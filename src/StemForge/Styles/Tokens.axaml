@@ -1,0 +1,79 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ====== Colors ====== -->
+
+    <!-- Backgrounds -->
+    <Color x:Key="Bg0Color">#1c1c1e</Color>
+    <Color x:Key="Bg1Color">#2c2c2e</Color>
+    <Color x:Key="Bg2Color">#3a3a3c</Color>
+    <Color x:Key="Bg3Color">#48484a</Color>
+
+    <!-- Text -->
+    <Color x:Key="TextPrimaryColor">#f2f2f7</Color>
+    <Color x:Key="TextSecondaryColor">#aeaeb2</Color>
+    <Color x:Key="TextPlaceholderColor">#636366</Color>
+
+    <!-- Accent (amber) -->
+    <Color x:Key="AccentColor">#d4703a</Color>
+    <Color x:Key="AccentBrightColor">#e88040</Color>
+    <Color x:Key="AccentDimBgColor">#1AD4703A</Color> <!-- ~10% alpha -->
+
+    <!-- Status -->
+    <Color x:Key="SuccessColor">#30d158</Color>
+    <Color x:Key="SuccessDimBgColor">#1F30D158</Color> <!-- ~12% alpha -->
+    <Color x:Key="ErrorColor">#ff453a</Color>
+    <Color x:Key="ErrorDimBgColor">#1FFF453A</Color>
+
+    <!-- Category accents -->
+    <Color x:Key="CategoryVocalsColor">#0a84ff</Color>
+    <Color x:Key="CategoryInstrumentalsColor">#30d158</Color>
+    <Color x:Key="CategoryOtherColor">#ffd60a</Color>
+
+    <!-- ====== Brushes ====== -->
+
+    <SolidColorBrush x:Key="Bg0Brush" Color="{StaticResource Bg0Color}" />
+    <SolidColorBrush x:Key="Bg1Brush" Color="{StaticResource Bg1Color}" />
+    <SolidColorBrush x:Key="Bg2Brush" Color="{StaticResource Bg2Color}" />
+    <SolidColorBrush x:Key="Bg3Brush" Color="{StaticResource Bg3Color}" />
+
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
+    <SolidColorBrush x:Key="TextPlaceholderBrush" Color="{StaticResource TextPlaceholderColor}" />
+
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="AccentBrightBrush" Color="{StaticResource AccentBrightColor}" />
+    <SolidColorBrush x:Key="AccentDimBgBrush" Color="{StaticResource AccentDimBgColor}" />
+
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="SuccessDimBgBrush" Color="{StaticResource SuccessDimBgColor}" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}" />
+    <SolidColorBrush x:Key="ErrorDimBgBrush" Color="{StaticResource ErrorDimBgColor}" />
+
+    <SolidColorBrush x:Key="CategoryVocalsBrush" Color="{StaticResource CategoryVocalsColor}" />
+    <SolidColorBrush x:Key="CategoryInstrumentalsBrush" Color="{StaticResource CategoryInstrumentalsColor}" />
+    <SolidColorBrush x:Key="CategoryOtherBrush" Color="{StaticResource CategoryOtherColor}" />
+
+    <!-- Button gradient (used on primary amber CTAs) -->
+    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="{StaticResource AccentBrightColor}" Offset="0" />
+        <GradientStop Color="{StaticResource AccentColor}" Offset="1" />
+    </LinearGradientBrush>
+
+    <!-- ====== Typography ====== -->
+    <!-- TODO: bundle DM Sans + JetBrains Mono. For now fall back to system equivalents. -->
+    <FontFamily x:Key="UiFont">Inter, Segoe UI, San Francisco, Arial</FontFamily>
+    <FontFamily x:Key="MonoFont">JetBrains Mono, Cascadia Mono, Consolas, Menlo, monospace</FontFamily>
+
+    <!-- ====== Shape / sizing ====== -->
+    <CornerRadius x:Key="RadiusCard">8</CornerRadius>
+    <CornerRadius x:Key="RadiusButton">6</CornerRadius>
+    <CornerRadius x:Key="RadiusChip">3</CornerRadius>
+    <CornerRadius x:Key="RadiusPill">20</CornerRadius>
+
+    <x:Double x:Key="SidebarWidth">56</x:Double>
+    <x:Double x:Key="TitleBarHeight">38</x:Double>
+    <x:Double x:Key="ToolbarHeight">50</x:Double>
+    <x:Double x:Key="FooterBarHeight">56</x:Double>
+
+</ResourceDictionary>

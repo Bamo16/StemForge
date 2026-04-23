@@ -1,0 +1,40 @@
+# Design handoff (not part of the repo)
+design_handoff_stemforge/
+
+# Build outputs
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Rr]elease/
+[Ll]og/
+[Ll]ogs/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# .NET
+*.pdb
+project.lock.json
+project.fragment.lock.json
+artifacts/
+.dotnet/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rider
+_ReSharper.Caches/
+
+# Avalonia/MSBuild
+*.binlog

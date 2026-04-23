@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:StemForge.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             x:Class="StemForge.Views.QueueView"
+             x:DataType="vm:QueueViewModel">
+
+    <Grid RowDefinitions="{StaticResource ToolbarHeight},*">
+        <Border Grid.Row="0"
+                Background="{DynamicResource Bg1Brush}"
+                BorderBrush="{DynamicResource Bg3Brush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,0">
+            <TextBlock Classes="h1" Text="{Binding Title}" VerticalAlignment="Center" />
+        </Border>
+
+        <TextBlock Grid.Row="1"
+                   Text="Job list goes here"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Foreground="{DynamicResource TextPlaceholderBrush}" />
+    </Grid>
+</UserControl>

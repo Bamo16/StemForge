@@ -1,0 +1,77 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:StemForge.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             x:Class="StemForge.Views.SeparateView"
+             x:DataType="vm:SeparateViewModel">
+
+    <Grid RowDefinitions="{StaticResource ToolbarHeight},*,{StaticResource FooterBarHeight}">
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource Bg1Brush}"
+                BorderBrush="{DynamicResource Bg3Brush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,0">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0"
+                           Classes="h1"
+                           Text="{Binding Title}"
+                           VerticalAlignment="Center" />
+                <!-- Presets / Models toggle pill (placeholder) -->
+                <Border Grid.Column="1"
+                        Background="{DynamicResource Bg0Brush}"
+                        CornerRadius="6"
+                        Padding="4"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="0">
+                        <Border Background="{DynamicResource Bg2Brush}"
+                                CornerRadius="4"
+                                Padding="10,4">
+                            <TextBlock Text="Presets" FontSize="12" FontWeight="Medium"
+                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                        </Border>
+                        <Border Background="Transparent" Padding="10,4">
+                            <TextBlock Text="Models" FontSize="12" FontWeight="Medium"
+                                       Foreground="{DynamicResource TextPlaceholderBrush}" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Main content placeholder -->
+        <TextBlock Grid.Row="1"
+                   Text="Preset grid goes here"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Foreground="{DynamicResource TextPlaceholderBrush}" />
+
+        <!-- Footer -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource Bg0Brush}"
+                BorderBrush="{DynamicResource Bg3Brush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,0">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="📁" FontSize="14" />
+                    <TextBlock Classes="mono"
+                               Text="~/Music/Stems"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               VerticalAlignment="Center" />
+                    <Button Classes="ghost" Content="Browse" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text="0 presets selected"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               VerticalAlignment="Center" />
+                    <Button Classes="ghost" Content="Add to Queue" />
+                    <Button Classes="accent" Content="▶  Run" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,98 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:StemForge.ViewModels"
+        xmlns:views="using:StemForge.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
+        x:Class="StemForge.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="StemForge"
+        Width="1100" Height="720"
+        MinWidth="900" MinHeight="600"
+        Background="{DynamicResource Bg1Brush}"
+        ExtendClientAreaToDecorationsHint="False">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid ColumnDefinitions="{StaticResource SidebarWidth},*">
+
+        <!-- Sidebar -->
+        <Border Grid.Column="0"
+                Background="{DynamicResource Bg0Brush}"
+                BorderBrush="{DynamicResource Bg3Brush}"
+                BorderThickness="0,0,1,0">
+            <ItemsControl ItemsSource="{Binding NavItems}" Margin="0,12,0,0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical" Spacing="4" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="vm:NavItem">
+                        <Button Classes="navItem"
+                                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).NavigateCommand}"
+                                CommandParameter="{Binding}"
+                                Width="44" Height="44"
+                                HorizontalAlignment="Center"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0">
+                            <Button.Styles>
+                                <Style Selector="Button.navItem">
+                                    <Setter Property="CornerRadius" Value="6" />
+                                </Style>
+                                <Style Selector="Button.navItem:pointerover /template/ ContentPresenter">
+                                    <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+                                </Style>
+                            </Button.Styles>
+                            <Grid>
+                                <!-- Active pill background -->
+                                <Border CornerRadius="6"
+                                        Background="{DynamicResource AccentDimBgBrush}"
+                                        IsVisible="{Binding IsActive}" />
+                                <StackPanel Orientation="Vertical" Spacing="2"
+                                            VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <Path Data="{Binding IconData}"
+                                          Width="18" Height="18"
+                                          Stretch="None"
+                                          StrokeThickness="1.5"
+                                          StrokeLineCap="Round"
+                                          StrokeJoin="Round"
+                                          Stroke="{DynamicResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{Binding Label}"
+                                               FontSize="9"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                </StackPanel>
+                                <!-- Badge -->
+                                <Border IsVisible="{Binding Badge}"
+                                        Background="{DynamicResource AccentBrush}"
+                                        CornerRadius="8"
+                                        MinWidth="16" Height="16"
+                                        Padding="4,0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Margin="0,2,2,0">
+                                    <TextBlock Text="{Binding Badge}"
+                                               Foreground="White"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                </Border>
+                            </Grid>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+
+        <!-- Content -->
+        <ContentControl Grid.Column="1"
+                        Content="{Binding CurrentPage}" />
+    </Grid>
+
+</Window>
