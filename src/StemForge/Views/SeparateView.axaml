@@ -121,7 +121,8 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="{StaticResource ToolbarHeight},Auto,*,{StaticResource FooterBarHeight}">
+    <!-- Row heights mirror tokens in Styles/Tokens.axaml: ToolbarHeight=50, FooterBarHeight=56. -->
+    <Grid RowDefinitions="50,Auto,*,56">
 
         <!-- ===== Toolbar ===== -->
         <Border Grid.Row="0"

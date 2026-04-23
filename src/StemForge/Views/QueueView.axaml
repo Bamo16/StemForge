@@ -7,7 +7,7 @@
              x:Class="StemForge.Views.QueueView"
              x:DataType="vm:QueueViewModel">
 
-    <Grid RowDefinitions="{StaticResource ToolbarHeight},*">
+    <Grid RowDefinitions="50,*">
         <Border Grid.Row="0"
                 Background="{DynamicResource Bg1Brush}"
                 BorderBrush="{DynamicResource Bg3Brush}"

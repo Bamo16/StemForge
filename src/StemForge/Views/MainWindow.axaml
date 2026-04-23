@@ -17,7 +17,10 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid ColumnDefinitions="{StaticResource SidebarWidth},*">
+    <!-- Column widths duplicate tokens in Styles/Tokens.axaml (SidebarWidth = 56):
+         Avalonia can't substitute a StaticResource into part of a comma-separated
+         ColumnDefinitions attribute, so we use literals here. -->
+    <Grid ColumnDefinitions="56,*">
 
         <!-- Sidebar -->
         <Border Grid.Column="0"
