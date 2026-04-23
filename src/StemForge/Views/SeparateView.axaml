@@ -3,73 +3,326 @@
              xmlns:vm="using:StemForge.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             mc:Ignorable="d" d:DesignWidth="1044" d:DesignHeight="720"
              x:Class="StemForge.Views.SeparateView"
              x:DataType="vm:SeparateViewModel">
 
-    <Grid RowDefinitions="{StaticResource ToolbarHeight},*,{StaticResource FooterBarHeight}">
+    <UserControl.Styles>
+        <!-- ===== Mode toggle pill ===== -->
+        <Style Selector="Border.modePillHost">
+            <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="2" />
+        </Style>
+        <Style Selector="Button.modeTab">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="14,5" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+        <Style Selector="Button.modeTab.active">
+            <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        </Style>
 
-        <!-- Toolbar -->
+        <!-- ===== Drop zone ===== -->
+        <Style Selector="Border.dropZone">
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Height" Value="52" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.dropZone:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="Background" Value="{DynamicResource AccentDimBgBrush}" />
+        </Style>
+
+        <!-- ===== URL input field ===== -->
+        <Style Selector="Border.urlField">
+            <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Height" Value="52" />
+            <Setter Property="Padding" Value="12,0" />
+        </Style>
+        <Style Selector="Border.urlField TextBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- ===== Preset card ===== -->
+        <Style Selector="Border.preset">
+            <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.preset:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource TextPlaceholderBrush}" />
+        </Style>
+        <Style Selector="Border.preset.selected">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="Background" Value="{DynamicResource AccentDimBgBrush}" />
+        </Style>
+
+        <!-- Checkbox inside preset card -->
+        <Style Selector="Border.checkbox">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="Margin" Value="0,1,0,0" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
+        <Style Selector="Border.preset.selected Border.checkbox">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+
+        <!-- Preset name/description color shifts when selected -->
+        <Style Selector="Border.preset TextBlock.presetName">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Border.preset.selected TextBlock.presetName">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+        </Style>
+
+        <!-- Tag chip -->
+        <Style Selector="Border.tag">
+            <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Padding" Value="6,2" />
+        </Style>
+        <Style Selector="Border.tag TextBlock">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="{StaticResource ToolbarHeight},Auto,*,{StaticResource FooterBarHeight}">
+
+        <!-- ===== Toolbar ===== -->
         <Border Grid.Row="0"
                 Background="{DynamicResource Bg1Brush}"
                 BorderBrush="{DynamicResource Bg3Brush}"
                 BorderThickness="0,0,0,1"
-                Padding="16,0">
+                Padding="20,0">
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Grid.Column="0"
                            Classes="h1"
                            Text="{Binding Title}"
                            VerticalAlignment="Center" />
-                <!-- Presets / Models toggle pill (placeholder) -->
-                <Border Grid.Column="1"
-                        Background="{DynamicResource Bg0Brush}"
-                        CornerRadius="6"
-                        Padding="4"
-                        VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="0">
-                        <Border Background="{DynamicResource Bg2Brush}"
-                                CornerRadius="4"
-                                Padding="10,4">
-                            <TextBlock Text="Presets" FontSize="12" FontWeight="Medium"
-                                       Foreground="{DynamicResource TextPrimaryBrush}" />
-                        </Border>
-                        <Border Background="Transparent" Padding="10,4">
-                            <TextBlock Text="Models" FontSize="12" FontWeight="Medium"
-                                       Foreground="{DynamicResource TextPlaceholderBrush}" />
-                        </Border>
+                <Border Grid.Column="1" Classes="modePillHost" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="1">
+                        <Button Classes="modeTab"
+                                Classes.active="{Binding IsPresetsMode}"
+                                Command="{Binding SetModeCommand}"
+                                CommandParameter="Presets"
+                                Content="Presets" />
+                        <Button Classes="modeTab"
+                                Classes.active="{Binding IsModelsMode}"
+                                Command="{Binding SetModeCommand}"
+                                CommandParameter="Models"
+                                Content="Models" />
                     </StackPanel>
                 </Border>
             </Grid>
         </Border>
 
-        <!-- Main content placeholder -->
-        <TextBlock Grid.Row="1"
-                   Text="Preset grid goes here"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                   Foreground="{DynamicResource TextPlaceholderBrush}" />
+        <!-- ===== Input bar ===== -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource Bg1Brush}"
+                BorderBrush="{DynamicResource Bg3Brush}"
+                BorderThickness="0,0,0,1"
+                Padding="20,12">
+            <Grid ColumnDefinitions="*,Auto,1.2*" ColumnSpacing="12">
 
-        <!-- Footer -->
-        <Border Grid.Row="2"
+                <!-- Drop zone -->
+                <Border Grid.Column="0" Classes="dropZone">
+                    <StackPanel Orientation="Horizontal" Spacing="10"
+                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Path Data="M8 2 V10 M5 7 L8 10 L11 7 M2 11 V13 A1 1 0 0 0 3 14 H13 A1 1 0 0 0 14 13 V11"
+                              Width="16" Height="16" Stretch="None"
+                              Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5"
+                              StrokeLineCap="Round" StrokeJoin="Round" />
+                        <TextBlock VerticalAlignment="Center" FontSize="13"
+                                   Foreground="{DynamicResource TextSecondaryBrush}">
+                            <Run Text="Drop audio file, or " />
+                            <Run Text="browse" Foreground="{DynamicResource AccentBrush}" />
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Grid.Column="1" Text="or"
+                           FontSize="12"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" />
+
+                <!-- URL field -->
+                <Border Grid.Column="2" Classes="urlField">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                        <Path Grid.Column="0"
+                              Data="M5.5 8.5 L8.5 5.5 M6.5 4.5 L7.8 3.2 A2.5 2.5 0 0 1 11.34 6.74 L10 8.1 M4 5.9 L2.66 7.26 A2.5 2.5 0 0 0 6.2 10.8 L7.5 9.5"
+                              Width="14" Height="14" Stretch="None"
+                              Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.3"
+                              StrokeLineCap="Round"
+                              VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding UrlInput, Mode=TwoWay}"
+                                 PlaceholderText="Paste YouTube / yt-dlp URL…"
+                                 VerticalContentAlignment="Center" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ===== Content: preset grid or models table ===== -->
+        <ScrollViewer Grid.Row="2" Padding="20,16" HorizontalScrollBarVisibility="Disabled">
+            <Grid>
+                <!-- Presets -->
+                <ItemsControl ItemsSource="{Binding Categories}"
+                              IsVisible="{Binding IsPresetsMode}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Vertical" Spacing="14" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:PresetCategoryGroup">
+                            <StackPanel Spacing="8">
+                                <!-- Category header -->
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Border Width="3" Height="14"
+                                            Background="{Binding AccentBrush}"
+                                            CornerRadius="2" />
+                                    <TextBlock Classes="sectionLabel"
+                                               Text="{Binding Label}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <!-- 2-column preset grid -->
+                                <ItemsControl ItemsSource="{Binding Items}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="2" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="vm:PresetItemViewModel">
+                                            <Border Classes="preset"
+                                                    Classes.selected="{Binding IsSelected}"
+                                                    Margin="0,0,7,7"
+                                                    PointerPressed="OnPresetCardClicked">
+                                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                                    <!-- Checkbox -->
+                                                    <Border Grid.Column="0" Classes="checkbox">
+                                                        <Path Data="M1 4 L4 7 L9 1"
+                                                              Stroke="White" StrokeThickness="1.5"
+                                                              StrokeLineCap="Round" StrokeJoin="Round"
+                                                              Stretch="None"
+                                                              Width="10" Height="8"
+                                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                              IsVisible="{Binding IsSelected}" />
+                                                    </Border>
+
+                                                    <!-- Body -->
+                                                    <StackPanel Grid.Column="1" Spacing="2">
+                                                        <TextBlock Classes="presetName" Text="{Binding Label}" />
+                                                        <TextBlock Text="{Binding Description}"
+                                                                   FontSize="11"
+                                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                   TextWrapping="Wrap" />
+                                                        <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,4,0,0">
+                                                            <Border Classes="tag">
+                                                                <TextBlock Text="{Binding ModelsTag}" />
+                                                            </Border>
+                                                            <Border Classes="tag">
+                                                                <TextBlock Text="{Binding VramTag}" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Models placeholder -->
+                <TextBlock IsVisible="{Binding IsModelsMode}"
+                           Text="Raw model selection coming soon"
+                           HorizontalAlignment="Center" VerticalAlignment="Top"
+                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                           Margin="0,60,0,0" />
+            </Grid>
+        </ScrollViewer>
+
+        <!-- ===== Footer ===== -->
+        <Border Grid.Row="3"
                 Background="{DynamicResource Bg0Brush}"
                 BorderBrush="{DynamicResource Bg3Brush}"
                 BorderThickness="0,1,0,0"
-                Padding="16,0">
-            <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="📁" FontSize="14" />
-                    <TextBlock Classes="mono"
-                               Text="~/Music/Stems"
+                Padding="20,0">
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="12">
+                <Path Grid.Column="0"
+                      Data="M2 11 V3 A1 1 0 0 1 3 2 H11 A1 1 0 0 1 12 3 V11 M5 13 H9"
+                      Width="14" Height="14" Stretch="None"
+                      Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.3"
+                      StrokeLineCap="Round"
+                      VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Classes="mono"
+                           Text="{Binding OutputPath}"
+                           FontSize="12"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="3" Classes="ghost"
+                        Content="Browse"
+                        Command="{Binding BrowseOutputCommand}" />
+                <Border Grid.Column="4" Width="1" Height="24"
+                        Background="{DynamicResource Bg3Brush}"
+                        Margin="0,0,0,0" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SelectedCount}"
                                FontSize="12"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               VerticalAlignment="Center" />
-                    <Button Classes="ghost" Content="Browse" />
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AccentBrush}"
+                               IsVisible="{Binding HasSelection}" />
+                    <TextBlock Text="{Binding SelectedCountLabel}"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <TextBlock Text="0 presets selected"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               VerticalAlignment="Center" />
-                    <Button Classes="ghost" Content="Add to Queue" />
-                    <Button Classes="accent" Content="▶  Run" />
+                <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button Classes="ghost"
+                            Content="Add to Queue"
+                            Command="{Binding AddToQueueCommand}" />
+                    <Button Classes="accent"
+                            Content="▶  Run"
+                            Command="{Binding RunCommand}" />
                 </StackPanel>
             </Grid>
         </Border>
