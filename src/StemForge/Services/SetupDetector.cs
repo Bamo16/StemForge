@@ -20,16 +20,19 @@ public static class SetupDetector
         return File.Exists(uvShim) ? uvShim : "audio-separator";
     }
 
-    public static async Task<IReadOnlyList<ToolInfo>> DetectAllAsync(
+    public static Task<IReadOnlyList<ToolInfo>> DetectAllAsync(
         string? ytdlpPath,
         string? ffmpegPath
-    )
+    ) => Task.Run(async () =>
     {
-        var audioSep = await DetectAsync("audio-separator", ResolveAudioSeparatorPath(), "--version", required: true);
-        var ytdlp    = await DetectAsync("yt-dlp",          ytdlpPath ?? "yt-dlp",       "--version", required: false);
-        var ffmpeg   = await DetectAsync("ffmpeg",          ffmpegPath ?? "ffmpeg",       "-version",  required: false);
-        return [audioSep, ytdlp, ffmpeg];
-    }
+        // Run all three detections in parallel — each spawns a short-lived process.
+        var results = await Task.WhenAll(
+            DetectAsync("audio-separator", ResolveAudioSeparatorPath(), "--version", required: true),
+            DetectAsync("yt-dlp",          ytdlpPath  ?? "yt-dlp",     "--version", required: false),
+            DetectAsync("ffmpeg",          ffmpegPath ?? "ffmpeg",      "-version",  required: false)
+        );
+        return (IReadOnlyList<ToolInfo>)results;
+    });
 
     private static async Task<ToolInfo> DetectAsync(
         string name, string exe, string versionArg, bool required)
@@ -44,9 +47,16 @@ public static class SetupDetector
                 RedirectStandardError = true,
             };
             using var p = Process.Start(psi)!;
-            var stdout = await p.StandardOutput.ReadToEndAsync();
-            await p.WaitForExitAsync();
-            var version = stdout.Split('\n')[0].Trim();
+            // Read both streams concurrently — not draining stderr causes a deadlock
+            // if the process writes enough to fill the OS pipe buffer.
+            var stdoutTask = p.StandardOutput.ReadToEndAsync();
+            var stderrTask = p.StandardError.ReadToEndAsync();
+            await Task.WhenAll(stdoutTask, stderrTask, p.WaitForExitAsync());
+            // Some tools (e.g. audio-separator) print version to stderr via Python logging
+            var output = (await stdoutTask).Trim();
+            if (string.IsNullOrEmpty(output))
+                output = (await stderrTask).Trim();
+            var version = output.Split('\n')[0].Trim();
             return new ToolInfo(name, Found: true, Version: version, IsRequired: required);
         }
         catch
