@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Linq;
 using Avalonia;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -9,7 +8,11 @@ using StemForge.Services;
 
 namespace StemForge.ViewModels;
 
-public enum SeparateMode { Presets, Models }
+public enum SeparateMode
+{
+    Presets,
+    Models,
+}
 
 public partial class SeparateViewModel : PageViewModelBase
 {
@@ -25,6 +28,10 @@ public partial class SeparateViewModel : PageViewModelBase
 
     [ObservableProperty]
     private string? _inputFilePath;
+
+    public bool HasInputFile => !string.IsNullOrWhiteSpace(InputFilePath);
+    public string InputFileName =>
+        string.IsNullOrWhiteSpace(InputFilePath) ? string.Empty : Path.GetFileName(InputFilePath);
 
     [ObservableProperty]
     private string _urlInput = string.Empty;
@@ -42,7 +49,25 @@ public partial class SeparateViewModel : PageViewModelBase
 
     public bool HasSelection => SelectedCount > 0;
 
-    public bool CanRun => SelectedCount > 0 && (!string.IsNullOrWhiteSpace(InputFilePath) || !string.IsNullOrWhiteSpace(UrlInput));
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RunCommand))]
+    private bool _isRunning;
+
+    [ObservableProperty]
+    private int _progress;
+
+    [ObservableProperty]
+    private string _statusText = string.Empty;
+
+    [ObservableProperty]
+    private string? _errorMessage;
+
+    private CancellationTokenSource? _runCts;
+
+    public bool CanStartRun =>
+        !IsRunning
+        && SelectedCount > 0
+        && (!string.IsNullOrWhiteSpace(InputFilePath) || !string.IsNullOrWhiteSpace(UrlInput));
 
     public SeparateViewModel()
     {
@@ -63,20 +88,31 @@ public partial class SeparateViewModel : PageViewModelBase
         var app = Application.Current!;
         IBrush Brush(string key)
         {
-            if (app.Resources.TryGetResource(key, app.ActualThemeVariant, out var value) && value is IBrush b)
+            if (
+                app.Resources.TryGetResource(key, app.ActualThemeVariant, out var value)
+                && value is IBrush b
+            )
             {
                 return b;
             }
             return Brushes.Transparent;
         }
 
-        var byCategory = PresetCatalog.BuiltIn
-            .GroupBy(p => p.Category)
+        var byCategory = PresetCatalog
+            .BuiltIn.GroupBy(p => p.Category)
             .ToDictionary(g => g.Key, g => g.Select(p => new PresetItemViewModel(p)));
 
-        foreach (var category in new[] { PresetCategory.Vocals, PresetCategory.Instrumentals, PresetCategory.Other })
+        foreach (
+            var category in new[]
+            {
+                PresetCategory.Vocals,
+                PresetCategory.Instrumentals,
+                PresetCategory.Other,
+            }
+        )
         {
-            if (!byCategory.TryGetValue(category, out var items)) continue;
+            if (!byCategory.TryGetValue(category, out var items))
+                continue;
             var brush = category switch
             {
                 PresetCategory.Vocals => Brush("CategoryVocalsBrush"),
@@ -88,7 +124,10 @@ public partial class SeparateViewModel : PageViewModelBase
         }
     }
 
-    private void OnItemPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void OnItemPropertyChanged(
+        object? sender,
+        System.ComponentModel.PropertyChangedEventArgs e
+    )
     {
         if (e.PropertyName == nameof(PresetItemViewModel.IsSelected))
         {
@@ -105,20 +144,28 @@ public partial class SeparateViewModel : PageViewModelBase
     {
         OnPropertyChanged(nameof(SelectedCountLabel));
         OnPropertyChanged(nameof(HasSelection));
-        OnPropertyChanged(nameof(CanRun));
+        OnPropertyChanged(nameof(CanStartRun));
         RunCommand.NotifyCanExecuteChanged();
         AddToQueueCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnInputFilePathChanged(string? value)
     {
-        OnPropertyChanged(nameof(CanRun));
+        OnPropertyChanged(nameof(CanStartRun));
+        OnPropertyChanged(nameof(HasInputFile));
+        OnPropertyChanged(nameof(InputFileName));
         RunCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand]
+    private void ClearInput()
+    {
+        InputFilePath = null;
     }
 
     partial void OnUrlInputChanged(string value)
     {
-        OnPropertyChanged(nameof(CanRun));
+        OnPropertyChanged(nameof(CanStartRun));
         RunCommand.NotifyCanExecuteChanged();
     }
 
@@ -131,7 +178,9 @@ public partial class SeparateViewModel : PageViewModelBase
     [RelayCommand]
     private void SetMode(string mode)
     {
-        Mode = mode.Equals("Models", StringComparison.OrdinalIgnoreCase) ? SeparateMode.Models : SeparateMode.Presets;
+        Mode = mode.Equals("Models", StringComparison.OrdinalIgnoreCase)
+            ? SeparateMode.Models
+            : SeparateMode.Presets;
     }
 
     [RelayCommand]
@@ -140,23 +189,71 @@ public partial class SeparateViewModel : PageViewModelBase
         item.IsSelected = !item.IsSelected;
     }
 
-    [RelayCommand]
-    private void Browse()
+    [RelayCommand(CanExecute = nameof(CanStartRun))]
+    private async Task RunAsync()
     {
-        // TODO: wire up StorageProvider.OpenFilePickerAsync
+        using var cts = new CancellationTokenSource();
+        _runCts = cts;
+        IsRunning = true;
+        ErrorMessage = null;
+        Progress = 0;
+
+        try
+        {
+            var selectedPresets = Categories
+                .SelectMany(g => g.Items)
+                .Where(i => i.IsSelected)
+                .Select(i => i.Preset)
+                .ToList();
+
+            var modelsDir = SeparationService.ResolveModelsDir();
+            var outputDir = ExpandPath(OutputPath);
+            var service = new SeparationService();
+
+            var progressReporter = new Progress<SeparationProgress>(p =>
+            {
+                Progress = p.OverallPercent;
+                StatusText = p.StatusText;
+            });
+
+            await service.RunAsync(
+                InputFilePath!,
+                selectedPresets,
+                outputDir,
+                modelsDir,
+                progressReporter,
+                cts.Token
+            );
+
+            StatusText = $"Done — {selectedPresets.Count} stem{(selectedPresets.Count == 1 ? "" : "s")} written";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText = "Cancelled";
+            Progress = 0;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            StatusText = "Failed";
+        }
+        finally
+        {
+            IsRunning = false;
+            _runCts = null;
+        }
     }
 
     [RelayCommand]
-    private void BrowseOutput()
-    {
-        // TODO: wire up StorageProvider.OpenFolderPickerAsync
-    }
+    private void CancelRun() => _runCts?.Cancel();
 
-    [RelayCommand(CanExecute = nameof(CanRun))]
-    private void Run()
-    {
-        // TODO: enqueue job and run
-    }
+    private static string ExpandPath(string path) =>
+        path.StartsWith("~/")
+            ? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                path[2..]
+            )
+            : path;
 
     [RelayCommand(CanExecute = nameof(HasSelection))]
     private void AddToQueue()

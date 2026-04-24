@@ -13,4 +13,5 @@ public sealed record Preset(
     PresetCategory Category,
     string Description,
     int ModelCount,
-    string Vram);
+    string Vram
+);
