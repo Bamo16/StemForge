@@ -63,14 +63,16 @@ public partial class SeparateViewModel : PageViewModelBase
     private string? _errorMessage;
 
     private CancellationTokenSource? _runCts;
+    private readonly JobQueueService _queue;
 
     public bool CanStartRun =>
         !IsRunning
         && SelectedCount > 0
         && (!string.IsNullOrWhiteSpace(InputFilePath) || !string.IsNullOrWhiteSpace(UrlInput));
 
-    public SeparateViewModel()
+    public SeparateViewModel(JobQueueService queue)
     {
+        _queue = queue;
         Categories = new ObservableCollection<PresetCategoryGroup>(BuildGroups());
 
         foreach (var g in Categories)
@@ -258,6 +260,22 @@ public partial class SeparateViewModel : PageViewModelBase
     [RelayCommand(CanExecute = nameof(HasSelection))]
     private void AddToQueue()
     {
-        // TODO: enqueue selected presets
+        if (string.IsNullOrWhiteSpace(InputFilePath) && string.IsNullOrWhiteSpace(UrlInput))
+            return;
+
+        var selectedPresets = Categories
+            .SelectMany(g => g.Items)
+            .Where(i => i.IsSelected)
+            .Select(i => i.Preset)
+            .ToList();
+
+        var record = new JobRecord(
+            Guid.NewGuid(),
+            InputFilePath ?? UrlInput,
+            selectedPresets,
+            ExpandPath(OutputPath)
+        );
+
+        _queue.Enqueue(record);
     }
 }

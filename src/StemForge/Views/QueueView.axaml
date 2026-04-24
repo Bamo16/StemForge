@@ -3,22 +3,261 @@
              xmlns:vm="using:StemForge.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             mc:Ignorable="d" d:DesignWidth="1044" d:DesignHeight="720"
              x:Class="StemForge.Views.QueueView"
              x:DataType="vm:QueueViewModel">
 
+    <UserControl.Styles>
+        <!-- Column header text -->
+        <Style Selector="TextBlock.colHeader">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
+            <Setter Property="LetterSpacing" Value="0.07" />
+        </Style>
+
+        <!-- Row base -->
+        <Style Selector="Border.jobRow">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Border.jobRow.alt">
+            <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+        </Style>
+        <Style Selector="Border.jobRow.expanded">
+            <Setter Property="Background" Value="{DynamicResource AccentDimBgBrush}" />
+        </Style>
+
+        <!-- Running job: amber left accent bar -->
+        <Style Selector="Border.runningAccent">
+            <Setter Property="Width" Value="2" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.runningAccent.visible">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+        </Style>
+
+        <!-- Status label -->
+        <Style Selector="TextBlock.statusLabel">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LetterSpacing" Value="0.04" />
+        </Style>
+
+        <!-- Output file link -->
+        <Style Selector="Button.fileLink">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+        </Style>
+        <Style Selector="Button.fileLink:pointerover TextBlock">
+            <Setter Property="TextDecorations" Value="Underline" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        </Style>
+
+        <!-- Done detail panel -->
+        <Style Selector="Border.doneBanner">
+            <Setter Property="Background" Value="{DynamicResource SuccessDimBgBrush}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
+
+        <!-- Error detail panel -->
+        <Style Selector="Border.errorBanner">
+            <Setter Property="Background" Value="{DynamicResource ErrorDimBgBrush}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
+    </UserControl.Styles>
+
     <Grid RowDefinitions="50,*">
+
+        <!-- ===== Toolbar ===== -->
         <Border Grid.Row="0"
                 Background="{DynamicResource Bg1Brush}"
                 BorderBrush="{DynamicResource Bg3Brush}"
                 BorderThickness="0,0,0,1"
-                Padding="16,0">
-            <TextBlock Classes="h1" Text="{Binding Title}" VerticalAlignment="Center" />
+                Padding="20,0">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                <TextBlock Grid.Column="0" Classes="h1" Text="{Binding Title}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding SummaryLabel}"
+                           FontSize="12"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="2" Classes="ghost"
+                        Content="Clear done"
+                        Command="{Binding ClearDoneCommand}" />
+            </Grid>
         </Border>
 
-        <TextBlock Grid.Row="1"
-                   Text="Job list goes here"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                   Foreground="{DynamicResource TextPlaceholderBrush}" />
+        <!-- ===== Job list ===== -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,*">
+
+            <!-- Column header row -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource Bg0Brush}"
+                    BorderBrush="{DynamicResource Bg3Brush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="20,0">
+                <!-- 2px left-accent spacer + 2.4* File + 1.5* Preset + 3* Progress + 80 Status -->
+                <Grid ColumnDefinitions="2,2.4*,1.5*,3*,80" Height="32">
+                    <TextBlock Grid.Column="1" Classes="colHeader" Text="FILE"
+                               VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Classes="colHeader" Text="PRESET"
+                               VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Classes="colHeader" Text="PROGRESS"
+                               VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="4" Classes="colHeader" Text="STATUS"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Empty state -->
+            <TextBlock Grid.Row="1"
+                       IsVisible="{Binding !Jobs.Count}"
+                       Text="No jobs yet — select presets on the Separate screen and click Add to Queue."
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextPlaceholderBrush}"
+                       FontSize="13" TextWrapping="Wrap" MaxWidth="360" TextAlignment="Center" />
+
+            <!-- Rows -->
+            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Jobs}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Vertical" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:JobItemViewModel">
+                            <StackPanel Orientation="Vertical">
+                                <!-- Main row -->
+                                <Border Classes="jobRow"
+                                        Classes.expanded="{Binding IsExpanded}"
+                                        Padding="0"
+                                        MinHeight="42">
+                                    <Grid ColumnDefinitions="2,2.4*,1.5*,3*,80" Margin="20,0">
+                                        <!-- Running accent bar -->
+                                        <Border Grid.Column="0" Classes="runningAccent"
+                                                Classes.visible="{Binding IsRunning}"
+                                                VerticalAlignment="Stretch" />
+
+                                        <!-- File (click to expand) -->
+                                        <Button Grid.Column="1"
+                                                Command="{Binding ToggleExpandCommand}"
+                                                Background="Transparent" BorderThickness="0"
+                                                Padding="0" HorizontalContentAlignment="Left"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Classes="mono"
+                                                       Text="{Binding InputFileName}"
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </Button>
+
+                                        <!-- Preset -->
+                                        <TextBlock Grid.Column="2" Classes="mono"
+                                                   Text="{Binding PresetSummary}"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+
+                                        <!-- Progress bar + label -->
+                                        <Grid Grid.Column="3" ColumnDefinitions="*,42"
+                                              ColumnSpacing="10" VerticalAlignment="Center">
+                                            <ProgressBar Grid.Column="0"
+                                                         Value="{Binding Progress}"
+                                                         Maximum="100"
+                                                         Height="4"
+                                                         IsVisible="{Binding ShowProgress}"
+                                                         Foreground="{DynamicResource AccentBrush}"
+                                                         Background="{DynamicResource Bg2Brush}"
+                                                         BorderThickness="0"
+                                                         VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="1" Classes="mono"
+                                                       Text="{Binding ProgressLabel}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       VerticalAlignment="Center" />
+                                        </Grid>
+
+                                        <!-- Status chip -->
+                                        <TextBlock Grid.Column="4" Classes="statusLabel"
+                                                   Text="{Binding StatusLabel}"
+                                                   Foreground="{Binding StatusBrush}"
+                                                   HorizontalAlignment="Right"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+
+                                <!-- Expanded detail panel -->
+                                <Border IsVisible="{Binding IsExpanded}"
+                                        Background="{DynamicResource Bg1Brush}"
+                                        BorderBrush="{DynamicResource Bg3Brush}"
+                                        BorderThickness="0,0,0,1"
+                                        Padding="36,10,20,14">
+                                    <StackPanel Spacing="8">
+
+                                        <!-- Running: sub-progress + cancel -->
+                                        <StackPanel IsVisible="{Binding IsRunning}" Spacing="6">
+                                            <TextBlock Text="{Binding StatusText}"
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            <Button Classes="ghost"
+                                                    Content="■  Cancel"
+                                                    Command="{Binding CancelCommand}"
+                                                    Foreground="{DynamicResource ErrorBrush}"
+                                                    BorderBrush="{DynamicResource ErrorBrush}" />
+                                        </StackPanel>
+
+                                        <!-- Done: output files + Show in Explorer -->
+                                        <Border IsVisible="{Binding IsDone}" Classes="doneBanner">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <ItemsControl Grid.Column="0"
+                                                              ItemsSource="{Binding OutputFiles}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Spacing="4" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="x:String">
+                                                            <TextBlock Classes="mono"
+                                                                       Text="{Binding}"
+                                                                       FontSize="11"
+                                                                       Foreground="{DynamicResource SuccessBrush}"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <Button Grid.Column="1" Classes="ghost"
+                                                        Content="Show in Explorer"
+                                                        Command="{Binding ShowInExplorerCommand}"
+                                                        VerticalAlignment="Top" />
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Failed: error message -->
+                                        <Border IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                Classes="errorBanner">
+                                            <TextBlock Text="{Binding ErrorMessage}"
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource ErrorBrush}"
+                                                       TextWrapping="Wrap" />
+                                        </Border>
+
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </UserControl>
