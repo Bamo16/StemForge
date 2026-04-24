@@ -64,15 +64,18 @@ public partial class SeparateViewModel : PageViewModelBase
 
     private CancellationTokenSource? _runCts;
     private readonly JobQueueService _queue;
+    private readonly AppSettingsService _settings;
 
     public bool CanStartRun =>
         !IsRunning
         && SelectedCount > 0
         && (!string.IsNullOrWhiteSpace(InputFilePath) || !string.IsNullOrWhiteSpace(UrlInput));
 
-    public SeparateViewModel(JobQueueService queue)
+    public SeparateViewModel(JobQueueService queue, AppSettingsService settings)
     {
         _queue = queue;
+        _settings = settings;
+        _outputPath = settings.Current.OutputDirectory;
         Categories = new ObservableCollection<PresetCategoryGroup>(BuildGroups());
 
         foreach (var g in Categories)
@@ -208,7 +211,7 @@ public partial class SeparateViewModel : PageViewModelBase
                 .Select(i => i.Preset)
                 .ToList();
 
-            var modelsDir = SeparationService.ResolveModelsDir();
+            var modelsDir = _settings.Current.ModelsDirectory;
             var outputDir = ExpandPath(OutputPath);
             var service = new SeparationService();
 
@@ -273,7 +276,8 @@ public partial class SeparateViewModel : PageViewModelBase
             Guid.NewGuid(),
             InputFilePath ?? UrlInput,
             selectedPresets,
-            ExpandPath(OutputPath)
+            ExpandPath(OutputPath),
+            _settings.Current.ModelsDirectory
         );
 
         _queue.Enqueue(record);

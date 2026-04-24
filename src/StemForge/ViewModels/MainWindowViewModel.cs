@@ -21,13 +21,14 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-        var separation = new SeparationService();
+        var settingsSvc = AppSettingsService.Load();
+        var separation = new SeparationService(SetupDetector.ResolveAudioSeparatorPath());
         var queue = new JobQueueService(separation);
 
-        var separate = new SeparateViewModel(queue);
+        var separate = new SeparateViewModel(queue, settingsSvc);
         var queueVm = new QueueViewModel(queue);
         var models = new ModelsViewModel();
-        var settings = new SettingsViewModel();
+        var settings = new SettingsViewModel(settingsSvc);
 
         NavItems =
         [

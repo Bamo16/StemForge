@@ -3,22 +3,264 @@
              xmlns:vm="using:StemForge.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             mc:Ignorable="d" d:DesignWidth="1044" d:DesignHeight="720"
              x:Class="StemForge.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
 
+    <UserControl.Styles>
+        <!-- Section heading -->
+        <Style Selector="TextBlock.settingSection">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
+
+        <!-- Setting row label -->
+        <Style Selector="TextBlock.settingLabel">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <!-- Settings TextBox -->
+        <Style Selector="TextBox.settingInput">
+            <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        </Style>
+
+        <!-- Card panel -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="16,14" />
+        </Style>
+
+        <!-- GPU variant toggle button -->
+        <Style Selector="Button.variantTab">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="14,7" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+        <Style Selector="Button.variantTab.active">
+            <Setter Property="Background" Value="{DynamicResource AccentDimBgBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        <Style Selector="Button.variantTab:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+        </Style>
+
+        <!-- Tool status dot -->
+        <Style Selector="Ellipse.statusDot">
+            <Setter Property="Width" Value="7" />
+            <Setter Property="Height" Value="7" />
+        </Style>
+        <Style Selector="Ellipse.statusDot.ok">
+            <Setter Property="Fill" Value="{DynamicResource SuccessBrush}" />
+        </Style>
+        <Style Selector="Ellipse.statusDot.fail">
+            <Setter Property="Fill" Value="{DynamicResource ErrorBrush}" />
+        </Style>
+    </UserControl.Styles>
+
     <Grid RowDefinitions="50,*">
+
+        <!-- ===== Toolbar ===== -->
         <Border Grid.Row="0"
                 Background="{DynamicResource Bg1Brush}"
                 BorderBrush="{DynamicResource Bg3Brush}"
                 BorderThickness="0,0,0,1"
-                Padding="16,0">
+                Padding="20,0">
             <TextBlock Classes="h1" Text="{Binding Title}" VerticalAlignment="Center" />
         </Border>
 
-        <TextBlock Grid.Row="1"
-                   Text="audio-separator, yt-dlp, ffmpeg, directories go here"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                   Foreground="{DynamicResource TextPlaceholderBrush}" />
+        <!-- ===== Scrollable content (max 600px centered) ===== -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel MaxWidth="600"
+                        HorizontalAlignment="Center"
+                        Margin="20,24,20,40"
+                        Spacing="20">
+
+                <!-- ── Status banner ── -->
+                <Border CornerRadius="10"
+                        Padding="16,14"
+                        IsVisible="{Binding !ToolsLoading}">
+                    <Border.Background>
+                        <SolidColorBrush Color="{DynamicResource SuccessColor}" Opacity="0.08" />
+                    </Border.Background>
+                    <Border.BorderBrush>
+                        <SolidColorBrush Color="{DynamicResource SuccessColor}" Opacity="0.3" />
+                    </Border.BorderBrush>
+                    <Border.BorderThickness>1</Border.BorderThickness>
+                    <StackPanel Spacing="12">
+                        <!-- Header -->
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse Classes="statusDot" Classes.ok="{Binding AllSystemsGo}"
+                                     Classes.fail="{Binding !AllSystemsGo}" />
+                            <TextBlock FontSize="12" FontWeight="Bold" LetterSpacing="0.06"
+                                       Foreground="{DynamicResource SuccessBrush}"
+                                       Text="ALL SYSTEMS GO"
+                                       IsVisible="{Binding AllSystemsGo}" />
+                            <TextBlock FontSize="12" FontWeight="Bold" LetterSpacing="0.06"
+                                       Foreground="{DynamicResource ErrorBrush}"
+                                       Text="MISSING REQUIRED TOOLS"
+                                       IsVisible="{Binding !AllSystemsGo}" />
+                        </StackPanel>
+                        <!-- Tool rows -->
+                        <ItemsControl ItemsSource="{Binding Tools}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="3" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="vm:ToolStatusViewModel">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock Text="{Binding Name}"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        <TextBlock Classes="mono"
+                                                   Text="{Binding StatusLine}"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Classes="ghost"
+                                Content="Refresh"
+                                Command="{Binding RefreshToolsCommand}"
+                                HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Detecting spinner -->
+                <StackPanel IsVisible="{Binding ToolsLoading}"
+                            Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                    <TextBlock Text="Detecting tools…"
+                               FontSize="13"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+
+                <!-- ── audio-separator ── -->
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="settingSection" Text="audio-separator" />
+                    <Border Classes="card">
+                        <StackPanel Spacing="14">
+                            <!-- GPU variant -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="settingLabel" Text="GPU variant" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Classes="variantTab"
+                                            Classes.active="{Binding IsCpu}"
+                                            Command="{Binding SetGpuVariantCommand}"
+                                            CommandParameter="Cpu"
+                                            Content="CPU" />
+                                    <Button Classes="variantTab"
+                                            Classes.active="{Binding IsCuda}"
+                                            Command="{Binding SetGpuVariantCommand}"
+                                            CommandParameter="Cuda"
+                                            Content="CUDA" />
+                                    <Button Classes="variantTab"
+                                            Classes.active="{Binding IsDirectML}"
+                                            Command="{Binding SetGpuVariantCommand}"
+                                            CommandParameter="DirectML"
+                                            Content="DirectML" />
+                                </StackPanel>
+                                <TextBlock FontSize="11"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="CPU works everywhere. CUDA requires an NVIDIA GPU. DirectML works on most Windows GPUs (AMD/Intel/NVIDIA)."
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ── yt-dlp & ffmpeg ── -->
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="settingSection" Text="yt-dlp &amp; ffmpeg" />
+                    <Border Classes="card">
+                        <StackPanel Spacing="14">
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel"
+                                           Text="yt-dlp path (leave blank to use system PATH)" />
+                                <TextBox Classes="settingInput"
+                                         Text="{Binding YtdlpPath, Mode=TwoWay}"
+                                         PlaceholderText="Auto-detect from PATH" />
+                            </StackPanel>
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel"
+                                           Text="ffmpeg path (leave blank to use system PATH)" />
+                                <TextBox Classes="settingInput"
+                                         Text="{Binding FfmpegPath, Mode=TwoWay}"
+                                         PlaceholderText="Auto-detect from PATH" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ── Defaults ── -->
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="settingSection" Text="Default directories" />
+                    <Border Classes="card">
+                        <StackPanel Spacing="14">
+                            <!-- Output dir -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel" Text="Output directory" />
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <TextBox Grid.Column="0" Classes="settingInput"
+                                             Text="{Binding OutputDirectory, Mode=TwoWay}" />
+                                    <Button Grid.Column="1" Classes="ghost"
+                                            Content="Browse"
+                                            Click="OnBrowseOutputClicked" />
+                                </Grid>
+                            </StackPanel>
+                            <!-- Models dir -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel" Text="Models directory" />
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <TextBox Grid.Column="0" Classes="settingInput"
+                                             Text="{Binding ModelsDirectory, Mode=TwoWay}" />
+                                    <Button Grid.Column="1" Classes="ghost"
+                                            Content="Browse"
+                                            Click="OnBrowseModelsClicked" />
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ── Save footer ── -->
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                    <TextBlock Grid.Column="1"
+                               Text="✓  Saved"
+                               FontSize="12"
+                               Foreground="{DynamicResource SuccessBrush}"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding SaveSuccess}" />
+                    <Button Grid.Column="2"
+                            Classes="accent"
+                            Content="Save changes"
+                            Command="{Binding SaveCommand}" />
+                </Grid>
+
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

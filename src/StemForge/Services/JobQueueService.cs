@@ -65,7 +65,7 @@ public sealed class JobQueueService
                 vm.Job.InputFilePath,
                 vm.Job.Presets,
                 vm.Job.OutputDir,
-                SeparationService.ResolveModelsDir(),
+                vm.Job.ModelsDir,
                 progress,
                 cts.Token
             );

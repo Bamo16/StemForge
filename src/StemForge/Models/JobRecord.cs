@@ -5,7 +5,8 @@ public sealed record JobRecord(
     Guid Id,
     string InputFilePath,
     IReadOnlyList<Preset> Presets,
-    string OutputDir
+    string OutputDir,
+    string ModelsDir
 )
 {
     public string InputFileName => Path.GetFileName(InputFilePath);
