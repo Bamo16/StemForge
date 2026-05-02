@@ -11,7 +11,10 @@ public static class ToolInstaller
         {
             return (await ProcessRunner.RunAsync("uv", ["--version"])).Success;
         }
-        catch { return false; }
+        catch
+        {
+            return false;
+        }
     }
 
     public static async Task<GpuVariant?> DetectInstalledVariantAsync()
@@ -19,13 +22,15 @@ public static class ToolInstaller
         try
         {
             var toolDir = (await ProcessRunner.RunAsync("uv", ["tool", "dir"])).Stdout;
-            if (string.IsNullOrWhiteSpace(toolDir)) return null;
+            if (string.IsNullOrWhiteSpace(toolDir))
+                return null;
 
             var pythonExe = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 ? Path.Combine(toolDir, "audio-separator", "Scripts", "python.exe")
                 : Path.Combine(toolDir, "audio-separator", "bin", "python");
 
-            if (!File.Exists(pythonExe)) return null;
+            if (!File.Exists(pythonExe))
+                return null;
 
             const string script =
                 "from importlib.metadata import distributions;"
@@ -41,7 +46,10 @@ public static class ToolInstaller
                 _ => null,
             };
         }
-        catch { return null; }
+        catch
+        {
+            return null;
+        }
     }
 
     public static Task InstallAudioSeparatorAsync(
@@ -51,7 +59,13 @@ public static class ToolInstaller
     ) =>
         ProcessRunner.RunStreamingAsync(
             "uv",
-            ["tool", "install", $"audio-separator[{SetupDetector.GetPipExtra(variant)}]"],
+            [
+                "tool",
+                "install",
+                $"audio-separator[{SetupDetector.GetPipExtra(variant)}]",
+                "--python",
+                "3.10",
+            ],
             progress,
             ct
         );
