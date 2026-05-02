@@ -12,8 +12,8 @@ public partial class NavItem : ObservableObject
     public required PageViewModelBase Target { get; init; }
 
     [ObservableProperty]
-    private bool _isActive;
+    public partial bool IsActive { get; set; }
 
     [ObservableProperty]
-    private int _badge;
+    public partial int Badge { get; set; }
 }

@@ -1,16 +1,14 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using StemForge.Extensions;
 using StemForge.Models;
 
 namespace StemForge.Services;
 
 public sealed class AppSettingsService
 {
-    private static readonly string SettingsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "StemForge",
-        "settings.json"
-    );
+    private static readonly string SettingsPath =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("StemForge", "settings.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -31,7 +29,9 @@ public sealed class AppSettingsService
                 svc.Current = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new();
             }
         }
-        catch { /* corrupt settings — start fresh */ }
+        catch
+        { /* corrupt settings — start fresh */
+        }
         return svc;
     }
 

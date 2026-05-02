@@ -3,21 +3,19 @@ using StemForge.Models;
 
 namespace StemForge.ViewModels;
 
-public partial class PresetItemViewModel : ObservableObject
+public partial class PresetItemViewModel(Preset preset) : ObservableObject
 {
-    public Preset Preset { get; }
-
-    public PresetItemViewModel(Preset preset)
-    {
-        Preset = preset;
-    }
+    public Preset Preset { get; } = preset;
 
     public string Id => Preset.Id;
     public string Label => Preset.Label;
     public string Description => Preset.Description;
-    public string ModelsTag => $"{Preset.ModelCount} models";
+    public string ModelsTag =>
+        Preset.Mode == SeparationMode.SingleModel ? "1 model"
+        : Preset.ModelCount > 0 ? $"{Preset.ModelCount} models"
+        : string.Empty;
     public string VramTag => Preset.Vram;
 
     [ObservableProperty]
-    private bool _isSelected;
+    public partial bool IsSelected { get; set; }
 }

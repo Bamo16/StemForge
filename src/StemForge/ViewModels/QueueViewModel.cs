@@ -15,7 +15,7 @@ public partial class QueueViewModel : PageViewModelBase
     public ObservableCollection<JobItemViewModel> Jobs => _queue.Jobs;
 
     [ObservableProperty]
-    private string _summaryLabel = string.Empty;
+    public partial string SummaryLabel { get; set; } = string.Empty;
 
     public QueueViewModel(JobQueueService queue)
     {

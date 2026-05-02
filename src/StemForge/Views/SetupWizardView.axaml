@@ -1,0 +1,403 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:StemForge.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
+             x:Class="StemForge.Views.SetupWizardView"
+             x:DataType="vm:SetupWizardViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Button.variantTab">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="14,7" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+        <Style Selector="Button.variantTab.active">
+            <Setter Property="Background" Value="{DynamicResource AccentDimBgBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        <Style Selector="Button.variantTab:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+        </Style>
+
+        <Style Selector="Ellipse.stepDot">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Fill" Value="{DynamicResource Bg3Brush}" />
+        </Style>
+        <Style Selector="Ellipse.stepDot.active">
+            <Setter Property="Fill" Value="{DynamicResource AccentBrush}" />
+        </Style>
+
+        <Style Selector="TextBox.dirInput">
+            <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        </Style>
+
+        <Style Selector="Ellipse.statusDot">
+            <Setter Property="Width" Value="7" />
+            <Setter Property="Height" Value="7" />
+        </Style>
+        <Style Selector="Ellipse.statusDot.ok">
+            <Setter Property="Fill" Value="{DynamicResource SuccessBrush}" />
+        </Style>
+        <Style Selector="Ellipse.statusDot.fail">
+            <Setter Property="Fill" Value="{DynamicResource ErrorBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Full-screen dim overlay -->
+    <Panel>
+        <Border>
+            <Border.Background>
+                <SolidColorBrush Color="Black" Opacity="0.6" />
+            </Border.Background>
+        </Border>
+
+        <!-- Centered wizard card -->
+        <Border MaxWidth="480"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{DynamicResource Bg1Brush}"
+                BorderBrush="{DynamicResource Bg3Brush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                BoxShadow="0 8 40 0 #60000000">
+
+            <StackPanel>
+
+                <!-- Step indicator dots (hidden on Welcome) -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="8"
+                            Margin="0,24,0,0"
+                            IsVisible="{Binding !IsWelcomeStep}">
+                    <Ellipse Classes="stepDot" Classes.active="{Binding IsStep1Active}" />
+                    <Ellipse Classes="stepDot" Classes.active="{Binding IsStep2Active}" />
+                    <Ellipse Classes="stepDot" Classes.active="{Binding IsStep3Active}" />
+                    <Ellipse Classes="stepDot" Classes.active="{Binding IsStep4Active}" />
+                </StackPanel>
+
+                <!-- Step content -->
+                <Panel MinHeight="340" Margin="32,24,32,0">
+
+                    <!-- ── Welcome ── -->
+                    <StackPanel IsVisible="{Binding IsWelcomeStep}"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Spacing="16">
+                        <TextBlock Text="StemForge"
+                                   FontSize="32" FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock Text="AI-powered audio stem separation"
+                                   FontSize="14"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <TextBlock MaxWidth="340"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   FontSize="13"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,8,0,0"
+                                   Text="This wizard will check your system, configure directories, and install audio-separator if needed." />
+                    </StackPanel>
+
+                    <!-- ── Detect ── -->
+                    <StackPanel IsVisible="{Binding IsDetectStep}" Spacing="16">
+                        <TextBlock Text="Checking your system"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+
+                        <StackPanel IsVisible="{Binding IsDetecting}" Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Ellipse Width="7" Height="7">
+                                    <Ellipse.Fill>
+                                        <SolidColorBrush Color="{DynamicResource SuccessColor}" Opacity="0.5" />
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                                <TextBlock Text="Detecting tools…"
+                                           FontSize="12" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </StackPanel>
+                            <ProgressBar IsIndeterminate="True" Height="2"
+                                         Foreground="{DynamicResource SuccessBrush}"
+                                         Background="Transparent" />
+                        </StackPanel>
+
+                        <StackPanel IsVisible="{Binding !IsDetecting}" Spacing="14">
+                            <ItemsControl ItemsSource="{Binding Tools}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Spacing="8" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:ToolStatusViewModel">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Ellipse Classes="statusDot"
+                                                     Classes.ok="{Binding Found}"
+                                                     Classes.fail="{Binding !Found}" />
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       VerticalAlignment="Center" />
+                                            <TextBlock Classes="mono"
+                                                       Text="{Binding StatusLine}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <Border IsVisible="{Binding VariantTag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                    Background="{DynamicResource AccentDimBgBrush}"
+                                                    CornerRadius="3" Padding="5,2"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding VariantTag}"
+                                                           FontSize="10" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource AccentBrush}" />
+                                            </Border>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <StackPanel Spacing="8" Margin="0,4,0,0">
+                                <TextBlock Text="GPU variant"
+                                           FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Classes="variantTab"
+                                            Classes.active="{Binding IsCpu}"
+                                            Command="{Binding SetGpuVariantCommand}"
+                                            CommandParameter="Cpu"
+                                            Content="CPU" />
+                                    <Button Classes="variantTab"
+                                            Classes.active="{Binding IsCuda}"
+                                            Command="{Binding SetGpuVariantCommand}"
+                                            CommandParameter="Cuda"
+                                            Content="CUDA" />
+                                    <Button Classes="variantTab"
+                                            Classes.active="{Binding IsDirectML}"
+                                            Command="{Binding SetGpuVariantCommand}"
+                                            CommandParameter="DirectML"
+                                            Content="DirectML" />
+                                </StackPanel>
+                                <TextBlock FontSize="11"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="CPU works everywhere. CUDA requires NVIDIA. DirectML works on most Windows GPUs." />
+                                <TextBlock FontSize="11" FontWeight="Medium"
+                                           Foreground="{DynamicResource AccentBrush}"
+                                           Text="{Binding GpuHint}"
+                                           IsVisible="{Binding GpuHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- ── Directories ── -->
+                    <StackPanel IsVisible="{Binding IsDirectoriesStep}" Spacing="16">
+                        <TextBlock Text="Output directories"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock FontSize="13"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="Where should StemForge save separated stems and store AI models?" />
+
+                        <StackPanel Spacing="6">
+                            <TextBlock FontSize="12"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Text="Stems output" />
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <TextBox Grid.Column="0" Classes="dirInput"
+                                         Text="{Binding OutputDirectory, Mode=TwoWay}" />
+                                <Button Grid.Column="1" Classes="ghost"
+                                        Content="Browse"
+                                        Click="OnBrowseOutputClicked" />
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock FontSize="12"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Text="Models cache" />
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <TextBox Grid.Column="0" Classes="dirInput"
+                                         Text="{Binding ModelsDirectory, Mode=TwoWay}" />
+                                <Button Grid.Column="1" Classes="ghost"
+                                        Content="Browse"
+                                        Click="OnBrowseModelsClicked" />
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- ── Install ── -->
+                    <StackPanel IsVisible="{Binding IsInstallStep}" Spacing="16">
+                        <TextBlock Text="Install audio-separator"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+
+                        <Border IsVisible="{Binding !UvFound}"
+                                CornerRadius="8" Padding="12"
+                                Background="{DynamicResource Bg2Brush}"
+                                BorderBrush="{DynamicResource ErrorBrush}"
+                                BorderThickness="1">
+                            <StackPanel Spacing="6">
+                                <TextBlock FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ErrorBrush}"
+                                           Text="uv not found" />
+                                <TextBlock FontSize="12"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="Install uv from astral.sh/uv, then restart StemForge and return to this step." />
+                            </StackPanel>
+                        </Border>
+
+                        <StackPanel IsVisible="{Binding UvFound}" Spacing="14">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Ellipse Classes="statusDot ok" />
+                                <TextBlock FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SuccessBrush}"
+                                           Text="uv is available" />
+                            </StackPanel>
+
+                            <StackPanel IsVisible="{Binding !InstallSuccess}" Spacing="10">
+                                <TextBlock FontSize="13"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="audio-separator was not detected. Click Install to set it up now." />
+                                <Button Classes="accent"
+                                        Content="Install"
+                                        Command="{Binding InstallCommand}"
+                                        IsEnabled="{Binding !IsInstalling}"
+                                        HorizontalAlignment="Left" />
+                            </StackPanel>
+
+                            <StackPanel IsVisible="{Binding InstallSuccess}"
+                                        Orientation="Horizontal" Spacing="8">
+                                <Ellipse Classes="statusDot ok" />
+                                <TextBlock FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SuccessBrush}"
+                                           Text="audio-separator installed successfully" />
+                            </StackPanel>
+
+                            <ScrollViewer MaxHeight="140"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          IsVisible="{Binding InstallLog, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                <TextBlock Classes="mono"
+                                           Text="{Binding InstallLog}"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </ScrollViewer>
+
+                            <TextBlock IsVisible="{Binding InstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       Text="{Binding InstallError}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource ErrorBrush}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- ── Finish ── -->
+                    <StackPanel IsVisible="{Binding IsFinishStep}"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Spacing="16">
+                        <Border Width="56" Height="56"
+                                CornerRadius="28"
+                                HorizontalAlignment="Center">
+                            <Border.Background>
+                                <SolidColorBrush Color="{DynamicResource SuccessColor}" Opacity="0.15" />
+                            </Border.Background>
+                            <TextBlock Text="✓"
+                                       FontSize="26" FontWeight="Bold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SuccessBrush}" />
+                        </Border>
+                        <TextBlock Text="You're all set!"
+                                   FontSize="22" FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock MaxWidth="320"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   FontSize="13"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="StemForge is ready. You can change these settings anytime from the Settings screen." />
+                    </StackPanel>
+
+                </Panel>
+
+                <!-- Nav buttons -->
+                <Grid ColumnDefinitions="Auto,*,Auto"
+                      Margin="32,20,32,28">
+
+                    <!-- Back (middle steps) or Close (welcome re-run) -->
+                    <Button Grid.Column="0"
+                            Classes="ghost"
+                            Content="Back"
+                            Command="{Binding BackCommand}"
+                            IsVisible="{Binding IsBackVisible}" />
+                    <Button Grid.Column="0"
+                            Classes="ghost"
+                            Content="Close"
+                            Command="{Binding DismissCommand}">
+                        <Button.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="IsWelcomeStep" />
+                                <Binding Path="CanDismiss" />
+                            </MultiBinding>
+                        </Button.IsVisible>
+                    </Button>
+
+                    <!-- Welcome: Get Started -->
+                    <Button Grid.Column="2"
+                            Classes="accent"
+                            Content="Get Started"
+                            Command="{Binding StartCommand}"
+                            IsVisible="{Binding IsWelcomeStep}" />
+
+                    <!-- Detect / Directories / Install: Next -->
+                    <Button Grid.Column="2"
+                            Classes="accent"
+                            Content="Next"
+                            Command="{Binding NextCommand}"
+                            IsEnabled="{Binding CanGoNext}">
+                        <Button.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="!IsWelcomeStep" />
+                                <Binding Path="!IsFinishStep" />
+                            </MultiBinding>
+                        </Button.IsVisible>
+                    </Button>
+
+                    <!-- Finish: Start using StemForge -->
+                    <Button Grid.Column="2"
+                            Classes="accent"
+                            Content="Start using StemForge"
+                            Command="{Binding FinishCommand}"
+                            IsVisible="{Binding IsFinishStep}" />
+
+                </Grid>
+
+            </StackPanel>
+        </Border>
+    </Panel>
+
+</UserControl>

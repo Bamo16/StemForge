@@ -1,3 +1,4 @@
+using System.Text;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -9,33 +10,59 @@ public partial class JobItemViewModel : ObservableObject
 {
     public JobRecord Job { get; }
 
-    // Forwarded from record for convenient binding
-    public string InputFileName => Job.InputFileName;
     public string PresetSummary => Job.PresetSummary;
 
     [ObservableProperty]
-    private JobStatus _status = JobStatus.Queued;
+    public partial string InputFileName { get; set; }
+
+    public JobItemViewModel(JobRecord job)
+    {
+        Job = job;
+        InputFileName = job.InputFileName;
+    }
 
     [ObservableProperty]
-    private int _progress;
+    public partial JobStatus Status { get; set; } = JobStatus.Queued;
 
     [ObservableProperty]
-    private string _statusText = string.Empty;
+    public partial int Progress { get; set; }
 
     [ObservableProperty]
-    private string? _errorMessage;
+    public partial string StatusText { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private bool _isExpanded;
+    public partial string PresetCounter { get; set; } = string.Empty;
 
-    public List<string> OutputFiles { get; } = new();
+    [ObservableProperty]
+    public partial string? ErrorMessage { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsExpanded { get; set; }
+    public List<string> OutputFiles { get; } = [];
+
+    private readonly StringBuilder _logBuilder = new();
+
+    [ObservableProperty]
+    public partial string LogOutput { get; set; } = string.Empty;
+
+    /// <summary>Append a line of subprocess output. Must be called on the UI thread.</summary>
+    public void AppendLog(string line)
+    {
+        if (_logBuilder.Length > 0)
+        {
+            _logBuilder.Append('\n');
+        }
+
+        _logBuilder.Append(line);
+        LogOutput = _logBuilder.ToString();
+    }
 
     public bool HasOutputFiles => OutputFiles.Count > 0;
     public bool IsRunning => Status == JobStatus.Running;
     public bool IsDone => Status == JobStatus.Done;
     public bool IsTerminal => Status is JobStatus.Done or JobStatus.Failed or JobStatus.Cancelled;
     public bool ShowProgress => Status is JobStatus.Running or JobStatus.Done;
-    public string ProgressLabel => ShowProgress ? $"{Progress}%" : "—";
+    public string ProgressLabel => IsRunning && !string.IsNullOrEmpty(PresetCounter) ? PresetCounter : "—";
 
     public IBrush StatusBrush =>
         Status switch
@@ -59,11 +86,6 @@ public partial class JobItemViewModel : ObservableObject
 
     public Action<JobItemViewModel>? CancelRequested { get; set; }
 
-    public JobItemViewModel(JobRecord job)
-    {
-        Job = job;
-    }
-
     [RelayCommand]
     private void ToggleExpand() => IsExpanded = !IsExpanded;
 
@@ -73,7 +95,8 @@ public partial class JobItemViewModel : ObservableObject
     [RelayCommand]
     private void ShowInExplorer()
     {
-        if (OutputFiles.Count == 0) return;
+        if (OutputFiles.Count == 0)
+            return;
         // Select the first output file in Explorer
         var path = OutputFiles[0];
         if (File.Exists(path))
@@ -94,6 +117,11 @@ public partial class JobItemViewModel : ObservableObject
     }
 
     partial void OnProgressChanged(int value)
+    {
+        OnPropertyChanged(nameof(ProgressLabel));
+    }
+
+    partial void OnPresetCounterChanged(string value)
     {
         OnPropertyChanged(nameof(ProgressLabel));
     }

@@ -72,7 +72,7 @@ public sealed class PresetCatalog
         new(
             "karaoke",
             "Karaoke",
-            PresetCategory.Other,
+            PresetCategory.Instrumentals,
             "Remove lead vocal, keep everything else",
             2,
             "2 GB"

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
 using Avalonia.Threading;
 using StemForge.Models;
 using StemForge.ViewModels;
@@ -9,26 +10,21 @@ namespace StemForge.Services;
 /// Runs separation jobs sequentially. One job at a time; all others wait in FIFO order.
 /// Thread-safe enqueue; all observable mutations happen on the UI thread.
 /// </summary>
-public sealed class JobQueueService
+public sealed class JobQueueService(SeparationService separation, AppSettingsService settings)
 {
-    private readonly SeparationService _separation;
+    private readonly SeparationService _separation = separation;
+    private readonly AppSettingsService _settings = settings;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private CancellationTokenSource? _currentCts;
     private JobItemViewModel? _currentJob;
 
-    public ObservableCollection<JobItemViewModel> Jobs { get; } = new();
+    public ObservableCollection<JobItemViewModel> Jobs { get; } = [];
 
     public int ActiveCount => Jobs.Count(j => j.Status is JobStatus.Running or JobStatus.Queued);
 
-    public JobQueueService(SeparationService separation)
-    {
-        _separation = separation;
-    }
-
     public void Enqueue(JobRecord record)
     {
-        var vm = new JobItemViewModel(record);
-        vm.CancelRequested = OnCancelRequested;
+        var vm = new JobItemViewModel(record) { CancelRequested = OnCancelRequested };
 
         Dispatcher.UIThread.Post(() => Jobs.Add(vm));
 
@@ -50,30 +46,69 @@ public sealed class JobQueueService
             OnPropertyChanged();
         });
 
+        string? dlTempDir = null;
         try
         {
+            // ── Download step (URL input only) ─────────────────────────────────
+            string inputFile;
+            if (vm.Job.SourceUrl is { Length: > 0 } url)
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    vm.Progress = 0;
+                    vm.StatusText = "Downloading…";
+                });
+
+                dlTempDir = Path.Combine(Path.GetTempPath(), $"stemforge-dl-{Guid.NewGuid():N}");
+                Directory.CreateDirectory(dlTempDir);
+
+                var dlLog = new Progress<string>(line =>
+                    Dispatcher.UIThread.Post(() => vm.AppendLog(line))
+                );
+
+                inputFile = await DownloadAudioAsync(url, dlTempDir, dlLog, cts.Token);
+                var downloadedName = Path.GetFileName(inputFile);
+                Dispatcher.UIThread.Post(() => vm.InputFileName = downloadedName);
+            }
+            else
+            {
+                inputFile =
+                    vm.Job.InputFilePath
+                    ?? throw new InvalidOperationException(
+                        "Job has neither a file path nor a source URL."
+                    );
+            }
+
+            // ── Separation step ────────────────────────────────────────────────
             var progress = new Progress<SeparationProgress>(p =>
             {
                 Dispatcher.UIThread.Post(() =>
                 {
-                    vm.Progress = p.OverallPercent;
-                    vm.StatusText = p.StatusText;
+                    vm.Progress = p.StepPercent;
+                    vm.StatusText = p.StepLabel;
+                    vm.PresetCounter = $"{p.PresetIndex + 1}/{p.PresetCount}";
                 });
             });
 
+            var logProgress = new Progress<string>(line =>
+                Dispatcher.UIThread.Post(() => vm.AppendLog(line))
+            );
+
             await _separation.RunAsync(
-                vm.Job.InputFilePath,
+                inputFile,
                 vm.Job.Presets,
                 vm.Job.OutputDir,
                 vm.Job.ModelsDir,
                 progress,
+                logProgress,
                 cts.Token
             );
 
-            // Collect output files written to OutputDir matching this job's presets
-            var baseName = Path.GetFileNameWithoutExtension(vm.Job.InputFilePath);
-            var outputFiles = vm.Job.Presets
-                .Select(p => Path.Combine(vm.Job.OutputDir, $"{baseName} ({p.Id}).flac"))
+            var baseName = Path.GetFileNameWithoutExtension(inputFile);
+            var outputFiles = vm
+                .Job.Presets.Select(p =>
+                    Path.Combine(vm.Job.OutputDir, $"{baseName} ({p.Id}).flac")
+                )
                 .Where(File.Exists)
                 .ToList();
 
@@ -81,7 +116,8 @@ public sealed class JobQueueService
             {
                 vm.OutputFiles.AddRange(outputFiles);
                 vm.Progress = 100;
-                vm.StatusText = $"{outputFiles.Count} stem{(outputFiles.Count == 1 ? "" : "s")} written";
+                vm.StatusText =
+                    $"{outputFiles.Count} stem{(outputFiles.Count == 1 ? "" : "s")} written";
                 vm.Status = JobStatus.Done;
                 vm.IsExpanded = true;
                 OnPropertyChanged();
@@ -109,6 +145,12 @@ public sealed class JobQueueService
         }
         finally
         {
+            if (dlTempDir is not null)
+                try
+                {
+                    Directory.Delete(dlTempDir, recursive: true);
+                }
+                catch { }
             _currentJob = null;
             _currentCts = null;
             _gate.Release();
@@ -140,5 +182,61 @@ public sealed class JobQueueService
     }
 
     public event EventHandler? StateChanged;
+
     private void OnPropertyChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
+
+    // Matches any YouTube URL or bare video ID and captures the 11-char video ID.
+    private static readonly Regex _youTubeRegex = new(
+        @"^(?:(?:(?:https?:\/\/)?(?:(?:www|music|m)\.)?)?(?:youtube\.com|youtu\.be)(?:\S*?(?:\?v=|\/)))?(?<VideoId>[0-9A-Za-z_-]{11})(?:[&?].*)?$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
+
+    private async Task<string> DownloadAudioAsync(
+        string url,
+        string dlDir,
+        IProgress<string> log,
+        CancellationToken ct
+    )
+    {
+        // Normalise YouTube URLs to music.youtube.com for the best available audio format.
+        var targetUrl = _youTubeRegex.Match(url).Groups["VideoId"]
+            is { Success: true, Value: { } id }
+            ? $"https://music.youtube.com/watch?v={id}"
+            : url;
+
+        var ytdlp = string.IsNullOrWhiteSpace(_settings.Current.YtdlpPath)
+            ? "yt-dlp"
+            : _settings.Current.YtdlpPath;
+
+        var args = new List<string>
+        {
+            "--no-playlist",
+            "--format", "bestaudio",
+            "--output", "%(title)s.%(ext)s",
+            "--paths", dlDir,
+        };
+
+        var cookies = _settings.Current.YtdlpCookiesFromBrowser;
+        if (!string.IsNullOrWhiteSpace(cookies))
+        {
+            // If it looks like a file path, use --cookies; otherwise use --cookies-from-browser.
+            var flag = cookies.Contains(Path.DirectorySeparatorChar) ||
+                       cookies.Contains(Path.AltDirectorySeparatorChar) ||
+                       cookies.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
+                ? "--cookies"
+                : "--cookies-from-browser";
+            args.AddRange([flag, cookies]);
+        }
+
+        var jsRuntime = _settings.Current.YtdlpJsRuntime;
+        if (!string.IsNullOrWhiteSpace(jsRuntime))
+            args.AddRange(["--js-runtime", jsRuntime]);
+
+        args.Add(targetUrl);
+
+        await ProcessRunner.RunStreamingAsync(ytdlp, args, log, ct);
+
+        return Directory.GetFiles(dlDir).FirstOrDefault()
+            ?? throw new InvalidOperationException("yt-dlp produced no output file.");
+    }
 }

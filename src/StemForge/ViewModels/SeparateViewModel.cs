@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using Avalonia;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using StemForge.Extensions;
 using StemForge.Models;
 using StemForge.Services;
 
@@ -10,8 +12,8 @@ namespace StemForge.ViewModels;
 
 public enum SeparateMode
 {
-    Presets,
-    Models,
+    BuiltIn,
+    MyPresets,
 }
 
 public partial class SeparateViewModel : PageViewModelBase
@@ -21,26 +23,26 @@ public partial class SeparateViewModel : PageViewModelBase
     public ObservableCollection<PresetCategoryGroup> Categories { get; }
 
     [ObservableProperty]
-    private SeparateMode _mode = SeparateMode.Presets;
+    public partial SeparateMode Mode { get; set; } = SeparateMode.BuiltIn;
 
-    public bool IsPresetsMode => Mode == SeparateMode.Presets;
-    public bool IsModelsMode => Mode == SeparateMode.Models;
+    public bool IsBuiltInMode => Mode == SeparateMode.BuiltIn;
+    public bool IsMyPresetsMode => Mode == SeparateMode.MyPresets;
 
     [ObservableProperty]
-    private string? _inputFilePath;
+    public partial string? InputFilePath { get; set; }
 
     public bool HasInputFile => !string.IsNullOrWhiteSpace(InputFilePath);
     public string InputFileName =>
         string.IsNullOrWhiteSpace(InputFilePath) ? string.Empty : Path.GetFileName(InputFilePath);
 
     [ObservableProperty]
-    private string _urlInput = string.Empty;
+    public partial string UrlInput { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string _outputPath = "~/Music/Stems";
+    public partial string OutputPath { get; set; } = "~/Music/Stems";
 
     [ObservableProperty]
-    private int _selectedCount;
+    public partial int SelectedCount { get; set; }
 
     public string SelectedCountLabel =>
         SelectedCount == 0
@@ -49,47 +51,91 @@ public partial class SeparateViewModel : PageViewModelBase
 
     public bool HasSelection => SelectedCount > 0;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(RunCommand))]
-    private bool _isRunning;
-
-    [ObservableProperty]
-    private int _progress;
-
-    [ObservableProperty]
-    private string _statusText = string.Empty;
-
-    [ObservableProperty]
-    private string? _errorMessage;
-
-    private CancellationTokenSource? _runCts;
     private readonly JobQueueService _queue;
     private readonly AppSettingsService _settings;
+    private readonly UserPresetService _userPresets;
+
+    public event Action? NavigateToQueueRequested;
 
     public bool CanStartRun =>
-        !IsRunning
-        && SelectedCount > 0
+        SelectedCount > 0
         && (!string.IsNullOrWhiteSpace(InputFilePath) || !string.IsNullOrWhiteSpace(UrlInput));
 
-    public SeparateViewModel(JobQueueService queue, AppSettingsService settings)
+    // ── User presets ──────────────────────────────────────────────────────────
+
+    public ObservableCollection<PresetItemViewModel> UserPresetItems { get; } = [];
+    public bool HasUserPresets => UserPresetItems.Count > 0;
+
+    public SeparateViewModel(
+        JobQueueService queue,
+        AppSettingsService settings,
+        UserPresetService userPresets
+    )
     {
         _queue = queue;
         _settings = settings;
-        _outputPath = settings.Current.OutputDirectory;
+        _userPresets = userPresets;
+        OutputPath = settings.Current.OutputDirectory;
         Categories = new ObservableCollection<PresetCategoryGroup>(BuildGroups());
 
         foreach (var g in Categories)
-        {
-            foreach (var item in g.Items)
-            {
-                item.PropertyChanged += OnItemPropertyChanged;
-            }
-        }
+        foreach (var item in g.Items)
+            item.PropertyChanged += OnItemPropertyChanged;
+
+        foreach (var p in _userPresets.Presets)
+            AddUserPresetItem(p);
+
+        _userPresets.Presets.CollectionChanged += OnUserPresetsCollectionChanged;
     }
+
+    private void AddUserPresetItem(Preset p)
+    {
+        var vm = new PresetItemViewModel(p);
+        vm.PropertyChanged += OnItemPropertyChanged;
+        UserPresetItems.Add(vm);
+    }
+
+    private void OnUserPresetsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        switch (e.Action)
+        {
+            case NotifyCollectionChangedAction.Add:
+                foreach (Preset p in e.NewItems!)
+                    AddUserPresetItem(p);
+                break;
+            case NotifyCollectionChangedAction.Remove:
+                foreach (Preset p in e.OldItems!)
+                {
+                    var vm = UserPresetItems.FirstOrDefault(i => i.Id == p.Id);
+                    if (vm is not null)
+                    {
+                        vm.PropertyChanged -= OnItemPropertyChanged;
+                        UserPresetItems.Remove(vm);
+                    }
+                }
+                break;
+            default:
+                foreach (var vm in UserPresetItems)
+                    vm.PropertyChanged -= OnItemPropertyChanged;
+                UserPresetItems.Clear();
+                foreach (var p in _userPresets.Presets)
+                    AddUserPresetItem(p);
+                break;
+        }
+        OnPropertyChanged(nameof(HasUserPresets));
+        RecomputeSelectedCount();
+    }
+
+    [RelayCommand]
+    private void RemoveUserPreset(PresetItemViewModel item)
+    {
+        _userPresets.Remove(item.Id);
+    }
+
+    // ── Preset building ───────────────────────────────────────────────────────
 
     private static IEnumerable<PresetCategoryGroup> BuildGroups()
     {
-        // Pull brushes from the app-level resources by key.
         var app = Application.Current!;
         IBrush Brush(string key)
         {
@@ -97,9 +143,7 @@ public partial class SeparateViewModel : PageViewModelBase
                 app.Resources.TryGetResource(key, app.ActualThemeVariant, out var value)
                 && value is IBrush b
             )
-            {
                 return b;
-            }
             return Brushes.Transparent;
         }
 
@@ -129,20 +173,22 @@ public partial class SeparateViewModel : PageViewModelBase
         }
     }
 
+    // ── Property notifications ────────────────────────────────────────────────
+
     private void OnItemPropertyChanged(
         object? sender,
         System.ComponentModel.PropertyChangedEventArgs e
     )
     {
         if (e.PropertyName == nameof(PresetItemViewModel.IsSelected))
-        {
             RecomputeSelectedCount();
-        }
     }
 
     private void RecomputeSelectedCount()
     {
-        SelectedCount = Categories.Sum(g => g.Items.Count(i => i.IsSelected));
+        SelectedCount =
+            Categories.Sum(g => g.Items.Count(i => i.IsSelected))
+            + UserPresetItems.Count(i => i.IsSelected);
     }
 
     partial void OnSelectedCountChanged(int value)
@@ -176,16 +222,16 @@ public partial class SeparateViewModel : PageViewModelBase
 
     partial void OnModeChanged(SeparateMode value)
     {
-        OnPropertyChanged(nameof(IsPresetsMode));
-        OnPropertyChanged(nameof(IsModelsMode));
+        OnPropertyChanged(nameof(IsBuiltInMode));
+        OnPropertyChanged(nameof(IsMyPresetsMode));
     }
 
     [RelayCommand]
     private void SetMode(string mode)
     {
-        Mode = mode.Equals("Models", StringComparison.OrdinalIgnoreCase)
-            ? SeparateMode.Models
-            : SeparateMode.Presets;
+        Mode = mode.Equals("MyPresets", StringComparison.OrdinalIgnoreCase)
+            ? SeparateMode.MyPresets
+            : SeparateMode.BuiltIn;
     }
 
     [RelayCommand]
@@ -195,69 +241,15 @@ public partial class SeparateViewModel : PageViewModelBase
     }
 
     [RelayCommand(CanExecute = nameof(CanStartRun))]
-    private async Task RunAsync()
+    private void Run()
     {
-        using var cts = new CancellationTokenSource();
-        _runCts = cts;
-        IsRunning = true;
-        ErrorMessage = null;
-        Progress = 0;
-
-        try
-        {
-            var selectedPresets = Categories
-                .SelectMany(g => g.Items)
-                .Where(i => i.IsSelected)
-                .Select(i => i.Preset)
-                .ToList();
-
-            var modelsDir = _settings.Current.ModelsDirectory;
-            var outputDir = ExpandPath(OutputPath);
-            var service = new SeparationService();
-
-            var progressReporter = new Progress<SeparationProgress>(p =>
-            {
-                Progress = p.OverallPercent;
-                StatusText = p.StatusText;
-            });
-
-            await service.RunAsync(
-                InputFilePath!,
-                selectedPresets,
-                outputDir,
-                modelsDir,
-                progressReporter,
-                cts.Token
-            );
-
-            StatusText = $"Done — {selectedPresets.Count} stem{(selectedPresets.Count == 1 ? "" : "s")} written";
-        }
-        catch (OperationCanceledException)
-        {
-            StatusText = "Cancelled";
-            Progress = 0;
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = ex.Message;
-            StatusText = "Failed";
-        }
-        finally
-        {
-            IsRunning = false;
-            _runCts = null;
-        }
+        AddToQueue();
+        NavigateToQueueRequested?.Invoke();
     }
 
-    [RelayCommand]
-    private void CancelRun() => _runCts?.Cancel();
-
     private static string ExpandPath(string path) =>
-        path.StartsWith("~/")
-            ? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                path[2..]
-            )
+        path.StartsWith('~')
+            ? Environment.SpecialFolder.UserProfile.GetFolderPath(path.TrimStart('~', '/', '\\'))
             : path;
 
     [RelayCommand(CanExecute = nameof(HasSelection))]
@@ -268,13 +260,16 @@ public partial class SeparateViewModel : PageViewModelBase
 
         var selectedPresets = Categories
             .SelectMany(g => g.Items)
+            .Concat(UserPresetItems)
             .Where(i => i.IsSelected)
             .Select(i => i.Preset)
             .ToList();
 
+        var hasUrl = !string.IsNullOrWhiteSpace(UrlInput);
         var record = new JobRecord(
             Guid.NewGuid(),
-            InputFilePath ?? UrlInput,
+            hasUrl ? null : InputFilePath,
+            hasUrl ? UrlInput : null,
             selectedPresets,
             ExpandPath(OutputPath),
             _settings.Current.ModelsDirectory

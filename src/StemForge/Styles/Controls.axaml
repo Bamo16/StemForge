@@ -27,6 +27,9 @@
     <Style Selector="TextBlock.mono">
         <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
     </Style>
+    <Style Selector="SelectableTextBlock.mono">
+        <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+    </Style>
 
     <!-- Secondary text -->
     <Style Selector="TextBlock.secondary">

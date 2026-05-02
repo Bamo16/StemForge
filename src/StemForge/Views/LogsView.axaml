@@ -1,0 +1,105 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:StemForge.ViewModels"
+xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1044" d:DesignHeight="720"
+             x:Class="StemForge.Views.LogsView"
+             x:DataType="vm:LogsViewModel">
+
+    <UserControl.Styles>
+        <!-- Level toggle buttons -->
+        <Style Selector="Button.levelToggle">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
+        </Style>
+        <Style Selector="Button.levelToggle:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+        </Style>
+        <Style Selector="Button.levelToggle.on">
+            <Setter Property="BorderBrush" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+        </Style>
+        <Style Selector="Button.levelToggle.debug.on">
+            <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource TextPlaceholderBrush}" />
+        </Style>
+        <Style Selector="Button.levelToggle.warn.on">
+            <Setter Property="Foreground" Value="#E8A000" />
+            <Setter Property="BorderBrush" Value="#E8A000" />
+        </Style>
+        <Style Selector="Button.levelToggle.error.on">
+            <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}" />
+        </Style>
+
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="50,*">
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource Bg1Brush}"
+                BorderBrush="{DynamicResource Bg3Brush}"
+                BorderThickness="0,0,0,1"
+                Padding="20,0">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <TextBlock Grid.Column="0" Classes="h1" Text="{Binding Title}" VerticalAlignment="Center" />
+
+                <!-- Level filters -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Button Classes="levelToggle debug"
+                            Classes.on="{Binding ShowDebug}"
+                            Content="DBG"
+                            Command="{Binding ToggleDebugCommand}" />
+                    <Button Classes="levelToggle"
+                            Classes.on="{Binding ShowInfo}"
+                            Content="INF"
+                            Command="{Binding ToggleInfoCommand}" />
+                    <Button Classes="levelToggle warn"
+                            Classes.on="{Binding ShowWarning}"
+                            Content="WRN"
+                            Command="{Binding ToggleWarningCommand}" />
+                    <Button Classes="levelToggle error"
+                            Classes.on="{Binding ShowError}"
+                            Content="ERR"
+                            Command="{Binding ToggleErrorCommand}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Button Classes="ghost"
+                            Content="Open folder"
+                            Command="{Binding OpenLogsFolderCommand}" />
+                    <Button Classes="ghost"
+                            Content="Clear"
+                            Command="{Binding ClearCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Log entries — single SelectableTextBlock so text can be selected across rows -->
+        <ScrollViewer Grid.Row="1"
+                      x:Name="LogScroll"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <SelectableTextBlock Classes="mono"
+                                 Text="{Binding DisplayedText}"
+                                 FontSize="11"
+                                 Foreground="{DynamicResource TextSecondaryBrush}"
+                                 TextWrapping="Wrap"
+                                 HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Stretch"
+                                 Background="Transparent"
+                                 Margin="16,6,16,8" />
+        </ScrollViewer>
+
+    </Grid>
+</UserControl>

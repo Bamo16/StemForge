@@ -138,15 +138,15 @@
                 <Border Grid.Column="1" Classes="modePillHost" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="1">
                         <Button Classes="modeTab"
-                                Classes.active="{Binding IsPresetsMode}"
+                                Classes.active="{Binding IsBuiltInMode}"
                                 Command="{Binding SetModeCommand}"
-                                CommandParameter="Presets"
-                                Content="Presets" />
+                                CommandParameter="BuiltIn"
+                                Content="Built-in" />
                         <Button Classes="modeTab"
-                                Classes.active="{Binding IsModelsMode}"
+                                Classes.active="{Binding IsMyPresetsMode}"
                                 Command="{Binding SetModeCommand}"
-                                CommandParameter="Models"
-                                Content="Models" />
+                                CommandParameter="MyPresets"
+                                Content="My Presets" />
                     </StackPanel>
                 </Border>
             </Grid>
@@ -223,9 +223,9 @@
         <!-- ===== Content: preset grid or models table ===== -->
         <ScrollViewer Grid.Row="2" Padding="20,16" HorizontalScrollBarVisibility="Disabled">
             <Grid>
-                <!-- Presets -->
+                <!-- Built-in presets -->
                 <ItemsControl ItemsSource="{Binding Categories}"
-                              IsVisible="{Binding IsPresetsMode}">
+                              IsVisible="{Binding IsBuiltInMode}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Vertical" Spacing="14" />
@@ -295,84 +295,132 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <!-- Models placeholder -->
-                <TextBlock IsVisible="{Binding IsModelsMode}"
-                           Text="Raw model selection coming soon"
-                           HorizontalAlignment="Center" VerticalAlignment="Top"
-                           Foreground="{DynamicResource TextPlaceholderBrush}"
-                           Margin="0,60,0,0" />
+                <!-- My Presets panel -->
+                <Panel IsVisible="{Binding IsMyPresetsMode}">
+
+                    <!-- Empty state -->
+                    <StackPanel IsVisible="{Binding !HasUserPresets}"
+                                HorizontalAlignment="Center" VerticalAlignment="Top"
+                                Margin="0,48" Spacing="8">
+                        <TextBlock Text="No custom presets yet."
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="Go to the Models tab to browse models and save a custom preset."
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextPlaceholderBrush}"
+                                   HorizontalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- User preset grid (same card style as built-in) -->
+                    <ItemsControl IsVisible="{Binding HasUserPresets}"
+                                  ItemsSource="{Binding UserPresetItems}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="2" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:PresetItemViewModel">
+                                <!-- Panel so the × overlays without disrupting the card layout -->
+                                <Panel Margin="0,0,7,7">
+                                    <Border Classes="preset"
+                                            Classes.selected="{Binding IsSelected}"
+                                            PointerPressed="OnPresetCardClicked">
+                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                            <!-- Checkbox -->
+                                            <Border Grid.Column="0" Classes="checkbox">
+                                                <Path Data="M1 4 L4 7 L9 1"
+                                                      Stroke="White" StrokeThickness="1.5"
+                                                      StrokeLineCap="Round" StrokeJoin="Round"
+                                                      Stretch="None"
+                                                      Width="10" Height="8"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                      IsVisible="{Binding IsSelected}" />
+                                            </Border>
+
+                                            <!-- Body -->
+                                            <StackPanel Grid.Column="1" Spacing="2" Margin="0,0,22,0">
+                                                <TextBlock Classes="presetName" Text="{Binding Label}" />
+                                                <TextBlock Text="{Binding Description}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           TextWrapping="Wrap"
+                                                           MaxLines="2"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,4,0,0">
+                                                    <Border Classes="tag">
+                                                        <TextBlock Text="{Binding ModelsTag}" />
+                                                    </Border>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- × overlaid top-right, doesn't affect card layout -->
+                                    <Button HorizontalAlignment="Right"
+                                            VerticalAlignment="Top"
+                                            Classes="ghost"
+                                            Content="×"
+                                            FontSize="14"
+                                            Padding="5,2"
+                                            Margin="0,4,4,0"
+                                            Command="{Binding $parent[ItemsControl].((vm:SeparateViewModel)DataContext).RemoveUserPresetCommand}"
+                                            CommandParameter="{Binding}" />
+                                </Panel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                </Panel>
             </Grid>
         </ScrollViewer>
 
         <!-- ===== Footer ===== -->
-        <Panel Grid.Row="3">
-            <!-- Accent progress bar pinned to top edge, bleeds through the border's padding -->
-            <ProgressBar IsVisible="{Binding IsRunning}"
-                         Value="{Binding Progress}"
-                         Maximum="100"
-                         Height="2"
-                         VerticalAlignment="Top"
-                         Foreground="{DynamicResource AccentBrush}"
-                         Background="Transparent"
-                         BorderThickness="0" />
-            <Border Background="{DynamicResource Bg0Brush}"
-                    BorderBrush="{DynamicResource Bg3Brush}"
-                    BorderThickness="0,1,0,0"
-                    Padding="20,0">
-                <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="12">
-                    <Path Grid.Column="0"
-                          Data="M2 11 V3 A1 1 0 0 1 3 2 H11 A1 1 0 0 1 12 3 V11 M5 13 H9"
-                          Width="14" Height="14" Stretch="None"
-                          Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.3"
-                          StrokeLineCap="Round"
-                          VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1" Classes="mono"
-                               Text="{Binding OutputPath}"
+        <Border Grid.Row="3"
+                Background="{DynamicResource Bg0Brush}"
+                BorderBrush="{DynamicResource Bg3Brush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,0">
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="12">
+                <Path Grid.Column="0"
+                      Data="M2 11 V3 A1 1 0 0 1 3 2 H11 A1 1 0 0 1 12 3 V11 M5 13 H9"
+                      Width="14" Height="14" Stretch="None"
+                      Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.3"
+                      StrokeLineCap="Round"
+                      VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Classes="mono"
+                           Text="{Binding OutputPath}"
+                           FontSize="12"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="3" Classes="ghost"
+                        Content="Browse"
+                        Click="OnBrowseOutputClicked" />
+                <Border Grid.Column="4" Width="1" Height="24"
+                        Background="{DynamicResource Bg3Brush}"
+                        VerticalAlignment="Center" />
+                <!-- Preset count -->
+                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SelectedCount}"
                                FontSize="12"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               VerticalAlignment="Center" />
-                    <Button Grid.Column="3" Classes="ghost"
-                            Content="Browse"
-                            Click="OnBrowseOutputClicked" />
-                    <Border Grid.Column="4" Width="1" Height="24"
-                            Background="{DynamicResource Bg3Brush}"
-                            VerticalAlignment="Center" />
-                    <!-- Status / preset count -->
-                    <StackPanel Grid.Column="5" VerticalAlignment="Center">
-                        <!-- Idle: preset count -->
-                        <StackPanel Orientation="Horizontal" IsVisible="{Binding !IsRunning}">
-                            <TextBlock Text="{Binding SelectedCount}"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AccentBrush}"
-                                       IsVisible="{Binding HasSelection}" />
-                            <TextBlock Text="{Binding SelectedCountLabel}"
-                                       FontSize="12"
-                                       Foreground="{DynamicResource TextSecondaryBrush}" />
-                        </StackPanel>
-                        <!-- Running: status text -->
-                        <TextBlock Text="{Binding StatusText}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                   IsVisible="{Binding IsRunning}" />
-                    </StackPanel>
-                    <!-- Run / Stop buttons -->
-                    <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                        <Button Classes="ghost"
-                                Content="Add to Queue"
-                                Command="{Binding AddToQueueCommand}"
-                                IsVisible="{Binding !IsRunning}" />
-                        <Button Classes="accent"
-                                Content="▶  Run"
-                                Command="{Binding RunCommand}"
-                                IsVisible="{Binding !IsRunning}" />
-                        <Button Classes="ghost"
-                                Content="■  Stop"
-                                Command="{Binding CancelRunCommand}"
-                                IsVisible="{Binding IsRunning}" />
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </Panel>
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AccentBrush}"
+                               IsVisible="{Binding HasSelection}" />
+                    <TextBlock Text="{Binding SelectedCountLabel}"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <!-- Action buttons -->
+                <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button Classes="ghost"
+                            Content="Add to Queue"
+                            Command="{Binding AddToQueueCommand}" />
+                    <Button Classes="accent"
+                            Content="▶  Run"
+                            Command="{Binding RunCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

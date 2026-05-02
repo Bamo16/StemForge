@@ -1,3 +1,5 @@
+using StemForge.Extensions;
+
 namespace StemForge.Models;
 
 public sealed class AppSettings
@@ -6,16 +8,18 @@ public sealed class AppSettings
     public string OutputDirectory { get; set; } = DefaultOutputDirectory;
     public string ModelsDirectory { get; set; } = DefaultModelsDirectory;
     public string? YtdlpPath { get; set; }
-    public string? FfmpegPath { get; set; }
+
+    // Browser name for --cookies-from-browser (e.g. "firefox", "chrome", "edge"). Null = no cookies.
+    public string? YtdlpCookiesFromBrowser { get; set; }
+
+    // JS runtime for --js-runtime (e.g. "deno", "node"). Null = let yt-dlp auto-detect.
+    public string? YtdlpJsRuntime { get; set; }
     public bool FirstRunComplete { get; set; } = false;
+    public GpuVariant? InstalledVariant { get; set; }
 
     public static string DefaultOutputDirectory =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Music", "Stems");
+        Environment.SpecialFolder.UserProfile.GetFolderPath("Music", "Stems");
 
     public static string DefaultModelsDirectory =>
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "audio-separator",
-            "models"
-        );
+        Environment.SpecialFolder.LocalApplicationData.GetFolderPath("audio-separator", "models");
 }

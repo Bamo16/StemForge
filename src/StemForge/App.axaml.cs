@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using StemForge.Services;
 using StemForge.ViewModels;
 using StemForge.Views;
 
@@ -15,9 +16,12 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        AppLogger.Initialize();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow { DataContext = new MainWindowViewModel() };
+            desktop.Exit += (_, _) => AppLogger.Shutdown();
         }
 
         base.OnFrameworkInitializationCompleted();

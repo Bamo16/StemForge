@@ -15,56 +15,63 @@ public partial class SettingsViewModel : PageViewModelBase
     // ── Tool detection ─────────────────────────────────────────────────────────
 
     [ObservableProperty]
-    private bool _toolsLoading = true;
+    public partial bool ToolsLoading { get; set; } = true;
 
     [ObservableProperty]
-    private bool _allSystemsGo;
+    public partial bool AllSystemsGo { get; set; }
 
+    [ObservableProperty]
+    public partial string GpuHint { get; set; } = string.Empty;
     public ObservableCollection<ToolStatusViewModel> Tools { get; } = new();
 
     // ── GPU variant ────────────────────────────────────────────────────────────
 
     [ObservableProperty]
-    private GpuVariant _gpuVariant;
+    public partial GpuVariant GpuVariant { get; set; }
 
-    public bool IsCpu       => GpuVariant == GpuVariant.Cpu;
-    public bool IsCuda      => GpuVariant == GpuVariant.Cuda;
-    public bool IsDirectML  => GpuVariant == GpuVariant.DirectML;
+    public bool IsCpu => GpuVariant == GpuVariant.Cpu;
+    public bool IsCuda => GpuVariant == GpuVariant.Cuda;
+    public bool IsDirectML => GpuVariant == GpuVariant.DirectML;
 
     // ── Directories ────────────────────────────────────────────────────────────
 
     [ObservableProperty]
-    private string _outputDirectory = string.Empty;
+    public partial string OutputDirectory { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string _modelsDirectory = string.Empty;
+    public partial string ModelsDirectory { get; set; } = string.Empty;
 
     // ── Optional tool paths ────────────────────────────────────────────────────
 
     [ObservableProperty]
-    private string _ytdlpPath = string.Empty;
+    public partial string YtdlpPath { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string _ffmpegPath = string.Empty;
+    public partial string YtdlpCookiesFromBrowser { get; set; }
+
+    [ObservableProperty]
+    public partial string YtdlpJsRuntime { get; set; }
 
     // ── Save state ─────────────────────────────────────────────────────────────
 
     [ObservableProperty]
-    private bool _saveSuccess;
+    public partial bool SaveSuccess { get; set; }
 
     public SettingsViewModel(AppSettingsService settingsService)
     {
         _settingsService = settingsService;
         LoadFromSettings(settingsService.Current);
+        _ = DetectToolsAsync();
     }
 
     private void LoadFromSettings(AppSettings s)
     {
-        GpuVariant       = s.GpuVariant;
-        OutputDirectory  = s.OutputDirectory;
-        ModelsDirectory  = s.ModelsDirectory;
-        YtdlpPath        = s.YtdlpPath  ?? string.Empty;
-        FfmpegPath       = s.FfmpegPath ?? string.Empty;
+        GpuVariant = s.GpuVariant;
+        OutputDirectory = s.OutputDirectory;
+        ModelsDirectory = s.ModelsDirectory;
+        YtdlpPath = s.YtdlpPath ?? string.Empty;
+        YtdlpCookiesFromBrowser = s.YtdlpCookiesFromBrowser ?? string.Empty;
+        YtdlpJsRuntime = s.YtdlpJsRuntime ?? string.Empty;
     }
 
     partial void OnGpuVariantChanged(GpuVariant value)
@@ -84,22 +91,81 @@ public partial class SettingsViewModel : PageViewModelBase
     {
         ToolsLoading = true;
         Tools.Clear();
+        GpuHint = string.Empty;
         try
         {
-            var results = await SetupDetector.DetectAllAsync(
-                string.IsNullOrWhiteSpace(YtdlpPath)  ? null : YtdlpPath,
-                string.IsNullOrWhiteSpace(FfmpegPath) ? null : FfmpegPath
+            var toolsTask = SetupDetector.DetectAllAsync(
+                string.IsNullOrWhiteSpace(YtdlpPath) ? null : YtdlpPath
             );
-            foreach (var t in results)
-                Tools.Add(new ToolStatusViewModel(t));
+            var gpuTask = GpuDetector.DetectAsync();
 
+            await Task.WhenAll(toolsTask, gpuTask);
+
+            var results = await toolsTask;
+            var gpus = await gpuTask;
+
+            await TryFillInstalledVariantAsync(results);
+
+            foreach (var t in results)
+                Tools.Add(new ToolStatusViewModel(t, VariantTagFor(t.Name, t.Found)));
             AllSystemsGo = results.All(t => t.Found || !t.IsRequired);
+
+            // Pick the most capable GPU for the hint (NVIDIA > AMD/Intel > unknown)
+            var best = gpus.OrderBy(g =>
+                    g.Vendor switch
+                    {
+                        GpuVendor.Nvidia => 0,
+                        GpuVendor.Amd => 1,
+                        GpuVendor.Intel => 2,
+                        _ => 3,
+                    }
+                )
+                .FirstOrDefault();
+
+            if (best is not null)
+            {
+                GpuHint = $"Detected: {best.Name}";
+
+                // Auto-select the best variant only before the user has ever saved settings
+                if (!_settingsService.Current.FirstRunComplete)
+                    GpuVariant = GpuDetector.SuggestVariant(gpus);
+            }
         }
         finally
         {
             ToolsLoading = false;
         }
     }
+
+    private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolInfo> tools)
+    {
+        if (_settingsService.Current.InstalledVariant is not null)
+            return;
+
+        if (!(tools.FirstOrDefault(t => t.Name == "audio-separator")?.Found ?? false))
+            return;
+
+        if (await ToolInstaller.DetectInstalledVariantAsync() is { } detected)
+            _settingsService.Current.InstalledVariant = detected;
+    }
+
+    private string? VariantTagFor(string toolName, bool found)
+    {
+        if (toolName != "audio-separator" || !found)
+            return null;
+        return _settingsService.Current.InstalledVariant switch
+        {
+            GpuVariant.Cuda => "CUDA",
+            GpuVariant.DirectML => "DirectML",
+            GpuVariant.Cpu => "CPU",
+            _ => null,
+        };
+    }
+
+    public event Action? ShowWizardRequested;
+
+    [RelayCommand]
+    private void ShowWizard() => ShowWizardRequested?.Invoke();
 
     [RelayCommand]
     private async Task RefreshTools() => await DetectToolsAsync();
@@ -108,11 +174,17 @@ public partial class SettingsViewModel : PageViewModelBase
     private async Task Save()
     {
         var s = _settingsService.Current;
-        s.GpuVariant      = GpuVariant;
-        s.OutputDirectory = string.IsNullOrWhiteSpace(OutputDirectory) ? AppSettings.DefaultOutputDirectory : OutputDirectory;
-        s.ModelsDirectory = string.IsNullOrWhiteSpace(ModelsDirectory) ? AppSettings.DefaultModelsDirectory : ModelsDirectory;
-        s.YtdlpPath       = string.IsNullOrWhiteSpace(YtdlpPath)  ? null : YtdlpPath;
-        s.FfmpegPath      = string.IsNullOrWhiteSpace(FfmpegPath) ? null : FfmpegPath;
+        s.GpuVariant = GpuVariant;
+        s.OutputDirectory = string.IsNullOrWhiteSpace(OutputDirectory)
+            ? AppSettings.DefaultOutputDirectory
+            : OutputDirectory;
+        s.ModelsDirectory = string.IsNullOrWhiteSpace(ModelsDirectory)
+            ? AppSettings.DefaultModelsDirectory
+            : ModelsDirectory;
+        s.YtdlpPath = string.IsNullOrWhiteSpace(YtdlpPath) ? null : YtdlpPath;
+        s.YtdlpCookiesFromBrowser = string.IsNullOrWhiteSpace(YtdlpCookiesFromBrowser) ? null : YtdlpCookiesFromBrowser;
+        s.YtdlpJsRuntime = string.IsNullOrWhiteSpace(YtdlpJsRuntime) ? null : YtdlpJsRuntime;
+        s.FirstRunComplete = true;
 
         await _settingsService.SaveAsync();
 

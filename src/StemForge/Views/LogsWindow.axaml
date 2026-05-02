@@ -1,0 +1,14 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:StemForge.ViewModels"
+        xmlns:views="using:StemForge.Views"
+        x:Class="StemForge.Views.LogsWindow"
+        x:DataType="vm:LogsViewModel"
+        Title="StemForge — Logs"
+        Width="960" Height="520"
+        MinWidth="600" MinHeight="320"
+        Background="{DynamicResource Bg1Brush}">
+
+    <views:LogsView DataContext="{Binding}" />
+
+</Window>

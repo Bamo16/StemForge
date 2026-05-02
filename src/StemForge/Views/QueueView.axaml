@@ -17,15 +17,27 @@
         </Style>
 
         <!-- Row base -->
-        <Style Selector="Border.jobRow">
+        <Style Selector="Button.jobRow">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="MinHeight" Value="42" />
         </Style>
-        <Style Selector="Border.jobRow.alt">
+        <Style Selector="Button.jobRow /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.jobRow.alt /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
         </Style>
-        <Style Selector="Border.jobRow.expanded">
+        <Style Selector="Button.jobRow.expanded /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource AccentDimBgBrush}" />
+        </Style>
+        <Style Selector="Button.jobRow:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
         </Style>
 
         <!-- Running job: amber left accent bar -->
@@ -135,29 +147,24 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="vm:JobItemViewModel">
                             <StackPanel Orientation="Vertical">
-                                <!-- Main row -->
-                                <Border Classes="jobRow"
+                                <!-- Main row — whole row is clickable -->
+                                <Button Classes="jobRow"
                                         Classes.expanded="{Binding IsExpanded}"
-                                        Padding="0"
-                                        MinHeight="42">
-                                    <Grid ColumnDefinitions="2,2.4*,1.5*,3*,80" Margin="20,0">
+                                        Command="{Binding ToggleExpandCommand}">
+                                    <Grid ColumnDefinitions="2,2.4*,1.5*,3*,80" Margin="20,0"
+                                          MinHeight="42">
                                         <!-- Running accent bar -->
                                         <Border Grid.Column="0" Classes="runningAccent"
                                                 Classes.visible="{Binding IsRunning}"
                                                 VerticalAlignment="Stretch" />
 
-                                        <!-- File (click to expand) -->
-                                        <Button Grid.Column="1"
-                                                Command="{Binding ToggleExpandCommand}"
-                                                Background="Transparent" BorderThickness="0"
-                                                Padding="0" HorizontalContentAlignment="Left"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Classes="mono"
-                                                       Text="{Binding InputFileName}"
-                                                       FontSize="12"
-                                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                                       TextTrimming="CharacterEllipsis" />
-                                        </Button>
+                                        <!-- File -->
+                                        <TextBlock Grid.Column="1" Classes="mono"
+                                                   Text="{Binding InputFileName}"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
 
                                         <!-- Preset -->
                                         <TextBlock Grid.Column="2" Classes="mono"
@@ -167,24 +174,32 @@
                                                    VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis" />
 
-                                        <!-- Progress bar + label -->
-                                        <Grid Grid.Column="3" ColumnDefinitions="*,42"
-                                              ColumnSpacing="10" VerticalAlignment="Center">
-                                            <ProgressBar Grid.Column="0"
-                                                         Value="{Binding Progress}"
-                                                         Maximum="100"
-                                                         Height="4"
-                                                         IsVisible="{Binding ShowProgress}"
-                                                         Foreground="{DynamicResource AccentBrush}"
-                                                         Background="{DynamicResource Bg2Brush}"
-                                                         BorderThickness="0"
-                                                         VerticalAlignment="Center" />
-                                            <TextBlock Grid.Column="1" Classes="mono"
-                                                       Text="{Binding ProgressLabel}"
-                                                       FontSize="11"
-                                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                                       VerticalAlignment="Center" />
-                                        </Grid>
+                                        <!-- Progress bar + status text + label -->
+                                        <StackPanel Grid.Column="3" Spacing="2"
+                                                    VerticalAlignment="Center">
+                                            <Grid ColumnDefinitions="*,42" ColumnSpacing="10">
+                                                <ProgressBar Grid.Column="0"
+                                                             Value="{Binding Progress}"
+                                                             Maximum="100"
+                                                             Height="4"
+                                                             IsVisible="{Binding ShowProgress}"
+                                                             Foreground="{DynamicResource AccentBrush}"
+                                                             Background="{DynamicResource Bg2Brush}"
+                                                             BorderThickness="0"
+                                                             VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Classes="mono"
+                                                           Text="{Binding ProgressLabel}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           VerticalAlignment="Center" />
+                                            </Grid>
+                                            <TextBlock Classes="mono"
+                                                       Text="{Binding StatusText}"
+                                                       IsVisible="{Binding IsRunning}"
+                                                       FontSize="10"
+                                                       Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
 
                                         <!-- Status chip -->
                                         <TextBlock Grid.Column="4" Classes="statusLabel"
@@ -193,7 +208,7 @@
                                                    HorizontalAlignment="Right"
                                                    VerticalAlignment="Center" />
                                     </Grid>
-                                </Border>
+                                </Button>
 
                                 <!-- Expanded detail panel -->
                                 <Border IsVisible="{Binding IsExpanded}"
@@ -203,11 +218,20 @@
                                         Padding="36,10,20,14">
                                     <StackPanel Spacing="8">
 
-                                        <!-- Running: sub-progress + cancel -->
-                                        <StackPanel IsVisible="{Binding IsRunning}" Spacing="6">
+                                        <!-- Running: sub-progress + log + cancel -->
+                                        <StackPanel IsVisible="{Binding IsRunning}" Spacing="8">
                                             <TextBlock Text="{Binding StatusText}"
                                                        FontSize="12"
                                                        Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            <ScrollViewer MaxHeight="100"
+                                                          HorizontalScrollBarVisibility="Disabled"
+                                                          IsVisible="{Binding LogOutput, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                                <SelectableTextBlock Classes="mono"
+                                                                     Text="{Binding LogOutput}"
+                                                                     FontSize="10"
+                                                                     Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                                     TextWrapping="Wrap" />
+                                            </ScrollViewer>
                                             <Button Classes="ghost"
                                                     Content="■  Cancel"
                                                     Command="{Binding CancelCommand}"
@@ -242,13 +266,24 @@
                                             </Grid>
                                         </Border>
 
-                                        <!-- Failed: error message -->
+                                        <!-- Failed: error message + log -->
                                         <Border IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                                 Classes="errorBanner">
-                                            <TextBlock Text="{Binding ErrorMessage}"
-                                                       FontSize="12"
-                                                       Foreground="{DynamicResource ErrorBrush}"
-                                                       TextWrapping="Wrap" />
+                                            <StackPanel Spacing="8">
+                                                <TextBlock Text="{Binding ErrorMessage}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource ErrorBrush}"
+                                                           TextWrapping="Wrap" />
+                                                <ScrollViewer MaxHeight="120"
+                                                              HorizontalScrollBarVisibility="Disabled"
+                                                              IsVisible="{Binding LogOutput, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                                    <SelectableTextBlock Classes="mono"
+                                                                         Text="{Binding LogOutput}"
+                                                                         FontSize="10"
+                                                                         Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                                         TextWrapping="Wrap" />
+                                                </ScrollViewer>
+                                            </StackPanel>
                                         </Border>
 
                                     </StackPanel>

@@ -9,12 +9,14 @@ public sealed class ToolStatusViewModel
     public string Version { get; }
     public bool IsRequired { get; }
     public string StatusLine => Found ? Version : (IsRequired ? "Not found" : "Not found (optional)");
+    public string? VariantTag { get; }
 
-    public ToolStatusViewModel(ToolInfo info)
+    public ToolStatusViewModel(ToolInfo info, string? variantTag = null)
     {
         Name = info.Name;
         Found = info.Found;
         Version = info.Version ?? string.Empty;
         IsRequired = info.IsRequired;
+        VariantTag = variantTag;
     }
 }

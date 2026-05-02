@@ -96,67 +96,95 @@
                         Margin="20,24,20,40"
                         Spacing="20">
 
-                <!-- ── Status banner ── -->
-                <Border CornerRadius="10"
-                        Padding="16,14"
-                        IsVisible="{Binding !ToolsLoading}">
+                <!-- ── Status banner ── always visible; contents swap on ToolsLoading -->
+                <Border CornerRadius="10" BorderThickness="1">
                     <Border.Background>
                         <SolidColorBrush Color="{DynamicResource SuccessColor}" Opacity="0.08" />
                     </Border.Background>
                     <Border.BorderBrush>
                         <SolidColorBrush Color="{DynamicResource SuccessColor}" Opacity="0.3" />
                     </Border.BorderBrush>
-                    <Border.BorderThickness>1</Border.BorderThickness>
-                    <StackPanel Spacing="12">
-                        <!-- Header -->
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Ellipse Classes="statusDot" Classes.ok="{Binding AllSystemsGo}"
-                                     Classes.fail="{Binding !AllSystemsGo}" />
-                            <TextBlock FontSize="12" FontWeight="Bold" LetterSpacing="0.06"
-                                       Foreground="{DynamicResource SuccessBrush}"
-                                       Text="ALL SYSTEMS GO"
-                                       IsVisible="{Binding AllSystemsGo}" />
-                            <TextBlock FontSize="12" FontWeight="Bold" LetterSpacing="0.06"
-                                       Foreground="{DynamicResource ErrorBrush}"
-                                       Text="MISSING REQUIRED TOOLS"
-                                       IsVisible="{Binding !AllSystemsGo}" />
-                        </StackPanel>
-                        <!-- Tool rows -->
-                        <ItemsControl ItemsSource="{Binding Tools}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Columns="3" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="vm:ToolStatusViewModel">
-                                    <StackPanel Spacing="3">
-                                        <TextBlock Text="{Binding Name}"
-                                                   FontSize="11" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
-                                        <TextBlock Classes="mono"
-                                                   Text="{Binding StatusLine}"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <Button Classes="ghost"
-                                Content="Refresh"
-                                Command="{Binding RefreshToolsCommand}"
-                                HorizontalAlignment="Left" />
-                    </StackPanel>
-                </Border>
 
-                <!-- Detecting spinner -->
-                <StackPanel IsVisible="{Binding ToolsLoading}"
-                            Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
-                    <TextBlock Text="Detecting tools…"
-                               FontSize="13"
-                               Foreground="{DynamicResource TextSecondaryBrush}" />
-                </StackPanel>
+                    <Panel>
+                        <!-- Loading state -->
+                        <StackPanel IsVisible="{Binding ToolsLoading}"
+                                    Spacing="10" Margin="16,14">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <Ellipse Width="7" Height="7">
+                                    <Ellipse.Fill>
+                                        <SolidColorBrush Color="{DynamicResource SuccessColor}" Opacity="0.5" />
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                                <TextBlock Text="Detecting tools…"
+                                           FontSize="12" FontWeight="Bold" LetterSpacing="0.06"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </StackPanel>
+                            <ProgressBar IsIndeterminate="True"
+                                         Height="2"
+                                         Foreground="{DynamicResource SuccessBrush}"
+                                         Background="Transparent" />
+                        </StackPanel>
+
+                        <!-- Done state -->
+                        <StackPanel IsVisible="{Binding !ToolsLoading}"
+                                    Spacing="12" Margin="16,14">
+                            <!-- Header -->
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Ellipse Classes="statusDot" Classes.ok="{Binding AllSystemsGo}"
+                                         Classes.fail="{Binding !AllSystemsGo}" />
+                                <TextBlock FontSize="12" FontWeight="Bold" LetterSpacing="0.06"
+                                           Foreground="{DynamicResource SuccessBrush}"
+                                           Text="ALL SYSTEMS GO"
+                                           IsVisible="{Binding AllSystemsGo}" />
+                                <TextBlock FontSize="12" FontWeight="Bold" LetterSpacing="0.06"
+                                           Foreground="{DynamicResource ErrorBrush}"
+                                           Text="MISSING REQUIRED TOOLS"
+                                           IsVisible="{Binding !AllSystemsGo}" />
+                            </StackPanel>
+                            <!-- Tool rows -->
+                            <ItemsControl ItemsSource="{Binding Tools}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="3" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:ToolStatusViewModel">
+                                        <StackPanel Spacing="3">
+                                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           VerticalAlignment="Center" />
+                                                <Border IsVisible="{Binding VariantTag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                        Background="{DynamicResource AccentDimBgBrush}"
+                                                        CornerRadius="3" Padding="4,1"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding VariantTag}"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource AccentBrush}" />
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Classes="mono"
+                                                       Text="{Binding StatusLine}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Button Classes="ghost"
+                                        Content="Refresh"
+                                        Command="{Binding RefreshToolsCommand}" />
+                                <Button Classes="ghost"
+                                        Content="Re-run setup wizard"
+                                        Command="{Binding ShowWizardCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Panel>
+                </Border>
 
                 <!-- ── audio-separator ── -->
                 <StackPanel Spacing="12">
@@ -187,14 +215,18 @@
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
                                            Text="CPU works everywhere. CUDA requires an NVIDIA GPU. DirectML works on most Windows GPUs (AMD/Intel/NVIDIA)."
                                            TextWrapping="Wrap" />
+                                <TextBlock FontSize="11" FontWeight="Medium"
+                                           Foreground="{DynamicResource AccentBrush}"
+                                           Text="{Binding GpuHint}"
+                                           IsVisible="{Binding GpuHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                             </StackPanel>
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
-                <!-- ── yt-dlp & ffmpeg ── -->
+                <!-- ── yt-dlp ── -->
                 <StackPanel Spacing="12">
-                    <TextBlock Classes="settingSection" Text="yt-dlp &amp; ffmpeg" />
+                    <TextBlock Classes="settingSection" Text="yt-dlp" />
                     <Border Classes="card">
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="6">
@@ -206,10 +238,31 @@
                             </StackPanel>
                             <StackPanel Spacing="6">
                                 <TextBlock Classes="settingLabel"
-                                           Text="ffmpeg path (leave blank to use system PATH)" />
+                                           Text="Cookies from browser (e.g. firefox, chrome, edge)" />
                                 <TextBox Classes="settingInput"
-                                         Text="{Binding FfmpegPath, Mode=TwoWay}"
-                                         PlaceholderText="Auto-detect from PATH" />
+                                         Text="{Binding YtdlpCookiesFromBrowser, Mode=TwoWay}"
+                                         PlaceholderText="Leave blank to skip" />
+                                <TextBlock FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="Needed for YouTube Premium audio (up to 264 kbps opus vs ~135 kbps without). Alternatively, export a cookies.txt file from your browser using the &quot;Get cookies.txt LOCALLY&quot; extension and enter its path instead." />
+                                <HyperlinkButton Padding="0" FontSize="11"
+                                                 NavigateUri="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
+                                                 Foreground="{DynamicResource AccentBrush}"
+                                                 Content="yt-dlp cookie documentation ↗" />
+                            </StackPanel>
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel"
+                                           Text="JS runtime (deno, node, bun, quickjs)" />
+                                <TextBox Classes="settingInput"
+                                         Text="{Binding YtdlpJsRuntime, Mode=TwoWay}"
+                                         PlaceholderText="Leave blank — yt-dlp auto-detects deno if installed" />
+                                <TextBlock FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="Required for YouTube authentication when using cookies. Deno is recommended (minimum v2.0.0). If deno is in your PATH, leave this blank — yt-dlp will find it automatically. Only set this if you need to pick a specific runtime or yt-dlp can't find it." />
+                                <HyperlinkButton Padding="0" FontSize="11"
+                                                 NavigateUri="https://github.com/yt-dlp/yt-dlp/wiki/EJS"
+                                                 Foreground="{DynamicResource AccentBrush}"
+                                                 Content="yt-dlp JS runtime documentation ↗" />
                             </StackPanel>
                         </StackPanel>
                     </Border>

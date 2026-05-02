@@ -3,22 +3,392 @@
              xmlns:vm="using:StemForge.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             mc:Ignorable="d" d:DesignWidth="1044" d:DesignHeight="720"
              x:Class="StemForge.Views.ModelsView"
              x:DataType="vm:ModelsViewModel">
 
-    <Grid RowDefinitions="50,*">
+    <UserControl.Styles>
+
+        <!-- Filter pill -->
+        <Style Selector="Button.filterPill">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="20" />
+            <Setter Property="Padding" Value="12,4" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+        <Style Selector="Button.filterPill.active">
+            <Setter Property="Background" Value="{DynamicResource AccentDimBgBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        <Style Selector="Button.filterPill:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+        </Style>
+
+        <!-- Table row hover + checked state -->
+        <Style Selector="Border.tableRow">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="MinHeight" Value="38" />
+        </Style>
+        <Style Selector="Border.tableRow:pointerover">
+            <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+        </Style>
+        <Style Selector="Border.tableRow.checked">
+            <Setter Property="Background" Value="{DynamicResource AccentDimBgBrush}" />
+        </Style>
+
+        <!-- Column header text -->
+        <Style Selector="TextBlock.colHeader">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- "Local" badge -->
+        <Style Selector="Border.localBadge">
+            <Setter Property="Background" Value="{DynamicResource AccentDimBgBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="5,2" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- Delete button -->
+        <Style Selector="Button.deleteBtn">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+        <Style Selector="Button.deleteBtn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ErrorBrush}" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+
+        <!-- Create-preset panel input field -->
+        <Style Selector="Border.presetInput">
+            <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="10,0" />
+        </Style>
+        <Style Selector="Border.presetInput:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource TextSecondaryBrush}" />
+        </Style>
+        <Style Selector="Border.presetInput:focus-within">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        <!-- Suppress the TextBox inner border so only the outer Border shows focus -->
+        <Style Selector="Border.presetInput TextBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Border.presetInput TextBox /template/ Border">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.presetInput TextBox:pointerover /template/ Border">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.presetInput TextBox:focus /template/ Border">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+
+    </UserControl.Styles>
+
+    <!-- RowDefs: toolbar | filter pills | column headers + list | create-preset panel -->
+    <Grid RowDefinitions="50,44,*,Auto">
+
+        <!-- ===== Toolbar ===== -->
         <Border Grid.Row="0"
                 Background="{DynamicResource Bg1Brush}"
                 BorderBrush="{DynamicResource Bg3Brush}"
                 BorderThickness="0,0,0,1"
                 Padding="16,0">
-            <TextBlock Classes="h1" Text="{Binding Title}" VerticalAlignment="Center" />
+            <Grid ColumnDefinitions="*,Auto,180">
+                <TextBlock Classes="h1" Text="{Binding Title}" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Classes="ghost"
+                        Content="Refresh"
+                        Margin="0,0,12,0"
+                        Command="{Binding RefreshCommand}" />
+                <TextBox Grid.Column="2"
+                         Text="{Binding SearchText, Mode=TwoWay}"
+                         PlaceholderText="Search models…"
+                         Background="{DynamicResource Bg0Brush}"
+                         BorderBrush="{DynamicResource Bg3Brush}"
+                         BorderThickness="1"
+                         CornerRadius="6"
+                         Padding="8,0"
+                         FontSize="12"
+                         VerticalAlignment="Center"
+                         VerticalContentAlignment="Center"
+                         Height="30" />
+            </Grid>
         </Border>
 
-        <TextBlock Grid.Row="1"
-                   Text="Installed models + downloads go here"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                   Foreground="{DynamicResource TextPlaceholderBrush}" />
+        <!-- ===== Filter pills ===== -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource Bg1Brush}"
+                BorderBrush="{DynamicResource Bg3Brush}"
+                BorderThickness="0,0,0,1">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Horizontal" Spacing="6" Margin="16,8,16,8">
+                    <!-- Stem filters -->
+                    <Button Classes="filterPill" Classes.active="{Binding IsFilterAll}"
+                            Command="{Binding SetStemFilterCommand}" CommandParameter=""
+                            Content="All" />
+                    <Button Classes="filterPill" Classes.active="{Binding IsFilterVocals}"
+                            Command="{Binding SetStemFilterCommand}" CommandParameter="vocals"
+                            Content="Vocals" />
+                    <Button Classes="filterPill" Classes.active="{Binding IsFilterInstrumental}"
+                            Command="{Binding SetStemFilterCommand}" CommandParameter="instrumental"
+                            Content="Instrumental" />
+                    <Button Classes="filterPill" Classes.active="{Binding IsFilterDrums}"
+                            Command="{Binding SetStemFilterCommand}" CommandParameter="drums"
+                            Content="Drums" />
+                    <Button Classes="filterPill" Classes.active="{Binding IsFilterBass}"
+                            Command="{Binding SetStemFilterCommand}" CommandParameter="bass"
+                            Content="Bass" />
+                    <Button Classes="filterPill" Classes.active="{Binding IsFilterOther}"
+                            Command="{Binding SetStemFilterCommand}" CommandParameter="other"
+                            Content="Other" />
+                    <!-- Divider -->
+                    <Border Width="1" Height="16" Background="{DynamicResource Bg3Brush}"
+                            VerticalAlignment="Center" Margin="4,0" />
+                    <!-- Local-only toggle -->
+                    <Button Classes="filterPill" Classes.active="{Binding ShowLocalOnly}"
+                            Command="{Binding ToggleLocalOnlyCommand}"
+                            Content="Local only" />
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- ===== Column headers + model list ===== -->
+        <Grid Grid.Row="2" RowDefinitions="Auto,*">
+
+            <!-- Column headers (only when list is visible) -->
+            <Border Grid.Row="0"
+                    IsVisible="{Binding HasModels}"
+                    Background="{DynamicResource Bg1Brush}"
+                    BorderBrush="{DynamicResource Bg3Brush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="16,6">
+                <!-- Cols: checkbox | name | arch | stems | status | size | actions -->
+                <Grid ColumnDefinitions="34,*,72,200,72,76,72">
+                    <TextBlock Grid.Column="1" Classes="colHeader" Text="NAME" />
+                    <TextBlock Grid.Column="2" Classes="colHeader" Text="ARCH" />
+                    <TextBlock Grid.Column="3" Classes="colHeader" Text="STEMS (SDR dB)" />
+                    <TextBlock Grid.Column="4" Classes="colHeader" Text="STATUS" />
+                    <TextBlock Grid.Column="5" Classes="colHeader" Text="SIZE" />
+                </Grid>
+            </Border>
+
+            <!-- Content area -->
+            <Panel Grid.Row="1">
+
+                <!-- Loading -->
+                <StackPanel IsVisible="{Binding IsLoading}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                    <ProgressBar IsIndeterminate="True" Width="200" Height="2"
+                                 Foreground="{DynamicResource AccentBrush}"
+                                 Background="Transparent" />
+                    <TextBlock Text="Loading model catalog…"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Error -->
+                <StackPanel IsVisible="{Binding HasError}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                    <TextBlock Text="⚠ Could not load models"
+                               FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ErrorBrush}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding ErrorText}"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               MaxWidth="380"
+                               TextAlignment="Center" />
+                    <Button Classes="ghost" Content="Retry"
+                            HorizontalAlignment="Center"
+                            Command="{Binding RefreshCommand}" />
+                </StackPanel>
+
+                <!-- Empty (no results after filter) -->
+                <TextBlock IsVisible="{Binding IsEmpty}"
+                           Text="No models match the current filter."
+                           FontSize="12"
+                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                <!-- Model list -->
+                <ScrollViewer IsVisible="{Binding HasModels}"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Models}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ModelItemViewModel">
+                                <StackPanel>
+                                    <Border Classes="tableRow"
+                                            Classes.checked="{Binding IsChecked}"
+                                            Padding="16,0">
+                                        <!-- Cols: checkbox | name | arch | stems | status | size | actions -->
+                                        <Grid ColumnDefinitions="34,*,72,200,72,76,72"
+                                              MinHeight="38">
+
+                                            <!-- Checkbox -->
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center" />
+
+                                            <!-- Name -->
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding FriendlyName}"
+                                                       FontSize="12"
+                                                       FontWeight="Medium"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,8,0"
+                                                       TextTrimming="CharacterEllipsis" />
+
+                                            <!-- Architecture -->
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding Architecture}"
+                                                       Classes="mono"
+                                                       FontSize="10"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       VerticalAlignment="Center" />
+
+                                            <!-- Stems + SDR -->
+                                            <TextBlock Grid.Column="3"
+                                                       Text="{Binding StemNames}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Margin="0,0,8,0" />
+
+                                            <!-- Local badge -->
+                                            <Border Grid.Column="4"
+                                                    Classes="localBadge"
+                                                    IsVisible="{Binding IsLocal}">
+                                                <TextBlock Text="Local"
+                                                           FontSize="10"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource AccentBrush}" />
+                                            </Border>
+
+                                            <!-- File size -->
+                                            <TextBlock Grid.Column="5"
+                                                       Text="{Binding FileSizeDisplay}"
+                                                       Classes="mono"
+                                                       FontSize="10"
+                                                       Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                       VerticalAlignment="Center" />
+
+                                            <!-- Delete -->
+                                            <Button Grid.Column="6"
+                                                    Classes="deleteBtn"
+                                                    Content="Delete"
+                                                    IsVisible="{Binding IsLocal}"
+                                                    VerticalAlignment="Center"
+                                                    Command="{Binding $parent[ItemsControl].((vm:ModelsViewModel)DataContext).DeleteModelCommand}"
+                                                    CommandParameter="{Binding}" />
+
+                                        </Grid>
+                                    </Border>
+                                    <Border Height="1"
+                                            Background="{DynamicResource Bg2Brush}"
+                                            Margin="16,0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+            </Panel>
+        </Grid>
+
+        <!-- ===== Create preset panel (visible when models are checked) ===== -->
+        <Border Grid.Row="3"
+                IsVisible="{Binding HasChecked}"
+                Background="{DynamicResource Bg1Brush}"
+                BorderBrush="{DynamicResource Bg3Brush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,14">
+            <Grid RowDefinitions="Auto,10,Auto">
+
+                <!-- Selection summary -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
+                    <TextBlock FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AccentBrush}"
+                               VerticalAlignment="Center">
+                        <Run Text="{Binding CheckedCount}" />
+                        <Run Text=" model(s) selected:" />
+                    </TextBlock>
+                    <TextBlock Text="{Binding CheckedSummary}"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <!-- Create-preset form -->
+                <Grid Grid.Row="2" ColumnDefinitions="*,12,Auto,12,Auto">
+
+                    <!-- Name input -->
+                    <Border Grid.Column="0" Classes="presetInput">
+                        <TextBox Text="{Binding NewPresetName, Mode=TwoWay}"
+                                 PlaceholderText="Preset name…" />
+                    </Border>
+
+                    <!-- Ensemble algorithm picker (2+ models) -->
+                    <ComboBox Grid.Column="2"
+                              IsVisible="{Binding IsMultiModel}"
+                              ItemsSource="{Binding EnsembleAlgorithmOptions}"
+                              SelectedItem="{Binding EnsembleAlgorithm, Mode=TwoWay}"
+                              Height="34"
+                              MinWidth="140"
+                              VerticalContentAlignment="Center"
+                              FontSize="12">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:EnsembleOption">
+                                <TextBlock Text="{Binding Key}"
+                                           ToolTip.Tip="{Binding Tip}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <!-- Save button -->
+                    <Button Grid.Column="4" Classes="accent"
+                            Content="Save as Preset"
+                            Command="{Binding SavePresetCommand}" />
+
+                </Grid>
+            </Grid>
+        </Border>
+
     </Grid>
 </UserControl>

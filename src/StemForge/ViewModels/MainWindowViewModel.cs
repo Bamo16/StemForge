@@ -13,21 +13,30 @@ public partial class MainWindowViewModel : ViewModelBase
     private const string IconModels = "M9 2 L15 5 V13 L9 16 L3 13 V5 Z M3 5 L9 8 L15 5 M9 8 V16";
     private const string IconSettings =
         "M9 6 A3 3 0 1 0 9 12 A3 3 0 1 0 9 6 M9 1 V3 M9 15 V17 M1 9 H3 M15 9 H17";
+    private const string IconLogs =
+        "M3 5 H5 M3 9 H5 M3 13 H5 M7 5 H15 M7 9 H15 M7 13 H13";
 
     [ObservableProperty]
-    private PageViewModelBase _currentPage;
-
+    public partial PageViewModelBase CurrentPage { get; set; }
     public ObservableCollection<NavItem> NavItems { get; }
+
+    public SetupWizardViewModel Wizard { get; }
+    public LogsViewModel Logs { get; }
+    public event Action? ShowLogsRequested;
+
+    [ObservableProperty]
+    public partial bool IsSetupRequired { get; set; }
 
     public MainWindowViewModel()
     {
-        var settingsSvc = AppSettingsService.Load();
-        var separation = new SeparationService(SetupDetector.ResolveAudioSeparatorPath());
-        var queue = new JobQueueService(separation);
+        var settingsSvc  = AppSettingsService.Load();
+        var userPresets  = UserPresetService.Load();
+        var separation   = new SeparationService(SetupDetector.ResolveAudioSeparatorPath());
+        var queue        = new JobQueueService(separation, settingsSvc);
 
-        var separate = new SeparateViewModel(queue, settingsSvc);
-        var queueVm = new QueueViewModel(queue);
-        var models = new ModelsViewModel();
+        var separate = new SeparateViewModel(queue, settingsSvc, userPresets);
+        var queueVm  = new QueueViewModel(queue);
+        var models   = new ModelsViewModel(settingsSvc, userPresets);
         var settings = new SettingsViewModel(settingsSvc);
 
         NavItems =
@@ -38,8 +47,31 @@ public partial class MainWindowViewModel : ViewModelBase
             new() { Label = "Settings", IconData = IconSettings, Target = settings },
         ];
 
-        _currentPage = separate;
+        Logs = new LogsViewModel();
+
+        void GoToQueue()
+        {
+            var queueNav = NavItems.First(n => n.Label == "Queue");
+            foreach (var n in NavItems) n.IsActive = ReferenceEquals(n, queueNav);
+            CurrentPage = queueNav.Target;
+        }
+
+        separate.NavigateToQueueRequested += GoToQueue;
+        CurrentPage = separate;
+
+        Wizard = new SetupWizardViewModel(settingsSvc);
+        IsSetupRequired = !settingsSvc.Current.FirstRunComplete;
+        Wizard.SetupCompleted += () => IsSetupRequired = false;
+        Wizard.SetupDismissed += () => IsSetupRequired = false;
+        settings.ShowWizardRequested += () =>
+        {
+            Wizard.Reset();
+            IsSetupRequired = true;
+        };
     }
+
+    [RelayCommand]
+    private void ShowLogs() => ShowLogsRequested?.Invoke();
 
     [RelayCommand]
     private void Navigate(NavItem item)
