@@ -22,7 +22,7 @@ public partial class SettingsViewModel : PageViewModelBase
 
     [ObservableProperty]
     public partial string GpuHint { get; set; } = string.Empty;
-    public ObservableCollection<ToolStatusViewModel> Tools { get; } = new();
+    public ObservableCollection<ToolStatusViewModel> Tools { get; } = [];
 
     // ── GPU variant ────────────────────────────────────────────────────────────
 
@@ -47,10 +47,10 @@ public partial class SettingsViewModel : PageViewModelBase
     public partial string YtdlpPath { get; set; } = string.Empty;
 
     [ObservableProperty]
-    public partial string YtdlpCookiesFromBrowser { get; set; }
+    public partial string YtdlpCookiesFromBrowser { get; set; } = string.Empty;
 
     [ObservableProperty]
-    public partial string YtdlpJsRuntime { get; set; }
+    public partial string YtdlpJsRuntime { get; set; } = string.Empty;
 
     // ── Save state ─────────────────────────────────────────────────────────────
 
@@ -181,8 +181,10 @@ public partial class SettingsViewModel : PageViewModelBase
         s.ModelsDirectory = string.IsNullOrWhiteSpace(ModelsDirectory)
             ? AppSettings.DefaultModelsDirectory
             : ModelsDirectory;
-        s.YtdlpPath = string.IsNullOrWhiteSpace(YtdlpPath) ? null : YtdlpPath;
-        s.YtdlpCookiesFromBrowser = string.IsNullOrWhiteSpace(YtdlpCookiesFromBrowser) ? null : YtdlpCookiesFromBrowser;
+        s.YtdlpPath = YtdlpPath;
+        s.YtdlpCookiesFromBrowser = string.IsNullOrWhiteSpace(YtdlpCookiesFromBrowser)
+            ? null
+            : YtdlpCookiesFromBrowser;
         s.YtdlpJsRuntime = string.IsNullOrWhiteSpace(YtdlpJsRuntime) ? null : YtdlpJsRuntime;
         s.FirstRunComplete = true;
 

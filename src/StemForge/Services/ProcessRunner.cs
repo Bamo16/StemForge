@@ -73,7 +73,7 @@ public static class ProcessRunner
     )
     {
         // Materialise before the enumerator is consumed by ProcessStartInfo.
-        var argList = args as IReadOnlyList<string> ?? args.ToList();
+        var argList = args as IReadOnlyList<string> ?? [.. args];
 
         AppLogger.Debug("Process", $"→ {Path.GetFileName(exe)} {string.Join(' ', argList)}");
 
@@ -134,25 +134,43 @@ public static class ProcessRunner
         else
         {
             // Capture mode: drain both streams concurrently to avoid pipe deadlocks.
-            var outTask = p.StandardOutput.ReadToEndAsync();
-            var errTask = p.StandardError.ReadToEndAsync();
+            var outTask = p.StandardOutput.ReadToEndAsync(CancellationToken.None);
+            var errTask = p.StandardError.ReadToEndAsync(CancellationToken.None);
             await Task.WhenAll(outTask, errTask, p.WaitForExitAsync(CancellationToken.None));
             stdout = (await outTask).Trim();
             stderr = (await errTask).Trim();
 
             // Log each non-empty output line at Debug level.
-            foreach (var line in stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            foreach (
+                var line in stdout.Split(
+                    '\n',
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                )
+            )
+            {
                 AppLogger.Debug($"{exeName}.out", line);
-            foreach (var line in stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            }
+
+            foreach (
+                var line in stderr.Split(
+                    '\n',
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                )
+            )
+            {
                 AppLogger.Debug($"{exeName}.err", line);
+            }
         }
 
         ct.ThrowIfCancellationRequested();
 
         var result = new Result(p.ExitCode, stdout, stderr);
         if (!result.Success)
-            AppLogger.Error("Process", $"← {exeName} exit {p.ExitCode}" +
-                (string.IsNullOrWhiteSpace(stderr) ? "" : $"\n{stderr}"));
+            AppLogger.Error(
+                "Process",
+                $"← {exeName} exit {p.ExitCode}"
+                    + (string.IsNullOrWhiteSpace(stderr) ? "" : $"\n{stderr}")
+            );
         else
             AppLogger.Info("Process", $"← {exeName} exit 0");
 

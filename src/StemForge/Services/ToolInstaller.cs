@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using StemForge.Models;
 
 namespace StemForge.Services;
@@ -25,26 +24,29 @@ public static class ToolInstaller
             if (string.IsNullOrWhiteSpace(toolDir))
                 return null;
 
-            var pythonExe = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                ? Path.Combine(toolDir, "audio-separator", "Scripts", "python.exe")
-                : Path.Combine(toolDir, "audio-separator", "bin", "python");
+            var pythonExe = new[]
+            {
+                Path.Combine(toolDir, "audio-separator", "Scripts", "python.exe"), // Windows
+                Path.Combine(toolDir, "audio-separator", "bin", "python"), // macOS/Linux
+            }.FirstOrDefault(File.Exists);
 
-            if (!File.Exists(pythonExe))
+            if (pythonExe is null)
                 return null;
 
-            const string script =
-                "from importlib.metadata import distributions;"
-                + "n={d.metadata['Name'].lower() for d in distributions()};"
-                + "print('Cuda' if 'onnxruntime-gpu' in n else ('DirectML' if 'onnxruntime-directml' in n else 'Cpu'))";
+            // Check functional GPU support rather than just which packages are installed.
+            // torch may not be present for cpu/dml installs, so guard the import.
+            const string script = """
+                try:
+                    import torch; torch_gpu=torch.cuda.is_available()
+                except ImportError:
+                    torch_gpu=False
+                import onnxruntime as ort; providers=ort.get_available_providers()
+                print('Cuda' if torch_gpu and 'CUDAExecutionProvider' in providers else ('DirectML' if 'DMLExecutionProvider' in providers else 'Cpu'))
+                """;
 
             var result = (await ProcessRunner.RunAsync(pythonExe, ["-c", script])).Stdout;
-            return result switch
-            {
-                "Cuda" => GpuVariant.Cuda,
-                "DirectML" => GpuVariant.DirectML,
-                "Cpu" => GpuVariant.Cpu,
-                _ => null,
-            };
+
+            return Enum.TryParse<GpuVariant>(result, out var variant) ? variant : null;
         }
         catch
         {
@@ -52,21 +54,27 @@ public static class ToolInstaller
         }
     }
 
-    public static Task InstallAudioSeparatorAsync(
+    public static async Task InstallAudioSeparatorAsync(
         GpuVariant variant,
         IProgress<string> progress,
         CancellationToken ct = default
-    ) =>
-        ProcessRunner.RunStreamingAsync(
-            "uv",
-            [
-                "tool",
-                "install",
-                $"audio-separator[{SetupDetector.GetPipExtra(variant)}]",
-                "--python",
-                "3.10",
-            ],
-            progress,
-            ct
-        );
+    )
+    {
+        var extra = SetupDetector.GetPipExtra(variant);
+        List<string> args =
+        [
+            "tool",
+            "install",
+            "--python",
+            "3.10",
+            "--force",
+            $"audio-separator[{extra}]",
+        ];
+
+        // PyTorch CUDA wheels are not on PyPI; cu121 requires CUDA 12.1+ drivers.
+        if (variant == GpuVariant.Cuda)
+            args.AddRange(["--extra-index-url", "https://download.pytorch.org/whl/cu121"]);
+
+        await ProcessRunner.RunStreamingAsync("uv", [.. args], progress, ct);
+    }
 }

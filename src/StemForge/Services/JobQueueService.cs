@@ -10,7 +10,10 @@ namespace StemForge.Services;
 /// Runs separation jobs sequentially. One job at a time; all others wait in FIFO order.
 /// Thread-safe enqueue; all observable mutations happen on the UI thread.
 /// </summary>
-public sealed class JobQueueService(SeparationService separation, AppSettingsService settings)
+public sealed partial class JobQueueService(
+    SeparationService separation,
+    AppSettingsService settings
+)
 {
     private readonly SeparationService _separation = separation;
     private readonly AppSettingsService _settings = settings;
@@ -185,12 +188,6 @@ public sealed class JobQueueService(SeparationService separation, AppSettingsSer
 
     private void OnPropertyChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
 
-    // Matches any YouTube URL or bare video ID and captures the 11-char video ID.
-    private static readonly Regex _youTubeRegex = new(
-        @"^(?:(?:(?:https?:\/\/)?(?:(?:www|music|m)\.)?)?(?:youtube\.com|youtu\.be)(?:\S*?(?:\?v=|\/)))?(?<VideoId>[0-9A-Za-z_-]{11})(?:[&?].*)?$",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase
-    );
-
     private async Task<string> DownloadAudioAsync(
         string url,
         string dlDir,
@@ -198,33 +195,33 @@ public sealed class JobQueueService(SeparationService separation, AppSettingsSer
         CancellationToken ct
     )
     {
-        // Normalise YouTube URLs to music.youtube.com for the best available audio format.
-        var targetUrl = _youTubeRegex.Match(url).Groups["VideoId"]
-            is { Success: true, Value: { } id }
-            ? $"https://music.youtube.com/watch?v={id}"
-            : url;
-
-        var ytdlp = string.IsNullOrWhiteSpace(_settings.Current.YtdlpPath)
-            ? "yt-dlp"
-            : _settings.Current.YtdlpPath;
-
         var args = new List<string>
         {
             "--no-playlist",
-            "--format", "bestaudio",
-            "--output", "%(title)s.%(ext)s",
-            "--paths", dlDir,
+            "--format",
+            "bestaudio/best",
+            "--extract-audio",
+            "--audio-format",
+            "flac",
+            "--audio-quality",
+            "0",
+            "--restrict-filenames",
+            "--output",
+            "%(title)s.%(ext)s",
+            "--paths",
+            dlDir,
         };
 
         var cookies = _settings.Current.YtdlpCookiesFromBrowser;
         if (!string.IsNullOrWhiteSpace(cookies))
         {
             // If it looks like a file path, use --cookies; otherwise use --cookies-from-browser.
-            var flag = cookies.Contains(Path.DirectorySeparatorChar) ||
-                       cookies.Contains(Path.AltDirectorySeparatorChar) ||
-                       cookies.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
-                ? "--cookies"
-                : "--cookies-from-browser";
+            var flag =
+                cookies.Contains(Path.DirectorySeparatorChar)
+                || cookies.Contains(Path.AltDirectorySeparatorChar)
+                || cookies.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
+                    ? "--cookies"
+                    : "--cookies-from-browser";
             args.AddRange([flag, cookies]);
         }
 
@@ -232,11 +229,24 @@ public sealed class JobQueueService(SeparationService separation, AppSettingsSer
         if (!string.IsNullOrWhiteSpace(jsRuntime))
             args.AddRange(["--js-runtime", jsRuntime]);
 
-        args.Add(targetUrl);
+        args.Add(NormalizeUrl(url));
 
-        await ProcessRunner.RunStreamingAsync(ytdlp, args, log, ct);
+        await ProcessRunner.RunStreamingAsync(_settings.Current.YtdlpPath, args, log, ct);
 
         return Directory.GetFiles(dlDir).FirstOrDefault()
             ?? throw new InvalidOperationException("yt-dlp produced no output file.");
     }
+
+    // Normalise YouTube URLs to music.youtube.com for the best available audio format.
+    private static string NormalizeUrl(string url) =>
+        YtVideoIdRegex().Match(url).Groups["VideoId"] is { Success: true, Value: { } id }
+            ? $"https://music.youtube.com/watch?v={id}"
+            : url;
+
+    // Matches any YouTube URL or bare video ID and captures the 11-char video ID.
+    [GeneratedRegex(
+        @"^(?:(?:(?:https?:\/\/)?(?:(?:www|music|m)\.)?)?(?:youtube\.com|youtu\.be)(?:\S*?(?:\?v=|\/)))?(?<VideoId>[0-9A-Za-z_-]{11})(?:[&?].*)?$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled
+    )]
+    private static partial Regex YtVideoIdRegex();
 }

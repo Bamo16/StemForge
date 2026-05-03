@@ -7,7 +7,11 @@ public sealed class AppSettings
     public GpuVariant GpuVariant { get; set; } = GpuVariant.Cpu;
     public string OutputDirectory { get; set; } = DefaultOutputDirectory;
     public string ModelsDirectory { get; set; } = DefaultModelsDirectory;
-    public string? YtdlpPath { get; set; }
+    public string YtdlpPath
+    {
+        get => string.IsNullOrWhiteSpace(field) ? "yt-dlp" : field;
+        set => field = value;
+    }
 
     // Browser name for --cookies-from-browser (e.g. "firefox", "chrome", "edge"). Null = no cookies.
     public string? YtdlpCookiesFromBrowser { get; set; }
