@@ -29,11 +29,10 @@ public partial class QueueViewModel : PageViewModelBase
     {
         var total = _queue.Jobs.Count;
         var running = _queue.Jobs.Count(j => j.Status == JobStatus.Running);
-        SummaryLabel = total == 0
-            ? "No jobs"
-            : running > 0
-                ? $"{total} job{(total == 1 ? "" : "s")} · {running} running"
-                : $"{total} job{(total == 1 ? "" : "s")}";
+        SummaryLabel =
+            total == 0 ? "No jobs"
+            : running > 0 ? $"{total} job{(total == 1 ? "" : "s")} · {running} running"
+            : $"{total} job{(total == 1 ? "" : "s")}";
     }
 
     [RelayCommand]

@@ -27,13 +27,15 @@ public static class SetupDetector
         Task.Run(async () =>
         {
             var results = await Task.WhenAll(
+                DetectAsync("uv", "uv", "--version", required: true),
                 DetectAsync(
                     "audio-separator",
                     ResolveAudioSeparatorPath(),
                     "--version",
                     required: true
                 ),
-                DetectAsync("yt-dlp", ytdlpPath ?? "yt-dlp", "--version", required: false)
+                DetectAsync("yt-dlp", ytdlpPath ?? "yt-dlp", "--version", required: false),
+                DetectAsync("ffmpeg", "ffmpeg", "-version", required: false)
             );
             return (IReadOnlyList<ToolInfo>)results;
         });

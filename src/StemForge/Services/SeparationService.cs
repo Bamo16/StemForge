@@ -68,7 +68,10 @@ public sealed partial class SeparationService(string audioSeparatorPath = "audio
                         ?? throw new FileNotFoundException(
                             $"audio-separator produced no output in '{passDir}' for preset '{preset.Id}'"
                         );
-                    var outPath = Path.Combine(outputDir, $"{baseName} ({preset.Label}).flac");
+                    var outPath = Path.Combine(
+                        outputDir,
+                        $"{baseName} ({preset.Category} - {preset.Label}).flac"
+                    );
                     File.Copy(stemFile, outPath, overwrite: true);
                 }
                 else
@@ -193,7 +196,10 @@ public sealed partial class SeparationService(string audioSeparatorPath = "audio
 
                         var cleaned = CleanLogLine(line);
                         if (cleaned is not null)
+                        {
+                            AppLogger.Info("audio-separator", cleaned);
                             logProgress?.Report(cleaned);
+                        }
                     }
                 }
             },

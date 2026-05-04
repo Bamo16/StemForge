@@ -52,14 +52,20 @@ public partial class SeparateViewModel : PageViewModelBase
     public bool HasSelection => SelectedCount > 0;
 
     private readonly JobQueueService _queue;
-    private readonly AppSettingsService _settings;
+    private readonly AppSettings _settings;
     private readonly UserPresetService _userPresets;
 
     public event Action? NavigateToQueueRequested;
 
+    [ObservableProperty]
+    public partial bool IsUrlInputEnabled { get; set; }
+
     public bool CanStartRun =>
         SelectedCount > 0
-        && (!string.IsNullOrWhiteSpace(InputFilePath) || !string.IsNullOrWhiteSpace(UrlInput));
+        && (
+            !string.IsNullOrWhiteSpace(InputFilePath)
+            || (IsUrlInputEnabled && !string.IsNullOrWhiteSpace(UrlInput))
+        );
 
     // ── User presets ──────────────────────────────────────────────────────────
 
@@ -68,14 +74,16 @@ public partial class SeparateViewModel : PageViewModelBase
 
     public SeparateViewModel(
         JobQueueService queue,
-        AppSettingsService settings,
+        AppSettings settings,
         UserPresetService userPresets
     )
     {
         _queue = queue;
         _settings = settings;
         _userPresets = userPresets;
-        OutputPath = settings.Current.OutputDirectory;
+        OutputPath = settings.OutputDirectory;
+        IsUrlInputEnabled = true;
+        _ = CheckUrlToolsAsync();
         Categories = new ObservableCollection<PresetCategoryGroup>(BuildGroups());
 
         foreach (var g in Categories)
@@ -220,6 +228,19 @@ public partial class SeparateViewModel : PageViewModelBase
         RunCommand.NotifyCanExecuteChanged();
     }
 
+    partial void OnIsUrlInputEnabledChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanStartRun));
+        RunCommand.NotifyCanExecuteChanged();
+    }
+
+    private async Task CheckUrlToolsAsync()
+    {
+        var ytdlp = await ToolInstaller.IsYtdlpAvailableAsync();
+        var ffmpeg = await ToolInstaller.IsFfmpegAvailableAsync();
+        IsUrlInputEnabled = ytdlp && ffmpeg;
+    }
+
     partial void OnModeChanged(SeparateMode value)
     {
         OnPropertyChanged(nameof(IsBuiltInMode));
@@ -272,7 +293,7 @@ public partial class SeparateViewModel : PageViewModelBase
             hasUrl ? UrlInput : null,
             selectedPresets,
             ExpandPath(OutputPath),
-            _settings.Current.ModelsDirectory
+            _settings.ModelsDirectory
         );
 
         _queue.Enqueue(record);

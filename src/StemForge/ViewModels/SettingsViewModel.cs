@@ -8,7 +8,7 @@ namespace StemForge.ViewModels;
 
 public partial class SettingsViewModel : PageViewModelBase
 {
-    private readonly AppSettingsService _settingsService;
+    private readonly AppSettings _settings;
 
     public override string Title => "Settings";
 
@@ -57,10 +57,10 @@ public partial class SettingsViewModel : PageViewModelBase
     [ObservableProperty]
     public partial bool SaveSuccess { get; set; }
 
-    public SettingsViewModel(AppSettingsService settingsService)
+    public SettingsViewModel(AppSettings settings)
     {
-        _settingsService = settingsService;
-        LoadFromSettings(settingsService.Current);
+        _settings = settings;
+        LoadFromSettings(settings);
         _ = DetectToolsAsync();
     }
 
@@ -69,7 +69,7 @@ public partial class SettingsViewModel : PageViewModelBase
         GpuVariant = s.GpuVariant;
         OutputDirectory = s.OutputDirectory;
         ModelsDirectory = s.ModelsDirectory;
-        YtdlpPath = s.YtdlpPath ?? string.Empty;
+        YtdlpPath = s.YtdlpPath;
         YtdlpCookiesFromBrowser = s.YtdlpCookiesFromBrowser ?? string.Empty;
         YtdlpJsRuntime = s.YtdlpJsRuntime ?? string.Empty;
     }
@@ -127,7 +127,7 @@ public partial class SettingsViewModel : PageViewModelBase
                 GpuHint = $"Detected: {best.Name}";
 
                 // Auto-select the best variant only before the user has ever saved settings
-                if (!_settingsService.Current.FirstRunComplete)
+                if (!_settings.FirstRunComplete)
                     GpuVariant = GpuDetector.SuggestVariant(gpus);
             }
         }
@@ -139,28 +139,26 @@ public partial class SettingsViewModel : PageViewModelBase
 
     private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolInfo> tools)
     {
-        if (_settingsService.Current.InstalledVariant is not null)
+        if (_settings.InstalledVariant is not null)
             return;
 
         if (!(tools.FirstOrDefault(t => t.Name == "audio-separator")?.Found ?? false))
             return;
 
         if (await ToolInstaller.DetectInstalledVariantAsync() is { } detected)
-            _settingsService.Current.InstalledVariant = detected;
+            _settings.InstalledVariant = detected;
     }
 
-    private string? VariantTagFor(string toolName, bool found)
-    {
-        if (toolName != "audio-separator" || !found)
-            return null;
-        return _settingsService.Current.InstalledVariant switch
-        {
-            GpuVariant.Cuda => "CUDA",
-            GpuVariant.DirectML => "DirectML",
-            GpuVariant.Cpu => "CPU",
-            _ => null,
-        };
-    }
+    private string? VariantTagFor(string toolName, bool found) =>
+        toolName != "audio-separator" || !found
+            ? null
+            : _settings.InstalledVariant switch
+            {
+                GpuVariant.Cuda => "CUDA",
+                GpuVariant.DirectML => "DirectML",
+                GpuVariant.Cpu => "CPU",
+                _ => null,
+            };
 
     public event Action? ShowWizardRequested;
 
@@ -173,22 +171,19 @@ public partial class SettingsViewModel : PageViewModelBase
     [RelayCommand]
     private async Task Save()
     {
-        var s = _settingsService.Current;
-        s.GpuVariant = GpuVariant;
-        s.OutputDirectory = string.IsNullOrWhiteSpace(OutputDirectory)
-            ? AppSettings.DefaultOutputDirectory
-            : OutputDirectory;
-        s.ModelsDirectory = string.IsNullOrWhiteSpace(ModelsDirectory)
-            ? AppSettings.DefaultModelsDirectory
-            : ModelsDirectory;
-        s.YtdlpPath = YtdlpPath;
-        s.YtdlpCookiesFromBrowser = string.IsNullOrWhiteSpace(YtdlpCookiesFromBrowser)
+        _settings.GpuVariant = GpuVariant;
+        _settings.OutputDirectory = OutputDirectory;
+        _settings.ModelsDirectory = ModelsDirectory;
+        _settings.YtdlpPath = YtdlpPath;
+        _settings.YtdlpCookiesFromBrowser = string.IsNullOrWhiteSpace(YtdlpCookiesFromBrowser)
             ? null
             : YtdlpCookiesFromBrowser;
-        s.YtdlpJsRuntime = string.IsNullOrWhiteSpace(YtdlpJsRuntime) ? null : YtdlpJsRuntime;
-        s.FirstRunComplete = true;
+        _settings.YtdlpJsRuntime = string.IsNullOrWhiteSpace(YtdlpJsRuntime)
+            ? null
+            : YtdlpJsRuntime;
+        _settings.FirstRunComplete = true;
 
-        await _settingsService.SaveAsync();
+        await _settings.SaveAsync();
 
         SaveSuccess = true;
         await Task.Delay(2000);

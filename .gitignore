@@ -13,7 +13,8 @@ design_handoff_stemforge/
 
 # IDE
 .vs/
-.vscode/
+.vscode/*
+!.vscode/tasks.json
 .idea/
 *.user
 *.suo

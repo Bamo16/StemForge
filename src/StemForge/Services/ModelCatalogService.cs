@@ -46,7 +46,7 @@ public sealed class ModelCatalogService
         // The output is a nested object: { "Arch": { "Friendly Name": { ...model... } } }
         // Strip any log lines before/after the JSON object.
         var start = raw.IndexOf('{');
-        var end   = raw.LastIndexOf('}');
+        var end = raw.LastIndexOf('}');
         if (start < 0 || end <= start)
             return [];
 
@@ -69,7 +69,7 @@ public sealed class ModelCatalogService
                 foreach (var modelProp in archProp.Value.EnumerateObject())
                 {
                     var friendlyName = modelProp.Name;
-                    var modelEl      = modelProp.Value;
+                    var modelEl = modelProp.Value;
                     if (modelEl.ValueKind != JsonValueKind.Object)
                         continue;
 
@@ -96,8 +96,10 @@ public sealed class ModelCatalogService
         var result = new List<StemSdr>();
 
         // "stems": ["vocals", "instrumental", ...]
-        if (!modelEl.TryGetProperty("stems", out var stemsArr)
-            || stemsArr.ValueKind != JsonValueKind.Array)
+        if (
+            !modelEl.TryGetProperty("stems", out var stemsArr)
+            || stemsArr.ValueKind != JsonValueKind.Array
+        )
             return result;
 
         // "scores": { "vocals": { "SDR": 10.15, ... }, ... }
@@ -111,11 +113,13 @@ public sealed class ModelCatalogService
             var name = stemEl.GetString()!;
             double? sdr = null;
 
-            if (scoresEl.ValueKind == JsonValueKind.Object
+            if (
+                scoresEl.ValueKind == JsonValueKind.Object
                 && scoresEl.TryGetProperty(name, out var stemScoreEl)
                 && stemScoreEl.ValueKind == JsonValueKind.Object
                 && stemScoreEl.TryGetProperty("SDR", out var sdrEl)
-                && sdrEl.ValueKind == JsonValueKind.Number)
+                && sdrEl.ValueKind == JsonValueKind.Number
+            )
             {
                 sdr = sdrEl.GetDouble();
             }

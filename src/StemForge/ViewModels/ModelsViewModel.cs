@@ -17,11 +17,11 @@ public partial class ModelsViewModel : PageViewModelBase
     public override string Title => "Model Library";
 
     private readonly ModelCatalogService _catalog = new();
-    private readonly AppSettingsService _settings;
+    private readonly AppSettings _settings;
     private readonly UserPresetService _userPresets;
     private readonly List<ModelItemViewModel> _all = [];
 
-    public ModelsViewModel(AppSettingsService settings, UserPresetService userPresets)
+    public ModelsViewModel(AppSettings settings, UserPresetService userPresets)
     {
         _settings = settings;
         _userPresets = userPresets;
@@ -37,12 +37,13 @@ public partial class ModelsViewModel : PageViewModelBase
     [ObservableProperty]
     public partial string? ErrorText { get; set; }
 
-    public bool HasError  => ErrorText is not null;
+    public bool HasError => ErrorText is not null;
     public bool HasModels => !IsLoading && ErrorText is null && Models.Count > 0;
-    public bool IsEmpty   => !IsLoading && ErrorText is null && Models.Count == 0;
+    public bool IsEmpty => !IsLoading && ErrorText is null && Models.Count == 0;
 
-    partial void OnIsLoadingChanged(bool value)    => NotifyListState();
-    partial void OnErrorTextChanged(string? value)  => NotifyListState();
+    partial void OnIsLoadingChanged(bool value) => NotifyListState();
+
+    partial void OnErrorTextChanged(string? value) => NotifyListState();
 
     private void NotifyListState()
     {
@@ -67,6 +68,7 @@ public partial class ModelsViewModel : PageViewModelBase
     public partial bool ShowLocalOnly { get; set; }
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
+
     partial void OnStemFilterChanged(string value)
     {
         OnPropertyChanged(nameof(IsFilterAll));
@@ -77,14 +79,15 @@ public partial class ModelsViewModel : PageViewModelBase
         OnPropertyChanged(nameof(IsFilterOther));
         ApplyFilter();
     }
+
     partial void OnShowLocalOnlyChanged(bool value) => ApplyFilter();
 
-    public bool IsFilterAll          => StemFilter == string.Empty;
-    public bool IsFilterVocals       => StemFilter == "vocals";
+    public bool IsFilterAll => StemFilter == string.Empty;
+    public bool IsFilterVocals => StemFilter == "vocals";
     public bool IsFilterInstrumental => StemFilter == "instrumental";
-    public bool IsFilterDrums        => StemFilter == "drums";
-    public bool IsFilterBass         => StemFilter == "bass";
-    public bool IsFilterOther        => StemFilter == "other";
+    public bool IsFilterDrums => StemFilter == "drums";
+    public bool IsFilterBass => StemFilter == "bass";
+    public bool IsFilterOther => StemFilter == "other";
 
     [RelayCommand]
     private void SetStemFilter(string stem) => StemFilter = stem;
@@ -94,8 +97,8 @@ public partial class ModelsViewModel : PageViewModelBase
 
     // ── Multi-select ──────────────────────────────────────────────────────────
 
-    public int  CheckedCount => _all.Count(m => m.IsChecked);
-    public bool HasChecked   => _all.Any(m => m.IsChecked);
+    public int CheckedCount => _all.Count(m => m.IsChecked);
+    public bool HasChecked => _all.Any(m => m.IsChecked);
     public bool IsMultiModel => CheckedCount > 1;
 
     public string CheckedSummary =>
@@ -105,7 +108,8 @@ public partial class ModelsViewModel : PageViewModelBase
 
     private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(ModelItemViewModel.IsChecked)) return;
+        if (e.PropertyName != nameof(ModelItemViewModel.IsChecked))
+            return;
         OnPropertyChanged(nameof(CheckedCount));
         OnPropertyChanged(nameof(HasChecked));
         OnPropertyChanged(nameof(IsMultiModel));
@@ -126,27 +130,43 @@ public partial class ModelsViewModel : PageViewModelBase
 
     public IReadOnlyList<EnsembleOption> EnsembleAlgorithmOptions { get; } =
     [
-        new("avg_wave",    "Average the waveforms of all models. Simple, reliable general-purpose blend."),
-        new("median_wave", "Median of waveforms across models. More robust to outlier models than averaging."),
-        new("max_fft",     "Maximum spectral magnitude at each frequency. Maximises loudness and recovered detail."),
-        new("min_fft",     "Minimum spectral magnitude at each frequency. Aggressively suppresses noise at the cost of detail."),
-        new("mean_fft",    "Mean spectral magnitude. Smoother frequency-domain blend than avg_wave."),
-        new("median_fft",  "Median spectral magnitude. Robust frequency-domain blend — good when one model is significantly noisier than the others."),
+        new(
+            "avg_wave",
+            "Average the waveforms of all models. Simple, reliable general-purpose blend."
+        ),
+        new(
+            "median_wave",
+            "Median of waveforms across models. More robust to outlier models than averaging."
+        ),
+        new(
+            "max_fft",
+            "Maximum spectral magnitude at each frequency. Maximises loudness and recovered detail."
+        ),
+        new(
+            "min_fft",
+            "Minimum spectral magnitude at each frequency. Aggressively suppresses noise at the cost of detail."
+        ),
+        new("mean_fft", "Mean spectral magnitude. Smoother frequency-domain blend than avg_wave."),
+        new(
+            "median_fft",
+            "Median spectral magnitude. Robust frequency-domain blend — good when one model is significantly noisier than the others."
+        ),
     ];
 
-    private bool CanSavePreset =>
-        HasChecked && !string.IsNullOrWhiteSpace(NewPresetName);
+    private bool CanSavePreset => HasChecked && !string.IsNullOrWhiteSpace(NewPresetName);
 
     [RelayCommand(CanExecute = nameof(CanSavePreset))]
     private void SavePreset()
     {
         var checked_ = _all.Where(m => m.IsChecked).ToList();
-        if (checked_.Count == 0) return;
+        if (checked_.Count == 0)
+            return;
 
         var id = SanitizeId(NewPresetName);
-        var description = checked_.Count == 1
-            ? checked_[0].FriendlyName
-            : string.Join(" + ", checked_.Select(m => m.FriendlyName));
+        var description =
+            checked_.Count == 1
+                ? checked_[0].FriendlyName
+                : string.Join(" + ", checked_.Select(m => m.FriendlyName));
 
         Preset preset;
         if (checked_.Count == 1)
@@ -191,7 +211,7 @@ public partial class ModelsViewModel : PageViewModelBase
     [RelayCommand]
     private void DeleteModel(ModelItemViewModel item)
     {
-        var path = Path.Combine(_settings.Current.ModelsDirectory, item.Filename);
+        var path = Path.Combine(_settings.ModelsDirectory, item.Filename);
         try
         {
             if (File.Exists(path))
@@ -202,7 +222,10 @@ public partial class ModelsViewModel : PageViewModelBase
         }
         catch (Exception ex)
         {
-            AppLogger.Error(nameof(ModelsViewModel), $"Delete failed for {item.Filename}: {ex.Message}");
+            AppLogger.Error(
+                nameof(ModelsViewModel),
+                $"Delete failed for {item.Filename}: {ex.Message}"
+            );
         }
     }
 
@@ -231,7 +254,7 @@ public partial class ModelsViewModel : PageViewModelBase
         {
             var exe = SetupDetector.ResolveAudioSeparatorPath();
             var models = await _catalog.ListModelsAsync(exe, forceRefresh);
-            var modelsDir = _settings.Current.ModelsDirectory;
+            var modelsDir = _settings.ModelsDirectory;
 
             foreach (var m in models)
             {
@@ -264,7 +287,7 @@ public partial class ModelsViewModel : PageViewModelBase
     private void ApplyFilter()
     {
         var search = SearchText.Trim();
-        var stem   = StemFilter;
+        var stem = StemFilter;
 
         var filtered = _all.Where(m =>
         {
@@ -273,9 +296,11 @@ public partial class ModelsViewModel : PageViewModelBase
 
             if (!string.IsNullOrEmpty(search))
             {
-                if (!m.FriendlyName.Contains(search, StringComparison.OrdinalIgnoreCase)
+                if (
+                    !m.FriendlyName.Contains(search, StringComparison.OrdinalIgnoreCase)
                     && !m.Filename.Contains(search, StringComparison.OrdinalIgnoreCase)
-                    && !m.Architecture.Contains(search, StringComparison.OrdinalIgnoreCase))
+                    && !m.Architecture.Contains(search, StringComparison.OrdinalIgnoreCase)
+                )
                     return false;
             }
 

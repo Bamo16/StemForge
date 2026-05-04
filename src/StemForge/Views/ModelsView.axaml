@@ -112,6 +112,22 @@
             <Setter Property="BorderBrush" Value="Transparent" />
         </Style>
 
+        <!-- Filter search TextBox: keep background stable on hover/focus; accent border on focus -->
+        <Style Selector="TextBox.filterSearch /template/ Border">
+            <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="TextBox.filterSearch:pointerover /template/ Border">
+            <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+        </Style>
+        <Style Selector="TextBox.filterSearch:focus /template/ Border">
+            <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style Selector="TextBox.filterSearch:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+
     </UserControl.Styles>
 
     <!-- RowDefs: toolbar | filter pills | column headers + list | create-preset panel -->
@@ -130,6 +146,7 @@
                         Margin="0,0,12,0"
                         Command="{Binding RefreshCommand}" />
                 <TextBox Grid.Column="2"
+                         Classes="filterSearch"
                          Text="{Binding SearchText, Mode=TwoWay}"
                          PlaceholderText="Search models…"
                          Background="{DynamicResource Bg0Brush}"

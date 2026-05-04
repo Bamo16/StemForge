@@ -62,7 +62,8 @@ public partial class JobItemViewModel : ObservableObject
     public bool IsDone => Status == JobStatus.Done;
     public bool IsTerminal => Status is JobStatus.Done or JobStatus.Failed or JobStatus.Cancelled;
     public bool ShowProgress => Status is JobStatus.Running or JobStatus.Done;
-    public string ProgressLabel => IsRunning && !string.IsNullOrEmpty(PresetCounter) ? PresetCounter : "—";
+    public string ProgressLabel =>
+        IsRunning && !string.IsNullOrEmpty(PresetCounter) ? PresetCounter : "—";
 
     public IBrush StatusBrush =>
         Status switch

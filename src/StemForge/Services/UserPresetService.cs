@@ -33,7 +33,10 @@ public sealed class UserPresetService
         }
         catch (Exception ex)
         {
-            AppLogger.Warning(nameof(UserPresetService), $"Could not load user presets: {ex.Message}");
+            AppLogger.Warning(
+                nameof(UserPresetService),
+                $"Could not load user presets: {ex.Message}"
+            );
         }
         return svc;
     }
@@ -65,7 +68,10 @@ public sealed class UserPresetService
         }
         catch (Exception ex)
         {
-            AppLogger.Warning(nameof(UserPresetService), $"Could not save user presets: {ex.Message}");
+            AppLogger.Warning(
+                nameof(UserPresetService),
+                $"Could not save user presets: {ex.Message}"
+            );
         }
     }
 
@@ -85,11 +91,19 @@ public sealed class UserPresetService
 
         public Preset ToPreset() =>
             new(
-                Id, Label,
+                Id,
+                Label,
                 Enum.TryParse<PresetCategory>(Category, out var cat) ? cat : PresetCategory.Other,
-                Description, ModelCount, Vram,
-                Enum.TryParse<SeparationMode>(Mode, out var mode) ? mode : SeparationMode.SingleModel,
-                PrimaryModel, EnsembleAlgorithm, ExtraModels, EnsembleWeights
+                Description,
+                ModelCount,
+                Vram,
+                Enum.TryParse<SeparationMode>(Mode, out var mode)
+                    ? mode
+                    : SeparationMode.SingleModel,
+                PrimaryModel,
+                EnsembleAlgorithm,
+                ExtraModels,
+                EnsembleWeights
             );
 
         public static PresetDto FromPreset(Preset p) =>

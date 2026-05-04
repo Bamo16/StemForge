@@ -8,7 +8,8 @@ public sealed class ToolStatusViewModel
     public bool Found { get; }
     public string Version { get; }
     public bool IsRequired { get; }
-    public string StatusLine => Found ? Version : (IsRequired ? "Not found" : "Not found (optional)");
+    public string StatusLine =>
+        Found ? Version : (IsRequired ? "Not found" : "Not found (optional)");
     public string? VariantTag { get; }
 
     public ToolStatusViewModel(ToolInfo info, string? variantTag = null)

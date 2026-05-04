@@ -38,7 +38,8 @@ public partial class SettingsView : UserControl
     private async Task<string?> PickFolderAsync()
     {
         var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is null) return null;
+        if (topLevel is null)
+            return null;
         var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
             new FolderPickerOpenOptions { AllowMultiple = false }
         );

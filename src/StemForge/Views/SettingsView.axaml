@@ -145,13 +145,17 @@
                             <ItemsControl ItemsSource="{Binding Tools}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <UniformGrid Columns="3" />
+                                        <StackPanel Spacing="10" />
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="vm:ToolStatusViewModel">
-                                        <StackPanel Spacing="3">
-                                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                        <StackPanel Spacing="2">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <Ellipse Classes="statusDot"
+                                                         Classes.ok="{Binding Found}"
+                                                         Classes.fail="{Binding !Found}"
+                                                         VerticalAlignment="Center" />
                                                 <TextBlock Text="{Binding Name}"
                                                            FontSize="11" FontWeight="SemiBold"
                                                            Foreground="{DynamicResource TextPrimaryBrush}"
@@ -169,7 +173,7 @@
                                                        Text="{Binding StatusLine}"
                                                        FontSize="11"
                                                        Foreground="{DynamicResource TextSecondaryBrush}"
-                                                       TextTrimming="CharacterEllipsis" />
+                                                       Margin="13,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

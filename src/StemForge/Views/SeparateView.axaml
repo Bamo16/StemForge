@@ -50,6 +50,12 @@
             <Setter Property="Height" Value="52" />
             <Setter Property="Padding" Value="12,0" />
         </Style>
+        <Style Selector="Border.urlField:focus-within">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        <Style Selector="Border.urlField.urlDisabled">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
         <Style Selector="Border.urlField TextBox">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -58,6 +64,17 @@
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Border.urlField TextBox /template/ Border">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="Border.urlField TextBox:pointerover /template/ Border">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.urlField TextBox:focus /template/ Border">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
         </Style>
 
         <!-- ===== Preset card ===== -->
@@ -203,7 +220,13 @@
                            VerticalAlignment="Center" />
 
                 <!-- URL field -->
-                <Border Grid.Column="2" Classes="urlField">
+                <Border Grid.Column="2" Classes="urlField"
+                        Classes.urlDisabled="{Binding !IsUrlInputEnabled}"
+                        IsEnabled="{Binding IsUrlInputEnabled}">
+                    <ToolTip.Tip>
+                        <TextBlock IsVisible="{Binding !IsUrlInputEnabled}"
+                                   Text="Install yt-dlp and ffmpeg to enable URL downloads (Settings → Re-run setup wizard)" />
+                    </ToolTip.Tip>
                     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
                         <Path Grid.Column="0"
                               Data="M5.5 8.5 L8.5 5.5 M6.5 4.5 L7.8 3.2 A2.5 2.5 0 0 1 11.34 6.74 L10 8.1 M4 5.9 L2.66 7.26 A2.5 2.5 0 0 0 6.2 10.8 L7.5 9.5"

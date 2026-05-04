@@ -8,6 +8,11 @@
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>
 
+    <!-- TextBox selection highlight covers full input width, not just text extent -->
+    <Style Selector="TextBox /template/ TextPresenter#PART_TextPresenter">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+
     <!-- Heading: toolbar titles (15px / 600) -->
     <Style Selector="TextBlock.h1">
         <Setter Property="FontSize" Value="15" />

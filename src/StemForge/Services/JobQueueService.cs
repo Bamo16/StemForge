@@ -10,13 +10,10 @@ namespace StemForge.Services;
 /// Runs separation jobs sequentially. One job at a time; all others wait in FIFO order.
 /// Thread-safe enqueue; all observable mutations happen on the UI thread.
 /// </summary>
-public sealed partial class JobQueueService(
-    SeparationService separation,
-    AppSettingsService settings
-)
+public sealed partial class JobQueueService(SeparationService separation, AppSettings settings)
 {
     private readonly SeparationService _separation = separation;
-    private readonly AppSettingsService _settings = settings;
+    private readonly AppSettings _settings = settings;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private CancellationTokenSource? _currentCts;
     private JobItemViewModel? _currentJob;
@@ -110,7 +107,7 @@ public sealed partial class JobQueueService(
             var baseName = Path.GetFileNameWithoutExtension(inputFile);
             var outputFiles = vm
                 .Job.Presets.Select(p =>
-                    Path.Combine(vm.Job.OutputDir, $"{baseName} ({p.Id}).flac")
+                    Path.Combine(vm.Job.OutputDir, $"{baseName} ({p.Category} - {p.Label}).flac")
                 )
                 .Where(File.Exists)
                 .ToList();
@@ -205,14 +202,13 @@ public sealed partial class JobQueueService(
             "flac",
             "--audio-quality",
             "0",
-            "--restrict-filenames",
             "--output",
             "%(title)s.%(ext)s",
             "--paths",
             dlDir,
         };
 
-        var cookies = _settings.Current.YtdlpCookiesFromBrowser;
+        var cookies = _settings.YtdlpCookiesFromBrowser;
         if (!string.IsNullOrWhiteSpace(cookies))
         {
             // If it looks like a file path, use --cookies; otherwise use --cookies-from-browser.
@@ -225,13 +221,13 @@ public sealed partial class JobQueueService(
             args.AddRange([flag, cookies]);
         }
 
-        var jsRuntime = _settings.Current.YtdlpJsRuntime;
+        var jsRuntime = _settings.YtdlpJsRuntime;
         if (!string.IsNullOrWhiteSpace(jsRuntime))
             args.AddRange(["--js-runtime", jsRuntime]);
 
         args.Add(NormalizeUrl(url));
 
-        await ProcessRunner.RunStreamingAsync(_settings.Current.YtdlpPath, args, log, ct);
+        await ProcessRunner.RunStreamingAsync(_settings.YtdlpPath, args, log, ct);
 
         return Directory.GetFiles(dlDir).FirstOrDefault()
             ?? throw new InvalidOperationException("yt-dlp produced no output file.");

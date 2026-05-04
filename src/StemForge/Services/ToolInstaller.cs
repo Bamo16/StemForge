@@ -1,9 +1,35 @@
+using System.Runtime.InteropServices;
 using StemForge.Models;
 
 namespace StemForge.Services;
 
 public static class ToolInstaller
 {
+    public static async Task InstallUvAsync(
+        IProgress<string> progress,
+        CancellationToken ct = default
+    )
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            await ProcessRunner.RunStreamingAsync(
+                "powershell",
+                ["-ExecutionPolicy", "ByPass", "-c", "irm https://astral.sh/uv/install.ps1 | iex"],
+                progress,
+                ct
+            );
+        }
+        else
+        {
+            await ProcessRunner.RunStreamingAsync(
+                "sh",
+                ["-c", "curl -LsSf https://astral.sh/uv/install.sh | sh"],
+                progress,
+                ct
+            );
+        }
+    }
+
     public static async Task<bool> IsUvAvailableAsync()
     {
         try
@@ -14,6 +40,63 @@ public static class ToolInstaller
         {
             return false;
         }
+    }
+
+    public static async Task<bool> IsYtdlpAvailableAsync()
+    {
+        try
+        {
+            return (await ProcessRunner.RunAsync("yt-dlp", ["--version"])).Success;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static async Task<bool> IsFfmpegAvailableAsync()
+    {
+        try
+        {
+            return (await ProcessRunner.RunAsync("ffmpeg", ["-version"])).Success;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static Task InstallYtdlpAsync(
+        IProgress<string> progress,
+        CancellationToken ct = default
+    ) => ProcessRunner.RunStreamingAsync("uv", ["tool", "install", "yt-dlp"], progress, ct);
+
+    public static Task InstallFfmpegAsync(
+        IProgress<string> progress,
+        CancellationToken ct = default
+    )
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return ProcessRunner.RunStreamingAsync(
+                "winget",
+                [
+                    "install",
+                    "--id",
+                    "Gyan.FFmpeg",
+                    "-e",
+                    "--accept-source-agreements",
+                    "--accept-package-agreements",
+                ],
+                progress,
+                ct
+            );
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            return ProcessRunner.RunStreamingAsync("brew", ["install", "ffmpeg"], progress, ct);
+
+        throw new PlatformNotSupportedException(
+            "Automatic ffmpeg install is not supported on this platform. Install ffmpeg via your package manager."
+        );
     }
 
     public static async Task<GpuVariant?> DetectInstalledVariantAsync()

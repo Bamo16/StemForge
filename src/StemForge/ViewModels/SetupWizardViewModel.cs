@@ -16,9 +16,9 @@ public enum WizardStep
     Finish,
 }
 
-public partial class SetupWizardViewModel(AppSettingsService settings) : ViewModelBase
+public partial class SetupWizardViewModel(AppSettings settings) : ViewModelBase
 {
-    private readonly AppSettingsService _settings = settings;
+    private readonly AppSettings _settings = settings;
 
     public event Action? SetupCompleted;
     public event Action? SetupDismissed;
@@ -49,7 +49,7 @@ public partial class SetupWizardViewModel(AppSettingsService settings) : ViewMod
         CurrentStep switch
         {
             WizardStep.Detect => !IsDetecting,
-            WizardStep.Install => InstallSuccess || !UvFound,
+            WizardStep.Install => AudioSeparatorFound,
             _ => true,
         };
 
@@ -78,10 +78,10 @@ public partial class SetupWizardViewModel(AppSettingsService settings) : ViewMod
     // ── Directories ───────────────────────────────────────────────────────────
 
     [ObservableProperty]
-    public partial string OutputDirectory { get; set; } = settings.Current.OutputDirectory;
+    public partial string OutputDirectory { get; set; } = settings.OutputDirectory;
 
     [ObservableProperty]
-    public partial string ModelsDirectory { get; set; } = settings.Current.ModelsDirectory;
+    public partial string ModelsDirectory { get; set; } = settings.ModelsDirectory;
 
     // ── Install ───────────────────────────────────────────────────────────────
 
@@ -89,10 +89,40 @@ public partial class SetupWizardViewModel(AppSettingsService settings) : ViewMod
     public partial bool UvFound { get; set; }
 
     [ObservableProperty]
+    public partial bool IsInstallingUv { get; set; }
+
+    [ObservableProperty]
+    public partial string? UvInstallError { get; set; }
+
+    [ObservableProperty]
     public partial bool IsInstalling { get; set; }
 
     [ObservableProperty]
     public partial bool InstallSuccess { get; set; }
+
+    [ObservableProperty]
+    public partial bool YtdlpFound { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsInstallingYtdlp { get; set; }
+
+    [ObservableProperty]
+    public partial bool YtdlpInstallSuccess { get; set; }
+
+    [ObservableProperty]
+    public partial string? YtdlpInstallError { get; set; }
+
+    [ObservableProperty]
+    public partial bool FfmpegFound { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsInstallingFfmpeg { get; set; }
+
+    [ObservableProperty]
+    public partial bool FfmpegInstallSuccess { get; set; }
+
+    [ObservableProperty]
+    public partial string? FfmpegInstallError { get; set; }
 
     private readonly StringBuilder _installLog = new();
 
@@ -121,10 +151,12 @@ public partial class SetupWizardViewModel(AppSettingsService settings) : ViewMod
         if (value == WizardStep.Detect)
             _ = RunDetectionAsync();
         else if (value == WizardStep.Install)
-            _ = CheckUvAsync();
+            _ = RecheckToolsAsync();
     }
 
     partial void OnIsDetectingChanged(bool value) => OnPropertyChanged(nameof(CanGoNext));
+
+    partial void OnAudioSeparatorFoundChanged(bool value) => OnPropertyChanged(nameof(CanGoNext));
 
     partial void OnGpuVariantChanged(GpuVariant value)
     {
@@ -132,8 +164,6 @@ public partial class SetupWizardViewModel(AppSettingsService settings) : ViewMod
         OnPropertyChanged(nameof(IsCuda));
         OnPropertyChanged(nameof(IsDirectML));
     }
-
-    partial void OnInstallSuccessChanged(bool value) => OnPropertyChanged(nameof(CanGoNext));
 
     partial void OnUvFoundChanged(bool value) => OnPropertyChanged(nameof(CanGoNext));
 
@@ -160,8 +190,7 @@ public partial class SetupWizardViewModel(AppSettingsService settings) : ViewMod
         CurrentStep = CurrentStep switch
         {
             WizardStep.Detect => WizardStep.Directories,
-            WizardStep.Directories when !AudioSeparatorFound => WizardStep.Install,
-            WizardStep.Directories => WizardStep.Finish,
+            WizardStep.Directories => WizardStep.Install,
             WizardStep.Install => WizardStep.Finish,
             _ => CurrentStep,
         };
@@ -169,6 +198,39 @@ public partial class SetupWizardViewModel(AppSettingsService settings) : ViewMod
 
     [RelayCommand]
     private void SetGpuVariant(string variant) => GpuVariant = Enum.Parse<GpuVariant>(variant);
+
+    [RelayCommand]
+    private async Task InstallUvAsync()
+    {
+        IsInstallingUv = true;
+        UvInstallError = null;
+        _installLog.Clear();
+        InstallLog = string.Empty;
+
+        try
+        {
+            var progress = new Progress<string>(line =>
+            {
+                if (_installLog.Length > 0)
+                    _installLog.Append('\n');
+                _installLog.Append(line);
+                InstallLog = _installLog.ToString();
+            });
+            await ToolInstaller.InstallUvAsync(progress);
+            UvFound = await ToolInstaller.IsUvAvailableAsync();
+            if (!UvFound)
+                UvInstallError =
+                    "uv installed but could not be found on PATH. You may need to restart StemForge.";
+        }
+        catch (Exception ex)
+        {
+            UvInstallError = ex.Message;
+        }
+        finally
+        {
+            IsInstallingUv = false;
+        }
+    }
 
     [RelayCommand]
     private async Task InstallAsync()
@@ -202,15 +264,84 @@ public partial class SetupWizardViewModel(AppSettingsService settings) : ViewMod
     }
 
     [RelayCommand]
+    private async Task InstallYtdlpAsync()
+    {
+        IsInstallingYtdlp = true;
+        YtdlpInstallError = null;
+        _installLog.Clear();
+        InstallLog = string.Empty;
+
+        try
+        {
+            var progress = new Progress<string>(line =>
+            {
+                if (_installLog.Length > 0)
+                    _installLog.Append('\n');
+                _installLog.Append(line);
+                InstallLog = _installLog.ToString();
+            });
+            await ToolInstaller.InstallYtdlpAsync(progress);
+            YtdlpFound = await ToolInstaller.IsYtdlpAvailableAsync();
+            if (!YtdlpFound)
+                YtdlpInstallError =
+                    "yt-dlp installed but could not be found on PATH. You may need to restart StemForge.";
+            else
+                YtdlpInstallSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            YtdlpInstallError = ex.Message;
+        }
+        finally
+        {
+            IsInstallingYtdlp = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task InstallFfmpegAsync()
+    {
+        IsInstallingFfmpeg = true;
+        FfmpegInstallError = null;
+        _installLog.Clear();
+        InstallLog = string.Empty;
+
+        try
+        {
+            var progress = new Progress<string>(line =>
+            {
+                if (_installLog.Length > 0)
+                    _installLog.Append('\n');
+                _installLog.Append(line);
+                InstallLog = _installLog.ToString();
+            });
+            await ToolInstaller.InstallFfmpegAsync(progress);
+            FfmpegFound = await ToolInstaller.IsFfmpegAvailableAsync();
+            if (!FfmpegFound)
+                FfmpegInstallError =
+                    "ffmpeg installed but could not be found on PATH. You may need to restart StemForge.";
+            else
+                FfmpegInstallSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            FfmpegInstallError = ex.Message;
+        }
+        finally
+        {
+            IsInstallingFfmpeg = false;
+        }
+    }
+
+    [RelayCommand]
     private async Task FinishAsync()
     {
-        var s = _settings.Current;
-        s.GpuVariant = GpuVariant;
-        s.OutputDirectory = OutputDirectory;
-        s.ModelsDirectory = ModelsDirectory;
-        s.FirstRunComplete = true;
+        _settings.GpuVariant = GpuVariant;
+        _settings.OutputDirectory = OutputDirectory;
+        _settings.ModelsDirectory = ModelsDirectory;
+        _settings.FirstRunComplete = true;
         if (InstallSuccess)
-            s.InstalledVariant = GpuVariant;
+            _settings.InstalledVariant = GpuVariant;
         await _settings.SaveAsync();
         SetupCompleted?.Invoke();
     }
@@ -227,14 +358,24 @@ public partial class SetupWizardViewModel(AppSettingsService settings) : ViewMod
         GpuHint = string.Empty;
         AudioSeparatorFound = false;
         UvFound = false;
+        IsInstallingUv = false;
+        UvInstallError = null;
         IsInstalling = false;
         InstallSuccess = false;
         InstallError = null;
+        YtdlpFound = false;
+        IsInstallingYtdlp = false;
+        YtdlpInstallSuccess = false;
+        YtdlpInstallError = null;
+        FfmpegFound = false;
+        IsInstallingFfmpeg = false;
+        FfmpegInstallSuccess = false;
+        FfmpegInstallError = null;
         _installLog.Clear();
         InstallLog = string.Empty;
-        OutputDirectory = _settings.Current.OutputDirectory;
-        ModelsDirectory = _settings.Current.ModelsDirectory;
-        GpuVariant = _settings.Current.GpuVariant;
+        OutputDirectory = _settings.OutputDirectory;
+        ModelsDirectory = _settings.ModelsDirectory;
+        GpuVariant = _settings.GpuVariant;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -259,8 +400,11 @@ public partial class SetupWizardViewModel(AppSettingsService settings) : ViewMod
             foreach (var t in tools)
                 Tools.Add(new ToolStatusViewModel(t, VariantTagFor(t.Name, t.Found)));
 
+            UvFound = tools.FirstOrDefault(t => t.Name == "uv")?.Found ?? false;
             AudioSeparatorFound =
                 tools.FirstOrDefault(t => t.Name == "audio-separator")?.Found ?? false;
+            YtdlpFound = tools.FirstOrDefault(t => t.Name == "yt-dlp")?.Found ?? false;
+            FfmpegFound = tools.FirstOrDefault(t => t.Name == "ffmpeg")?.Found ?? false;
 
             var best = gpus.OrderBy(g =>
                     g.Vendor switch
@@ -285,22 +429,29 @@ public partial class SetupWizardViewModel(AppSettingsService settings) : ViewMod
         }
     }
 
-    private async Task CheckUvAsync() => UvFound = await ToolInstaller.IsUvAvailableAsync();
+    private async Task RecheckToolsAsync()
+    {
+        UvFound = await ToolInstaller.IsUvAvailableAsync();
+        YtdlpFound = await ToolInstaller.IsYtdlpAvailableAsync();
+        FfmpegFound = await ToolInstaller.IsFfmpegAvailableAsync();
+    }
 
     private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolInfo> tools)
     {
-        if (_settings.Current.InstalledVariant is not null) return;
-        if (!(tools.FirstOrDefault(t => t.Name == "audio-separator")?.Found ?? false)) return;
+        if (_settings.InstalledVariant is not null)
+            return;
+        if (!(tools.FirstOrDefault(t => t.Name == "audio-separator")?.Found ?? false))
+            return;
         var detected = await ToolInstaller.DetectInstalledVariantAsync();
         if (detected is not null)
-            _settings.Current.InstalledVariant = detected;
+            _settings.InstalledVariant = detected;
     }
 
     private string? VariantTagFor(string toolName, bool found)
     {
         if (toolName != "audio-separator" || !found)
             return null;
-        return _settings.Current.InstalledVariant switch
+        return _settings.InstalledVariant switch
         {
             GpuVariant.Cuda => "CUDA",
             GpuVariant.DirectML => "DirectML",

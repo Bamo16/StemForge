@@ -84,7 +84,10 @@ public static class GpuDetector
         {
             return (await ProcessRunner.RunAsync(cmd, args)).Stdout;
         }
-        catch { return string.Empty; }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     private static List<DetectedGpu> ParseLines(string raw, bool skipFirst = false) =>

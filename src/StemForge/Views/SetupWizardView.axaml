@@ -142,33 +142,35 @@
                             <ItemsControl ItemsSource="{Binding Tools}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <StackPanel Spacing="8" />
+                                        <StackPanel Spacing="10" />
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="vm:ToolStatusViewModel">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <Ellipse Classes="statusDot"
-                                                     Classes.ok="{Binding Found}"
-                                                     Classes.fail="{Binding !Found}" />
-                                            <TextBlock Text="{Binding Name}"
-                                                       FontSize="12" FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                                       VerticalAlignment="Center" />
+                                        <StackPanel Spacing="2">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <Ellipse Classes="statusDot"
+                                                         Classes.ok="{Binding Found}"
+                                                         Classes.fail="{Binding !Found}"
+                                                         VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           VerticalAlignment="Center" />
+                                                <Border IsVisible="{Binding VariantTag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                        Background="{DynamicResource AccentDimBgBrush}"
+                                                        CornerRadius="3" Padding="5,2"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding VariantTag}"
+                                                               FontSize="10" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource AccentBrush}" />
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock Classes="mono"
                                                        Text="{Binding StatusLine}"
                                                        FontSize="11"
                                                        Foreground="{DynamicResource TextSecondaryBrush}"
-                                                       VerticalAlignment="Center"
-                                                       TextTrimming="CharacterEllipsis" />
-                                            <Border IsVisible="{Binding VariantTag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                                    Background="{DynamicResource AccentDimBgBrush}"
-                                                    CornerRadius="3" Padding="5,2"
-                                                    VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding VariantTag}"
-                                                           FontSize="10" FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource AccentBrush}" />
-                                            </Border>
+                                                       Margin="13,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
@@ -246,27 +248,29 @@
 
                     <!-- ── Install ── -->
                     <StackPanel IsVisible="{Binding IsInstallStep}" Spacing="16">
-                        <TextBlock Text="Install audio-separator"
+                        <TextBlock Text="Install tools"
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}" />
 
-                        <Border IsVisible="{Binding !UvFound}"
-                                CornerRadius="8" Padding="12"
-                                Background="{DynamicResource Bg2Brush}"
-                                BorderBrush="{DynamicResource ErrorBrush}"
-                                BorderThickness="1">
-                            <StackPanel Spacing="6">
-                                <TextBlock FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource ErrorBrush}"
-                                           Text="uv not found" />
-                                <TextBlock FontSize="12"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           TextWrapping="Wrap"
-                                           Text="Install uv from astral.sh/uv, then restart StemForge and return to this step." />
-                            </StackPanel>
-                        </Border>
+                        <!-- audio-separator (required) -->
+                        <StackPanel IsVisible="{Binding !UvFound}" Spacing="10">
+                            <TextBlock FontSize="13"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap"
+                                       Text="uv is required to install audio-separator. Click below to install it automatically." />
+                            <Button Classes="accent"
+                                    Content="Install uv"
+                                    Command="{Binding InstallUvCommand}"
+                                    IsEnabled="{Binding !IsInstallingUv}"
+                                    HorizontalAlignment="Left" />
+                            <TextBlock IsVisible="{Binding UvInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       Text="{Binding UvInstallError}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource ErrorBrush}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
 
-                        <StackPanel IsVisible="{Binding UvFound}" Spacing="14">
+                        <StackPanel IsVisible="{Binding UvFound}" Spacing="10">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Ellipse Classes="statusDot ok" />
                                 <TextBlock FontSize="12" FontWeight="SemiBold"
@@ -274,42 +278,111 @@
                                            Text="uv is available" />
                             </StackPanel>
 
-                            <StackPanel IsVisible="{Binding !InstallSuccess}" Spacing="10">
+                            <StackPanel IsVisible="{Binding !AudioSeparatorFound}" Spacing="8">
                                 <TextBlock FontSize="13"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Text="audio-separator was not detected. Click Install to set it up now." />
                                 <Button Classes="accent"
-                                        Content="Install"
+                                        Content="Install audio-separator"
                                         Command="{Binding InstallCommand}"
                                         IsEnabled="{Binding !IsInstalling}"
                                         HorizontalAlignment="Left" />
+                                <TextBlock IsVisible="{Binding InstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                           Text="{Binding InstallError}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource ErrorBrush}"
+                                           TextWrapping="Wrap" />
                             </StackPanel>
 
-                            <StackPanel IsVisible="{Binding InstallSuccess}"
+                            <StackPanel IsVisible="{Binding AudioSeparatorFound}"
                                         Orientation="Horizontal" Spacing="8">
                                 <Ellipse Classes="statusDot ok" />
                                 <TextBlock FontSize="12" FontWeight="SemiBold"
                                            Foreground="{DynamicResource SuccessBrush}"
-                                           Text="audio-separator installed successfully" />
+                                           Text="audio-separator is available" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Optional tools -->
+                        <StackPanel IsVisible="{Binding UvFound}" Spacing="8">
+                            <TextBlock FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Text="Optional tools" />
+
+                            <!-- yt-dlp -->
+                            <StackPanel Spacing="6">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Ellipse Classes="statusDot"
+                                             Classes.ok="{Binding YtdlpFound}"
+                                             Classes.fail="{Binding !YtdlpFound}"
+                                             VerticalAlignment="Center" />
+                                    <TextBlock FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               Text="yt-dlp"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock FontSize="11"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               Text="— enables YouTube URL downloads"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <Button Classes="ghost"
+                                        Content="Install yt-dlp"
+                                        Command="{Binding InstallYtdlpCommand}"
+                                        IsEnabled="{Binding !IsInstallingYtdlp}"
+                                        IsVisible="{Binding !YtdlpFound}"
+                                        HorizontalAlignment="Left"
+                                        Margin="15,0,0,0" />
+                                <TextBlock IsVisible="{Binding YtdlpInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                           Text="{Binding YtdlpInstallError}"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource ErrorBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="15,0,0,0" />
                             </StackPanel>
 
-                            <ScrollViewer MaxHeight="140"
-                                          HorizontalScrollBarVisibility="Disabled"
-                                          IsVisible="{Binding InstallLog, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                                <TextBlock Classes="mono"
-                                           Text="{Binding InstallLog}"
+                            <!-- ffmpeg -->
+                            <StackPanel Spacing="6">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Ellipse Classes="statusDot"
+                                             Classes.ok="{Binding FfmpegFound}"
+                                             Classes.fail="{Binding !FfmpegFound}"
+                                             VerticalAlignment="Center" />
+                                    <TextBlock FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               Text="ffmpeg"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock FontSize="11"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               Text="— required for audio conversion"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <Button Classes="ghost"
+                                        Content="Install ffmpeg"
+                                        Command="{Binding InstallFfmpegCommand}"
+                                        IsEnabled="{Binding !IsInstallingFfmpeg}"
+                                        IsVisible="{Binding !FfmpegFound}"
+                                        HorizontalAlignment="Left"
+                                        Margin="15,0,0,0" />
+                                <TextBlock IsVisible="{Binding FfmpegInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                           Text="{Binding FfmpegInstallError}"
                                            FontSize="11"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           TextWrapping="Wrap" />
-                            </ScrollViewer>
-
-                            <TextBlock IsVisible="{Binding InstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                       Text="{Binding InstallError}"
-                                       FontSize="12"
-                                       Foreground="{DynamicResource ErrorBrush}"
-                                       TextWrapping="Wrap" />
+                                           Foreground="{DynamicResource ErrorBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="15,0,0,0" />
+                            </StackPanel>
                         </StackPanel>
+
+                        <!-- Shared install log -->
+                        <ScrollViewer MaxHeight="120"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      IsVisible="{Binding InstallLog, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                            <TextBlock Classes="mono"
+                                       Text="{Binding InstallLog}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap" />
+                        </ScrollViewer>
                     </StackPanel>
 
                     <!-- ── Finish ── -->
