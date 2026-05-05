@@ -126,6 +126,22 @@
             "problemMatcher": "$msCompile"
         },
         {
+            "label": "test",
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "test",
+                "${workspaceFolder}/src/StemForge.Tests/StemForge.Tests.csproj"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
             "label": "publish: win-x64 (self-contained)",
             "type": "process",
             "command": "dotnet",

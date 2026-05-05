@@ -54,6 +54,7 @@ public partial class SeparateViewModel : PageViewModelBase
     private readonly JobQueueService _queue;
     private readonly AppSettings _settings;
     private readonly UserPresetService _userPresets;
+    private readonly ToolInstaller _toolInstaller;
 
     public event Action? NavigateToQueueRequested;
 
@@ -75,12 +76,14 @@ public partial class SeparateViewModel : PageViewModelBase
     public SeparateViewModel(
         JobQueueService queue,
         AppSettings settings,
-        UserPresetService userPresets
+        UserPresetService userPresets,
+        ToolInstaller toolInstaller
     )
     {
         _queue = queue;
         _settings = settings;
         _userPresets = userPresets;
+        _toolInstaller = toolInstaller;
         OutputPath = settings.OutputDirectory;
         IsUrlInputEnabled = true;
         _ = CheckUrlToolsAsync();
@@ -236,8 +239,8 @@ public partial class SeparateViewModel : PageViewModelBase
 
     private async Task CheckUrlToolsAsync()
     {
-        var ytdlp = await ToolInstaller.IsYtdlpAvailableAsync();
-        var ffmpeg = await ToolInstaller.IsFfmpegAvailableAsync();
+        var ytdlp = await _toolInstaller.IsYtdlpAvailableAsync();
+        var ffmpeg = await _toolInstaller.IsFfmpegAvailableAsync();
         IsUrlInputEnabled = ytdlp && ffmpeg;
     }
 

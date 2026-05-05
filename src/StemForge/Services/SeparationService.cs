@@ -215,7 +215,7 @@ public sealed partial class SeparationService(string audioSeparatorPath = "audio
             );
     }
 
-    private static IEnumerable<string> BuildArgs(
+    internal static IEnumerable<string> BuildArgs(
         string inputFile,
         Preset preset,
         string modelsDir,
@@ -246,7 +246,7 @@ public sealed partial class SeparationService(string audioSeparatorPath = "audio
         };
     }
 
-    private static IEnumerable<string> BuildCustomEnsembleArgs(
+    internal static IEnumerable<string> BuildCustomEnsembleArgs(
         string inputFile,
         Preset preset,
         IEnumerable<string> tail
@@ -283,7 +283,7 @@ public sealed partial class SeparationService(string audioSeparatorPath = "audio
     }
 
     // Detect a step change from a non-tqdm log line and return a short label, or null.
-    private static string? ParseStepLabel(string line)
+    internal static string? ParseStepLabel(string line)
     {
         // audio-separator emits either "LEVEL:module:message" or "timestamp - LEVEL - module - message"
         var msg = line;
@@ -296,6 +296,8 @@ public sealed partial class SeparationService(string audioSeparatorPath = "audio
 
         if (msg.Contains("Starting separation", StringComparison.OrdinalIgnoreCase))
             return "Separating";
+        if (msg.Contains("Downloading", StringComparison.OrdinalIgnoreCase))
+            return "Downloading model";
         if (
             msg.Contains("Processing with model:", StringComparison.OrdinalIgnoreCase)
             || msg.Contains("Loading model", StringComparison.OrdinalIgnoreCase)
@@ -310,13 +312,11 @@ public sealed partial class SeparationService(string audioSeparatorPath = "audio
             )
         )
             return "Creating ensemble";
-        if (msg.Contains("Downloading", StringComparison.OrdinalIgnoreCase))
-            return "Downloading model";
         return null;
     }
 
     // Strip Python logging prefix from a log line for display.
-    private static string? CleanLogLine(string raw)
+    internal static string? CleanLogLine(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
             return null;
@@ -349,7 +349,7 @@ public sealed partial class SeparationService(string audioSeparatorPath = "audio
         return string.IsNullOrWhiteSpace(s) ? null : s;
     }
 
-    private static string? FindStem(string passDir, PresetCategory category)
+    internal static string? FindStem(string passDir, PresetCategory category)
     {
         var keyword = category switch
         {

@@ -29,15 +29,20 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
+        var runner = new ProcessRunner();
         var appSettings = AppSettings.Load();
         var userPresets = UserPresetService.Load();
+        var setupDetector = new SetupDetector(runner);
+        var gpuDetector = new GpuDetector(runner);
+        var toolInstaller = new ToolInstaller(runner);
+        var modelCatalog = new ModelCatalogService(runner);
         var separation = new SeparationService(SetupDetector.ResolveAudioSeparatorPath());
-        var queue = new JobQueueService(separation, appSettings);
+        var queue = new JobQueueService(separation, appSettings, runner);
 
-        var separate = new SeparateViewModel(queue, appSettings, userPresets);
+        var separate = new SeparateViewModel(queue, appSettings, userPresets, toolInstaller);
         var queueVm = new QueueViewModel(queue);
-        var models = new ModelsViewModel(appSettings, userPresets);
-        var settings = new SettingsViewModel(appSettings);
+        var models = new ModelsViewModel(appSettings, userPresets, modelCatalog);
+        var settings = new SettingsViewModel(appSettings, setupDetector, gpuDetector, toolInstaller);
 
         NavItems =
         [
@@ -81,7 +86,7 @@ public partial class MainWindowViewModel : ViewModelBase
         separate.NavigateToQueueRequested += GoToQueue;
         CurrentPage = separate;
 
-        Wizard = new SetupWizardViewModel(appSettings);
+        Wizard = new SetupWizardViewModel(appSettings, setupDetector, gpuDetector, toolInstaller);
         IsSetupRequired = !appSettings.FirstRunComplete;
         Wizard.SetupCompleted += () => IsSetupRequired = false;
         Wizard.SetupDismissed += () => IsSetupRequired = false;

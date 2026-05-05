@@ -27,15 +27,17 @@ public sealed record DetectedGpu(string Name)
         };
 }
 
-public static class GpuDetector
+public sealed class GpuDetector(IProcessRunner runner)
 {
-    public static async Task<IReadOnlyList<DetectedGpu>> DetectAsync() =>
+    private readonly IProcessRunner _runner = runner;
+
+    public Task<IReadOnlyList<DetectedGpu>> DetectAsync() =>
         true switch
         {
-            _ when RuntimeInformation.IsOSPlatform(OSPlatform.Windows) => await QueryWindowsAsync(),
-            _ when RuntimeInformation.IsOSPlatform(OSPlatform.Linux) => await QueryLinuxAsync(),
-            _ when RuntimeInformation.IsOSPlatform(OSPlatform.OSX) => await QueryMacAsync(),
-            _ => [],
+            _ when RuntimeInformation.IsOSPlatform(OSPlatform.Windows) => QueryWindowsAsync(),
+            _ when RuntimeInformation.IsOSPlatform(OSPlatform.Linux) => QueryLinuxAsync(),
+            _ when RuntimeInformation.IsOSPlatform(OSPlatform.OSX) => QueryMacAsync(),
+            _ => Task.FromResult<IReadOnlyList<DetectedGpu>>([]),
         };
 
     /// <summary>Returns the best GpuVariant for the detected hardware.</summary>
@@ -50,8 +52,7 @@ public static class GpuDetector
             _ => GpuVariant.Cpu,
         };
 
-    // Windows: Using the modern CIM call via PowerShell
-    private static async Task<IReadOnlyList<DetectedGpu>> QueryWindowsAsync() =>
+    private async Task<IReadOnlyList<DetectedGpu>> QueryWindowsAsync() =>
         ParseLines(
             await GetCommandOutputAsync(
                 "powershell",
@@ -63,13 +64,10 @@ public static class GpuDetector
             )
         );
 
-    // Linux: Direct shell execution
-    private static async Task<IReadOnlyList<DetectedGpu>> QueryLinuxAsync() =>
+    private async Task<IReadOnlyList<DetectedGpu>> QueryLinuxAsync() =>
         ParseLines(await GetCommandOutputAsync("sh", ["-c", "lspci -mm | grep -Ei 'VGA|Display'"]));
 
-    // --- macOS: Using 'system_profiler' ---
-    private static async Task<IReadOnlyList<DetectedGpu>> QueryMacAsync() =>
-        // Look for lines containing "Chipset Model"
+    private async Task<IReadOnlyList<DetectedGpu>> QueryMacAsync() =>
         [
             .. (await GetCommandOutputAsync("system_profiler", ["SPDisplaysDataType"]))
                 .Split('\n')
@@ -78,11 +76,11 @@ public static class GpuDetector
                 .Select(name => new DetectedGpu(name)),
         ];
 
-    private static async Task<string> GetCommandOutputAsync(string cmd, IEnumerable<string> args)
+    private async Task<string> GetCommandOutputAsync(string cmd, IEnumerable<string> args)
     {
         try
         {
-            return (await ProcessRunner.RunAsync(cmd, args)).Stdout;
+            return (await _runner.RunAsync(cmd, args)).Stdout;
         }
         catch
         {
