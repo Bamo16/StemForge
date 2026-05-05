@@ -142,6 +142,18 @@
             "problemMatcher": "$msCompile"
         },
         {
+            "label": "test: coverage report",
+            "type": "shell",
+            "command": "dotnet test ${workspaceFolder}/src/StemForge.Tests/StemForge.Tests.csproj && dotnet reportgenerator -reports:${workspaceFolder}/src/StemForge.Tests/TestResults/lcov.info -targetdir:${workspaceFolder}/src/StemForge.Tests/TestResults/report -reporttypes:Html && start ${workspaceFolder}/src/StemForge.Tests/TestResults/report/index.html",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
             "label": "publish: win-x64 (self-contained)",
             "type": "process",
             "command": "dotnet",

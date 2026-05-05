@@ -1,6 +1,9 @@
 # Design handoff (not part of the repo)
 design_handoff_stemforge/
 
+# Test coverage report (generated, not committed)
+src/StemForge.Tests/TestResults/report/
+
 # Build outputs
 [Bb]in/
 [Oo]bj/
