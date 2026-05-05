@@ -7,8 +7,8 @@
         <IsPackable>false</IsPackable>
         <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
         <CollectCoverage>true</CollectCoverage>
-        <CoverletOutputFormat>cobertura</CoverletOutputFormat>
-        <CoverletOutput>./TestResults/coverage.xml</CoverletOutput>
+        <CoverletOutputFormat>lcov</CoverletOutputFormat>
+        <CoverletOutput>./TestResults/lcov.info</CoverletOutput>
         <Exclude>[StemForge.Tests]*</Exclude>
         <Threshold>15</Threshold>
         <ThresholdType>line</ThresholdType>

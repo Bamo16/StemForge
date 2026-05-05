@@ -1,0 +1,6702 @@
+SF:V:\Repos\StemForge\src\StemForge\obj\Debug\net10.0\System.Text.RegularExpressions.Generator\System.Text.RegularExpressions.Generator.RegexGenerator\RegexGenerator.g.cs
+FN:113,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0::.ctor()
+FNDA:1,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0::.ctor()
+DA:114,1
+DA:115,1
+DA:116,1
+DA:117,1
+DA:118,1
+DA:119,1
+DA:120,1
+DA:121,1
+DA:122,1
+DA:123,1
+DA:124,1
+FN:110,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0::.cctor()
+FNDA:1,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0::.cctor()
+DA:111,1
+FN:129,System.Text.RegularExpressions.RegexRunner System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0/RunnerFactory::CreateInstance()
+FNDA:1,System.Text.RegularExpressions.RegexRunner System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0/RunnerFactory::CreateInstance()
+DA:130,1
+FN:137,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0/RunnerFactory/Runner::Scan(System.ReadOnlySpan`1<System.Char>)
+FNDA:7,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0/RunnerFactory/Runner::Scan(System.ReadOnlySpan`1<System.Char>)
+DA:138,7
+DA:140,7
+DA:141,2
+DA:142,2
+DA:143,2
+DA:144,7
+BRDA:140,8,0,7
+BRDA:140,8,1,0
+BRDA:140,25,0,2
+BRDA:140,25,1,7
+FN:149,System.Boolean System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0/RunnerFactory/Runner::TryFindNextPossibleStartingPosition(System.ReadOnlySpan`1<System.Char>)
+FNDA:7,System.Boolean System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0/RunnerFactory/Runner::TryFindNextPossibleStartingPosition(System.ReadOnlySpan`1<System.Char>)
+DA:150,7
+DA:151,7
+DA:154,7
+DA:155,7
+DA:157,7
+DA:158,7
+DA:159,7
+DA:161,0
+DA:164,0
+DA:165,0
+DA:166,7
+BRDA:154,26,0,7
+BRDA:157,35,0,7
+BRDA:157,35,1,0
+BRDA:154,26,1,0
+FN:171,System.Boolean System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0/RunnerFactory/Runner::TryMatchAtCurrentPosition(System.ReadOnlySpan`1<System.Char>)
+FNDA:7,System.Boolean System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0/RunnerFactory/Runner::TryMatchAtCurrentPosition(System.ReadOnlySpan`1<System.Char>)
+DA:172,7
+DA:173,7
+DA:174,7
+DA:176,7
+DA:177,14
+DA:178,7
+DA:179,7
+DA:180,7
+DA:181,14
+DA:182,7
+DA:183,7
+DA:184,7
+DA:185,7
+DA:186,7
+DA:189,7
+DA:190,0
+DA:191,0
+DA:192,0
+DA:197,7
+DA:199,7
+DA:200,7
+DA:202,7
+DA:206,7
+DA:207,7
+DA:209,7
+DA:210,7
+DA:212,7
+DA:213,7
+DA:217,7
+DA:219,7
+DA:220,7
+DA:222,7
+DA:224,7
+DA:225,7
+DA:226,1
+DA:227,1
+DA:231,6
+DA:232,6
+DA:233,6
+DA:234,6
+DA:235,6
+DA:236,6
+DA:237,6
+DA:240,6
+DA:241,0
+DA:242,0
+DA:245,6
+DA:246,6
+DA:249,6
+DA:250,0
+DA:251,0
+DA:253,6
+DA:256,6
+DA:257,6
+DA:258,3
+DA:260,3
+DA:262,3
+DA:263,3
+DA:264,3
+DA:265,9
+DA:267,9
+DA:268,9
+DA:270,5
+DA:271,5
+DA:272,5
+DA:273,0
+DA:274,0
+DA:275,0
+DA:277,5
+DA:279,18
+DA:284,9
+DA:286,9
+DA:287,9
+DA:289,9
+DA:293,9
+DA:294,9
+DA:299,9
+DA:300,9
+DA:301,9
+DA:302,9
+DA:303,9
+DA:304,8
+DA:305,8
+DA:307,1
+DA:309,1
+DA:310,1
+DA:311,1
+DA:312,1
+DA:314,8
+DA:315,8
+DA:316,8
+DA:317,8
+DA:322,8
+DA:323,8
+DA:324,7
+DA:325,7
+DA:328,1
+DA:329,1
+DA:330,1
+DA:331,1
+DA:333,7
+DA:334,7
+DA:335,7
+DA:336,7
+DA:342,7
+DA:343,6
+DA:344,6
+DA:347,1
+DA:348,1
+DA:349,1
+DA:350,1
+DA:353,0
+DA:354,0
+DA:355,0
+DA:356,0
+DA:357,0
+DA:359,0
+DA:360,0
+DA:363,0
+DA:365,0
+DA:367,0
+DA:370,6
+DA:374,3
+DA:375,0
+DA:376,0
+DA:379,3
+DA:380,3
+DA:383,3
+DA:384,0
+DA:385,0
+DA:387,3
+DA:390,6
+DA:391,6
+DA:392,0
+DA:394,0
+DA:396,6
+DA:397,6
+DA:398,6
+DA:399,6
+DA:401,5
+DA:402,5
+DA:403,0
+DA:404,0
+DA:405,0
+DA:407,5
+DA:408,5
+DA:410,5
+DA:412,0
+DA:413,9
+DA:415,9
+DA:416,9
+DA:418,5
+DA:419,5
+DA:420,5
+DA:421,0
+DA:422,0
+DA:423,0
+DA:425,5
+DA:427,18
+DA:433,9
+DA:434,0
+DA:435,0
+DA:437,9
+DA:440,3
+DA:441,3
+DA:442,0
+DA:444,0
+DA:446,3
+DA:447,3
+DA:448,3
+DA:449,3
+DA:451,8
+DA:452,8
+DA:453,0
+DA:454,0
+DA:455,0
+DA:457,8
+DA:458,3
+DA:460,3
+DA:462,5
+DA:463,12
+DA:465,12
+DA:466,12
+DA:468,8
+DA:469,8
+DA:470,8
+DA:471,0
+DA:472,0
+DA:473,0
+DA:475,8
+DA:477,24
+DA:480,12
+DA:481,12
+DA:482,8
+DA:483,8
+DA:488,4
+DA:489,0
+DA:490,0
+DA:493,4
+DA:497,3
+DA:498,3
+DA:499,0
+DA:500,0
+DA:503,3
+DA:504,3
+DA:505,3
+DA:509,1
+DA:510,1
+DA:511,0
+DA:512,0
+DA:515,1
+DA:516,1
+DA:517,1
+DA:520,0
+DA:526,4
+DA:527,4
+DA:529,18
+DA:530,18
+DA:531,18
+DA:532,0
+DA:533,0
+DA:534,0
+DA:536,18
+DA:537,18
+DA:538,18
+DA:539,0
+DA:540,0
+DA:542,18
+DA:543,18
+DA:544,18
+DA:546,22
+DA:547,22
+DA:549,22
+DA:550,22
+DA:552,18
+DA:553,18
+DA:554,18
+DA:556,44
+DA:561,22
+DA:562,0
+DA:563,0
+DA:566,22
+DA:570,3
+DA:571,3
+DA:572,3
+DA:573,0
+DA:574,0
+DA:577,3
+DA:578,3
+DA:579,3
+DA:582,4
+DA:583,4
+DA:584,4
+DA:587,15
+DA:593,7
+DA:594,0
+DA:595,0
+DA:597,7
+DA:600,3
+DA:601,3
+DA:602,0
+DA:604,0
+DA:605,0
+DA:607,3
+DA:608,3
+DA:609,3
+DA:610,3
+DA:612,5
+DA:613,5
+DA:614,0
+DA:615,0
+DA:616,0
+DA:618,5
+DA:619,2
+DA:621,2
+DA:622,2
+DA:624,3
+DA:625,20
+DA:629,10
+DA:630,10
+DA:633,10
+DA:634,10
+DA:635,10
+DA:636,10
+DA:637,10
+DA:638,10
+DA:639,10
+DA:640,10
+DA:641,10
+DA:642,10
+DA:643,10
+DA:644,10
+DA:645,10
+DA:646,5
+DA:647,5
+DA:649,5
+DA:651,5
+DA:652,5
+DA:653,5
+DA:654,5
+DA:658,5
+DA:660,5
+DA:661,5
+DA:663,5
+DA:666,5
+DA:667,5
+DA:668,5
+DA:673,0
+DA:674,0
+DA:675,0
+DA:677,0
+DA:678,0
+DA:679,0
+DA:680,0
+DA:681,0
+DA:683,0
+DA:684,0
+DA:686,0
+DA:687,0
+DA:689,0
+DA:690,0
+DA:691,0
+DA:693,0
+DA:694,0
+DA:695,0
+DA:696,0
+DA:698,0
+DA:699,0
+DA:700,0
+DA:702,0
+DA:703,0
+DA:705,0
+DA:706,0
+DA:711,0
+DA:712,0
+DA:713,0
+DA:715,0
+DA:718,5
+DA:719,5
+DA:720,0
+DA:722,0
+DA:724,5
+DA:725,5
+DA:726,5
+DA:727,5
+DA:729,0
+DA:730,0
+DA:731,0
+DA:732,0
+DA:733,0
+DA:735,0
+DA:736,0
+DA:738,0
+DA:740,0
+DA:741,10
+DA:745,5
+DA:746,0
+DA:747,0
+DA:751,5
+DA:752,5
+DA:753,5
+DA:764,7
+BRDA:189,63,0,0
+BRDA:189,63,1,7
+BRDA:224,191,0,7
+BRDA:224,191,1,0
+BRDA:224,221,0,1
+BRDA:224,221,1,6
+BRDA:232,235,0,6
+BRDA:232,235,1,0
+BRDA:232,260,0,6
+BRDA:232,260,1,6
+BRDA:240,309,0,0
+BRDA:240,309,1,6
+BRDA:249,337,0,0
+BRDA:272,461,1,6
+BRDA:257,362,0,3
+BRDA:257,362,1,3
+BRDA:249,337,1,9
+BRDA:272,461,0,0
+BRDA:300,527,0,9
+BRDA:300,543,0,1
+BRDA:300,559,0,1
+BRDA:300,527,1,8
+BRDA:300,543,1,8
+BRDA:300,559,1,8
+BRDA:300,587,0,8
+BRDA:300,587,1,1
+BRDA:360,897,1,8
+BRDA:322,662,0,8
+BRDA:322,662,1,0
+BRDA:322,692,0,7
+BRDA:322,692,1,1
+BRDA:360,897,2,7
+BRDA:342,765,0,7
+BRDA:342,765,1,0
+BRDA:342,793,0,6
+BRDA:342,793,1,1
+BRDA:407,1104,1,0
+BRDA:354,846,0,0
+BRDA:354,846,1,0
+BRDA:360,897,0,3
+BRDA:374,937,0,3
+BRDA:374,937,1,0
+BRDA:374,962,0,0
+BRDA:374,962,1,3
+BRDA:383,993,0,0
+BRDA:360,897,3,6
+BRDA:391,1018,0,0
+BRDA:391,1018,1,6
+BRDA:420,1162,1,5
+BRDA:402,1084,0,0
+BRDA:402,1084,1,5
+BRDA:407,1104,0,5
+BRDA:383,993,1,9
+BRDA:457,1308,1,5
+BRDA:420,1162,0,0
+BRDA:433,1180,0,6
+BRDA:433,1180,1,3
+BRDA:433,1194,0,0
+BRDA:441,1219,0,0
+BRDA:441,1219,1,3
+BRDA:470,1370,1,8
+BRDA:452,1288,0,0
+BRDA:452,1288,1,8
+BRDA:457,1308,0,3
+BRDA:433,1194,1,12
+BRDA:493,1482,0,8
+BRDA:470,1370,0,0
+BRDA:480,1393,0,12
+BRDA:480,1393,1,0
+BRDA:480,1423,0,8
+BRDA:480,1423,1,4
+BRDA:488,1442,0,0
+BRDA:488,1442,1,4
+BRDA:493,1466,0,3
+BRDA:493,1474,0,3
+BRDA:493,1474,1,3
+BRDA:493,1482,1,3
+BRDA:497,1498,0,3
+BRDA:497,1498,1,0
+BRDA:497,1534,0,0
+BRDA:497,1534,1,3
+BRDA:493,1466,1,1
+BRDA:509,1567,0,1
+BRDA:509,1567,1,0
+BRDA:509,1603,0,0
+BRDA:509,1603,1,1
+BRDA:531,1656,0,0
+BRDA:531,1656,1,18
+BRDA:538,1687,0,18
+BRDA:538,1687,1,0
+BRDA:538,1710,0,0
+BRDA:538,1710,1,18
+BRDA:566,1833,0,18
+BRDA:618,2062,1,18
+BRDA:561,1801,0,0
+BRDA:561,1801,1,22
+BRDA:566,1825,0,18
+BRDA:566,1833,1,3
+BRDA:570,1845,0,3
+BRDA:570,1861,0,3
+BRDA:570,1845,1,0
+BRDA:570,1861,1,0
+BRDA:570,1886,0,0
+BRDA:570,1886,1,3
+BRDA:566,1825,1,4
+BRDA:593,1937,0,0
+BRDA:601,1965,0,0
+BRDA:601,1965,1,3
+BRDA:613,2042,0,0
+BRDA:613,2042,1,5
+BRDA:618,2062,0,2
+BRDA:593,1937,1,10
+BRDA:634,2101,0,10
+BRDA:634,2122,0,0
+BRDA:634,2122,1,10
+BRDA:634,2166,0,10
+BRDA:634,2187,0,0
+BRDA:634,2187,1,10
+BRDA:634,2231,0,10
+BRDA:634,2252,0,0
+BRDA:634,2252,1,10
+BRDA:634,2296,0,10
+BRDA:634,2317,0,0
+BRDA:634,2317,1,10
+BRDA:634,2361,0,10
+BRDA:634,2382,0,0
+BRDA:634,2382,1,10
+BRDA:634,2426,0,10
+BRDA:634,2447,0,0
+BRDA:634,2447,1,10
+BRDA:634,2491,0,5
+BRDA:634,2512,0,0
+BRDA:634,2512,1,5
+BRDA:634,2556,0,5
+BRDA:634,2577,0,0
+BRDA:634,2577,1,5
+BRDA:634,2621,0,5
+BRDA:634,2642,0,0
+BRDA:634,2642,1,5
+BRDA:634,2686,0,5
+BRDA:634,2705,0,0
+BRDA:634,2705,1,5
+BRDA:634,2749,0,5
+BRDA:634,2768,0,0
+BRDA:634,2768,1,5
+BRDA:634,2101,1,5
+BRDA:634,2166,1,5
+BRDA:634,2231,1,5
+BRDA:634,2296,1,5
+BRDA:634,2361,1,5
+BRDA:634,2426,1,5
+BRDA:634,2491,1,5
+BRDA:634,2556,1,5
+BRDA:634,2621,1,5
+BRDA:634,2686,1,5
+BRDA:634,2749,1,5
+BRDA:634,2819,0,5
+BRDA:634,2819,1,5
+BRDA:666,2892,0,0
+BRDA:666,2892,1,5
+BRDA:666,2928,0,5
+BRDA:666,2928,1,0
+BRDA:678,2973,0,0
+BRDA:678,2973,1,0
+BRDA:735,3248,1,0
+BRDA:693,3056,0,0
+BRDA:693,3056,1,0
+BRDA:698,3080,0,0
+BRDA:698,3080,1,0
+BRDA:711,3137,0,0
+BRDA:719,3162,0,0
+BRDA:719,3162,1,5
+BRDA:730,3228,0,0
+BRDA:730,3228,1,0
+BRDA:735,3248,0,0
+BRDA:711,3137,1,5
+BRDA:745,3273,0,5
+BRDA:745,3283,0,0
+BRDA:745,3283,1,5
+BRDA:745,3273,1,0
+BRDA:745,3311,0,0
+BRDA:745,3311,1,5
+FN:757,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0/RunnerFactory/Runner::<TryMatchAtCurrentPosition>g__UncaptureUntil|2_0(System.Int32)
+FNDA:55,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__YtVideoIdRegex_0/RunnerFactory/Runner::<TryMatchAtCurrentPosition>g__UncaptureUntil|2_0(System.Int32)
+DA:758,55
+DA:759,55
+DA:760,0
+DA:761,0
+DA:762,0
+DA:763,55
+BRDA:759,23,1,0
+BRDA:759,23,0,55
+FN:777,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1::.ctor()
+FNDA:0,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1::.ctor()
+DA:778,0
+DA:779,0
+DA:780,0
+DA:781,0
+DA:782,0
+DA:783,0
+DA:784,0
+DA:785,0
+DA:786,0
+FN:774,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1::.cctor()
+FNDA:0,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1::.cctor()
+DA:775,0
+FN:791,System.Text.RegularExpressions.RegexRunner System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1/RunnerFactory::CreateInstance()
+FNDA:0,System.Text.RegularExpressions.RegexRunner System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1/RunnerFactory::CreateInstance()
+DA:792,0
+FN:799,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1/RunnerFactory/Runner::Scan(System.ReadOnlySpan`1<System.Char>)
+FNDA:0,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1/RunnerFactory/Runner::Scan(System.ReadOnlySpan`1<System.Char>)
+DA:800,0
+DA:802,0
+DA:803,0
+DA:804,0
+DA:805,0
+DA:806,0
+BRDA:802,8,0,0
+BRDA:802,8,1,0
+BRDA:802,25,0,0
+BRDA:802,25,1,0
+FN:811,System.Boolean System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1/RunnerFactory/Runner::TryFindNextPossibleStartingPosition(System.ReadOnlySpan`1<System.Char>)
+FNDA:0,System.Boolean System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1/RunnerFactory/Runner::TryFindNextPossibleStartingPosition(System.ReadOnlySpan`1<System.Char>)
+DA:812,0
+DA:813,0
+DA:816,0
+DA:817,0
+DA:819,0
+DA:820,0
+DA:821,0
+DA:823,0
+DA:826,0
+DA:827,0
+DA:828,0
+BRDA:816,25,0,0
+BRDA:819,34,0,0
+BRDA:819,34,1,0
+BRDA:816,25,1,0
+FN:833,System.Boolean System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1/RunnerFactory/Runner::TryMatchAtCurrentPosition(System.ReadOnlySpan`1<System.Char>)
+FNDA:0,System.Boolean System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1/RunnerFactory/Runner::TryMatchAtCurrentPosition(System.ReadOnlySpan`1<System.Char>)
+DA:834,0
+DA:835,0
+DA:836,0
+DA:837,0
+DA:838,0
+DA:841,0
+DA:842,0
+DA:843,0
+DA:844,0
+DA:848,0
+DA:849,0
+DA:850,0
+DA:851,0
+DA:852,0
+DA:853,0
+DA:855,0
+DA:856,0
+DA:857,0
+DA:860,0
+DA:861,0
+DA:864,0
+DA:865,0
+DA:866,0
+DA:867,0
+DA:868,0
+DA:869,0
+DA:871,0
+DA:872,0
+DA:873,0
+DA:874,0
+DA:877,0
+DA:878,0
+DA:879,0
+DA:881,0
+DA:882,0
+DA:885,0
+DA:886,0
+DA:887,0
+DA:888,0
+DA:892,0
+DA:893,0
+DA:894,0
+DA:895,0
+DA:906,0
+BRDA:841,29,0,0
+BRDA:841,29,1,0
+BRDA:850,95,1,0
+BRDA:850,71,0,0
+BRDA:850,71,1,0
+BRDA:850,95,0,0
+BRDA:866,163,1,0
+BRDA:866,139,0,0
+BRDA:866,139,1,0
+BRDA:866,163,0,0
+BRDA:871,174,0,0
+BRDA:871,174,1,0
+BRDA:885,240,0,0
+BRDA:885,240,1,0
+FN:899,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1/RunnerFactory/Runner::<TryMatchAtCurrentPosition>g__UncaptureUntil|2_0(System.Int32)
+FNDA:0,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__TqdmPctRegex_1/RunnerFactory/Runner::<TryMatchAtCurrentPosition>g__UncaptureUntil|2_0(System.Int32)
+DA:900,0
+DA:901,0
+DA:902,0
+DA:903,0
+DA:904,0
+DA:905,0
+BRDA:901,23,1,0
+BRDA:901,23,0,0
+FN:924,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::StackPop(System.Int32[],System.Int32&,System.Int32&,System.Int32&)
+FNDA:29,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::StackPop(System.Int32[],System.Int32&,System.Int32&,System.Int32&)
+DA:925,29
+DA:926,29
+DA:927,29
+DA:928,29
+FN:932,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::StackPush(System.Int32[]&,System.Int32&,System.Int32)
+FNDA:18,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::StackPush(System.Int32[]&,System.Int32&,System.Int32)
+DA:933,18
+DA:935,18
+DA:936,18
+DA:937,18
+DA:938,18
+DA:939,18
+DA:940,18
+DA:941,18
+DA:945,0
+DA:954,18
+BRDA:937,15,0,18
+BRDA:937,15,1,0
+FN:958,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::StackPush(System.Int32[]&,System.Int32&,System.Int32,System.Int32)
+FNDA:63,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::StackPush(System.Int32[]&,System.Int32&,System.Int32,System.Int32)
+DA:959,63
+DA:961,63
+DA:962,63
+DA:963,63
+DA:964,62
+DA:965,62
+DA:966,62
+DA:967,62
+DA:968,62
+DA:972,1
+DA:981,63
+BRDA:963,17,0,62
+BRDA:963,17,1,1
+FN:985,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::StackPush(System.Int32[]&,System.Int32&,System.Int32,System.Int32,System.Int32)
+FNDA:10,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::StackPush(System.Int32[]&,System.Int32&,System.Int32,System.Int32,System.Int32)
+DA:986,10
+DA:988,10
+DA:989,10
+DA:990,10
+DA:991,10
+DA:992,10
+DA:993,10
+DA:994,10
+DA:995,10
+DA:996,10
+DA:1000,0
+DA:1009,10
+BRDA:990,17,0,10
+BRDA:990,17,1,0
+FN:949,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::<StackPush>g__WithResize|3_0(System.Int32[]&,System.Int32&,System.Int32)
+FNDA:0,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::<StackPush>g__WithResize|3_0(System.Int32[]&,System.Int32&,System.Int32)
+DA:950,0
+DA:951,0
+DA:952,0
+DA:953,0
+FN:976,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::<StackPush>g__WithResize|4_0(System.Int32[]&,System.Int32&,System.Int32,System.Int32)
+FNDA:1,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::<StackPush>g__WithResize|4_0(System.Int32[]&,System.Int32&,System.Int32,System.Int32)
+DA:977,1
+DA:978,1
+DA:979,1
+DA:980,1
+FN:1004,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::<StackPush>g__WithResize|5_0(System.Int32[]&,System.Int32&,System.Int32,System.Int32,System.Int32)
+FNDA:0,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::<StackPush>g__WithResize|5_0(System.Int32[]&,System.Int32&,System.Int32,System.Int32,System.Int32)
+DA:1005,0
+DA:1006,0
+DA:1007,0
+DA:1008,0
+FN:916,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::.cctor()
+FNDA:1,System.Void System.Text.RegularExpressions.Generated.<RegexGenerator_g>F8D5B9E306FFA23B5CE67E8E650233C860E0F6A9C06E06CD6F22344486D8994DF__Utilities::.cctor()
+DA:917,1
+DA:920,1
+BRDA:917,17,0,0
+BRDA:917,17,1,1
+FN:68,System.Text.RegularExpressions.Regex StemForge.Services.JobQueueService::YtVideoIdRegex()
+FNDA:7,System.Text.RegularExpressions.Regex StemForge.Services.JobQueueService::YtVideoIdRegex()
+DA:69,7
+FN:89,System.Text.RegularExpressions.Regex StemForge.Services.SeparationService::TqdmPctRegex()
+FNDA:0,System.Text.RegularExpressions.Regex StemForge.Services.SeparationService::TqdmPctRegex()
+DA:90,0
+LF:529
+LH:324
+BRF:224
+BRH:128
+FNF:24
+FNH:14
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\App.axaml.cs
+FN:12,System.Void StemForge.App::Initialize()
+FNDA:0,System.Void StemForge.App::Initialize()
+DA:13,0
+DA:14,0
+DA:15,0
+FN:17,System.Void StemForge.App::OnFrameworkInitializationCompleted()
+FNDA:0,System.Void StemForge.App::OnFrameworkInitializationCompleted()
+DA:18,0
+DA:19,0
+DA:21,0
+DA:22,0
+DA:23,0
+DA:24,0
+DA:25,0
+DA:27,0
+DA:28,0
+BRDA:21,25,0,0
+BRDA:21,25,1,0
+LF:12
+LH:0
+BRF:2
+BRH:0
+FNF:2
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\App.axaml
+FN:0,System.Void StemForge.App::!XamlIlPopulate(System.IServiceProvider,StemForge.App)
+FNDA:0,System.Void StemForge.App::!XamlIlPopulate(System.IServiceProvider,StemForge.App)
+DA:1,0
+DA:5,0
+DA:8,0
+DA:12,0
+DA:14,0
+DA:20,0
+DA:21,0
+BRDA:1,247,0,0
+BRDA:1,247,1,0
+LF:7
+LH:0
+BRF:2
+BRH:0
+FNF:1
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Program.cs
+FN:11,System.Void StemForge.Program::Main(System.String[])
+FNDA:0,System.Void StemForge.Program::Main(System.String[])
+DA:12,0
+FN:15,Avalonia.AppBuilder StemForge.Program::BuildAvaloniaApp()
+FNDA:0,Avalonia.AppBuilder StemForge.Program::BuildAvaloniaApp()
+DA:16,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:20,0
+DA:21,0
+DA:22,0
+DA:23,0
+LF:9
+LH:0
+BRF:0
+BRH:0
+FNF:2
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewLocator.cs
+FN:17,Avalonia.Controls.Control StemForge.ViewLocator::Build(System.Object)
+FNDA:0,Avalonia.Controls.Control StemForge.ViewLocator::Build(System.Object)
+DA:18,0
+DA:19,0
+DA:20,0
+DA:22,0
+DA:23,0
+DA:25,0
+DA:26,0
+DA:27,0
+DA:30,0
+DA:31,0
+BRDA:19,7,0,0
+BRDA:19,7,1,0
+BRDA:25,59,0,0
+BRDA:25,59,1,0
+FN:33,System.Boolean StemForge.ViewLocator::Match(System.Object)
+FNDA:0,System.Boolean StemForge.ViewLocator::Match(System.Object)
+DA:34,0
+DA:35,0
+DA:36,0
+LF:13
+LH:0
+BRF:4
+BRH:0
+FNF:2
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\LogsView.axaml.cs
+FN:18,System.Void StemForge.Views.LogsView::OnLoaded(Avalonia.Interactivity.RoutedEventArgs)
+FNDA:0,System.Void StemForge.Views.LogsView::OnLoaded(Avalonia.Interactivity.RoutedEventArgs)
+DA:19,0
+DA:20,0
+DA:21,0
+DA:22,0
+DA:23,0
+DA:24,0
+DA:25,0
+DA:26,0
+DA:27,0
+BRDA:22,44,0,0
+BRDA:22,44,1,0
+FN:29,System.Void StemForge.Views.LogsView::OnUnloaded(Avalonia.Interactivity.RoutedEventArgs)
+FNDA:0,System.Void StemForge.Views.LogsView::OnUnloaded(Avalonia.Interactivity.RoutedEventArgs)
+DA:30,0
+DA:31,0
+DA:32,0
+DA:33,0
+DA:34,0
+BRDA:32,27,0,0
+BRDA:32,27,1,0
+FN:36,System.Void StemForge.Views.LogsView::OnDisplayedChanged(System.Object,System.Collections.Specialized.NotifyCollectionChangedEventArgs)
+FNDA:0,System.Void StemForge.Views.LogsView::OnDisplayedChanged(System.Object,System.Collections.Specialized.NotifyCollectionChangedEventArgs)
+DA:37,0
+DA:38,0
+DA:39,0
+DA:42,0
+DA:43,0
+DA:44,0
+DA:45,0
+DA:46,0
+DA:47,0
+DA:48,0
+DA:49,0
+DA:50,0
+DA:51,0
+DA:52,0
+DA:53,0
+DA:54,0
+BRDA:38,12,1,0
+BRDA:38,12,0,0
+FN:56,System.Void StemForge.Views.LogsView::ScrollToEnd()
+FNDA:0,System.Void StemForge.Views.LogsView::ScrollToEnd()
+DA:57,0
+FN:12,System.Void StemForge.Views.LogsView::.ctor()
+FNDA:0,System.Void StemForge.Views.LogsView::.ctor()
+DA:13,0
+DA:14,0
+DA:15,0
+DA:16,0
+LF:35
+LH:0
+BRF:12
+BRH:0
+FNF:5
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\LogsView.axaml
+FN:0,System.Void StemForge.Views.LogsView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.LogsView)
+FNDA:0,System.Void StemForge.Views.LogsView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.LogsView)
+DA:1,0
+DA:12,0
+DA:13,0
+DA:14,0
+DA:15,0
+DA:16,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:20,0
+DA:21,0
+DA:23,0
+DA:24,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:30,0
+DA:31,0
+DA:32,0
+DA:34,0
+DA:35,0
+DA:36,0
+DA:38,0
+DA:39,0
+DA:40,0
+DA:45,0
+DA:48,0
+DA:49,0
+DA:50,0
+DA:52,0
+DA:53,0
+DA:54,0
+DA:57,0
+DA:58,0
+DA:59,0
+DA:60,0
+DA:61,0
+DA:62,0
+DA:63,0
+DA:64,0
+DA:65,0
+DA:66,0
+DA:67,0
+DA:68,0
+DA:69,0
+DA:70,0
+DA:71,0
+DA:72,0
+DA:73,0
+DA:74,0
+DA:77,0
+DA:78,0
+DA:79,0
+DA:80,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:89,0
+DA:90,0
+DA:92,0
+DA:93,0
+DA:94,0
+DA:96,0
+DA:98,0
+DA:100,0
+BRDA:1,5620,0,0
+BRDA:1,5620,1,0
+LF:65
+LH:0
+BRF:2
+BRH:0
+FNF:1
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\LogsWindow.axaml
+FN:0,System.Void StemForge.Views.LogsWindow::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.LogsWindow)
+FNDA:0,System.Void StemForge.Views.LogsWindow::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.LogsWindow)
+DA:1,0
+DA:7,0
+DA:8,0
+DA:9,0
+DA:10,0
+DA:12,0
+BRDA:1,338,0,0
+BRDA:1,338,1,0
+LF:6
+LH:0
+BRF:2
+BRH:0
+FNF:1
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\LogsWindow.axaml.cs
+FN:6,System.Void StemForge.Views.LogsWindow::.ctor()
+FNDA:0,System.Void StemForge.Views.LogsWindow::.ctor()
+DA:7,0
+DA:8,0
+DA:9,0
+DA:10,0
+LF:4
+LH:0
+BRF:0
+BRH:0
+FNF:1
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\MainWindow.axaml.cs
+FN:16,System.Void StemForge.Views.MainWindow::OnLoaded(Avalonia.Interactivity.RoutedEventArgs)
+FNDA:0,System.Void StemForge.Views.MainWindow::OnLoaded(Avalonia.Interactivity.RoutedEventArgs)
+DA:17,0
+DA:18,0
+DA:19,0
+DA:20,0
+DA:21,0
+BRDA:19,27,0,0
+BRDA:19,27,1,0
+FN:23,System.Void StemForge.Views.MainWindow::OnUnloaded(Avalonia.Interactivity.RoutedEventArgs)
+FNDA:0,System.Void StemForge.Views.MainWindow::OnUnloaded(Avalonia.Interactivity.RoutedEventArgs)
+DA:24,0
+DA:25,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:29,0
+BRDA:26,27,0,0
+BRDA:26,27,1,0
+BRDA:28,55,0,0
+BRDA:28,55,1,0
+FN:31,System.Void StemForge.Views.MainWindow::OnShowLogsRequested()
+FNDA:0,System.Void StemForge.Views.MainWindow::OnShowLogsRequested()
+DA:32,0
+DA:33,0
+DA:34,0
+DA:35,0
+DA:36,0
+DA:39,0
+DA:40,0
+DA:41,0
+DA:42,0
+BRDA:33,9,0,0
+BRDA:33,9,1,0
+BRDA:33,22,0,0
+BRDA:33,22,1,0
+FN:10,System.Void StemForge.Views.MainWindow::.ctor()
+FNDA:0,System.Void StemForge.Views.MainWindow::.ctor()
+DA:11,0
+DA:12,0
+DA:13,0
+DA:14,0
+LF:24
+LH:0
+BRF:10
+BRH:0
+FNF:4
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\MainWindow.axaml
+FN:0,System.Void StemForge.Views.MainWindow::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.MainWindow)
+FNDA:0,System.Void StemForge.Views.MainWindow::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.MainWindow)
+DA:1,0
+DA:10,0
+DA:11,0
+DA:12,0
+DA:13,0
+DA:20,0
+DA:24,0
+DA:27,0
+DA:28,0
+DA:29,0
+DA:31,0
+DA:32,0
+DA:34,0
+DA:35,0
+DA:39,0
+DA:40,0
+DA:98,0
+DA:99,0
+DA:101,0
+DA:102,0
+DA:104,0
+DA:106,0
+DA:107,0
+DA:109,0
+DA:110,0
+DA:113,0
+DA:114,0
+DA:115,0
+DA:116,0
+DA:118,0
+DA:120,0
+DA:121,0
+DA:122,0
+DA:124,0
+DA:125,0
+DA:132,0
+DA:133,0
+DA:137,0
+DA:138,0
+BRDA:1,2910,0,0
+BRDA:1,2910,1,0
+FN:40,System.Object StemForge.Views.MainWindow/XamlClosure_2::Build_2(System.IServiceProvider)
+FNDA:0,System.Object StemForge.Views.MainWindow/XamlClosure_2::Build_2(System.IServiceProvider)
+DA:41,0
+DA:42,0
+DA:43,0
+DA:45,0
+DA:47,0
+DA:49,0
+DA:50,0
+DA:52,0
+DA:53,0
+DA:56,0
+DA:58,0
+DA:59,0
+DA:60,0
+DA:61,0
+DA:62,0
+DA:63,0
+DA:64,0
+DA:66,0
+DA:68,0
+DA:69,0
+DA:70,0
+DA:72,0
+DA:73,0
+DA:76,0
+DA:77,0
+DA:79,0
+DA:80,0
+DA:82,0
+DA:84,0
+DA:85,0
+DA:87,0
+DA:89,0
+LF:71
+LH:0
+BRF:2
+BRH:0
+FNF:2
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\ModelsView.axaml
+FN:0,System.Void StemForge.Views.ModelsView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.ModelsView)
+FNDA:0,System.Void StemForge.Views.ModelsView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.ModelsView)
+DA:1,0
+DA:13,0
+DA:14,0
+DA:15,0
+DA:16,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:20,0
+DA:21,0
+DA:23,0
+DA:24,0
+DA:25,0
+DA:26,0
+DA:28,0
+DA:29,0
+DA:33,0
+DA:34,0
+DA:35,0
+DA:37,0
+DA:38,0
+DA:40,0
+DA:41,0
+DA:45,0
+DA:46,0
+DA:47,0
+DA:48,0
+DA:49,0
+DA:53,0
+DA:54,0
+DA:55,0
+DA:56,0
+DA:57,0
+DA:58,0
+DA:59,0
+DA:60,0
+DA:64,0
+DA:65,0
+DA:66,0
+DA:67,0
+DA:68,0
+DA:69,0
+DA:70,0
+DA:71,0
+DA:73,0
+DA:74,0
+DA:75,0
+DA:79,0
+DA:80,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+DA:85,0
+DA:87,0
+DA:88,0
+DA:90,0
+DA:91,0
+DA:94,0
+DA:95,0
+DA:96,0
+DA:97,0
+DA:98,0
+DA:99,0
+DA:100,0
+DA:101,0
+DA:103,0
+DA:104,0
+DA:105,0
+DA:107,0
+DA:108,0
+DA:110,0
+DA:111,0
+DA:112,0
+DA:116,0
+DA:117,0
+DA:118,0
+DA:120,0
+DA:121,0
+DA:123,0
+DA:124,0
+DA:125,0
+DA:127,0
+DA:128,0
+DA:134,0
+DA:137,0
+DA:138,0
+DA:139,0
+DA:141,0
+DA:142,0
+DA:143,0
+DA:144,0
+DA:145,0
+DA:147,0
+DA:148,0
+DA:150,0
+DA:151,0
+DA:152,0
+DA:153,0
+DA:155,0
+DA:157,0
+DA:159,0
+DA:165,0
+DA:166,0
+DA:167,0
+DA:169,0
+DA:171,0
+DA:173,0
+DA:174,0
+DA:175,0
+DA:176,0
+DA:177,0
+DA:178,0
+DA:179,0
+DA:180,0
+DA:181,0
+DA:182,0
+DA:183,0
+DA:184,0
+DA:185,0
+DA:186,0
+DA:187,0
+DA:188,0
+DA:189,0
+DA:190,0
+DA:192,0
+DA:193,0
+DA:195,0
+DA:196,0
+DA:197,0
+DA:203,0
+DA:206,0
+DA:207,0
+DA:208,0
+DA:209,0
+DA:211,0
+DA:213,0
+DA:214,0
+DA:215,0
+DA:216,0
+DA:217,0
+DA:218,0
+DA:223,0
+DA:226,0
+DA:227,0
+DA:228,0
+DA:229,0
+DA:230,0
+DA:231,0
+DA:233,0
+DA:238,0
+DA:239,0
+DA:240,0
+DA:241,0
+DA:242,0
+DA:244,0
+DA:246,0
+DA:248,0
+DA:250,0
+DA:251,0
+DA:253,0
+DA:257,0
+DA:258,0
+DA:260,0
+DA:261,0
+DA:264,0
+DA:266,0
+DA:268,0
+DA:269,0
+DA:352,0
+DA:353,0
+DA:354,0
+DA:355,0
+DA:357,0
+DA:358,0
+DA:361,0
+DA:362,0
+DA:363,0
+DA:365,0
+DA:366,0
+DA:368,0
+DA:370,0
+DA:372,0
+DA:376,0
+DA:379,0
+DA:380,0
+DA:381,0
+DA:385,0
+DA:386,0
+DA:387,0
+DA:388,0
+DA:390,0
+DA:392,0
+DA:394,0
+DA:395,0
+DA:402,0
+DA:403,0
+DA:404,0
+BRDA:1,18675,0,0
+BRDA:1,18675,1,0
+FN:269,System.Object StemForge.Views.ModelsView/XamlClosure_3::Build_1(System.IServiceProvider)
+FNDA:0,System.Object StemForge.Views.ModelsView/XamlClosure_3::Build_1(System.IServiceProvider)
+DA:270,0
+DA:271,0
+DA:274,0
+DA:278,0
+DA:279,0
+DA:281,0
+DA:284,0
+DA:285,0
+DA:287,0
+DA:288,0
+DA:290,0
+DA:294,0
+DA:295,0
+DA:297,0
+DA:298,0
+DA:302,0
+DA:303,0
+DA:305,0
+DA:307,0
+DA:311,0
+DA:313,0
+DA:314,0
+DA:316,0
+DA:317,0
+DA:321,0
+DA:322,0
+DA:324,0
+DA:325,0
+DA:329,0
+DA:331,0
+DA:332,0
+DA:334,0
+DA:335,0
+DA:339,0
+DA:340,0
+FN:395,System.Object StemForge.Views.ModelsView/XamlClosure_3::Build_2(System.IServiceProvider)
+FNDA:0,System.Object StemForge.Views.ModelsView/XamlClosure_3::Build_2(System.IServiceProvider)
+DA:396,0
+LF:234
+LH:0
+BRF:2
+BRH:0
+FNF:3
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\ModelsView.axaml.cs
+FN:6,System.Void StemForge.Views.ModelsView::.ctor()
+FNDA:0,System.Void StemForge.Views.ModelsView::.ctor()
+DA:7,0
+DA:8,0
+DA:9,0
+DA:10,0
+LF:4
+LH:0
+BRF:0
+BRH:0
+FNF:1
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\QueueView.axaml
+FN:0,System.Void StemForge.Views.QueueView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.QueueView)
+FNDA:0,System.Void StemForge.Views.QueueView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.QueueView)
+DA:1,0
+DA:12,0
+DA:13,0
+DA:14,0
+DA:15,0
+DA:16,0
+DA:20,0
+DA:21,0
+DA:22,0
+DA:23,0
+DA:24,0
+DA:25,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:30,0
+DA:31,0
+DA:33,0
+DA:34,0
+DA:36,0
+DA:37,0
+DA:39,0
+DA:40,0
+DA:44,0
+DA:45,0
+DA:46,0
+DA:48,0
+DA:49,0
+DA:53,0
+DA:54,0
+DA:55,0
+DA:56,0
+DA:60,0
+DA:61,0
+DA:62,0
+DA:63,0
+DA:64,0
+DA:65,0
+DA:66,0
+DA:68,0
+DA:69,0
+DA:70,0
+DA:74,0
+DA:75,0
+DA:76,0
+DA:77,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+DA:88,0
+DA:91,0
+DA:92,0
+DA:93,0
+DA:95,0
+DA:96,0
+DA:97,0
+DA:98,0
+DA:99,0
+DA:101,0
+DA:103,0
+DA:104,0
+DA:105,0
+DA:110,0
+DA:113,0
+DA:114,0
+DA:115,0
+DA:117,0
+DA:119,0
+DA:120,0
+DA:122,0
+DA:124,0
+DA:126,0
+DA:127,0
+DA:132,0
+DA:133,0
+DA:134,0
+DA:135,0
+DA:136,0
+DA:137,0
+DA:140,0
+DA:141,0
+DA:143,0
+DA:144,0
+DA:148,0
+DA:149,0
+BRDA:1,7430,0,0
+BRDA:1,7430,1,0
+FN:150,System.Object StemForge.Views.QueueView/XamlClosure_4::Build_2(System.IServiceProvider)
+FNDA:0,System.Object StemForge.Views.QueueView/XamlClosure_4::Build_2(System.IServiceProvider)
+DA:151,0
+DA:152,0
+DA:153,0
+DA:154,0
+DA:155,0
+DA:157,0
+DA:158,0
+DA:162,0
+DA:163,0
+DA:165,0
+DA:167,0
+DA:170,0
+DA:171,0
+DA:173,0
+DA:175,0
+DA:178,0
+DA:179,0
+DA:180,0
+DA:181,0
+DA:182,0
+DA:184,0
+DA:185,0
+DA:186,0
+DA:187,0
+DA:189,0
+DA:190,0
+DA:191,0
+DA:193,0
+DA:196,0
+DA:197,0
+DA:198,0
+DA:200,0
+DA:205,0
+DA:206,0
+DA:207,0
+DA:209,0
+DA:214,0
+DA:215,0
+DA:216,0
+DA:218,0
+DA:219,0
+DA:222,0
+DA:223,0
+DA:225,0
+DA:226,0
+DA:228,0
+DA:229,0
+DA:230,0
+DA:232,0
+DA:235,0
+DA:236,0
+DA:237,0
+DA:238,0
+DA:239,0
+DA:243,0
+DA:244,0
+DA:245,0
+DA:246,0
+DA:248,0
+DA:249,0
+DA:253,0
+DA:254,0
+DA:262,0
+DA:263,0
+DA:264,0
+DA:270,0
+DA:272,0
+DA:273,0
+DA:275,0
+DA:277,0
+DA:279,0
+DA:280,0
+DA:281,0
+DA:283,0
+FN:254,System.Object StemForge.Views.QueueView/XamlClosure_4::Build_4(System.IServiceProvider)
+FNDA:0,System.Object StemForge.Views.QueueView/XamlClosure_4::Build_4(System.IServiceProvider)
+DA:255,0
+DA:257,0
+LF:162
+LH:0
+BRF:2
+BRH:0
+FNF:3
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\QueueView.axaml.cs
+FN:6,System.Void StemForge.Views.QueueView::.ctor()
+FNDA:0,System.Void StemForge.Views.QueueView::.ctor()
+DA:7,0
+DA:8,0
+DA:9,0
+DA:10,0
+LF:4
+LH:0
+BRF:0
+BRH:0
+FNF:1
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\SeparateView.axaml.cs
+FN:17,StemForge.ViewModels.SeparateViewModel StemForge.Views.SeparateView::get_Vm()
+FNDA:0,StemForge.ViewModels.SeparateViewModel StemForge.Views.SeparateView::get_Vm()
+DA:18,0
+FN:44,System.Void StemForge.Views.SeparateView::OnDropZoneDragOver(System.Object,Avalonia.Input.DragEventArgs)
+FNDA:0,System.Void StemForge.Views.SeparateView::OnDropZoneDragOver(System.Object,Avalonia.Input.DragEventArgs)
+DA:45,0
+DA:46,0
+DA:47,0
+DA:48,0
+DA:49,0
+BRDA:46,18,0,0
+BRDA:46,18,1,0
+FN:51,System.Void StemForge.Views.SeparateView::OnDropZoneDrop(System.Object,Avalonia.Input.DragEventArgs)
+FNDA:0,System.Void StemForge.Views.SeparateView::OnDropZoneDrop(System.Object,Avalonia.Input.DragEventArgs)
+DA:52,0
+DA:53,0
+DA:54,0
+DA:55,0
+DA:56,0
+BRDA:53,13,0,0
+BRDA:53,13,1,0
+BRDA:54,26,0,0
+BRDA:54,26,1,0
+BRDA:54,42,0,0
+BRDA:54,42,1,0
+FN:72,System.Void StemForge.Views.SeparateView::OnPresetCardClicked(System.Object,Avalonia.Input.PointerPressedEventArgs)
+FNDA:0,System.Void StemForge.Views.SeparateView::OnPresetCardClicked(System.Object,Avalonia.Input.PointerPressedEventArgs)
+DA:73,0
+DA:74,0
+DA:75,0
+DA:76,0
+BRDA:74,9,0,0
+BRDA:74,9,1,0
+BRDA:74,32,0,0
+BRDA:74,32,1,0
+FN:10,System.Void StemForge.Views.SeparateView::.ctor()
+FNDA:0,System.Void StemForge.Views.SeparateView::.ctor()
+DA:11,0
+DA:12,0
+DA:13,0
+DA:14,0
+DA:15,0
+DA:16,0
+FN:58,System.Void StemForge.Views.SeparateView/<OnBrowseOutputClicked>d__6::MoveNext()
+FNDA:0,System.Void StemForge.Views.SeparateView/<OnBrowseOutputClicked>d__6::MoveNext()
+DA:59,0
+DA:60,0
+DA:61,0
+DA:62,0
+DA:64,0
+DA:65,0
+DA:66,0
+DA:68,0
+DA:69,0
+DA:70,0
+BRDA:61,43,0,0
+BRDA:61,43,1,0
+BRDA:68,211,0,0
+BRDA:68,211,1,0
+FN:20,System.Void StemForge.Views.SeparateView/<OnDropZoneClicked>d__3::MoveNext()
+FNDA:0,System.Void StemForge.Views.SeparateView/<OnDropZoneClicked>d__3::MoveNext()
+DA:21,0
+DA:22,0
+DA:23,0
+DA:24,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:29,0
+DA:30,0
+DA:31,0
+DA:32,0
+DA:33,0
+DA:34,0
+DA:35,0
+DA:36,0
+DA:37,0
+DA:38,0
+DA:40,0
+DA:41,0
+DA:42,0
+BRDA:23,46,0,0
+BRDA:23,46,1,0
+BRDA:40,294,0,0
+BRDA:40,294,1,0
+LF:51
+LH:0
+BRF:20
+BRH:0
+FNF:7
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\SeparateView.axaml
+FN:0,System.Void StemForge.Views.SeparateView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.SeparateView)
+FNDA:0,System.Void StemForge.Views.SeparateView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.SeparateView)
+DA:1,0
+DA:12,0
+DA:13,0
+DA:14,0
+DA:15,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:20,0
+DA:21,0
+DA:22,0
+DA:23,0
+DA:24,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:32,0
+DA:33,0
+DA:34,0
+DA:35,0
+DA:36,0
+DA:37,0
+DA:39,0
+DA:40,0
+DA:41,0
+DA:45,0
+DA:46,0
+DA:47,0
+DA:48,0
+DA:49,0
+DA:50,0
+DA:51,0
+DA:53,0
+DA:54,0
+DA:56,0
+DA:57,0
+DA:59,0
+DA:60,0
+DA:61,0
+DA:62,0
+DA:63,0
+DA:64,0
+DA:65,0
+DA:66,0
+DA:68,0
+DA:69,0
+DA:70,0
+DA:72,0
+DA:73,0
+DA:75,0
+DA:76,0
+DA:77,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+DA:85,0
+DA:86,0
+DA:87,0
+DA:88,0
+DA:89,0
+DA:90,0
+DA:91,0
+DA:95,0
+DA:96,0
+DA:98,0
+DA:99,0
+DA:100,0
+DA:104,0
+DA:105,0
+DA:106,0
+DA:107,0
+DA:108,0
+DA:109,0
+DA:110,0
+DA:111,0
+DA:113,0
+DA:114,0
+DA:115,0
+DA:119,0
+DA:120,0
+DA:121,0
+DA:122,0
+DA:124,0
+DA:125,0
+DA:129,0
+DA:130,0
+DA:131,0
+DA:132,0
+DA:134,0
+DA:135,0
+DA:136,0
+DA:137,0
+DA:142,0
+DA:145,0
+DA:146,0
+DA:147,0
+DA:149,0
+DA:150,0
+DA:151,0
+DA:153,0
+DA:155,0
+DA:156,0
+DA:157,0
+DA:158,0
+DA:159,0
+DA:160,0
+DA:161,0
+DA:162,0
+DA:163,0
+DA:164,0
+DA:165,0
+DA:166,0
+DA:173,0
+DA:174,0
+DA:175,0
+DA:177,0
+DA:178,0
+DA:181,0
+DA:182,0
+DA:184,0
+DA:185,0
+DA:187,0
+DA:188,0
+DA:189,0
+DA:190,0
+DA:191,0
+DA:192,0
+DA:193,0
+DA:194,0
+DA:195,0
+DA:196,0
+DA:200,0
+DA:201,0
+DA:202,0
+DA:203,0
+DA:205,0
+DA:207,0
+DA:208,0
+DA:209,0
+DA:211,0
+DA:217,0
+DA:219,0
+DA:223,0
+DA:224,0
+DA:225,0
+DA:227,0
+DA:228,0
+DA:230,0
+DA:231,0
+DA:233,0
+DA:234,0
+DA:235,0
+DA:237,0
+DA:238,0
+DA:239,0
+DA:247,0
+DA:248,0
+DA:250,0
+DA:251,0
+DA:253,0
+DA:254,0
+DA:258,0
+DA:259,0
+DA:322,0
+DA:325,0
+DA:326,0
+DA:327,0
+DA:328,0
+DA:329,0
+DA:330,0
+DA:332,0
+DA:334,0
+DA:339,0
+DA:340,0
+DA:342,0
+DA:343,0
+DA:347,0
+DA:349,0
+DA:403,0
+DA:404,0
+DA:405,0
+DA:407,0
+DA:408,0
+DA:409,0
+DA:411,0
+DA:412,0
+DA:413,0
+DA:415,0
+DA:416,0
+DA:418,0
+DA:420,0
+DA:421,0
+DA:422,0
+DA:423,0
+DA:424,0
+DA:427,0
+DA:428,0
+DA:430,0
+DA:431,0
+DA:432,0
+DA:433,0
+DA:435,0
+DA:438,0
+DA:439,0
+DA:440,0
+DA:441,0
+DA:442,0
+DA:443,0
+DA:444,0
+BRDA:1,18461,0,0
+BRDA:1,18461,1,0
+FN:260,System.Object StemForge.Views.SeparateView/XamlClosure_5::Build_2(System.IServiceProvider)
+FNDA:0,System.Object StemForge.Views.SeparateView/XamlClosure_5::Build_2(System.IServiceProvider)
+DA:261,0
+DA:262,0
+DA:263,0
+DA:265,0
+DA:266,0
+DA:271,0
+DA:273,0
+DA:274,0
+DA:278,0
+DA:279,0
+FN:279,System.Object StemForge.Views.SeparateView/XamlClosure_5::Build_4(System.IServiceProvider)
+FNDA:0,System.Object StemForge.Views.SeparateView/XamlClosure_5::Build_4(System.IServiceProvider)
+DA:280,0
+DA:282,0
+DA:283,0
+DA:285,0
+DA:286,0
+DA:287,0
+DA:288,0
+DA:289,0
+DA:290,0
+DA:291,0
+DA:292,0
+DA:296,0
+DA:297,0
+DA:298,0
+DA:300,0
+DA:302,0
+DA:303,0
+DA:304,0
+DA:306,0
+DA:307,0
+FN:349,System.Object StemForge.Views.SeparateView/XamlClosure_5::Build_6(System.IServiceProvider)
+FNDA:0,System.Object StemForge.Views.SeparateView/XamlClosure_5::Build_6(System.IServiceProvider)
+DA:350,0
+DA:351,0
+DA:352,0
+DA:353,0
+DA:355,0
+DA:356,0
+DA:357,0
+DA:358,0
+DA:359,0
+DA:360,0
+DA:361,0
+DA:362,0
+DA:366,0
+DA:367,0
+DA:368,0
+DA:370,0
+DA:372,0
+DA:374,0
+DA:375,0
+DA:376,0
+DA:384,0
+DA:387,0
+DA:389,0
+DA:391,0
+DA:392,0
+LF:265
+LH:0
+BRF:2
+BRH:0
+FNF:4
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\SettingsView.axaml.cs
+FN:21,StemForge.ViewModels.SettingsViewModel StemForge.Views.SettingsView::get_Vm()
+FNDA:0,StemForge.ViewModels.SettingsViewModel StemForge.Views.SettingsView::get_Vm()
+DA:22,0
+FN:9,System.Void StemForge.Views.SettingsView::.ctor()
+FNDA:0,System.Void StemForge.Views.SettingsView::.ctor()
+DA:10,0
+DA:11,0
+DA:12,0
+DA:13,0
+FN:31,System.Void StemForge.Views.SettingsView/<OnBrowseModelsClicked>d__5::MoveNext()
+FNDA:0,System.Void StemForge.Views.SettingsView/<OnBrowseModelsClicked>d__5::MoveNext()
+DA:32,0
+DA:33,0
+DA:34,0
+DA:35,0
+DA:36,0
+BRDA:34,151,0,0
+BRDA:34,151,1,0
+FN:24,System.Void StemForge.Views.SettingsView/<OnBrowseOutputClicked>d__4::MoveNext()
+FNDA:0,System.Void StemForge.Views.SettingsView/<OnBrowseOutputClicked>d__4::MoveNext()
+DA:25,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:29,0
+BRDA:27,151,0,0
+BRDA:27,151,1,0
+FN:15,System.Void StemForge.Views.SettingsView/<OnLoaded>d__1::MoveNext()
+FNDA:0,System.Void StemForge.Views.SettingsView/<OnLoaded>d__1::MoveNext()
+DA:16,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:20,0
+BRDA:18,66,0,0
+BRDA:18,66,1,0
+BRDA:18,92,0,0
+BRDA:18,92,1,0
+FN:38,System.Void StemForge.Views.SettingsView/<PickFolderAsync>d__6::MoveNext()
+FNDA:0,System.Void StemForge.Views.SettingsView/<PickFolderAsync>d__6::MoveNext()
+DA:39,0
+DA:40,0
+DA:41,0
+DA:42,0
+DA:43,0
+DA:44,0
+DA:45,0
+DA:46,0
+DA:47,0
+BRDA:41,43,0,0
+BRDA:41,43,1,0
+BRDA:46,208,0,0
+BRDA:46,208,1,0
+LF:29
+LH:0
+BRF:12
+BRH:0
+FNF:6
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\SettingsView.axaml
+FN:0,System.Void StemForge.Views.SettingsView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.SettingsView)
+FNDA:0,System.Void StemForge.Views.SettingsView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.SettingsView)
+DA:1,0
+DA:12,0
+DA:13,0
+DA:14,0
+DA:15,0
+DA:16,0
+DA:20,0
+DA:21,0
+DA:22,0
+DA:23,0
+DA:24,0
+DA:28,0
+DA:29,0
+DA:30,0
+DA:31,0
+DA:32,0
+DA:33,0
+DA:34,0
+DA:35,0
+DA:36,0
+DA:40,0
+DA:41,0
+DA:42,0
+DA:43,0
+DA:44,0
+DA:45,0
+DA:49,0
+DA:50,0
+DA:51,0
+DA:52,0
+DA:53,0
+DA:54,0
+DA:55,0
+DA:56,0
+DA:57,0
+DA:59,0
+DA:60,0
+DA:61,0
+DA:62,0
+DA:64,0
+DA:65,0
+DA:69,0
+DA:70,0
+DA:71,0
+DA:73,0
+DA:74,0
+DA:76,0
+DA:77,0
+DA:81,0
+DA:84,0
+DA:85,0
+DA:86,0
+DA:88,0
+DA:89,0
+DA:93,0
+DA:94,0
+DA:96,0
+DA:100,0
+DA:102,0
+DA:105,0
+DA:108,0
+DA:110,0
+DA:111,0
+DA:112,0
+DA:113,0
+DA:115,0
+DA:118,0
+DA:119,0
+DA:120,0
+DA:122,0
+DA:124,0
+DA:125,0
+DA:129,0
+DA:130,0
+DA:132,0
+DA:133,0
+DA:134,0
+DA:135,0
+DA:136,0
+DA:137,0
+DA:138,0
+DA:139,0
+DA:140,0
+DA:141,0
+DA:142,0
+DA:145,0
+DA:147,0
+DA:148,0
+DA:152,0
+DA:153,0
+DA:181,0
+DA:182,0
+DA:183,0
+DA:184,0
+DA:185,0
+DA:186,0
+DA:187,0
+DA:194,0
+DA:195,0
+DA:196,0
+DA:197,0
+DA:199,0
+DA:200,0
+DA:201,0
+DA:202,0
+DA:203,0
+DA:204,0
+DA:205,0
+DA:206,0
+DA:207,0
+DA:208,0
+DA:209,0
+DA:210,0
+DA:211,0
+DA:212,0
+DA:213,0
+DA:214,0
+DA:215,0
+DA:216,0
+DA:218,0
+DA:219,0
+DA:220,0
+DA:222,0
+DA:223,0
+DA:224,0
+DA:225,0
+DA:232,0
+DA:233,0
+DA:234,0
+DA:235,0
+DA:236,0
+DA:237,0
+DA:238,0
+DA:239,0
+DA:240,0
+DA:241,0
+DA:243,0
+DA:244,0
+DA:245,0
+DA:246,0
+DA:247,0
+DA:248,0
+DA:249,0
+DA:250,0
+DA:251,0
+DA:252,0
+DA:253,0
+DA:254,0
+DA:255,0
+DA:257,0
+DA:258,0
+DA:259,0
+DA:260,0
+DA:261,0
+DA:262,0
+DA:263,0
+DA:264,0
+DA:265,0
+DA:266,0
+DA:267,0
+DA:268,0
+DA:269,0
+DA:276,0
+DA:277,0
+DA:278,0
+DA:279,0
+DA:281,0
+DA:282,0
+DA:283,0
+DA:284,0
+DA:285,0
+DA:286,0
+DA:287,0
+DA:288,0
+DA:292,0
+DA:293,0
+DA:294,0
+DA:295,0
+DA:296,0
+DA:297,0
+DA:298,0
+DA:299,0
+DA:307,0
+DA:308,0
+DA:309,0
+DA:311,0
+DA:313,0
+DA:314,0
+DA:316,0
+DA:317,0
+BRDA:1,15703,0,0
+BRDA:1,15703,1,0
+FN:153,System.Object StemForge.Views.SettingsView/XamlClosure_6::Build_2(System.IServiceProvider)
+FNDA:0,System.Object StemForge.Views.SettingsView/XamlClosure_6::Build_2(System.IServiceProvider)
+DA:154,0
+DA:155,0
+DA:156,0
+DA:157,0
+DA:159,0
+DA:160,0
+DA:161,0
+DA:163,0
+DA:164,0
+DA:165,0
+DA:167,0
+DA:168,0
+DA:169,0
+DA:172,0
+DA:173,0
+DA:175,0
+LF:206
+LH:0
+BRF:2
+BRH:0
+FNF:2
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\SetupWizardView.axaml.cs
+FN:14,StemForge.ViewModels.SetupWizardViewModel StemForge.Views.SetupWizardView::get_Vm()
+FNDA:0,StemForge.ViewModels.SetupWizardViewModel StemForge.Views.SetupWizardView::get_Vm()
+DA:15,0
+FN:9,System.Void StemForge.Views.SetupWizardView::.ctor()
+FNDA:0,System.Void StemForge.Views.SetupWizardView::.ctor()
+DA:10,0
+DA:11,0
+DA:12,0
+DA:13,0
+FN:23,System.Void StemForge.Views.SetupWizardView/<OnBrowseModelsClicked>d__4::MoveNext()
+FNDA:0,System.Void StemForge.Views.SetupWizardView/<OnBrowseModelsClicked>d__4::MoveNext()
+DA:24,0
+DA:25,0
+DA:26,0
+DA:27,0
+BRDA:25,144,0,0
+BRDA:25,144,1,0
+FN:17,System.Void StemForge.Views.SetupWizardView/<OnBrowseOutputClicked>d__3::MoveNext()
+FNDA:0,System.Void StemForge.Views.SetupWizardView/<OnBrowseOutputClicked>d__3::MoveNext()
+DA:18,0
+DA:19,0
+DA:20,0
+DA:21,0
+BRDA:19,144,0,0
+BRDA:19,144,1,0
+FN:29,System.Void StemForge.Views.SetupWizardView/<PickFolderAsync>d__5::MoveNext()
+FNDA:0,System.Void StemForge.Views.SetupWizardView/<PickFolderAsync>d__5::MoveNext()
+DA:30,0
+DA:31,0
+DA:32,0
+DA:33,0
+DA:34,0
+DA:35,0
+DA:36,0
+BRDA:30,31,0,0
+BRDA:30,31,1,0
+BRDA:30,80,0,0
+BRDA:30,224,0,0
+BRDA:30,250,0,0
+BRDA:30,276,0,0
+BRDA:30,301,0,0
+BRDA:30,224,1,0
+BRDA:30,250,1,0
+BRDA:30,276,1,0
+BRDA:30,301,1,0
+BRDA:30,80,1,0
+BRDA:30,371,0,0
+BRDA:30,371,1,0
+LF:20
+LH:0
+BRF:18
+BRH:0
+FNF:5
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Views\SetupWizardView.axaml
+FN:0,System.Void StemForge.Views.SetupWizardView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.SetupWizardView)
+FNDA:0,System.Void StemForge.Views.SetupWizardView::!XamlIlPopulate(System.IServiceProvider,StemForge.Views.SetupWizardView)
+DA:1,0
+DA:11,0
+DA:12,0
+DA:13,0
+DA:14,0
+DA:15,0
+DA:16,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:21,0
+DA:22,0
+DA:23,0
+DA:24,0
+DA:26,0
+DA:27,0
+DA:30,0
+DA:31,0
+DA:32,0
+DA:33,0
+DA:35,0
+DA:36,0
+DA:39,0
+DA:40,0
+DA:41,0
+DA:42,0
+DA:43,0
+DA:44,0
+DA:45,0
+DA:46,0
+DA:47,0
+DA:50,0
+DA:51,0
+DA:52,0
+DA:54,0
+DA:55,0
+DA:57,0
+DA:58,0
+DA:63,0
+DA:64,0
+DA:66,0
+DA:71,0
+DA:73,0
+DA:74,0
+DA:75,0
+DA:77,0
+DA:80,0
+DA:83,0
+DA:85,0
+DA:87,0
+DA:88,0
+DA:89,0
+DA:90,0
+DA:91,0
+DA:95,0
+DA:98,0
+DA:100,0
+DA:102,0
+DA:103,0
+DA:105,0
+DA:106,0
+DA:108,0
+DA:109,0
+DA:110,0
+DA:112,0
+DA:114,0
+DA:116,0
+DA:120,0
+DA:121,0
+DA:122,0
+DA:123,0
+DA:125,0
+DA:126,0
+DA:127,0
+DA:129,0
+DA:132,0
+DA:133,0
+DA:134,0
+DA:136,0
+DA:137,0
+DA:138,0
+DA:141,0
+DA:142,0
+DA:144,0
+DA:145,0
+DA:149,0
+DA:150,0
+DA:179,0
+DA:180,0
+DA:181,0
+DA:182,0
+DA:183,0
+DA:184,0
+DA:185,0
+DA:186,0
+DA:187,0
+DA:188,0
+DA:189,0
+DA:190,0
+DA:191,0
+DA:192,0
+DA:193,0
+DA:194,0
+DA:195,0
+DA:196,0
+DA:197,0
+DA:198,0
+DA:200,0
+DA:201,0
+DA:203,0
+DA:204,0
+DA:205,0
+DA:206,0
+DA:207,0
+DA:213,0
+DA:214,0
+DA:215,0
+DA:216,0
+DA:217,0
+DA:218,0
+DA:220,0
+DA:222,0
+DA:223,0
+DA:224,0
+DA:225,0
+DA:226,0
+DA:227,0
+DA:228,0
+DA:229,0
+DA:230,0
+DA:231,0
+DA:235,0
+DA:236,0
+DA:237,0
+DA:238,0
+DA:239,0
+DA:240,0
+DA:241,0
+DA:242,0
+DA:243,0
+DA:244,0
+DA:250,0
+DA:251,0
+DA:252,0
+DA:253,0
+DA:256,0
+DA:257,0
+DA:258,0
+DA:260,0
+DA:261,0
+DA:262,0
+DA:263,0
+DA:264,0
+DA:266,0
+DA:267,0
+DA:269,0
+DA:273,0
+DA:274,0
+DA:275,0
+DA:276,0
+DA:277,0
+DA:278,0
+DA:281,0
+DA:282,0
+DA:283,0
+DA:285,0
+DA:286,0
+DA:287,0
+DA:288,0
+DA:289,0
+DA:291,0
+DA:292,0
+DA:294,0
+DA:298,0
+DA:299,0
+DA:300,0
+DA:301,0
+DA:302,0
+DA:303,0
+DA:308,0
+DA:309,0
+DA:310,0
+DA:311,0
+DA:314,0
+DA:315,0
+DA:316,0
+DA:317,0
+DA:318,0
+DA:320,0
+DA:321,0
+DA:322,0
+DA:324,0
+DA:325,0
+DA:326,0
+DA:329,0
+DA:330,0
+DA:331,0
+DA:332,0
+DA:333,0
+DA:335,0
+DA:336,0
+DA:337,0
+DA:339,0
+DA:341,0
+DA:345,0
+DA:346,0
+DA:347,0
+DA:348,0
+DA:349,0
+DA:351,0
+DA:352,0
+DA:353,0
+DA:355,0
+DA:356,0
+DA:357,0
+DA:360,0
+DA:361,0
+DA:362,0
+DA:363,0
+DA:364,0
+DA:366,0
+DA:367,0
+DA:368,0
+DA:370,0
+DA:372,0
+DA:377,0
+DA:379,0
+DA:380,0
+DA:381,0
+DA:383,0
+DA:389,0
+DA:391,0
+DA:393,0
+DA:394,0
+DA:397,0
+DA:399,0
+DA:400,0
+DA:402,0
+DA:403,0
+DA:405,0
+DA:406,0
+DA:408,0
+DA:409,0
+DA:411,0
+DA:413,0
+DA:414,0
+DA:415,0
+DA:421,0
+DA:425,0
+DA:427,0
+DA:428,0
+DA:429,0
+DA:430,0
+DA:432,0
+DA:433,0
+DA:435,0
+DA:436,0
+DA:437,0
+DA:443,0
+DA:445,0
+DA:446,0
+DA:447,0
+DA:450,0
+DA:452,0
+DA:453,0
+DA:454,0
+DA:456,0
+DA:457,0
+DA:458,0
+DA:464,0
+DA:466,0
+DA:467,0
+DA:468,0
+BRDA:1,23013,0,0
+BRDA:1,23013,1,0
+FN:150,System.Object StemForge.Views.SetupWizardView/XamlClosure_7::Build_2(System.IServiceProvider)
+FNDA:0,System.Object StemForge.Views.SetupWizardView/XamlClosure_7::Build_2(System.IServiceProvider)
+DA:151,0
+DA:152,0
+DA:153,0
+DA:154,0
+DA:156,0
+DA:157,0
+DA:158,0
+DA:160,0
+DA:161,0
+DA:162,0
+DA:164,0
+DA:165,0
+DA:166,0
+DA:169,0
+DA:170,0
+DA:172,0
+LF:289
+LH:0
+BRF:2
+BRH:0
+FNF:2
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\JobItemViewModel.cs
+FN:10,StemForge.Models.JobRecord StemForge.ViewModels.JobItemViewModel::get_Job()
+FNDA:0,StemForge.Models.JobRecord StemForge.ViewModels.JobItemViewModel::get_Job()
+DA:11,0
+FN:12,System.String StemForge.ViewModels.JobItemViewModel::get_PresetSummary()
+FNDA:0,System.String StemForge.ViewModels.JobItemViewModel::get_PresetSummary()
+DA:13,0
+FN:40,System.Collections.Generic.List`1<System.String> StemForge.ViewModels.JobItemViewModel::get_OutputFiles()
+FNDA:0,System.Collections.Generic.List`1<System.String> StemForge.ViewModels.JobItemViewModel::get_OutputFiles()
+DA:41,0
+FN:49,System.Void StemForge.ViewModels.JobItemViewModel::AppendLog(System.String)
+FNDA:0,System.Void StemForge.ViewModels.JobItemViewModel::AppendLog(System.String)
+DA:50,0
+DA:51,0
+DA:52,0
+DA:53,0
+DA:54,0
+DA:56,0
+DA:57,0
+DA:58,0
+BRDA:51,17,0,0
+BRDA:51,17,1,0
+FN:59,System.Boolean StemForge.ViewModels.JobItemViewModel::get_HasOutputFiles()
+FNDA:0,System.Boolean StemForge.ViewModels.JobItemViewModel::get_HasOutputFiles()
+DA:60,0
+FN:60,System.Boolean StemForge.ViewModels.JobItemViewModel::get_IsRunning()
+FNDA:0,System.Boolean StemForge.ViewModels.JobItemViewModel::get_IsRunning()
+DA:61,0
+FN:61,System.Boolean StemForge.ViewModels.JobItemViewModel::get_IsDone()
+FNDA:0,System.Boolean StemForge.ViewModels.JobItemViewModel::get_IsDone()
+DA:62,0
+FN:62,System.Boolean StemForge.ViewModels.JobItemViewModel::get_IsTerminal()
+FNDA:0,System.Boolean StemForge.ViewModels.JobItemViewModel::get_IsTerminal()
+DA:63,0
+BRDA:63,11,1,0
+BRDA:63,11,0,0
+FN:63,System.Boolean StemForge.ViewModels.JobItemViewModel::get_ShowProgress()
+FNDA:0,System.Boolean StemForge.ViewModels.JobItemViewModel::get_ShowProgress()
+DA:64,0
+BRDA:64,11,1,0
+BRDA:64,11,0,0
+FN:65,System.String StemForge.ViewModels.JobItemViewModel::get_ProgressLabel()
+FNDA:0,System.String StemForge.ViewModels.JobItemViewModel::get_ProgressLabel()
+DA:66,0
+BRDA:66,6,0,0
+BRDA:66,6,1,0
+BRDA:66,19,0,0
+BRDA:66,19,1,0
+FN:68,Avalonia.Media.IBrush StemForge.ViewModels.JobItemViewModel::get_StatusBrush()
+FNDA:0,Avalonia.Media.IBrush StemForge.ViewModels.JobItemViewModel::get_StatusBrush()
+DA:69,0
+DA:70,0
+DA:71,0
+DA:72,0
+DA:73,0
+DA:74,0
+DA:75,0
+BRDA:69,14,1,0
+BRDA:69,14,2,0
+BRDA:69,14,3,0
+BRDA:69,14,0,0
+FN:77,System.String StemForge.ViewModels.JobItemViewModel::get_StatusLabel()
+FNDA:0,System.String StemForge.ViewModels.JobItemViewModel::get_StatusLabel()
+DA:78,0
+DA:79,0
+DA:80,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+DA:85,0
+DA:86,0
+BRDA:78,12,1,0
+BRDA:78,12,2,0
+BRDA:78,12,3,0
+BRDA:78,12,4,0
+BRDA:78,12,5,0
+BRDA:78,12,0,0
+FN:87,System.Action`1<StemForge.ViewModels.JobItemViewModel> StemForge.ViewModels.JobItemViewModel::get_CancelRequested()
+FNDA:0,System.Action`1<StemForge.ViewModels.JobItemViewModel> StemForge.ViewModels.JobItemViewModel::get_CancelRequested()
+DA:88,0
+FN:90,System.Void StemForge.ViewModels.JobItemViewModel::ToggleExpand()
+FNDA:0,System.Void StemForge.ViewModels.JobItemViewModel::ToggleExpand()
+DA:91,0
+FN:93,System.Void StemForge.ViewModels.JobItemViewModel::Cancel()
+FNDA:0,System.Void StemForge.ViewModels.JobItemViewModel::Cancel()
+DA:94,0
+BRDA:94,7,0,0
+BRDA:94,7,1,0
+FN:97,System.Void StemForge.ViewModels.JobItemViewModel::ShowInExplorer()
+FNDA:0,System.Void StemForge.ViewModels.JobItemViewModel::ShowInExplorer()
+DA:98,0
+DA:99,0
+DA:100,0
+DA:102,0
+DA:103,0
+DA:104,0
+DA:105,0
+DA:106,0
+DA:107,0
+BRDA:99,17,1,0
+BRDA:103,42,0,0
+BRDA:103,42,1,0
+BRDA:105,86,0,0
+BRDA:99,17,0,0
+BRDA:105,86,1,0
+FN:109,System.Void StemForge.ViewModels.JobItemViewModel::OnStatusChanged(StemForge.Models.JobStatus)
+FNDA:0,System.Void StemForge.ViewModels.JobItemViewModel::OnStatusChanged(StemForge.Models.JobStatus)
+DA:110,0
+DA:111,0
+DA:112,0
+DA:113,0
+DA:114,0
+DA:115,0
+DA:116,0
+DA:117,0
+DA:118,0
+FN:120,System.Void StemForge.ViewModels.JobItemViewModel::OnProgressChanged(System.Int32)
+FNDA:0,System.Void StemForge.ViewModels.JobItemViewModel::OnProgressChanged(System.Int32)
+DA:121,0
+DA:122,0
+DA:123,0
+FN:125,System.Void StemForge.ViewModels.JobItemViewModel::OnPresetCounterChanged(System.String)
+FNDA:0,System.Void StemForge.ViewModels.JobItemViewModel::OnPresetCounterChanged(System.String)
+DA:126,0
+DA:127,0
+DA:128,0
+FN:17,System.Void StemForge.ViewModels.JobItemViewModel::.ctor(StemForge.Models.JobRecord)
+FNDA:0,System.Void StemForge.ViewModels.JobItemViewModel::.ctor(StemForge.Models.JobRecord)
+DA:18,0
+DA:19,0
+DA:20,0
+DA:21,0
+DA:22,0
+DA:25,0
+DA:31,0
+DA:34,0
+DA:43,0
+DA:46,0
+LF:70
+LH:0
+BRF:28
+BRH:0
+FNF:20
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\LogsViewModel.cs
+FN:11,System.String StemForge.ViewModels.LogsViewModel::get_Title()
+FNDA:0,System.String StemForge.ViewModels.LogsViewModel::get_Title()
+DA:12,0
+FN:13,System.Collections.ObjectModel.ObservableCollection`1<StemForge.Services.LogEntry> StemForge.ViewModels.LogsViewModel::get_Displayed()
+FNDA:0,System.Collections.ObjectModel.ObservableCollection`1<StemForge.Services.LogEntry> StemForge.ViewModels.LogsViewModel::get_Displayed()
+DA:14,0
+FN:42,System.Void StemForge.ViewModels.LogsViewModel::ToggleDebug()
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::ToggleDebug()
+DA:43,0
+FN:45,System.Void StemForge.ViewModels.LogsViewModel::ToggleInfo()
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::ToggleInfo()
+DA:46,0
+FN:48,System.Void StemForge.ViewModels.LogsViewModel::ToggleWarning()
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::ToggleWarning()
+DA:49,0
+FN:51,System.Void StemForge.ViewModels.LogsViewModel::ToggleError()
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::ToggleError()
+DA:52,0
+FN:54,System.Void StemForge.ViewModels.LogsViewModel::Clear()
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::Clear()
+DA:55,0
+FN:58,System.Void StemForge.ViewModels.LogsViewModel::OpenLogsFolder()
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::OpenLogsFolder()
+DA:59,0
+DA:60,0
+DA:61,0
+DA:62,0
+BRDA:60,8,0,0
+BRDA:60,17,0,0
+BRDA:60,8,1,0
+BRDA:60,17,1,0
+BRDA:60,30,0,0
+BRDA:60,30,1,0
+FN:64,System.Void StemForge.ViewModels.LogsViewModel::OnSourceChanged(System.Object,System.Collections.Specialized.NotifyCollectionChangedEventArgs)
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::OnSourceChanged(System.Object,System.Collections.Specialized.NotifyCollectionChangedEventArgs)
+DA:65,0
+DA:66,0
+DA:69,0
+DA:70,0
+DA:71,0
+DA:72,0
+DA:73,0
+DA:75,0
+DA:76,0
+DA:78,0
+BRDA:66,11,1,0
+BRDA:69,74,1,0
+BRDA:70,53,0,0
+BRDA:70,53,1,0
+BRDA:69,74,0,0
+BRDA:66,11,0,0
+FN:80,System.String StemForge.ViewModels.LogsViewModel::get_DisplayedText()
+FNDA:0,System.String StemForge.ViewModels.LogsViewModel::get_DisplayedText()
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+DA:85,0
+DA:86,0
+FN:87,System.String StemForge.ViewModels.LogsViewModel::Truncate(System.String,System.Int32)
+FNDA:0,System.String StemForge.ViewModels.LogsViewModel::Truncate(System.String,System.Int32)
+DA:88,0
+BRDA:88,7,0,0
+BRDA:88,7,1,0
+FN:89,System.Void StemForge.ViewModels.LogsViewModel::NotifyDisplayedText()
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::NotifyDisplayedText()
+DA:90,0
+FN:92,System.Void StemForge.ViewModels.LogsViewModel::Rebuild()
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::Rebuild()
+DA:93,0
+DA:94,0
+DA:95,0
+DA:96,0
+DA:97,0
+DA:98,0
+BRDA:95,70,1,0
+BRDA:95,70,0,0
+FN:100,System.Boolean StemForge.ViewModels.LogsViewModel::Passes(StemForge.Services.LogEntry)
+FNDA:0,System.Boolean StemForge.ViewModels.LogsViewModel::Passes(StemForge.Services.LogEntry)
+DA:101,0
+DA:102,0
+DA:103,0
+DA:104,0
+DA:105,0
+DA:106,0
+DA:107,0
+DA:108,0
+BRDA:101,12,1,0
+BRDA:101,12,2,0
+BRDA:101,12,3,0
+BRDA:101,12,4,0
+BRDA:101,12,0,0
+FN:33,System.Void StemForge.ViewModels.LogsViewModel::OnShowDebugChanged(System.Boolean)
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::OnShowDebugChanged(System.Boolean)
+DA:34,0
+FN:35,System.Void StemForge.ViewModels.LogsViewModel::OnShowInfoChanged(System.Boolean)
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::OnShowInfoChanged(System.Boolean)
+DA:36,0
+FN:37,System.Void StemForge.ViewModels.LogsViewModel::OnShowWarningChanged(System.Boolean)
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::OnShowWarningChanged(System.Boolean)
+DA:38,0
+FN:39,System.Void StemForge.ViewModels.LogsViewModel::OnShowErrorChanged(System.Boolean)
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::OnShowErrorChanged(System.Boolean)
+DA:40,0
+FN:16,System.Void StemForge.ViewModels.LogsViewModel::.ctor()
+FNDA:0,System.Void StemForge.ViewModels.LogsViewModel::.ctor()
+DA:17,0
+DA:20,0
+DA:23,0
+DA:26,0
+DA:28,0
+DA:29,0
+DA:30,0
+DA:31,0
+DA:32,0
+LF:56
+LH:0
+BRF:21
+BRH:0
+FNF:19
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\MainWindowViewModel.cs
+FN:20,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.NavItem> StemForge.ViewModels.MainWindowViewModel::get_NavItems()
+FNDA:0,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.NavItem> StemForge.ViewModels.MainWindowViewModel::get_NavItems()
+DA:21,0
+FN:22,StemForge.ViewModels.SetupWizardViewModel StemForge.ViewModels.MainWindowViewModel::get_Wizard()
+FNDA:0,StemForge.ViewModels.SetupWizardViewModel StemForge.ViewModels.MainWindowViewModel::get_Wizard()
+DA:23,0
+FN:23,StemForge.ViewModels.LogsViewModel StemForge.ViewModels.MainWindowViewModel::get_Logs()
+FNDA:0,StemForge.ViewModels.LogsViewModel StemForge.ViewModels.MainWindowViewModel::get_Logs()
+DA:24,0
+FN:100,System.Void StemForge.ViewModels.MainWindowViewModel::ShowLogs()
+FNDA:0,System.Void StemForge.ViewModels.MainWindowViewModel::ShowLogs()
+DA:101,0
+BRDA:101,7,0,0
+BRDA:101,7,1,0
+FN:104,System.Void StemForge.ViewModels.MainWindowViewModel::Navigate(StemForge.ViewModels.NavItem)
+FNDA:0,System.Void StemForge.ViewModels.MainWindowViewModel::Navigate(StemForge.ViewModels.NavItem)
+DA:105,0
+DA:106,0
+DA:107,0
+DA:108,0
+DA:109,0
+BRDA:106,40,1,0
+BRDA:106,40,0,0
+FN:78,System.Void StemForge.ViewModels.MainWindowViewModel::<.ctor>g__GoToQueue|23_0()
+FNDA:0,System.Void StemForge.ViewModels.MainWindowViewModel::<.ctor>g__GoToQueue|23_0()
+DA:79,0
+DA:80,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+BRDA:81,83,1,0
+BRDA:81,83,0,0
+FN:90,System.Void StemForge.ViewModels.MainWindowViewModel::<.ctor>b__23_1()
+FNDA:0,System.Void StemForge.ViewModels.MainWindowViewModel::<.ctor>b__23_1()
+DA:91,0
+FN:91,System.Void StemForge.ViewModels.MainWindowViewModel::<.ctor>b__23_2()
+FNDA:0,System.Void StemForge.ViewModels.MainWindowViewModel::<.ctor>b__23_2()
+DA:92,0
+FN:93,System.Void StemForge.ViewModels.MainWindowViewModel::<.ctor>b__23_3()
+FNDA:0,System.Void StemForge.ViewModels.MainWindowViewModel::<.ctor>b__23_3()
+DA:94,0
+DA:95,0
+DA:96,0
+DA:97,0
+FN:29,System.Void StemForge.ViewModels.MainWindowViewModel::.ctor()
+FNDA:0,System.Void StemForge.ViewModels.MainWindowViewModel::.ctor()
+DA:30,0
+DA:31,0
+DA:32,0
+DA:33,0
+DA:34,0
+DA:35,0
+DA:36,0
+DA:37,0
+DA:38,0
+DA:39,0
+DA:40,0
+DA:42,0
+DA:43,0
+DA:44,0
+DA:45,0
+DA:47,0
+DA:48,0
+DA:49,0
+DA:50,0
+DA:51,0
+DA:52,0
+DA:53,0
+DA:54,0
+DA:55,0
+DA:56,0
+DA:57,0
+DA:58,0
+DA:59,0
+DA:60,0
+DA:61,0
+DA:62,0
+DA:63,0
+DA:64,0
+DA:65,0
+DA:66,0
+DA:67,0
+DA:68,0
+DA:69,0
+DA:70,0
+DA:71,0
+DA:72,0
+DA:73,0
+DA:74,0
+DA:76,0
+DA:86,0
+DA:87,0
+DA:89,0
+DA:90,0
+DA:93,0
+DA:98,0
+LF:71
+LH:0
+BRF:6
+BRH:0
+FNF:10
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\ModelItemViewModel.cs
+FN:7,StemForge.Models.ModelInfo StemForge.ViewModels.ModelItemViewModel::get_Model()
+FNDA:0,StemForge.Models.ModelInfo StemForge.ViewModels.ModelItemViewModel::get_Model()
+DA:8,0
+FN:9,System.String StemForge.ViewModels.ModelItemViewModel::get_Filename()
+FNDA:0,System.String StemForge.ViewModels.ModelItemViewModel::get_Filename()
+DA:10,0
+FN:10,System.String StemForge.ViewModels.ModelItemViewModel::get_FriendlyName()
+FNDA:0,System.String StemForge.ViewModels.ModelItemViewModel::get_FriendlyName()
+DA:11,0
+FN:11,System.String StemForge.ViewModels.ModelItemViewModel::get_Architecture()
+FNDA:0,System.String StemForge.ViewModels.ModelItemViewModel::get_Architecture()
+DA:12,0
+FN:12,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.StemSdr> StemForge.ViewModels.ModelItemViewModel::get_Stems()
+FNDA:0,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.StemSdr> StemForge.ViewModels.ModelItemViewModel::get_Stems()
+DA:13,0
+FN:15,System.String StemForge.ViewModels.ModelItemViewModel::get_StemNames()
+FNDA:0,System.String StemForge.ViewModels.ModelItemViewModel::get_StemNames()
+DA:16,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:20,0
+DA:21,0
+BRDA:16,17,0,0
+BRDA:16,17,1,0
+BRDA:19,14,0,0
+BRDA:19,14,1,0
+FN:32,System.String StemForge.ViewModels.ModelItemViewModel::get_FileSizeDisplay()
+FNDA:0,System.String StemForge.ViewModels.ModelItemViewModel::get_FileSizeDisplay()
+DA:33,0
+DA:34,0
+DA:35,0
+BRDA:33,8,0,0
+BRDA:33,25,0,0
+BRDA:33,25,1,0
+BRDA:33,8,1,0
+FN:5,System.Void StemForge.ViewModels.ModelItemViewModel::.ctor(StemForge.Models.ModelInfo)
+FNDA:0,System.Void StemForge.ViewModels.ModelItemViewModel::.ctor(StemForge.Models.ModelInfo)
+DA:6,0
+LF:15
+LH:0
+BRF:8
+BRH:0
+FNF:8
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\ModelsViewModel.cs
+FN:9,System.String StemForge.ViewModels.EnsembleOption::get_Key()
+FNDA:0,System.String StemForge.ViewModels.EnsembleOption::get_Key()
+DA:10,0
+FN:11,System.String StemForge.ViewModels.EnsembleOption::ToString()
+FNDA:0,System.String StemForge.ViewModels.EnsembleOption::ToString()
+DA:12,0
+FN:16,System.String StemForge.ViewModels.ModelsViewModel::get_Title()
+FNDA:0,System.String StemForge.ViewModels.ModelsViewModel::get_Title()
+DA:17,0
+FN:40,System.Boolean StemForge.ViewModels.ModelsViewModel::get_HasError()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_HasError()
+DA:41,0
+FN:41,System.Boolean StemForge.ViewModels.ModelsViewModel::get_HasModels()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_HasModels()
+DA:42,0
+BRDA:42,6,0,0
+BRDA:42,14,0,0
+BRDA:42,6,1,0
+BRDA:42,14,1,0
+FN:42,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsEmpty()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsEmpty()
+DA:43,0
+BRDA:43,6,0,0
+BRDA:43,14,0,0
+BRDA:43,6,1,0
+BRDA:43,14,1,0
+FN:49,System.Void StemForge.ViewModels.ModelsViewModel::NotifyListState()
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::NotifyListState()
+DA:50,0
+DA:51,0
+DA:52,0
+DA:53,0
+DA:54,0
+FN:57,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.ModelItemViewModel> StemForge.ViewModels.ModelsViewModel::get_Models()
+FNDA:0,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.ModelItemViewModel> StemForge.ViewModels.ModelsViewModel::get_Models()
+DA:58,0
+FN:85,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterAll()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterAll()
+DA:86,0
+FN:86,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterVocals()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterVocals()
+DA:87,0
+FN:87,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterInstrumental()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterInstrumental()
+DA:88,0
+FN:88,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterDrums()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterDrums()
+DA:89,0
+FN:89,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterBass()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterBass()
+DA:90,0
+FN:90,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterOther()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsFilterOther()
+DA:91,0
+FN:93,System.Void StemForge.ViewModels.ModelsViewModel::SetStemFilter(System.String)
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::SetStemFilter(System.String)
+DA:94,0
+FN:96,System.Void StemForge.ViewModels.ModelsViewModel::ToggleLocalOnly()
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::ToggleLocalOnly()
+DA:97,0
+FN:100,System.Int32 StemForge.ViewModels.ModelsViewModel::get_CheckedCount()
+FNDA:0,System.Int32 StemForge.ViewModels.ModelsViewModel::get_CheckedCount()
+DA:101,0
+FN:101,System.Boolean StemForge.ViewModels.ModelsViewModel::get_HasChecked()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_HasChecked()
+DA:102,0
+FN:102,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsMultiModel()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_IsMultiModel()
+DA:103,0
+FN:105,System.String StemForge.ViewModels.ModelsViewModel::get_CheckedSummary()
+FNDA:0,System.String StemForge.ViewModels.ModelsViewModel::get_CheckedSummary()
+DA:106,0
+DA:107,0
+DA:108,0
+BRDA:106,6,0,0
+BRDA:106,6,1,0
+FN:110,System.Void StemForge.ViewModels.ModelsViewModel::OnItemPropertyChanged(System.Object,System.ComponentModel.PropertyChangedEventArgs)
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::OnItemPropertyChanged(System.Object,System.ComponentModel.PropertyChangedEventArgs)
+DA:111,0
+DA:112,0
+DA:113,0
+DA:114,0
+DA:115,0
+DA:116,0
+DA:117,0
+DA:118,0
+DA:119,0
+BRDA:112,19,1,0
+BRDA:112,19,0,0
+FN:131,System.Collections.Generic.IReadOnlyList`1<StemForge.ViewModels.EnsembleOption> StemForge.ViewModels.ModelsViewModel::get_EnsembleAlgorithmOptions()
+FNDA:0,System.Collections.Generic.IReadOnlyList`1<StemForge.ViewModels.EnsembleOption> StemForge.ViewModels.ModelsViewModel::get_EnsembleAlgorithmOptions()
+DA:132,0
+FN:156,System.Boolean StemForge.ViewModels.ModelsViewModel::get_CanSavePreset()
+FNDA:0,System.Boolean StemForge.ViewModels.ModelsViewModel::get_CanSavePreset()
+DA:157,0
+BRDA:157,6,0,0
+BRDA:157,6,1,0
+FN:160,System.Void StemForge.ViewModels.ModelsViewModel::SavePreset()
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::SavePreset()
+DA:161,0
+DA:162,0
+DA:163,0
+DA:164,0
+DA:166,0
+DA:167,0
+DA:168,0
+DA:169,0
+DA:170,0
+DA:173,0
+DA:174,0
+DA:175,0
+DA:176,0
+DA:177,0
+DA:178,0
+DA:179,0
+DA:180,0
+DA:181,0
+DA:182,0
+DA:183,0
+DA:184,0
+DA:185,0
+DA:187,0
+DA:188,0
+DA:189,0
+DA:190,0
+DA:191,0
+DA:192,0
+DA:193,0
+DA:194,0
+DA:195,0
+DA:196,0
+DA:197,0
+DA:198,0
+DA:199,0
+DA:200,0
+DA:202,0
+DA:203,0
+DA:205,0
+DA:206,0
+DA:207,0
+DA:208,0
+BRDA:163,62,1,0
+BRDA:167,88,0,0
+BRDA:167,88,1,0
+BRDA:173,165,0,0
+BRDA:173,165,1,0
+BRDA:205,400,1,0
+BRDA:205,400,0,0
+BRDA:163,62,0,0
+FN:213,System.Void StemForge.ViewModels.ModelsViewModel::DeleteModel(StemForge.ViewModels.ModelItemViewModel)
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::DeleteModel(StemForge.ViewModels.ModelItemViewModel)
+DA:214,0
+DA:215,0
+DA:217,0
+DA:218,0
+DA:219,0
+DA:220,0
+DA:221,0
+DA:222,0
+DA:223,0
+DA:224,0
+DA:225,0
+DA:226,0
+DA:227,0
+DA:228,0
+DA:229,0
+DA:230,0
+DA:231,0
+BRDA:218,33,0,0
+BRDA:218,33,1,0
+FN:288,System.Void StemForge.ViewModels.ModelsViewModel::ApplyFilter()
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::ApplyFilter()
+DA:289,0
+DA:290,0
+DA:291,0
+DA:293,0
+DA:294,0
+DA:295,0
+DA:296,0
+DA:297,0
+DA:298,0
+DA:299,0
+DA:300,0
+DA:301,0
+DA:302,0
+DA:303,0
+DA:304,0
+DA:305,0
+DA:306,0
+DA:307,0
+DA:308,0
+DA:309,0
+DA:310,0
+DA:311,0
+DA:312,0
+DA:313,0
+DA:314,0
+DA:315,0
+DA:317,0
+DA:318,0
+DA:319,0
+DA:321,0
+DA:322,0
+BRDA:318,115,1,0
+BRDA:318,115,0,0
+BRDA:295,12,0,0
+BRDA:295,12,1,0
+BRDA:295,28,0,0
+BRDA:295,28,1,0
+BRDA:298,53,0,0
+BRDA:300,74,0,0
+BRDA:300,94,0,0
+BRDA:300,74,1,0
+BRDA:300,94,1,0
+BRDA:300,122,0,0
+BRDA:300,122,1,0
+BRDA:298,53,1,0
+BRDA:308,147,0,0
+BRDA:310,163,0,0
+BRDA:310,163,1,0
+BRDA:310,201,0,0
+BRDA:310,201,1,0
+BRDA:308,147,1,0
+FN:324,System.String StemForge.ViewModels.ModelsViewModel::SanitizeId(System.String)
+FNDA:0,System.String StemForge.ViewModels.ModelsViewModel::SanitizeId(System.String)
+DA:325,0
+DA:326,0
+DA:327,0
+BRDA:326,6,0,0
+BRDA:326,6,1,0
+FN:44,System.Void StemForge.ViewModels.ModelsViewModel::OnIsLoadingChanged(System.Boolean)
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::OnIsLoadingChanged(System.Boolean)
+DA:45,0
+FN:46,System.Void StemForge.ViewModels.ModelsViewModel::OnErrorTextChanged(System.String)
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::OnErrorTextChanged(System.String)
+DA:47,0
+FN:70,System.Void StemForge.ViewModels.ModelsViewModel::OnSearchTextChanged(System.String)
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::OnSearchTextChanged(System.String)
+DA:71,0
+FN:73,System.Void StemForge.ViewModels.ModelsViewModel::OnStemFilterChanged(System.String)
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::OnStemFilterChanged(System.String)
+DA:74,0
+DA:75,0
+DA:76,0
+DA:77,0
+DA:78,0
+DA:79,0
+DA:80,0
+DA:81,0
+DA:82,0
+FN:83,System.Void StemForge.ViewModels.ModelsViewModel::OnShowLocalOnlyChanged(System.Boolean)
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::OnShowLocalOnlyChanged(System.Boolean)
+DA:84,0
+FN:129,System.Void StemForge.ViewModels.ModelsViewModel::OnNewPresetNameChanged(System.String)
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::OnNewPresetNameChanged(System.String)
+DA:130,0
+FN:21,System.Void StemForge.ViewModels.ModelsViewModel::.ctor(StemForge.Models.AppSettings,StemForge.Services.UserPresetService,StemForge.Services.ModelCatalogService)
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel::.ctor(StemForge.Models.AppSettings,StemForge.Services.UserPresetService,StemForge.Services.ModelCatalogService)
+DA:22,0
+DA:24,0
+DA:25,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:29,0
+DA:30,0
+DA:31,0
+DA:36,0
+DA:63,0
+DA:66,0
+DA:124,0
+DA:127,0
+DA:133,0
+DA:134,0
+DA:135,0
+DA:136,0
+DA:137,0
+DA:138,0
+DA:139,0
+DA:140,0
+DA:141,0
+DA:142,0
+DA:143,0
+DA:144,0
+DA:145,0
+DA:146,0
+DA:147,0
+DA:148,0
+DA:149,0
+DA:150,0
+DA:151,0
+DA:152,0
+DA:153,0
+DA:154,0
+DA:155,0
+FN:244,System.Void StemForge.ViewModels.ModelsViewModel/<LoadModelsAsync>d__74::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel/<LoadModelsAsync>d__74::MoveNext()
+DA:245,0
+DA:246,0
+DA:247,0
+DA:249,0
+DA:250,0
+DA:251,0
+DA:252,0
+DA:255,0
+DA:256,0
+DA:257,0
+DA:258,0
+DA:260,0
+DA:261,0
+DA:262,0
+DA:263,0
+DA:264,0
+DA:265,0
+DA:266,0
+DA:267,0
+DA:268,0
+DA:269,0
+DA:270,0
+DA:271,0
+DA:273,0
+DA:275,0
+DA:276,0
+DA:277,0
+DA:278,0
+DA:279,0
+DA:280,0
+DA:281,0
+DA:283,0
+DA:284,0
+DA:285,0
+DA:286,0
+BRDA:249,133,1,0
+BRDA:249,133,0,0
+BRDA:260,635,1,0
+BRDA:264,517,0,0
+BRDA:264,517,1,0
+BRDA:260,635,0,0
+BRDA:275,709,0,0
+BRDA:275,709,1,0
+FN:236,System.Void StemForge.ViewModels.ModelsViewModel/<Refresh>d__73::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.ModelsViewModel/<Refresh>d__73::MoveNext()
+DA:237,0
+DA:238,0
+DA:239,0
+DA:240,0
+LF:220
+LH:0
+BRF:54
+BRH:0
+FNF:36
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\NavItem.cs
+FN:6,System.String StemForge.ViewModels.NavItem::get_Label()
+FNDA:0,System.String StemForge.ViewModels.NavItem::get_Label()
+DA:7,0
+FN:9,System.String StemForge.ViewModels.NavItem::get_IconData()
+FNDA:0,System.String StemForge.ViewModels.NavItem::get_IconData()
+DA:10,0
+FN:11,StemForge.ViewModels.PageViewModelBase StemForge.ViewModels.NavItem::get_Target()
+FNDA:0,StemForge.ViewModels.PageViewModelBase StemForge.ViewModels.NavItem::get_Target()
+DA:12,0
+LF:3
+LH:0
+BRF:0
+BRH:0
+FNF:3
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\PresetCategoryGroup.cs
+FN:12,StemForge.Models.PresetCategory StemForge.ViewModels.PresetCategoryGroup::get_Category()
+FNDA:0,StemForge.Models.PresetCategory StemForge.ViewModels.PresetCategoryGroup::get_Category()
+DA:13,0
+FN:13,System.String StemForge.ViewModels.PresetCategoryGroup::get_Label()
+FNDA:0,System.String StemForge.ViewModels.PresetCategoryGroup::get_Label()
+DA:14,0
+FN:21,Avalonia.Media.IBrush StemForge.ViewModels.PresetCategoryGroup::get_AccentBrush()
+FNDA:0,Avalonia.Media.IBrush StemForge.ViewModels.PresetCategoryGroup::get_AccentBrush()
+DA:22,0
+FN:22,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.PresetItemViewModel> StemForge.ViewModels.PresetCategoryGroup::get_Items()
+FNDA:0,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.PresetItemViewModel> StemForge.ViewModels.PresetCategoryGroup::get_Items()
+DA:23,0
+FN:6,System.Void StemForge.ViewModels.PresetCategoryGroup::.ctor(StemForge.Models.PresetCategory,Avalonia.Media.IBrush,System.Collections.Generic.IEnumerable`1<StemForge.ViewModels.PresetItemViewModel>)
+FNDA:0,System.Void StemForge.ViewModels.PresetCategoryGroup::.ctor(StemForge.Models.PresetCategory,Avalonia.Media.IBrush,System.Collections.Generic.IEnumerable`1<StemForge.ViewModels.PresetItemViewModel>)
+DA:7,0
+DA:8,0
+DA:9,0
+DA:10,0
+DA:11,0
+DA:15,0
+DA:16,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:20,0
+DA:21,0
+DA:24,0
+BRDA:15,12,0,0
+BRDA:15,18,0,0
+BRDA:15,12,1,0
+BRDA:15,18,1,0
+BRDA:15,24,1,0
+BRDA:15,24,0,0
+LF:17
+LH:0
+BRF:6
+BRH:0
+FNF:5
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\PresetItemViewModel.cs
+FN:7,StemForge.Models.Preset StemForge.ViewModels.PresetItemViewModel::get_Preset()
+FNDA:0,StemForge.Models.Preset StemForge.ViewModels.PresetItemViewModel::get_Preset()
+DA:8,0
+FN:9,System.String StemForge.ViewModels.PresetItemViewModel::get_Id()
+FNDA:0,System.String StemForge.ViewModels.PresetItemViewModel::get_Id()
+DA:10,0
+FN:10,System.String StemForge.ViewModels.PresetItemViewModel::get_Label()
+FNDA:0,System.String StemForge.ViewModels.PresetItemViewModel::get_Label()
+DA:11,0
+FN:11,System.String StemForge.ViewModels.PresetItemViewModel::get_Description()
+FNDA:0,System.String StemForge.ViewModels.PresetItemViewModel::get_Description()
+DA:12,0
+FN:13,System.String StemForge.ViewModels.PresetItemViewModel::get_ModelsTag()
+FNDA:0,System.String StemForge.ViewModels.PresetItemViewModel::get_ModelsTag()
+DA:14,0
+DA:15,0
+DA:16,0
+BRDA:14,12,0,0
+BRDA:14,26,0,0
+BRDA:14,26,1,0
+BRDA:14,12,1,0
+FN:16,System.String StemForge.ViewModels.PresetItemViewModel::get_VramTag()
+FNDA:0,System.String StemForge.ViewModels.PresetItemViewModel::get_VramTag()
+DA:17,0
+FN:5,System.Void StemForge.ViewModels.PresetItemViewModel::.ctor(StemForge.Models.Preset)
+FNDA:0,System.Void StemForge.ViewModels.PresetItemViewModel::.ctor(StemForge.Models.Preset)
+DA:6,0
+LF:9
+LH:0
+BRF:4
+BRH:0
+FNF:7
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\QueueViewModel.cs
+FN:12,System.String StemForge.ViewModels.QueueViewModel::get_Title()
+FNDA:0,System.String StemForge.ViewModels.QueueViewModel::get_Title()
+DA:13,0
+FN:14,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.JobItemViewModel> StemForge.ViewModels.QueueViewModel::get_Jobs()
+FNDA:0,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.JobItemViewModel> StemForge.ViewModels.QueueViewModel::get_Jobs()
+DA:15,0
+FN:28,System.Void StemForge.ViewModels.QueueViewModel::RefreshSummary()
+FNDA:0,System.Void StemForge.ViewModels.QueueViewModel::RefreshSummary()
+DA:29,0
+DA:30,0
+DA:31,0
+DA:32,0
+DA:33,0
+DA:34,0
+DA:35,0
+DA:36,0
+BRDA:32,68,0,0
+BRDA:32,75,0,0
+BRDA:32,112,0,0
+BRDA:32,112,1,0
+BRDA:32,75,1,0
+BRDA:32,177,0,0
+BRDA:32,177,1,0
+BRDA:32,68,1,0
+FN:38,System.Void StemForge.ViewModels.QueueViewModel::ClearDone()
+FNDA:0,System.Void StemForge.ViewModels.QueueViewModel::ClearDone()
+DA:39,0
+FN:22,System.Void StemForge.ViewModels.QueueViewModel::<.ctor>b__9_0(System.Object,System.EventArgs)
+FNDA:0,System.Void StemForge.ViewModels.QueueViewModel::<.ctor>b__9_0(System.Object,System.EventArgs)
+DA:23,0
+FN:23,System.Void StemForge.ViewModels.QueueViewModel::<.ctor>b__9_1(System.Object,System.Collections.Specialized.NotifyCollectionChangedEventArgs)
+FNDA:0,System.Void StemForge.ViewModels.QueueViewModel::<.ctor>b__9_1(System.Object,System.Collections.Specialized.NotifyCollectionChangedEventArgs)
+DA:24,0
+FN:17,System.Void StemForge.ViewModels.QueueViewModel::.ctor(StemForge.Services.JobQueueService)
+FNDA:0,System.Void StemForge.ViewModels.QueueViewModel::.ctor(StemForge.Services.JobQueueService)
+DA:18,0
+DA:20,0
+DA:21,0
+DA:22,0
+DA:25,0
+DA:26,0
+LF:19
+LH:0
+BRF:8
+BRH:0
+FNF:7
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\SeparateViewModel.cs
+FN:20,System.String StemForge.ViewModels.SeparateViewModel::get_Title()
+FNDA:0,System.String StemForge.ViewModels.SeparateViewModel::get_Title()
+DA:21,0
+FN:22,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.PresetCategoryGroup> StemForge.ViewModels.SeparateViewModel::get_Categories()
+FNDA:0,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.PresetCategoryGroup> StemForge.ViewModels.SeparateViewModel::get_Categories()
+DA:23,0
+FN:27,System.Boolean StemForge.ViewModels.SeparateViewModel::get_IsBuiltInMode()
+FNDA:0,System.Boolean StemForge.ViewModels.SeparateViewModel::get_IsBuiltInMode()
+DA:28,0
+FN:28,System.Boolean StemForge.ViewModels.SeparateViewModel::get_IsMyPresetsMode()
+FNDA:0,System.Boolean StemForge.ViewModels.SeparateViewModel::get_IsMyPresetsMode()
+DA:29,0
+FN:33,System.Boolean StemForge.ViewModels.SeparateViewModel::get_HasInputFile()
+FNDA:0,System.Boolean StemForge.ViewModels.SeparateViewModel::get_HasInputFile()
+DA:34,0
+FN:35,System.String StemForge.ViewModels.SeparateViewModel::get_InputFileName()
+FNDA:0,System.String StemForge.ViewModels.SeparateViewModel::get_InputFileName()
+DA:36,0
+BRDA:36,11,0,0
+BRDA:36,11,1,0
+FN:47,System.String StemForge.ViewModels.SeparateViewModel::get_SelectedCountLabel()
+FNDA:0,System.String StemForge.ViewModels.SeparateViewModel::get_SelectedCountLabel()
+DA:48,0
+DA:49,0
+DA:50,0
+BRDA:48,6,0,0
+BRDA:48,20,0,0
+BRDA:48,20,1,0
+BRDA:48,6,1,0
+FN:51,System.Boolean StemForge.ViewModels.SeparateViewModel::get_HasSelection()
+FNDA:0,System.Boolean StemForge.ViewModels.SeparateViewModel::get_HasSelection()
+DA:52,0
+FN:64,System.Boolean StemForge.ViewModels.SeparateViewModel::get_CanStartRun()
+FNDA:0,System.Boolean StemForge.ViewModels.SeparateViewModel::get_CanStartRun()
+DA:65,0
+DA:66,0
+DA:67,0
+DA:68,0
+DA:69,0
+BRDA:65,7,0,0
+BRDA:65,20,0,0
+BRDA:65,28,0,0
+BRDA:65,28,1,0
+BRDA:65,20,1,0
+BRDA:65,7,1,0
+FN:72,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.PresetItemViewModel> StemForge.ViewModels.SeparateViewModel::get_UserPresetItems()
+FNDA:0,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.PresetItemViewModel> StemForge.ViewModels.SeparateViewModel::get_UserPresetItems()
+DA:73,0
+FN:73,System.Boolean StemForge.ViewModels.SeparateViewModel::get_HasUserPresets()
+FNDA:0,System.Boolean StemForge.ViewModels.SeparateViewModel::get_HasUserPresets()
+DA:74,0
+FN:102,System.Void StemForge.ViewModels.SeparateViewModel::AddUserPresetItem(StemForge.Models.Preset)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::AddUserPresetItem(StemForge.Models.Preset)
+DA:103,0
+DA:104,0
+DA:105,0
+DA:106,0
+DA:107,0
+FN:109,System.Void StemForge.ViewModels.SeparateViewModel::OnUserPresetsCollectionChanged(System.Object,System.Collections.Specialized.NotifyCollectionChangedEventArgs)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::OnUserPresetsCollectionChanged(System.Object,System.Collections.Specialized.NotifyCollectionChangedEventArgs)
+DA:110,0
+DA:111,0
+DA:114,0
+DA:115,0
+DA:116,0
+DA:118,0
+DA:119,0
+DA:120,0
+DA:121,0
+DA:122,0
+DA:123,0
+DA:124,0
+DA:125,0
+DA:126,0
+DA:127,0
+DA:129,0
+DA:130,0
+DA:131,0
+DA:132,0
+DA:133,0
+DA:134,0
+DA:136,0
+DA:137,0
+DA:138,0
+BRDA:111,11,0,0
+BRDA:111,11,1,0
+BRDA:114,65,1,0
+BRDA:114,65,0,0
+BRDA:111,17,1,0
+BRDA:118,219,1,0
+BRDA:121,173,0,0
+BRDA:121,173,1,0
+BRDA:118,219,0,0
+BRDA:111,17,0,0
+BRDA:129,302,1,0
+BRDA:129,302,0,0
+BRDA:132,377,1,0
+BRDA:132,377,0,0
+FN:141,System.Void StemForge.ViewModels.SeparateViewModel::RemoveUserPreset(StemForge.ViewModels.PresetItemViewModel)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::RemoveUserPreset(StemForge.ViewModels.PresetItemViewModel)
+DA:142,0
+DA:143,0
+DA:144,0
+FN:192,System.Void StemForge.ViewModels.SeparateViewModel::OnItemPropertyChanged(System.Object,System.ComponentModel.PropertyChangedEventArgs)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::OnItemPropertyChanged(System.Object,System.ComponentModel.PropertyChangedEventArgs)
+DA:193,0
+DA:194,0
+DA:195,0
+DA:196,0
+BRDA:194,19,0,0
+BRDA:194,19,1,0
+FN:198,System.Void StemForge.ViewModels.SeparateViewModel::RecomputeSelectedCount()
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::RecomputeSelectedCount()
+DA:199,0
+DA:200,0
+DA:201,0
+DA:202,0
+DA:203,0
+FN:223,System.Void StemForge.ViewModels.SeparateViewModel::ClearInput()
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::ClearInput()
+DA:224,0
+DA:225,0
+DA:226,0
+FN:254,System.Void StemForge.ViewModels.SeparateViewModel::SetMode(System.String)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::SetMode(System.String)
+DA:255,0
+DA:256,0
+DA:257,0
+DA:258,0
+DA:259,0
+BRDA:256,14,0,0
+BRDA:256,14,1,0
+FN:262,System.Void StemForge.ViewModels.SeparateViewModel::TogglePreset(StemForge.ViewModels.PresetItemViewModel)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::TogglePreset(StemForge.ViewModels.PresetItemViewModel)
+DA:263,0
+DA:264,0
+DA:265,0
+FN:268,System.Void StemForge.ViewModels.SeparateViewModel::Run()
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::Run()
+DA:269,0
+DA:270,0
+DA:271,0
+DA:272,0
+BRDA:271,15,0,0
+BRDA:271,15,1,0
+FN:274,System.String StemForge.ViewModels.SeparateViewModel::ExpandPath(System.String)
+FNDA:0,System.String StemForge.ViewModels.SeparateViewModel::ExpandPath(System.String)
+DA:275,0
+DA:276,0
+DA:277,0
+BRDA:275,8,0,0
+BRDA:275,8,1,0
+FN:280,System.Void StemForge.ViewModels.SeparateViewModel::AddToQueue()
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::AddToQueue()
+DA:281,0
+DA:282,0
+DA:283,0
+DA:285,0
+DA:286,0
+DA:287,0
+DA:288,0
+DA:289,0
+DA:290,0
+DA:292,0
+DA:293,0
+DA:294,0
+DA:295,0
+DA:296,0
+DA:297,0
+DA:298,0
+DA:299,0
+DA:300,0
+DA:302,0
+DA:303,0
+BRDA:282,12,0,0
+BRDA:282,12,1,0
+BRDA:282,30,1,0
+BRDA:293,189,0,0
+BRDA:293,189,1,0
+BRDA:293,201,0,0
+BRDA:293,201,1,0
+BRDA:282,30,0,0
+FN:247,System.Void StemForge.ViewModels.SeparateViewModel::OnModeChanged(StemForge.ViewModels.SeparateMode)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::OnModeChanged(StemForge.ViewModels.SeparateMode)
+DA:248,0
+DA:249,0
+DA:250,0
+DA:251,0
+FN:214,System.Void StemForge.ViewModels.SeparateViewModel::OnInputFilePathChanged(System.String)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::OnInputFilePathChanged(System.String)
+DA:215,0
+DA:216,0
+DA:217,0
+DA:218,0
+DA:219,0
+DA:220,0
+FN:228,System.Void StemForge.ViewModels.SeparateViewModel::OnUrlInputChanged(System.String)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::OnUrlInputChanged(System.String)
+DA:229,0
+DA:230,0
+DA:231,0
+DA:232,0
+FN:205,System.Void StemForge.ViewModels.SeparateViewModel::OnSelectedCountChanged(System.Int32)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::OnSelectedCountChanged(System.Int32)
+DA:206,0
+DA:207,0
+DA:208,0
+DA:209,0
+DA:210,0
+DA:211,0
+DA:212,0
+FN:234,System.Void StemForge.ViewModels.SeparateViewModel::OnIsUrlInputEnabledChanged(System.Boolean)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::OnIsUrlInputEnabledChanged(System.Boolean)
+DA:235,0
+DA:236,0
+DA:237,0
+DA:238,0
+FN:151,Avalonia.Media.IBrush StemForge.ViewModels.SeparateViewModel::<BuildGroups>g__Brush|56_0(System.String,StemForge.ViewModels.SeparateViewModel/<>c__DisplayClass56_0&)
+FNDA:0,Avalonia.Media.IBrush StemForge.ViewModels.SeparateViewModel::<BuildGroups>g__Brush|56_0(System.String,StemForge.ViewModels.SeparateViewModel/<>c__DisplayClass56_0&)
+DA:152,0
+DA:153,0
+DA:154,0
+DA:155,0
+DA:156,0
+DA:157,0
+DA:158,0
+DA:159,0
+BRDA:153,31,0,0
+BRDA:153,31,1,0
+BRDA:153,49,0,0
+BRDA:153,49,1,0
+FN:25,System.Void StemForge.ViewModels.SeparateViewModel::.ctor(StemForge.Services.JobQueueService,StemForge.Models.AppSettings,StemForge.Services.UserPresetService,StemForge.Services.ToolInstaller)
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel::.ctor(StemForge.Services.JobQueueService,StemForge.Models.AppSettings,StemForge.Services.UserPresetService,StemForge.Services.ToolInstaller)
+DA:26,0
+DA:39,0
+DA:42,0
+DA:76,0
+DA:77,0
+DA:78,0
+DA:79,0
+DA:80,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+DA:85,0
+DA:86,0
+DA:87,0
+DA:88,0
+DA:89,0
+DA:90,0
+DA:92,0
+DA:93,0
+DA:94,0
+DA:96,0
+DA:97,0
+DA:99,0
+DA:100,0
+BRDA:92,211,1,0
+BRDA:93,190,1,0
+BRDA:93,190,0,0
+BRDA:92,211,0,0
+BRDA:96,272,1,0
+BRDA:96,272,0,0
+FN:161,StemForge.Models.PresetCategory StemForge.ViewModels.SeparateViewModel/<>c::<BuildGroups>b__56_1(StemForge.Models.Preset)
+FNDA:0,StemForge.Models.PresetCategory StemForge.ViewModels.SeparateViewModel/<>c::<BuildGroups>b__56_1(StemForge.Models.Preset)
+DA:162,0
+FN:162,StemForge.Models.PresetCategory StemForge.ViewModels.SeparateViewModel/<>c::<BuildGroups>b__56_2(System.Linq.IGrouping`2<StemForge.Models.PresetCategory,StemForge.Models.Preset>)
+FNDA:0,StemForge.Models.PresetCategory StemForge.ViewModels.SeparateViewModel/<>c::<BuildGroups>b__56_2(System.Linq.IGrouping`2<StemForge.Models.PresetCategory,StemForge.Models.Preset>)
+DA:163,0
+FN:148,System.Boolean StemForge.ViewModels.SeparateViewModel/<BuildGroups>d__56::MoveNext()
+FNDA:0,System.Boolean StemForge.ViewModels.SeparateViewModel/<BuildGroups>d__56::MoveNext()
+DA:149,0
+DA:150,0
+DA:161,0
+DA:165,0
+DA:166,0
+DA:167,0
+DA:168,0
+DA:169,0
+DA:170,0
+DA:171,0
+DA:173,0
+DA:174,0
+DA:175,0
+DA:176,0
+DA:177,0
+DA:178,0
+DA:179,0
+DA:180,0
+DA:181,0
+DA:182,0
+DA:183,0
+DA:184,0
+DA:185,0
+BRDA:166,457,1,0
+BRDA:174,247,1,0
+BRDA:176,266,0,0
+BRDA:176,272,0,0
+BRDA:176,266,1,0
+BRDA:176,272,1,0
+BRDA:176,278,1,0
+BRDA:176,278,0,0
+BRDA:174,247,0,0
+BRDA:166,457,0,0
+FN:240,System.Void StemForge.ViewModels.SeparateViewModel/<CheckUrlToolsAsync>d__60::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.SeparateViewModel/<CheckUrlToolsAsync>d__60::MoveNext()
+DA:241,0
+DA:242,0
+DA:243,0
+DA:244,0
+DA:245,0
+LF:184
+LH:0
+BRF:62
+BRH:0
+FNF:33
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\SettingsViewModel.cs
+FN:15,System.String StemForge.ViewModels.SettingsViewModel::get_Title()
+FNDA:0,System.String StemForge.ViewModels.SettingsViewModel::get_Title()
+DA:16,0
+FN:27,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.ToolStatusViewModel> StemForge.ViewModels.SettingsViewModel::get_Tools()
+FNDA:0,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.ToolStatusViewModel> StemForge.ViewModels.SettingsViewModel::get_Tools()
+DA:28,0
+FN:34,System.Boolean StemForge.ViewModels.SettingsViewModel::get_IsCpu()
+FNDA:0,System.Boolean StemForge.ViewModels.SettingsViewModel::get_IsCpu()
+DA:35,0
+FN:35,System.Boolean StemForge.ViewModels.SettingsViewModel::get_IsCuda()
+FNDA:0,System.Boolean StemForge.ViewModels.SettingsViewModel::get_IsCuda()
+DA:36,0
+FN:36,System.Boolean StemForge.ViewModels.SettingsViewModel::get_IsDirectML()
+FNDA:0,System.Boolean StemForge.ViewModels.SettingsViewModel::get_IsDirectML()
+DA:37,0
+FN:78,System.Void StemForge.ViewModels.SettingsViewModel::LoadFromSettings(StemForge.Models.AppSettings)
+FNDA:0,System.Void StemForge.ViewModels.SettingsViewModel::LoadFromSettings(StemForge.Models.AppSettings)
+DA:79,0
+DA:80,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+DA:85,0
+DA:86,0
+BRDA:84,61,0,0
+BRDA:84,61,1,0
+BRDA:85,83,0,0
+BRDA:85,83,1,0
+FN:96,System.Void StemForge.ViewModels.SettingsViewModel::SetGpuVariant(System.String)
+FNDA:0,System.Void StemForge.ViewModels.SettingsViewModel::SetGpuVariant(System.String)
+DA:97,0
+DA:98,0
+DA:99,0
+FN:163,System.String StemForge.ViewModels.SettingsViewModel::VariantTagFor(System.String,System.Boolean)
+FNDA:0,System.String StemForge.ViewModels.SettingsViewModel::VariantTagFor(System.String,System.Boolean)
+DA:164,0
+DA:165,0
+DA:166,0
+DA:167,0
+DA:168,0
+DA:169,0
+DA:170,0
+DA:171,0
+DA:172,0
+BRDA:164,11,0,0
+BRDA:164,11,1,0
+BRDA:164,14,0,0
+BRDA:164,14,1,0
+BRDA:166,43,0,0
+BRDA:166,54,2,0
+BRDA:166,54,3,0
+BRDA:166,54,1,0
+BRDA:166,43,1,0
+BRDA:166,54,0,0
+FN:176,System.Void StemForge.ViewModels.SettingsViewModel::ShowWizard()
+FNDA:0,System.Void StemForge.ViewModels.SettingsViewModel::ShowWizard()
+DA:177,0
+BRDA:177,7,0,0
+BRDA:177,7,1,0
+FN:88,System.Void StemForge.ViewModels.SettingsViewModel::OnGpuVariantChanged(StemForge.Models.GpuVariant)
+FNDA:0,System.Void StemForge.ViewModels.SettingsViewModel::OnGpuVariantChanged(StemForge.Models.GpuVariant)
+DA:89,0
+DA:90,0
+DA:91,0
+DA:92,0
+DA:93,0
+FN:20,System.Void StemForge.ViewModels.SettingsViewModel::.ctor(StemForge.Models.AppSettings,StemForge.Services.SetupDetector,StemForge.Services.GpuDetector,StemForge.Services.ToolInstaller)
+FNDA:0,System.Void StemForge.ViewModels.SettingsViewModel::.ctor(StemForge.Models.AppSettings,StemForge.Services.SetupDetector,StemForge.Services.GpuDetector,StemForge.Services.ToolInstaller)
+DA:21,0
+DA:27,0
+DA:42,0
+DA:45,0
+DA:50,0
+DA:53,0
+DA:56,0
+DA:63,0
+DA:64,0
+DA:65,0
+DA:66,0
+DA:67,0
+DA:68,0
+DA:69,0
+DA:70,0
+DA:71,0
+DA:72,0
+DA:73,0
+DA:74,0
+DA:75,0
+DA:76,0
+FN:121,System.Boolean StemForge.ViewModels.SettingsViewModel/<>c::<DetectToolsAsync>b__55_0(StemForge.Services.ToolInfo)
+FNDA:0,System.Boolean StemForge.ViewModels.SettingsViewModel/<>c::<DetectToolsAsync>b__55_0(StemForge.Services.ToolInfo)
+DA:122,0
+BRDA:122,6,0,0
+BRDA:122,6,1,0
+FN:125,System.Int32 StemForge.ViewModels.SettingsViewModel/<>c::<DetectToolsAsync>b__55_1(StemForge.Services.DetectedGpu)
+FNDA:0,System.Int32 StemForge.ViewModels.SettingsViewModel/<>c::<DetectToolsAsync>b__55_1(StemForge.Services.DetectedGpu)
+DA:126,0
+DA:127,0
+DA:128,0
+DA:129,0
+DA:130,0
+DA:131,0
+DA:132,0
+BRDA:126,12,1,0
+BRDA:126,12,2,0
+BRDA:126,12,3,0
+BRDA:126,12,0,0
+FN:155,System.Boolean StemForge.ViewModels.SettingsViewModel/<>c::<TryFillInstalledVariantAsync>b__56_0(StemForge.Services.ToolInfo)
+FNDA:0,System.Boolean StemForge.ViewModels.SettingsViewModel/<>c::<TryFillInstalledVariantAsync>b__56_0(StemForge.Services.ToolInfo)
+DA:156,0
+FN:101,System.Void StemForge.ViewModels.SettingsViewModel/<DetectToolsAsync>d__55::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.SettingsViewModel/<DetectToolsAsync>d__55::MoveNext()
+DA:102,0
+DA:103,0
+DA:104,0
+DA:105,0
+DA:107,0
+DA:108,0
+DA:109,0
+DA:110,0
+DA:111,0
+DA:113,0
+DA:115,0
+DA:116,0
+DA:118,0
+DA:120,0
+DA:121,0
+DA:125,0
+DA:133,0
+DA:134,0
+DA:136,0
+DA:137,0
+DA:138,0
+DA:141,0
+DA:142,0
+DA:143,0
+DA:144,0
+DA:146,0
+DA:147,0
+DA:148,0
+DA:149,0
+BRDA:108,137,0,0
+BRDA:108,137,1,0
+BRDA:120,798,1,0
+BRDA:120,798,0,0
+BRDA:136,954,0,0
+BRDA:141,1013,0,0
+BRDA:141,1013,1,0
+BRDA:136,954,1,0
+FN:179,System.Void StemForge.ViewModels.SettingsViewModel/<RefreshTools>d__62::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.SettingsViewModel/<RefreshTools>d__62::MoveNext()
+DA:180,0
+FN:183,System.Void StemForge.ViewModels.SettingsViewModel/<Save>d__63::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.SettingsViewModel/<Save>d__63::MoveNext()
+DA:184,0
+DA:185,0
+DA:186,0
+DA:187,0
+DA:188,0
+DA:189,0
+DA:190,0
+DA:191,0
+DA:192,0
+DA:193,0
+DA:194,0
+DA:195,0
+DA:197,0
+DA:199,0
+DA:200,0
+DA:201,0
+DA:202,0
+BRDA:189,168,0,0
+BRDA:189,168,1,0
+BRDA:192,217,0,0
+BRDA:192,217,1,0
+FN:151,System.Void StemForge.ViewModels.SettingsViewModel/<TryFillInstalledVariantAsync>d__56::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.SettingsViewModel/<TryFillInstalledVariantAsync>d__56::MoveNext()
+DA:152,0
+DA:153,0
+DA:154,0
+DA:157,0
+DA:159,0
+DA:160,0
+DA:161,0
+BRDA:153,50,0,0
+BRDA:153,50,1,0
+BRDA:156,100,0,0
+BRDA:156,100,1,0
+BRDA:156,116,0,0
+BRDA:156,116,1,0
+BRDA:159,261,0,0
+BRDA:159,261,1,0
+BRDA:159,288,0,0
+BRDA:159,288,1,0
+LF:115
+LH:0
+BRF:44
+BRH:0
+FNF:18
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\SetupWizardViewModel.cs
+FN:33,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_CanDismiss()
+FNDA:2,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_CanDismiss()
+DA:34,2
+FN:40,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsWelcomeStep()
+FNDA:2,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsWelcomeStep()
+DA:41,2
+FN:41,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsDetectStep()
+FNDA:1,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsDetectStep()
+DA:42,1
+FN:42,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsDirectoriesStep()
+FNDA:0,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsDirectoriesStep()
+DA:43,0
+FN:43,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsInstallStep()
+FNDA:0,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsInstallStep()
+DA:44,0
+FN:44,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsFinishStep()
+FNDA:0,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsFinishStep()
+DA:45,0
+FN:47,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsStep1Active()
+FNDA:3,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsStep1Active()
+DA:48,3
+FN:48,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsStep2Active()
+FNDA:2,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsStep2Active()
+DA:49,2
+FN:49,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsStep3Active()
+FNDA:2,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsStep3Active()
+DA:50,2
+FN:50,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsStep4Active()
+FNDA:2,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsStep4Active()
+DA:51,2
+FN:53,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsBackVisible()
+FNDA:5,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsBackVisible()
+DA:54,5
+BRDA:54,11,1,3
+BRDA:54,11,0,2
+FN:56,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_CanGoNext()
+FNDA:3,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_CanGoNext()
+DA:57,3
+DA:58,3
+DA:59,0
+DA:60,2
+DA:61,1
+DA:62,3
+BRDA:57,13,0,3
+BRDA:57,13,1,0
+BRDA:57,19,1,2
+BRDA:57,19,0,1
+FN:68,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.ToolStatusViewModel> StemForge.ViewModels.SetupWizardViewModel::get_Tools()
+FNDA:25,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.ToolStatusViewModel> StemForge.ViewModels.SetupWizardViewModel::get_Tools()
+DA:69,25
+FN:81,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsCpu()
+FNDA:2,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsCpu()
+DA:82,2
+FN:82,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsCuda()
+FNDA:2,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsCuda()
+DA:83,2
+FN:83,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsDirectML()
+FNDA:2,System.Boolean StemForge.ViewModels.SetupWizardViewModel::get_IsDirectML()
+DA:84,2
+FN:180,System.Void StemForge.ViewModels.SetupWizardViewModel::Start()
+FNDA:1,System.Void StemForge.ViewModels.SetupWizardViewModel::Start()
+DA:181,1
+FN:184,System.Void StemForge.ViewModels.SetupWizardViewModel::Back()
+FNDA:1,System.Void StemForge.ViewModels.SetupWizardViewModel::Back()
+DA:185,1
+DA:186,1
+DA:187,1
+DA:188,1
+DA:189,0
+DA:190,0
+DA:191,0
+DA:192,1
+DA:193,1
+BRDA:186,15,1,1
+BRDA:186,15,2,0
+BRDA:186,15,3,0
+BRDA:186,15,0,0
+FN:196,System.Void StemForge.ViewModels.SetupWizardViewModel::Next()
+FNDA:2,System.Void StemForge.ViewModels.SetupWizardViewModel::Next()
+DA:197,2
+DA:198,2
+DA:199,2
+DA:200,0
+DA:201,1
+DA:202,1
+DA:203,0
+DA:204,2
+DA:205,2
+BRDA:198,15,1,0
+BRDA:198,15,2,1
+BRDA:198,15,3,1
+BRDA:198,15,0,0
+FN:207,System.Void StemForge.ViewModels.SetupWizardViewModel::SetGpuVariant(System.String)
+FNDA:3,System.Void StemForge.ViewModels.SetupWizardViewModel::SetGpuVariant(System.String)
+DA:208,3
+FN:357,System.Void StemForge.ViewModels.SetupWizardViewModel::Dismiss()
+FNDA:1,System.Void StemForge.ViewModels.SetupWizardViewModel::Dismiss()
+DA:358,1
+BRDA:358,7,0,0
+BRDA:358,7,1,1
+FN:360,System.Void StemForge.ViewModels.SetupWizardViewModel::Reset()
+FNDA:1,System.Void StemForge.ViewModels.SetupWizardViewModel::Reset()
+DA:361,1
+DA:362,1
+DA:363,1
+DA:364,1
+DA:365,1
+DA:366,1
+DA:367,1
+DA:368,1
+DA:369,1
+DA:370,1
+DA:371,1
+DA:372,1
+DA:373,1
+DA:374,1
+DA:375,1
+DA:376,1
+DA:377,1
+DA:378,1
+DA:379,1
+DA:380,1
+DA:381,1
+DA:382,1
+DA:383,1
+DA:384,1
+DA:385,1
+DA:386,1
+DA:387,1
+FN:458,System.String StemForge.ViewModels.SetupWizardViewModel::VariantTagFor(System.String,System.Boolean)
+FNDA:8,System.String StemForge.ViewModels.SetupWizardViewModel::VariantTagFor(System.String,System.Boolean)
+DA:459,8
+DA:460,8
+DA:461,8
+DA:462,0
+DA:463,0
+DA:464,0
+DA:465,0
+DA:466,0
+DA:467,0
+DA:468,0
+DA:469,8
+BRDA:460,12,0,2
+BRDA:460,12,1,6
+BRDA:460,23,0,8
+BRDA:460,23,1,0
+BRDA:462,52,0,0
+BRDA:462,65,2,0
+BRDA:462,65,3,0
+BRDA:462,65,1,0
+BRDA:462,52,1,0
+BRDA:462,65,0,0
+FN:145,System.Void StemForge.ViewModels.SetupWizardViewModel::OnCurrentStepChanged(StemForge.ViewModels.WizardStep)
+FNDA:18,System.Void StemForge.ViewModels.SetupWizardViewModel::OnCurrentStepChanged(StemForge.ViewModels.WizardStep)
+DA:146,18
+DA:147,18
+DA:148,18
+DA:149,18
+DA:150,18
+DA:151,18
+DA:152,18
+DA:153,18
+DA:154,18
+DA:155,18
+DA:156,18
+DA:157,18
+DA:159,18
+DA:160,4
+DA:161,14
+DA:162,5
+DA:163,18
+BRDA:159,139,0,4
+BRDA:159,139,1,14
+BRDA:161,156,0,5
+BRDA:161,156,1,18
+FN:164,System.Void StemForge.ViewModels.SetupWizardViewModel::OnIsDetectingChanged(System.Boolean)
+FNDA:6,System.Void StemForge.ViewModels.SetupWizardViewModel::OnIsDetectingChanged(System.Boolean)
+DA:165,6
+FN:166,System.Void StemForge.ViewModels.SetupWizardViewModel::OnAudioSeparatorFoundChanged(System.Boolean)
+FNDA:4,System.Void StemForge.ViewModels.SetupWizardViewModel::OnAudioSeparatorFoundChanged(System.Boolean)
+DA:167,4
+FN:169,System.Void StemForge.ViewModels.SetupWizardViewModel::OnGpuVariantChanged(StemForge.Models.GpuVariant)
+FNDA:2,System.Void StemForge.ViewModels.SetupWizardViewModel::OnGpuVariantChanged(StemForge.Models.GpuVariant)
+DA:170,2
+DA:171,2
+DA:172,2
+DA:173,2
+DA:174,2
+FN:175,System.Void StemForge.ViewModels.SetupWizardViewModel::OnUvFoundChanged(System.Boolean)
+FNDA:0,System.Void StemForge.ViewModels.SetupWizardViewModel::OnUvFoundChanged(System.Boolean)
+DA:176,0
+FN:220,System.Void StemForge.ViewModels.SetupWizardViewModel::<InstallUvAsync>b__123_0(System.String)
+FNDA:0,System.Void StemForge.ViewModels.SetupWizardViewModel::<InstallUvAsync>b__123_0(System.String)
+DA:221,0
+DA:222,0
+DA:223,0
+DA:224,0
+DA:225,0
+DA:226,0
+BRDA:222,17,0,0
+BRDA:222,17,1,0
+FN:253,System.Void StemForge.ViewModels.SetupWizardViewModel::<InstallAsync>b__124_0(System.String)
+FNDA:0,System.Void StemForge.ViewModels.SetupWizardViewModel::<InstallAsync>b__124_0(System.String)
+DA:254,0
+DA:255,0
+DA:256,0
+DA:257,0
+DA:258,0
+DA:259,0
+BRDA:255,17,0,0
+BRDA:255,17,1,0
+FN:284,System.Void StemForge.ViewModels.SetupWizardViewModel::<InstallYtdlpAsync>b__125_0(System.String)
+FNDA:0,System.Void StemForge.ViewModels.SetupWizardViewModel::<InstallYtdlpAsync>b__125_0(System.String)
+DA:285,0
+DA:286,0
+DA:287,0
+DA:288,0
+DA:289,0
+DA:290,0
+BRDA:286,17,0,0
+BRDA:286,17,1,0
+FN:319,System.Void StemForge.ViewModels.SetupWizardViewModel::<InstallFfmpegAsync>b__126_0(System.String)
+FNDA:0,System.Void StemForge.ViewModels.SetupWizardViewModel::<InstallFfmpegAsync>b__126_0(System.String)
+DA:320,0
+DA:321,0
+DA:322,0
+DA:323,0
+DA:324,0
+DA:325,0
+BRDA:321,17,0,0
+BRDA:321,17,1,0
+FN:18,System.Void StemForge.ViewModels.SetupWizardViewModel::.ctor(StemForge.Models.AppSettings,StemForge.Services.SetupDetector,StemForge.Services.GpuDetector,StemForge.Services.ToolInstaller)
+FNDA:12,System.Void StemForge.ViewModels.SetupWizardViewModel::.ctor(StemForge.Models.AppSettings,StemForge.Services.SetupDetector,StemForge.Services.GpuDetector,StemForge.Services.ToolInstaller)
+DA:19,12
+DA:20,12
+DA:21,12
+DA:22,12
+DA:23,12
+DA:24,12
+DA:26,12
+DA:27,12
+DA:28,12
+DA:29,12
+DA:39,12
+DA:75,12
+DA:80,12
+DA:89,12
+DA:92,12
+DA:135,12
+DA:138,12
+FN:410,System.Boolean StemForge.ViewModels.SetupWizardViewModel/<>c::<RunDetectionAsync>b__130_0(StemForge.Services.ToolInfo)
+FNDA:4,System.Boolean StemForge.ViewModels.SetupWizardViewModel/<>c::<RunDetectionAsync>b__130_0(StemForge.Services.ToolInfo)
+DA:411,4
+FN:412,System.Boolean StemForge.ViewModels.SetupWizardViewModel/<>c::<RunDetectionAsync>b__130_1(StemForge.Services.ToolInfo)
+FNDA:6,System.Boolean StemForge.ViewModels.SetupWizardViewModel/<>c::<RunDetectionAsync>b__130_1(StemForge.Services.ToolInfo)
+DA:413,6
+FN:413,System.Boolean StemForge.ViewModels.SetupWizardViewModel/<>c::<RunDetectionAsync>b__130_2(StemForge.Services.ToolInfo)
+FNDA:8,System.Boolean StemForge.ViewModels.SetupWizardViewModel/<>c::<RunDetectionAsync>b__130_2(StemForge.Services.ToolInfo)
+DA:414,8
+FN:414,System.Boolean StemForge.ViewModels.SetupWizardViewModel/<>c::<RunDetectionAsync>b__130_3(StemForge.Services.ToolInfo)
+FNDA:10,System.Boolean StemForge.ViewModels.SetupWizardViewModel/<>c::<RunDetectionAsync>b__130_3(StemForge.Services.ToolInfo)
+DA:415,10
+FN:417,System.Int32 StemForge.ViewModels.SetupWizardViewModel/<>c::<RunDetectionAsync>b__130_4(StemForge.Services.DetectedGpu)
+FNDA:0,System.Int32 StemForge.ViewModels.SetupWizardViewModel/<>c::<RunDetectionAsync>b__130_4(StemForge.Services.DetectedGpu)
+DA:418,0
+DA:419,0
+DA:420,0
+DA:421,0
+DA:422,0
+DA:423,0
+DA:424,0
+BRDA:418,12,1,0
+BRDA:418,12,2,0
+BRDA:418,12,3,0
+BRDA:418,12,0,0
+FN:450,System.Boolean StemForge.ViewModels.SetupWizardViewModel/<>c::<TryFillInstalledVariantAsync>b__132_0(StemForge.Services.ToolInfo)
+FNDA:6,System.Boolean StemForge.ViewModels.SetupWizardViewModel/<>c::<TryFillInstalledVariantAsync>b__132_0(StemForge.Services.ToolInfo)
+DA:451,6
+FN:345,System.Void StemForge.ViewModels.SetupWizardViewModel/<FinishAsync>d__127::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.SetupWizardViewModel/<FinishAsync>d__127::MoveNext()
+DA:346,0
+DA:347,0
+DA:348,0
+DA:349,0
+DA:350,0
+DA:351,0
+DA:352,0
+DA:353,0
+DA:354,0
+DA:355,0
+BRDA:351,133,0,0
+BRDA:351,133,1,0
+BRDA:354,283,0,0
+BRDA:354,283,1,0
+FN:244,System.Void StemForge.ViewModels.SetupWizardViewModel/<InstallAsync>d__124::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.SetupWizardViewModel/<InstallAsync>d__124::MoveNext()
+DA:245,0
+DA:246,0
+DA:247,0
+DA:248,0
+DA:249,0
+DA:252,0
+DA:253,0
+DA:260,0
+DA:261,0
+DA:262,0
+DA:263,0
+DA:264,0
+DA:265,0
+DA:266,0
+DA:267,0
+DA:269,0
+DA:270,0
+DA:271,0
+DA:272,0
+FN:310,System.Void StemForge.ViewModels.SetupWizardViewModel/<InstallFfmpegAsync>d__126::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.SetupWizardViewModel/<InstallFfmpegAsync>d__126::MoveNext()
+DA:311,0
+DA:312,0
+DA:313,0
+DA:314,0
+DA:315,0
+DA:318,0
+DA:319,0
+DA:326,0
+DA:327,0
+DA:328,0
+DA:329,0
+DA:330,0
+DA:332,0
+DA:333,0
+DA:334,0
+DA:335,0
+DA:336,0
+DA:337,0
+DA:339,0
+DA:340,0
+DA:341,0
+DA:342,0
+BRDA:328,395,0,0
+BRDA:328,395,1,0
+FN:211,System.Void StemForge.ViewModels.SetupWizardViewModel/<InstallUvAsync>d__123::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.SetupWizardViewModel/<InstallUvAsync>d__123::MoveNext()
+DA:212,0
+DA:213,0
+DA:214,0
+DA:215,0
+DA:216,0
+DA:219,0
+DA:220,0
+DA:227,0
+DA:228,0
+DA:229,0
+DA:230,0
+DA:231,0
+DA:232,0
+DA:233,0
+DA:234,0
+DA:235,0
+DA:236,0
+DA:238,0
+DA:239,0
+DA:240,0
+DA:241,0
+BRDA:229,395,0,0
+BRDA:229,395,1,0
+FN:275,System.Void StemForge.ViewModels.SetupWizardViewModel/<InstallYtdlpAsync>d__125::MoveNext()
+FNDA:0,System.Void StemForge.ViewModels.SetupWizardViewModel/<InstallYtdlpAsync>d__125::MoveNext()
+DA:276,0
+DA:277,0
+DA:278,0
+DA:279,0
+DA:280,0
+DA:283,0
+DA:284,0
+DA:291,0
+DA:292,0
+DA:293,0
+DA:294,0
+DA:295,0
+DA:297,0
+DA:298,0
+DA:299,0
+DA:300,0
+DA:301,0
+DA:302,0
+DA:304,0
+DA:305,0
+DA:306,0
+DA:307,0
+BRDA:293,395,0,0
+BRDA:293,395,1,0
+FN:440,System.Void StemForge.ViewModels.SetupWizardViewModel/<RecheckToolsAsync>d__131::MoveNext()
+FNDA:5,System.Void StemForge.ViewModels.SetupWizardViewModel/<RecheckToolsAsync>d__131::MoveNext()
+DA:441,5
+DA:442,5
+DA:443,5
+DA:444,5
+DA:445,5
+FN:391,System.Void StemForge.ViewModels.SetupWizardViewModel/<RunDetectionAsync>d__130::MoveNext()
+FNDA:4,System.Void StemForge.ViewModels.SetupWizardViewModel/<RunDetectionAsync>d__130::MoveNext()
+DA:392,4
+DA:393,4
+DA:394,4
+DA:395,4
+DA:398,4
+DA:399,4
+DA:400,4
+DA:401,4
+DA:403,2
+DA:404,2
+DA:406,2
+DA:408,22
+DA:409,8
+DA:412,2
+DA:417,2
+DA:425,2
+DA:426,2
+DA:428,2
+DA:429,0
+DA:430,0
+DA:431,0
+DA:432,0
+DA:433,2
+DA:435,2
+DA:436,2
+DA:437,2
+DA:438,2
+BRDA:408,767,1,8
+BRDA:408,767,0,2
+BRDA:411,852,0,0
+BRDA:411,852,1,2
+BRDA:412,918,0,0
+BRDA:412,918,1,2
+BRDA:414,984,0,0
+BRDA:414,984,1,2
+BRDA:415,1050,0,0
+BRDA:415,1050,1,2
+BRDA:428,1133,0,0
+BRDA:428,1133,1,2
+FN:447,System.Void StemForge.ViewModels.SetupWizardViewModel/<TryFillInstalledVariantAsync>d__132::MoveNext()
+FNDA:2,System.Void StemForge.ViewModels.SetupWizardViewModel/<TryFillInstalledVariantAsync>d__132::MoveNext()
+DA:448,2
+DA:449,2
+DA:450,0
+DA:452,2
+DA:453,0
+DA:454,0
+DA:455,0
+DA:456,2
+BRDA:449,50,0,0
+BRDA:449,50,1,2
+BRDA:451,100,0,0
+BRDA:451,100,1,2
+BRDA:451,116,0,2
+BRDA:451,116,1,0
+BRDA:454,265,0,0
+BRDA:454,265,1,0
+LF:292
+LH:142
+BRF:72
+BRH:26
+FNF:47
+FNH:33
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\ViewModels\ToolStatusViewModel.cs
+FN:6,System.String StemForge.ViewModels.ToolStatusViewModel::get_Name()
+FNDA:0,System.String StemForge.ViewModels.ToolStatusViewModel::get_Name()
+DA:7,0
+FN:7,System.Boolean StemForge.ViewModels.ToolStatusViewModel::get_Found()
+FNDA:0,System.Boolean StemForge.ViewModels.ToolStatusViewModel::get_Found()
+DA:8,0
+FN:8,System.String StemForge.ViewModels.ToolStatusViewModel::get_Version()
+FNDA:0,System.String StemForge.ViewModels.ToolStatusViewModel::get_Version()
+DA:9,0
+FN:9,System.Boolean StemForge.ViewModels.ToolStatusViewModel::get_IsRequired()
+FNDA:0,System.Boolean StemForge.ViewModels.ToolStatusViewModel::get_IsRequired()
+DA:10,0
+FN:11,System.String StemForge.ViewModels.ToolStatusViewModel::get_StatusLine()
+FNDA:0,System.String StemForge.ViewModels.ToolStatusViewModel::get_StatusLine()
+DA:12,0
+BRDA:12,6,0,0
+BRDA:12,14,0,0
+BRDA:12,14,1,0
+BRDA:12,6,1,0
+FN:12,System.String StemForge.ViewModels.ToolStatusViewModel::get_VariantTag()
+FNDA:0,System.String StemForge.ViewModels.ToolStatusViewModel::get_VariantTag()
+DA:13,0
+FN:14,System.Void StemForge.ViewModels.ToolStatusViewModel::.ctor(StemForge.Services.ToolInfo,System.String)
+FNDA:8,System.Void StemForge.ViewModels.ToolStatusViewModel::.ctor(StemForge.Services.ToolInfo,System.String)
+DA:15,8
+DA:16,8
+DA:17,8
+DA:18,8
+DA:19,8
+DA:20,8
+DA:21,8
+DA:22,8
+BRDA:19,40,0,8
+BRDA:19,40,1,8
+LF:14
+LH:8
+BRF:6
+BRH:2
+FNF:7
+FNH:1
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Services\AppLogger.cs
+FN:15,System.DateTimeOffset StemForge.Services.LogEntry::get_Timestamp()
+FNDA:0,System.DateTimeOffset StemForge.Services.LogEntry::get_Timestamp()
+DA:16,0
+FN:16,StemForge.Services.LogLevel StemForge.Services.LogEntry::get_Level()
+FNDA:0,StemForge.Services.LogLevel StemForge.Services.LogEntry::get_Level()
+DA:17,0
+FN:17,System.String StemForge.Services.LogEntry::get_Source()
+FNDA:0,System.String StemForge.Services.LogEntry::get_Source()
+DA:18,0
+FN:18,System.String StemForge.Services.LogEntry::get_Message()
+FNDA:0,System.String StemForge.Services.LogEntry::get_Message()
+DA:19,0
+FN:21,System.String StemForge.Services.LogEntry::get_TimeDisplay()
+FNDA:0,System.String StemForge.Services.LogEntry::get_TimeDisplay()
+DA:22,0
+FN:24,System.String StemForge.Services.LogEntry::get_LevelTag()
+FNDA:0,System.String StemForge.Services.LogEntry::get_LevelTag()
+DA:25,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:29,0
+DA:30,0
+DA:31,0
+DA:32,0
+BRDA:25,12,1,0
+BRDA:25,12,2,0
+BRDA:25,12,3,0
+BRDA:25,12,4,0
+BRDA:25,12,0,0
+FN:33,System.Boolean StemForge.Services.LogEntry::get_IsDebug()
+FNDA:0,System.Boolean StemForge.Services.LogEntry::get_IsDebug()
+DA:34,0
+FN:34,System.Boolean StemForge.Services.LogEntry::get_IsInfo()
+FNDA:0,System.Boolean StemForge.Services.LogEntry::get_IsInfo()
+DA:35,0
+FN:35,System.Boolean StemForge.Services.LogEntry::get_IsWarning()
+FNDA:0,System.Boolean StemForge.Services.LogEntry::get_IsWarning()
+DA:36,0
+FN:36,System.Boolean StemForge.Services.LogEntry::get_IsError()
+FNDA:0,System.Boolean StemForge.Services.LogEntry::get_IsError()
+DA:37,0
+FN:14,System.Void StemForge.Services.LogEntry::.ctor(System.DateTimeOffset,StemForge.Services.LogLevel,System.String,System.String)
+FNDA:0,System.Void StemForge.Services.LogEntry::.ctor(System.DateTimeOffset,StemForge.Services.LogLevel,System.String,System.String)
+DA:15,0
+DA:20,0
+FN:47,System.Collections.ObjectModel.ObservableCollection`1<StemForge.Services.LogEntry> StemForge.Services.AppLogger::get_Entries()
+FNDA:0,System.Collections.ObjectModel.ObservableCollection`1<StemForge.Services.LogEntry> StemForge.Services.AppLogger::get_Entries()
+DA:48,0
+FN:50,System.String StemForge.Services.AppLogger::get_LogDirectory()
+FNDA:0,System.String StemForge.Services.AppLogger::get_LogDirectory()
+DA:51,0
+FN:56,System.Void StemForge.Services.AppLogger::Initialize()
+FNDA:0,System.Void StemForge.Services.AppLogger::Initialize()
+DA:57,0
+DA:58,0
+DA:60,0
+DA:61,0
+DA:62,0
+DA:65,0
+DA:66,0
+DA:67,0
+DA:68,0
+DA:69,0
+DA:70,0
+DA:72,0
+DA:73,0
+DA:74,0
+DA:75,0
+DA:77,0
+DA:78,0
+DA:79,0
+DA:80,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+DA:85,0
+DA:86,0
+DA:87,0
+DA:89,0
+DA:90,0
+BRDA:70,168,1,0
+BRDA:70,168,0,0
+FN:93,System.Void StemForge.Services.AppLogger::Shutdown()
+FNDA:0,System.Void StemForge.Services.AppLogger::Shutdown()
+DA:94,0
+DA:95,0
+DA:96,0
+DA:97,0
+DA:98,0
+DA:99,0
+DA:100,0
+BRDA:97,25,0,0
+BRDA:97,25,1,0
+FN:103,System.Void StemForge.Services.AppLogger::Debug(System.String,System.String)
+FNDA:0,System.Void StemForge.Services.AppLogger::Debug(System.String,System.String)
+DA:104,0
+FN:105,System.Void StemForge.Services.AppLogger::Info(System.String,System.String)
+FNDA:0,System.Void StemForge.Services.AppLogger::Info(System.String,System.String)
+DA:106,0
+FN:108,System.Void StemForge.Services.AppLogger::Warning(System.String,System.String)
+FNDA:0,System.Void StemForge.Services.AppLogger::Warning(System.String,System.String)
+DA:109,0
+FN:110,System.Void StemForge.Services.AppLogger::Error(System.String,System.String)
+FNDA:0,System.Void StemForge.Services.AppLogger::Error(System.String,System.String)
+DA:111,0
+FN:115,System.Void StemForge.Services.AppLogger::Add(StemForge.Services.LogLevel,System.String,System.String)
+FNDA:0,System.Void StemForge.Services.AppLogger::Add(StemForge.Services.LogLevel,System.String,System.String)
+DA:116,0
+DA:117,0
+DA:120,0
+DA:121,0
+DA:123,0
+DA:124,0
+DA:125,0
+DA:126,0
+DA:127,0
+DA:128,0
+DA:129,0
+DA:132,0
+DA:133,0
+DA:135,0
+DA:136,0
+BRDA:124,51,0,0
+BRDA:124,51,1,0
+BRDA:132,224,0,0
+BRDA:132,224,1,0
+FN:138,System.Void StemForge.Services.AppLogger::AddOnUiThread(StemForge.Services.LogEntry)
+FNDA:0,System.Void StemForge.Services.AppLogger::AddOnUiThread(StemForge.Services.LogEntry)
+DA:139,0
+DA:140,0
+DA:141,0
+DA:142,0
+DA:143,0
+BRDA:140,23,0,0
+BRDA:140,23,1,0
+FN:144,System.String StemForge.Services.AppLogger::Clip(System.String,System.Int32)
+FNDA:0,System.String StemForge.Services.AppLogger::Clip(System.String,System.Int32)
+DA:145,0
+BRDA:145,7,0,0
+BRDA:145,7,1,0
+FN:44,System.Void StemForge.Services.AppLogger::.cctor()
+FNDA:0,System.Void StemForge.Services.AppLogger::.cctor()
+DA:45,0
+LF:82
+LH:0
+BRF:17
+BRH:0
+FNF:23
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Services\GpuDetector.cs
+FN:13,System.String StemForge.Services.DetectedGpu::get_Name()
+FNDA:11,System.String StemForge.Services.DetectedGpu::get_Name()
+DA:14,11
+FN:15,StemForge.Services.GpuVendor StemForge.Services.DetectedGpu::get_Vendor()
+FNDA:14,StemForge.Services.GpuVendor StemForge.Services.DetectedGpu::get_Vendor()
+DA:16,14
+FN:16,System.Void StemForge.Services.DetectedGpu::.ctor(System.String)
+FNDA:11,System.Void StemForge.Services.DetectedGpu::.ctor(System.String)
+DA:17,11
+DA:18,11
+DA:19,14
+DA:20,11
+DA:21,8
+DA:22,11
+DA:23,11
+DA:24,8
+DA:25,11
+DA:26,2
+DA:27,11
+BRDA:19,27,1,3
+BRDA:19,27,0,8
+BRDA:21,47,0,6
+BRDA:21,47,1,3
+BRDA:21,61,1,3
+BRDA:21,61,0,5
+BRDA:24,81,1,3
+BRDA:24,81,0,2
+FN:34,System.Threading.Tasks.Task`1<System.Collections.Generic.IReadOnlyList`1<StemForge.Services.DetectedGpu>> StemForge.Services.GpuDetector::DetectAsync()
+FNDA:4,System.Threading.Tasks.Task`1<System.Collections.Generic.IReadOnlyList`1<StemForge.Services.DetectedGpu>> StemForge.Services.GpuDetector::DetectAsync()
+DA:35,4
+DA:36,4
+DA:37,8
+DA:38,0
+DA:39,0
+DA:40,0
+DA:41,4
+BRDA:37,18,1,4
+BRDA:37,18,0,0
+BRDA:38,41,1,0
+BRDA:38,41,0,0
+BRDA:39,64,1,0
+BRDA:39,64,0,0
+FN:44,StemForge.Models.GpuVariant StemForge.Services.GpuDetector::SuggestVariant(System.Collections.Generic.IReadOnlyList`1<StemForge.Services.DetectedGpu>)
+FNDA:6,StemForge.Models.GpuVariant StemForge.Services.GpuDetector::SuggestVariant(System.Collections.Generic.IReadOnlyList`1<StemForge.Services.DetectedGpu>)
+DA:45,6
+DA:46,6
+DA:47,14
+DA:48,6
+DA:49,7
+DA:50,2
+DA:51,6
+DA:52,2
+DA:53,6
+BRDA:47,45,1,2
+BRDA:47,45,0,10
+BRDA:49,90,1,4
+BRDA:49,90,0,3
+BRDA:49,1,0,3
+BRDA:49,1,1,1
+FN:91,System.Collections.Generic.List`1<StemForge.Services.DetectedGpu> StemForge.Services.GpuDetector::ParseLines(System.String,System.Boolean)
+FNDA:4,System.Collections.Generic.List`1<StemForge.Services.DetectedGpu> StemForge.Services.GpuDetector::ParseLines(System.String,System.Boolean)
+DA:92,4
+DA:93,4
+DA:94,4
+DA:95,4
+DA:96,4
+DA:97,4
+DA:98,0
+DA:99,4
+BRDA:92,10,0,4
+BRDA:92,10,1,0
+FN:29,System.Void StemForge.Services.GpuDetector::.ctor(StemForge.Services.IProcessRunner)
+FNDA:12,System.Void StemForge.Services.GpuDetector::.ctor(StemForge.Services.IProcessRunner)
+DA:30,12
+DA:32,12
+FN:79,System.Void StemForge.Services.GpuDetector/<GetCommandOutputAsync>d__7::MoveNext()
+FNDA:4,System.Void StemForge.Services.GpuDetector/<GetCommandOutputAsync>d__7::MoveNext()
+DA:80,4
+DA:82,4
+DA:83,4
+DA:85,4
+DA:86,4
+DA:87,4
+DA:89,4
+FN:67,System.Void StemForge.Services.GpuDetector/<QueryLinuxAsync>d__5::MoveNext()
+FNDA:0,System.Void StemForge.Services.GpuDetector/<QueryLinuxAsync>d__5::MoveNext()
+DA:68,0
+FN:70,System.Void StemForge.Services.GpuDetector/<QueryMacAsync>d__6::MoveNext()
+FNDA:0,System.Void StemForge.Services.GpuDetector/<QueryMacAsync>d__6::MoveNext()
+DA:71,0
+DA:72,0
+DA:73,0
+DA:77,0
+FN:55,System.Void StemForge.Services.GpuDetector/<QueryWindowsAsync>d__4::MoveNext()
+FNDA:4,System.Void StemForge.Services.GpuDetector/<QueryWindowsAsync>d__4::MoveNext()
+DA:56,4
+DA:57,4
+DA:58,4
+DA:59,4
+DA:60,4
+DA:61,4
+DA:62,4
+DA:63,4
+DA:64,4
+DA:65,4
+LF:61
+LH:52
+BRF:22
+BRH:16
+FNF:11
+FNH:9
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Services\JobQueueService.cs
+FN:25,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.JobItemViewModel> StemForge.Services.JobQueueService::get_Jobs()
+FNDA:0,System.Collections.ObjectModel.ObservableCollection`1<StemForge.ViewModels.JobItemViewModel> StemForge.Services.JobQueueService::get_Jobs()
+DA:26,0
+FN:27,System.Int32 StemForge.Services.JobQueueService::get_ActiveCount()
+FNDA:0,System.Int32 StemForge.Services.JobQueueService::get_ActiveCount()
+DA:28,0
+BRDA:28,9,1,0
+BRDA:28,9,0,0
+FN:30,System.Void StemForge.Services.JobQueueService::Enqueue(StemForge.Models.JobRecord)
+FNDA:0,System.Void StemForge.Services.JobQueueService::Enqueue(StemForge.Models.JobRecord)
+DA:31,0
+DA:32,0
+DA:34,0
+DA:36,0
+DA:37,0
+FN:165,System.Void StemForge.Services.JobQueueService::OnCancelRequested(StemForge.ViewModels.JobItemViewModel)
+FNDA:0,System.Void StemForge.Services.JobQueueService::OnCancelRequested(StemForge.ViewModels.JobItemViewModel)
+DA:166,0
+DA:167,0
+DA:168,0
+DA:169,0
+DA:170,0
+DA:172,0
+DA:173,0
+DA:174,0
+DA:175,0
+DA:176,0
+DA:177,0
+DA:178,0
+DA:179,0
+BRDA:167,37,0,0
+BRDA:168,46,0,0
+BRDA:168,46,1,0
+BRDA:167,37,1,0
+BRDA:169,75,0,0
+BRDA:169,75,1,0
+FN:181,System.Void StemForge.Services.JobQueueService::ClearDone()
+FNDA:0,System.Void StemForge.Services.JobQueueService::ClearDone()
+DA:182,0
+DA:183,0
+DA:184,0
+DA:185,0
+DA:186,0
+DA:187,0
+BRDA:184,87,1,0
+BRDA:184,87,0,0
+FN:190,System.Void StemForge.Services.JobQueueService::OnPropertyChanged()
+FNDA:0,System.Void StemForge.Services.JobQueueService::OnPropertyChanged()
+DA:191,0
+BRDA:191,7,0,0
+BRDA:191,7,1,0
+FN:242,System.String StemForge.Services.JobQueueService::NormalizeUrl(System.String)
+FNDA:7,System.String StemForge.Services.JobQueueService::NormalizeUrl(System.String)
+DA:243,7
+DA:244,7
+DA:245,7
+BRDA:243,28,0,7
+BRDA:243,36,0,5
+BRDA:243,28,1,2
+BRDA:243,36,1,2
+BRDA:243,46,0,2
+BRDA:243,46,1,5
+FN:12,System.Void StemForge.Services.JobQueueService::.ctor(StemForge.Services.SeparationService,StemForge.Models.AppSettings,StemForge.Services.IProcessRunner)
+FNDA:0,System.Void StemForge.Services.JobQueueService::.ctor(StemForge.Services.SeparationService,StemForge.Models.AppSettings,StemForge.Services.IProcessRunner)
+DA:13,0
+DA:14,0
+DA:15,0
+DA:16,0
+DA:17,0
+DA:19,0
+DA:20,0
+DA:21,0
+DA:22,0
+FN:46,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__0()
+FNDA:0,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__0()
+DA:47,0
+DA:48,0
+DA:49,0
+DA:50,0
+DA:51,0
+DA:52,0
+FN:61,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__6()
+FNDA:0,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__6()
+DA:62,0
+DA:63,0
+DA:64,0
+DA:65,0
+FN:70,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__7(System.String)
+FNDA:0,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__7(System.String)
+DA:71,0
+FN:88,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__2(StemForge.Models.SeparationProgress)
+FNDA:0,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__2(StemForge.Models.SeparationProgress)
+DA:89,0
+DA:90,0
+DA:91,0
+DA:92,0
+DA:93,0
+DA:94,0
+DA:95,0
+DA:96,0
+FN:98,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__3(System.String)
+FNDA:0,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__3(System.String)
+DA:99,0
+FN:133,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__1()
+FNDA:0,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_0::<RunWhenReadyAsync>b__1()
+DA:134,0
+DA:135,0
+DA:136,0
+DA:137,0
+DA:138,0
+FN:114,System.String StemForge.Services.JobQueueService/<>c__DisplayClass13_1::<RunWhenReadyAsync>b__4(StemForge.Models.Preset)
+FNDA:0,System.String StemForge.Services.JobQueueService/<>c__DisplayClass13_1::<RunWhenReadyAsync>b__4(StemForge.Models.Preset)
+DA:115,0
+FN:120,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_1::<RunWhenReadyAsync>b__5()
+FNDA:0,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_1::<RunWhenReadyAsync>b__5()
+DA:121,0
+DA:122,0
+DA:123,0
+DA:124,0
+DA:125,0
+DA:126,0
+DA:127,0
+DA:128,0
+DA:129,0
+BRDA:124,115,0,0
+BRDA:124,115,1,0
+FN:75,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_2::<RunWhenReadyAsync>b__8()
+FNDA:0,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_2::<RunWhenReadyAsync>b__8()
+DA:76,0
+FN:142,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_6::<RunWhenReadyAsync>b__12()
+FNDA:0,System.Void StemForge.Services.JobQueueService/<>c__DisplayClass13_6::<RunWhenReadyAsync>b__12()
+DA:143,0
+DA:144,0
+DA:145,0
+DA:146,0
+DA:147,0
+DA:148,0
+DA:149,0
+FN:198,System.Void StemForge.Services.JobQueueService/<DownloadAudioAsync>d__20::MoveNext()
+FNDA:0,System.Void StemForge.Services.JobQueueService/<DownloadAudioAsync>d__20::MoveNext()
+DA:199,0
+DA:200,0
+DA:201,0
+DA:202,0
+DA:203,0
+DA:204,0
+DA:205,0
+DA:206,0
+DA:207,0
+DA:208,0
+DA:209,0
+DA:210,0
+DA:211,0
+DA:212,0
+DA:213,0
+DA:214,0
+DA:216,0
+DA:217,0
+DA:218,0
+DA:220,0
+DA:221,0
+DA:222,0
+DA:223,0
+DA:224,0
+DA:225,0
+DA:226,0
+DA:227,0
+DA:229,0
+DA:230,0
+DA:231,0
+DA:233,0
+DA:235,0
+DA:237,0
+DA:238,0
+DA:239,0
+BRDA:217,212,0,0
+BRDA:220,232,0,0
+BRDA:220,250,0,0
+BRDA:220,269,0,0
+BRDA:220,232,1,0
+BRDA:220,250,1,0
+BRDA:220,269,1,0
+BRDA:217,212,1,0
+BRDA:230,375,0,0
+BRDA:230,375,1,0
+BRDA:237,601,0,0
+BRDA:237,601,1,0
+FN:39,System.Void StemForge.Services.JobQueueService/<RunWhenReadyAsync>d__13::MoveNext()
+FNDA:0,System.Void StemForge.Services.JobQueueService/<RunWhenReadyAsync>d__13::MoveNext()
+DA:40,0
+DA:41,0
+DA:42,0
+DA:43,0
+DA:44,0
+DA:46,0
+DA:54,0
+DA:56,0
+DA:59,0
+DA:60,0
+DA:61,0
+DA:67,0
+DA:68,0
+DA:70,0
+DA:72,0
+DA:74,0
+DA:75,0
+DA:77,0
+DA:79,0
+DA:80,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+DA:85,0
+DA:88,0
+DA:98,0
+DA:100,0
+DA:102,0
+DA:103,0
+DA:104,0
+DA:105,0
+DA:106,0
+DA:107,0
+DA:108,0
+DA:109,0
+DA:110,0
+DA:112,0
+DA:113,0
+DA:114,0
+DA:116,0
+DA:117,0
+DA:118,0
+DA:120,0
+DA:130,0
+DA:131,0
+DA:132,0
+DA:133,0
+DA:139,0
+DA:140,0
+DA:141,0
+DA:142,0
+DA:150,0
+DA:152,0
+DA:153,0
+DA:155,0
+DA:156,0
+DA:157,0
+DA:158,0
+DA:159,0
+DA:160,0
+DA:161,0
+DA:162,0
+DA:163,0
+BRDA:40,16,0,0
+BRDA:40,16,1,0
+BRDA:59,363,0,0
+BRDA:59,363,1,0
+BRDA:59,386,0,0
+BRDA:59,386,1,0
+BRDA:80,843,0,0
+BRDA:80,843,1,0
+BRDA:153,1484,0,0
+BRDA:153,1484,1,0
+LF:181
+LH:3
+BRF:42
+BRH:6
+FNF:20
+FNH:1
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Services\ModelCatalogService.cs
+FN:14,System.Void StemForge.Services.ModelCatalogService::Invalidate()
+FNDA:0,System.Void StemForge.Services.ModelCatalogService::Invalidate()
+DA:15,0
+FN:42,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.ModelInfo> StemForge.Services.ModelCatalogService::TryParseJson(System.String)
+FNDA:8,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.ModelInfo> StemForge.Services.ModelCatalogService::TryParseJson(System.String)
+DA:43,8
+DA:44,8
+DA:45,2
+DA:49,6
+DA:50,6
+DA:51,6
+DA:52,1
+DA:55,5
+DA:56,5
+DA:57,4
+DA:58,0
+DA:60,4
+DA:63,26
+DA:64,7
+DA:65,7
+DA:66,7
+DA:67,0
+DA:70,35
+DA:71,7
+DA:72,7
+DA:73,7
+DA:74,7
+DA:75,0
+DA:77,7
+DA:78,7
+DA:79,1
+DA:81,6
+DA:82,6
+DA:83,6
+DA:84,7
+DA:86,4
+DA:88,1
+DA:89,1
+DA:90,1
+DA:92,8
+BRDA:44,9,0,2
+BRDA:44,9,1,6
+BRDA:51,42,0,5
+BRDA:51,42,1,1
+BRDA:51,58,0,1
+BRDA:51,58,1,5
+BRDA:57,133,0,0
+BRDA:57,133,1,4
+BRDA:63,420,1,7
+BRDA:66,231,1,7
+BRDA:70,393,1,7
+BRDA:74,313,1,7
+BRDA:78,351,1,6
+BRDA:74,313,0,14
+BRDA:78,351,0,14
+BRDA:70,393,0,7
+BRDA:66,231,0,11
+BRDA:63,420,0,4
+FN:95,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.StemSdr> StemForge.Services.ModelCatalogService::ParseStems(System.Text.Json.JsonElement)
+FNDA:6,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.StemSdr> StemForge.Services.ModelCatalogService::ParseStems(System.Text.Json.JsonElement)
+DA:96,6
+DA:97,6
+DA:100,6
+DA:101,6
+DA:102,6
+DA:103,6
+DA:104,0
+DA:107,6
+DA:109,54
+DA:110,18
+DA:111,18
+DA:112,0
+DA:114,18
+DA:115,18
+DA:117,18
+DA:118,18
+DA:119,18
+DA:120,18
+DA:121,18
+DA:122,18
+DA:123,18
+DA:124,6
+DA:125,6
+DA:126,6
+DA:128,18
+DA:129,18
+DA:131,6
+DA:132,6
+BRDA:100,21,0,6
+BRDA:100,21,1,0
+BRDA:100,41,0,0
+BRDA:100,41,1,6
+BRDA:109,246,1,18
+BRDA:111,117,1,18
+BRDA:117,146,0,6
+BRDA:117,159,0,6
+BRDA:117,169,0,6
+BRDA:117,185,0,6
+BRDA:117,146,1,12
+BRDA:117,159,1,12
+BRDA:117,169,1,12
+BRDA:117,185,1,12
+BRDA:117,204,0,6
+BRDA:117,204,1,18
+BRDA:111,117,0,24
+BRDA:109,246,0,6
+FN:134,System.String StemForge.Services.ModelCatalogService::GetString(System.Text.Json.JsonElement,System.String[])
+FNDA:7,System.String StemForge.Services.ModelCatalogService::GetString(System.Text.Json.JsonElement,System.String[])
+DA:135,7
+DA:136,29
+DA:137,7
+DA:138,6
+DA:139,1
+DA:140,7
+BRDA:136,62,1,7
+BRDA:137,22,0,6
+BRDA:137,22,1,1
+BRDA:137,41,0,6
+BRDA:137,41,1,1
+BRDA:136,62,0,1
+FN:9,System.Void StemForge.Services.ModelCatalogService::.ctor(StemForge.Services.IProcessRunner)
+FNDA:0,System.Void StemForge.Services.ModelCatalogService::.ctor(StemForge.Services.IProcessRunner)
+DA:10,0
+DA:12,0
+FN:21,System.Void StemForge.Services.ModelCatalogService/<ListModelsAsync>d__4::MoveNext()
+FNDA:0,System.Void StemForge.Services.ModelCatalogService/<ListModelsAsync>d__4::MoveNext()
+DA:22,0
+DA:23,0
+DA:24,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:29,0
+DA:30,0
+DA:33,0
+DA:35,0
+DA:36,0
+DA:37,0
+DA:38,0
+BRDA:23,24,0,0
+BRDA:23,24,1,0
+BRDA:23,48,0,0
+BRDA:23,48,1,0
+BRDA:33,254,0,0
+BRDA:33,254,1,0
+LF:85
+LH:64
+BRF:48
+BRH:39
+FNF:6
+FNH:3
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Services\PresetCatalog.cs
+FN:12,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.Preset> StemForge.Services.PresetCatalog::get_BuiltIn()
+FNDA:0,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.Preset> StemForge.Services.PresetCatalog::get_BuiltIn()
+DA:13,0
+FN:13,System.Void StemForge.Services.PresetCatalog::.cctor()
+FNDA:0,System.Void StemForge.Services.PresetCatalog::.cctor()
+DA:14,0
+DA:15,0
+DA:16,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:20,0
+DA:21,0
+DA:22,0
+DA:23,0
+DA:24,0
+DA:25,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:29,0
+DA:30,0
+DA:31,0
+DA:32,0
+DA:33,0
+DA:34,0
+DA:35,0
+DA:36,0
+DA:37,0
+DA:38,0
+DA:39,0
+DA:40,0
+DA:41,0
+DA:42,0
+DA:43,0
+DA:44,0
+DA:45,0
+DA:46,0
+DA:47,0
+DA:48,0
+DA:49,0
+DA:50,0
+DA:51,0
+DA:52,0
+DA:53,0
+DA:54,0
+DA:55,0
+DA:56,0
+DA:57,0
+DA:58,0
+DA:59,0
+DA:60,0
+DA:61,0
+DA:62,0
+DA:63,0
+DA:64,0
+DA:65,0
+DA:66,0
+DA:67,0
+DA:68,0
+DA:69,0
+DA:70,0
+DA:71,0
+DA:72,0
+DA:73,0
+DA:74,0
+DA:75,0
+DA:76,0
+DA:77,0
+DA:78,0
+DA:79,0
+DA:80,0
+LF:68
+LH:0
+BRF:0
+BRH:0
+FNF:2
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Services\ProcessRunner.cs
+FN:45,System.Threading.Tasks.Task`1<StemForge.Services.ProcessRunner/Result> StemForge.Services.ProcessRunner::RunAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Threading.CancellationToken)
+FNDA:0,System.Threading.Tasks.Task`1<StemForge.Services.ProcessRunner/Result> StemForge.Services.ProcessRunner::RunAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Threading.CancellationToken)
+DA:46,0
+FN:53,System.Threading.Tasks.Task`1<StemForge.Services.ProcessRunner/Result> StemForge.Services.ProcessRunner::RunCheckedAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Threading.CancellationToken)
+FNDA:0,System.Threading.Tasks.Task`1<StemForge.Services.ProcessRunner/Result> StemForge.Services.ProcessRunner::RunCheckedAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Threading.CancellationToken)
+DA:54,0
+FN:16,System.Int32 StemForge.Services.ProcessRunner/Result::get_ExitCode()
+FNDA:42,System.Int32 StemForge.Services.ProcessRunner/Result::get_ExitCode()
+DA:17,42
+FN:18,System.Boolean StemForge.Services.ProcessRunner/Result::get_Success()
+FNDA:0,System.Boolean StemForge.Services.ProcessRunner/Result::get_Success()
+DA:19,0
+FN:22,System.String StemForge.Services.ProcessRunner/Result::get_Output()
+FNDA:14,System.String StemForge.Services.ProcessRunner/Result::get_Output()
+DA:23,14
+BRDA:23,11,0,14
+BRDA:23,11,1,0
+FN:34,System.Int32 StemForge.Services.ProcessRunner/ProcessFailedException::get_ExitCode()
+FNDA:0,System.Int32 StemForge.Services.ProcessRunner/ProcessFailedException::get_ExitCode()
+DA:35,0
+FN:35,System.String StemForge.Services.ProcessRunner/ProcessFailedException::get_Stderr()
+FNDA:0,System.String StemForge.Services.ProcessRunner/ProcessFailedException::get_Stderr()
+DA:36,0
+FN:28,System.Void StemForge.Services.ProcessRunner/ProcessFailedException::.ctor(System.String,System.Int32,System.String)
+FNDA:0,System.Void StemForge.Services.ProcessRunner/ProcessFailedException::.ctor(System.String,System.Int32,System.String)
+DA:29,0
+DA:30,0
+DA:31,0
+DA:32,0
+DA:33,0
+BRDA:29,21,0,0
+BRDA:29,21,1,0
+FN:92,System.Void StemForge.Services.ProcessRunner/<>c__DisplayClass5_0::<CoreAsync>b__0()
+FNDA:0,System.Void StemForge.Services.ProcessRunner/<>c__DisplayClass5_0::<CoreAsync>b__0()
+DA:93,0
+DA:95,0
+DA:96,0
+DA:97,0
+DA:98,0
+DA:99,0
+FN:110,System.Void StemForge.Services.ProcessRunner/<>c__DisplayClass5_0::<CoreAsync>b__1()
+FNDA:0,System.Void StemForge.Services.ProcessRunner/<>c__DisplayClass5_0::<CoreAsync>b__1()
+DA:111,0
+DA:112,0
+DA:113,0
+DA:114,0
+DA:115,0
+DA:116,0
+DA:117,0
+BRDA:112,24,0,0
+BRDA:112,24,1,0
+FN:121,System.Void StemForge.Services.ProcessRunner/<>c__DisplayClass5_0::<CoreAsync>b__2()
+FNDA:0,System.Void StemForge.Services.ProcessRunner/<>c__DisplayClass5_0::<CoreAsync>b__2()
+DA:122,0
+DA:123,0
+DA:124,0
+DA:125,0
+DA:126,0
+DA:127,0
+DA:128,0
+BRDA:123,24,0,0
+BRDA:123,24,1,0
+FN:73,System.Void StemForge.Services.ProcessRunner/<CoreAsync>d__5::MoveNext()
+FNDA:0,System.Void StemForge.Services.ProcessRunner/<CoreAsync>d__5::MoveNext()
+DA:74,0
+DA:76,0
+DA:78,0
+DA:80,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+DA:85,0
+DA:86,0
+DA:87,0
+DA:88,0
+DA:89,0
+DA:92,0
+DA:94,0
+DA:104,0
+DA:106,0
+DA:107,0
+DA:109,0
+DA:110,0
+DA:118,0
+DA:119,0
+DA:120,0
+DA:121,0
+DA:129,0
+DA:130,0
+DA:131,0
+DA:132,0
+DA:133,0
+DA:135,0
+DA:137,0
+DA:138,0
+DA:139,0
+DA:140,0
+DA:141,0
+DA:144,0
+DA:145,0
+DA:146,0
+DA:147,0
+DA:148,0
+DA:150,0
+DA:151,0
+DA:152,0
+DA:154,0
+DA:155,0
+DA:156,0
+DA:157,0
+DA:158,0
+DA:160,0
+DA:161,0
+DA:162,0
+DA:163,0
+DA:165,0
+DA:167,0
+DA:168,0
+DA:169,0
+DA:170,0
+DA:171,0
+DA:172,0
+DA:173,0
+DA:175,0
+DA:177,0
+DA:178,0
+DA:180,0
+DA:181,0
+BRDA:76,60,0,0
+BRDA:76,60,1,0
+BRDA:80,202,0,0
+BRDA:80,202,1,0
+BRDA:106,370,0,0
+BRDA:106,370,1,0
+BRDA:145,1276,1,0
+BRDA:145,1276,0,0
+BRDA:155,1404,1,0
+BRDA:155,1404,0,0
+BRDA:168,1497,0,0
+BRDA:169,1603,0,0
+BRDA:169,1603,1,0
+BRDA:168,1497,1,0
+BRDA:177,1684,0,0
+BRDA:177,1684,1,0
+BRDA:177,1707,0,0
+BRDA:177,1707,1,0
+FN:62,System.Void StemForge.Services.ProcessRunner/<RunStreamingAsync>d__4::MoveNext()
+FNDA:0,System.Void StemForge.Services.ProcessRunner/<RunStreamingAsync>d__4::MoveNext()
+DA:63,0
+LF:98
+LH:2
+BRF:26
+BRH:1
+FNF:13
+FNH:2
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Services\SeparationService.cs
+FN:17,System.String StemForge.Services.SeparationService::ResolveModelsDir()
+FNDA:0,System.String StemForge.Services.SeparationService::ResolveModelsDir()
+DA:18,0
+DA:19,0
+DA:20,0
+DA:21,0
+DA:22,0
+DA:23,0
+BRDA:18,12,0,0
+BRDA:18,12,1,0
+BRDA:18,21,0,0
+BRDA:18,21,1,0
+FN:223,System.Collections.Generic.IEnumerable`1<System.String> StemForge.Services.SeparationService::BuildArgs(System.String,StemForge.Models.Preset,System.String,System.String)
+FNDA:3,System.Collections.Generic.IEnumerable`1<System.String> StemForge.Services.SeparationService::BuildArgs(System.String,StemForge.Models.Preset,System.String,System.String)
+DA:224,3
+DA:229,3
+DA:230,3
+DA:231,3
+DA:232,1
+DA:233,1
+DA:234,1
+DA:235,1
+DA:236,1
+DA:237,1
+DA:238,1
+DA:239,1
+DA:240,1
+DA:241,3
+DA:242,1
+DA:243,3
+DA:244,3
+DA:245,1
+DA:246,3
+DA:247,3
+BRDA:229,31,0,2
+BRDA:229,31,1,1
+BRDA:232,74,0,0
+BRDA:232,74,1,1
+BRDA:229,37,1,1
+BRDA:229,37,0,1
+BRDA:245,182,0,0
+BRDA:245,182,1,1
+FN:253,System.Collections.Generic.IEnumerable`1<System.String> StemForge.Services.SeparationService::BuildCustomEnsembleArgs(System.String,StemForge.Models.Preset,System.Collections.Generic.IEnumerable`1<System.String>)
+FNDA:1,System.Collections.Generic.IEnumerable`1<System.String> StemForge.Services.SeparationService::BuildCustomEnsembleArgs(System.String,StemForge.Models.Preset,System.Collections.Generic.IEnumerable`1<System.String>)
+DA:254,1
+DA:255,1
+DA:256,1
+DA:257,1
+DA:258,1
+DA:259,1
+DA:261,1
+DA:263,1
+DA:264,1
+DA:265,1
+DA:266,1
+DA:267,1
+DA:269,1
+DA:270,1
+DA:271,1
+DA:272,1
+DA:273,1
+DA:275,1
+DA:276,0
+DA:277,0
+DA:278,0
+DA:279,0
+DA:281,1
+DA:282,1
+DA:283,1
+BRDA:255,8,0,0
+BRDA:255,8,1,1
+BRDA:263,81,0,1
+BRDA:263,81,1,0
+BRDA:263,97,0,1
+BRDA:263,97,1,1
+BRDA:269,144,0,1
+BRDA:269,144,1,1
+BRDA:275,183,0,0
+BRDA:275,183,1,1
+BRDA:275,202,0,0
+BRDA:275,202,1,1
+FN:286,System.String StemForge.Services.SeparationService::ParseStepLabel(System.String)
+FNDA:9,System.String StemForge.Services.SeparationService::ParseStepLabel(System.String)
+DA:287,9
+DA:289,9
+DA:290,9
+DA:291,9
+DA:292,0
+DA:293,0
+DA:294,0
+DA:295,0
+DA:297,9
+DA:298,2
+DA:299,7
+DA:300,1
+DA:301,6
+DA:302,6
+DA:303,6
+DA:304,6
+DA:305,2
+DA:306,4
+DA:307,4
+DA:308,4
+DA:309,4
+DA:310,4
+DA:311,4
+DA:312,4
+DA:313,4
+DA:314,2
+DA:315,2
+DA:316,9
+BRDA:291,25,0,0
+BRDA:294,47,0,0
+BRDA:294,47,1,0
+BRDA:291,25,1,9
+BRDA:297,124,0,2
+BRDA:297,124,1,7
+BRDA:299,154,0,1
+BRDA:299,154,1,6
+BRDA:301,177,0,5
+BRDA:301,177,1,1
+BRDA:301,198,0,2
+BRDA:301,198,1,4
+BRDA:306,221,0,2
+BRDA:306,235,0,1
+BRDA:306,249,0,0
+BRDA:306,235,1,2
+BRDA:306,249,1,2
+BRDA:306,221,1,2
+BRDA:306,273,0,2
+BRDA:306,273,1,2
+FN:319,System.String StemForge.Services.SeparationService::CleanLogLine(System.String)
+FNDA:6,System.String StemForge.Services.SeparationService::CleanLogLine(System.String)
+DA:320,6
+DA:321,6
+DA:322,2
+DA:323,4
+DA:326,4
+DA:327,4
+DA:328,3
+DA:329,4
+DA:330,2
+DA:331,4
+DA:332,2
+DA:333,2
+DA:334,2
+DA:335,2
+DA:336,2
+DA:338,2
+DA:340,2
+DA:341,2
+DA:342,1
+DA:343,1
+DA:344,1
+DA:345,1
+DA:346,1
+DA:347,2
+DA:349,4
+DA:350,6
+BRDA:321,9,0,2
+BRDA:321,9,1,4
+BRDA:327,46,0,3
+BRDA:327,46,1,4
+BRDA:329,69,0,2
+BRDA:329,69,1,4
+BRDA:331,95,0,2
+BRDA:334,127,0,2
+BRDA:334,127,1,2
+BRDA:331,95,1,2
+BRDA:341,187,0,1
+BRDA:344,213,0,1
+BRDA:344,213,1,1
+BRDA:341,187,1,2
+BRDA:349,257,0,4
+BRDA:349,257,1,0
+FN:352,System.String StemForge.Services.SeparationService::FindStem(System.String,StemForge.Models.PresetCategory)
+FNDA:2,System.String StemForge.Services.SeparationService::FindStem(System.String,StemForge.Models.PresetCategory)
+DA:353,2
+DA:354,2
+DA:355,2
+DA:356,2
+DA:357,0
+DA:358,0
+DA:359,0
+DA:360,0
+DA:361,0
+DA:362,0
+DA:363,0
+DA:364,2
+DA:365,2
+DA:366,0
+DA:367,2
+DA:368,2
+DA:369,2
+DA:370,2
+DA:371,2
+DA:372,2
+BRDA:354,12,1,2
+BRDA:354,12,2,0
+BRDA:354,12,3,0
+BRDA:354,12,4,0
+BRDA:354,12,5,0
+BRDA:354,12,6,0
+BRDA:354,12,7,0
+BRDA:354,12,0,0
+BRDA:365,129,0,0
+BRDA:365,129,1,2
+FN:226,System.Collections.Generic.IEnumerable`1<System.String> StemForge.Services.SeparationService::<BuildArgs>g__Tail|6_0(StemForge.Services.SeparationService/<>c__DisplayClass6_0&)
+FNDA:3,System.Collections.Generic.IEnumerable`1<System.String> StemForge.Services.SeparationService::<BuildArgs>g__Tail|6_0(StemForge.Services.SeparationService/<>c__DisplayClass6_0&)
+DA:227,3
+FN:8,System.Void StemForge.Services.SeparationService::.ctor(System.String)
+FNDA:0,System.Void StemForge.Services.SeparationService::.ctor(System.String)
+DA:9,0
+DA:11,0
+FN:123,System.Void StemForge.Services.SeparationService/<>c__DisplayClass5_0::<RunPassAsync>b__0()
+FNDA:0,System.Void StemForge.Services.SeparationService/<>c__DisplayClass5_0::<RunPassAsync>b__0()
+DA:124,0
+DA:126,0
+DA:127,0
+DA:128,0
+DA:129,0
+DA:130,0
+FN:135,System.Void StemForge.Services.SeparationService/<>c__DisplayClass5_0::<RunPassAsync>b__1()
+FNDA:0,System.Void StemForge.Services.SeparationService/<>c__DisplayClass5_0::<RunPassAsync>b__1()
+DA:136,0
+DA:137,0
+DA:138,0
+DA:139,0
+BRDA:137,24,0,0
+BRDA:137,24,1,0
+FN:143,System.Void StemForge.Services.SeparationService/<>c__DisplayClass5_0::<RunPassAsync>b__2()
+FNDA:0,System.Void StemForge.Services.SeparationService/<>c__DisplayClass5_0::<RunPassAsync>b__2()
+DA:144,0
+DA:145,0
+DA:146,0
+DA:147,0
+BRDA:145,24,0,0
+BRDA:145,24,1,0
+FN:160,System.Void StemForge.Services.SeparationService/<>c__DisplayClass5_0::<RunPassAsync>b__4()
+FNDA:0,System.Void StemForge.Services.SeparationService/<>c__DisplayClass5_0::<RunPassAsync>b__4()
+DA:161,0
+DA:162,0
+DA:164,0
+DA:165,0
+DA:166,0
+DA:167,0
+DA:168,0
+DA:169,0
+DA:170,0
+DA:171,0
+DA:172,0
+DA:173,0
+DA:174,0
+DA:175,0
+DA:176,0
+DA:177,0
+DA:178,0
+DA:179,0
+DA:181,0
+DA:182,0
+DA:183,0
+DA:184,0
+DA:185,0
+DA:186,0
+DA:187,0
+DA:188,0
+DA:189,0
+DA:190,0
+DA:191,0
+DA:192,0
+DA:193,0
+DA:194,0
+DA:195,0
+DA:197,0
+DA:198,0
+DA:199,0
+DA:200,0
+DA:201,0
+DA:202,0
+DA:203,0
+DA:204,0
+DA:205,0
+BRDA:164,289,1,0
+BRDA:167,72,0,0
+BRDA:170,106,0,0
+BRDA:170,106,1,0
+BRDA:167,72,1,0
+BRDA:183,172,0,0
+BRDA:186,185,0,0
+BRDA:186,185,1,0
+BRDA:183,172,1,0
+BRDA:198,244,0,0
+BRDA:201,267,0,0
+BRDA:201,267,1,0
+BRDA:198,244,1,0
+BRDA:164,289,0,0
+FN:151,System.Void StemForge.Services.SeparationService/<>c__DisplayClass5_0/<<RunPassAsync>b__3>d::MoveNext()
+FNDA:0,System.Void StemForge.Services.SeparationService/<>c__DisplayClass5_0/<<RunPassAsync>b__3>d::MoveNext()
+DA:152,0
+DA:153,0
+DA:154,0
+DA:155,0
+FN:33,System.Void StemForge.Services.SeparationService/<RunAsync>d__4::MoveNext()
+FNDA:0,System.Void StemForge.Services.SeparationService/<RunAsync>d__4::MoveNext()
+DA:34,0
+DA:35,0
+DA:36,0
+DA:37,0
+DA:38,0
+DA:41,0
+DA:42,0
+DA:43,0
+DA:44,0
+DA:45,0
+DA:46,0
+DA:47,0
+DA:49,0
+DA:51,0
+DA:52,0
+DA:53,0
+DA:54,0
+DA:55,0
+DA:56,0
+DA:57,0
+DA:58,0
+DA:59,0
+DA:60,0
+DA:61,0
+DA:63,0
+DA:64,0
+DA:66,0
+DA:67,0
+DA:68,0
+DA:69,0
+DA:70,0
+DA:71,0
+DA:72,0
+DA:73,0
+DA:74,0
+DA:75,0
+DA:76,0
+DA:78,0
+DA:80,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:85,0
+DA:86,0
+DA:88,0
+DA:90,0
+DA:91,0
+DA:92,0
+DA:93,0
+DA:94,0
+DA:95,0
+BRDA:42,935,1,0
+BRDA:49,231,0,0
+BRDA:49,231,1,0
+BRDA:63,455,0,0
+BRDA:66,485,0,0
+BRDA:66,485,1,0
+BRDA:63,455,1,0
+BRDA:80,874,1,0
+BRDA:80,874,0,0
+BRDA:42,935,0,0
+BRDA:85,947,0,0
+BRDA:85,947,1,0
+FN:107,System.Void StemForge.Services.SeparationService/<RunPassAsync>d__5::MoveNext()
+FNDA:0,System.Void StemForge.Services.SeparationService/<RunPassAsync>d__5::MoveNext()
+DA:108,0
+DA:109,0
+DA:111,0
+DA:112,0
+DA:113,0
+DA:114,0
+DA:115,0
+DA:116,0
+DA:117,0
+DA:119,0
+DA:120,0
+DA:121,0
+DA:123,0
+DA:125,0
+DA:132,0
+DA:134,0
+DA:135,0
+DA:140,0
+DA:141,0
+DA:142,0
+DA:143,0
+DA:148,0
+DA:149,0
+DA:150,0
+DA:151,0
+DA:156,0
+DA:157,0
+DA:159,0
+DA:160,0
+DA:163,0
+DA:180,0
+DA:196,0
+DA:206,0
+DA:207,0
+DA:209,0
+DA:210,0
+DA:212,0
+DA:213,0
+DA:214,0
+DA:215,0
+DA:216,0
+BRDA:119,250,0,0
+BRDA:119,250,1,0
+BRDA:212,754,0,0
+BRDA:212,754,1,0
+LF:280
+LH:104
+BRF:104
+BRH:47
+FNF:15
+FNH:6
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Services\SetupDetector.cs
+FN:5,System.String StemForge.Services.ToolInfo::get_Name()
+FNDA:148,System.String StemForge.Services.ToolInfo::get_Name()
+DA:6,148
+FN:16,System.String StemForge.Services.SetupDetector::ResolveAudioSeparatorPath()
+FNDA:9,System.String StemForge.Services.SetupDetector::ResolveAudioSeparatorPath()
+DA:17,9
+DA:18,9
+DA:19,9
+DA:20,9
+DA:21,9
+DA:22,9
+DA:23,9
+DA:24,9
+DA:25,9
+DA:26,9
+BRDA:25,101,0,0
+BRDA:25,101,1,9
+FN:28,System.Threading.Tasks.Task`1<System.Collections.Generic.IReadOnlyList`1<StemForge.Services.ToolInfo>> StemForge.Services.SetupDetector::DetectAllAsync(System.String)
+FNDA:8,System.Threading.Tasks.Task`1<System.Collections.Generic.IReadOnlyList`1<StemForge.Services.ToolInfo>> StemForge.Services.SetupDetector::DetectAllAsync(System.String)
+DA:29,8
+DA:30,8
+DA:31,8
+DA:32,8
+DA:33,8
+DA:34,8
+DA:35,8
+DA:36,8
+DA:37,8
+DA:38,8
+DA:39,8
+DA:40,8
+DA:41,8
+DA:42,8
+DA:43,16
+FN:65,System.String StemForge.Services.SetupDetector::GetPipExtra(StemForge.Models.GpuVariant)
+FNDA:3,System.String StemForge.Services.SetupDetector::GetPipExtra(StemForge.Models.GpuVariant)
+DA:66,3
+DA:67,3
+DA:68,1
+DA:69,1
+DA:70,1
+DA:71,3
+BRDA:66,6,0,2
+BRDA:66,6,1,1
+BRDA:66,12,1,1
+BRDA:66,12,0,1
+FN:7,System.Void StemForge.Services.SetupDetector::.ctor(StemForge.Services.IProcessRunner)
+FNDA:16,System.Void StemForge.Services.SetupDetector::.ctor(StemForge.Services.IProcessRunner)
+DA:8,16
+DA:10,16
+FN:50,System.Void StemForge.Services.SetupDetector/<DetectAsync>d__4::MoveNext()
+FNDA:32,System.Void StemForge.Services.SetupDetector/<DetectAsync>d__4::MoveNext()
+DA:51,32
+DA:53,32
+DA:54,32
+DA:55,14
+DA:56,14
+DA:58,18
+DA:59,18
+DA:60,18
+DA:62,32
+LF:43
+LH:43
+BRF:8
+BRH:7
+FNF:6
+FNH:6
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Services\ToolInstaller.cs
+FN:70,System.Threading.Tasks.Task StemForge.Services.ToolInstaller::InstallYtdlpAsync(System.IProgress`1<System.String>,System.Threading.CancellationToken)
+FNDA:0,System.Threading.Tasks.Task StemForge.Services.ToolInstaller::InstallYtdlpAsync(System.IProgress`1<System.String>,System.Threading.CancellationToken)
+DA:71,0
+FN:73,System.Threading.Tasks.Task StemForge.Services.ToolInstaller::InstallFfmpegAsync(System.IProgress`1<System.String>,System.Threading.CancellationToken)
+FNDA:0,System.Threading.Tasks.Task StemForge.Services.ToolInstaller::InstallFfmpegAsync(System.IProgress`1<System.String>,System.Threading.CancellationToken)
+DA:74,0
+DA:75,0
+DA:76,0
+DA:77,0
+DA:78,0
+DA:79,0
+DA:80,0
+DA:81,0
+DA:82,0
+DA:83,0
+DA:84,0
+DA:85,0
+DA:86,0
+DA:87,0
+DA:88,0
+DA:90,0
+DA:91,0
+DA:93,0
+DA:94,0
+DA:95,0
+DA:96,0
+BRDA:75,13,0,0
+BRDA:75,13,1,0
+BRDA:90,107,0,0
+BRDA:90,107,1,0
+FN:5,System.Void StemForge.Services.ToolInstaller::.ctor(StemForge.Services.IProcessRunner)
+FNDA:12,System.Void StemForge.Services.ToolInstaller::.ctor(StemForge.Services.IProcessRunner)
+DA:6,12
+DA:8,12
+FN:98,System.Void StemForge.Services.ToolInstaller/<DetectInstalledVariantAsync>d__8::MoveNext()
+FNDA:0,System.Void StemForge.Services.ToolInstaller/<DetectInstalledVariantAsync>d__8::MoveNext()
+DA:99,0
+DA:101,0
+DA:102,0
+DA:103,0
+DA:104,0
+DA:106,0
+DA:107,0
+DA:108,0
+DA:109,0
+DA:110,0
+DA:112,0
+DA:113,0
+DA:126,0
+DA:128,0
+DA:130,0
+DA:131,0
+DA:132,0
+DA:134,0
+BRDA:103,228,0,0
+BRDA:103,228,1,0
+BRDA:112,358,0,0
+BRDA:112,358,1,0
+BRDA:128,571,0,0
+BRDA:128,571,1,0
+FN:140,System.Void StemForge.Services.ToolInstaller/<InstallAudioSeparatorAsync>d__9::MoveNext()
+FNDA:0,System.Void StemForge.Services.ToolInstaller/<InstallAudioSeparatorAsync>d__9::MoveNext()
+DA:141,0
+DA:142,0
+DA:143,0
+DA:144,0
+DA:145,0
+DA:146,0
+DA:147,0
+DA:148,0
+DA:149,0
+DA:150,0
+DA:151,0
+DA:154,0
+DA:155,0
+DA:157,0
+DA:158,0
+BRDA:154,146,0,0
+BRDA:154,146,1,0
+FN:10,System.Void StemForge.Services.ToolInstaller/<InstallUvAsync>d__2::MoveNext()
+FNDA:0,System.Void StemForge.Services.ToolInstaller/<InstallUvAsync>d__2::MoveNext()
+DA:11,0
+DA:12,0
+DA:13,0
+DA:14,0
+DA:15,0
+DA:16,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:20,0
+DA:22,0
+DA:23,0
+DA:24,0
+DA:25,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:29,0
+DA:30,0
+BRDA:12,41,0,0
+BRDA:12,41,1,0
+FN:56,System.Void StemForge.Services.ToolInstaller/<IsFfmpegAvailableAsync>d__5::MoveNext()
+FNDA:5,System.Void StemForge.Services.ToolInstaller/<IsFfmpegAvailableAsync>d__5::MoveNext()
+DA:57,5
+DA:59,5
+DA:60,5
+DA:62,5
+DA:63,5
+DA:64,5
+DA:66,5
+FN:32,System.Void StemForge.Services.ToolInstaller/<IsUvAvailableAsync>d__3::MoveNext()
+FNDA:5,System.Void StemForge.Services.ToolInstaller/<IsUvAvailableAsync>d__3::MoveNext()
+DA:33,5
+DA:35,5
+DA:36,5
+DA:38,5
+DA:39,5
+DA:40,5
+DA:42,5
+FN:44,System.Void StemForge.Services.ToolInstaller/<IsYtdlpAvailableAsync>d__4::MoveNext()
+FNDA:5,System.Void StemForge.Services.ToolInstaller/<IsYtdlpAvailableAsync>d__4::MoveNext()
+DA:45,5
+DA:47,5
+DA:48,5
+DA:50,5
+DA:51,5
+DA:52,5
+DA:54,5
+LF:97
+LH:23
+BRF:14
+BRH:0
+FNF:9
+FNH:4
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Services\UserPresetService.cs
+FN:12,System.String StemForge.Services.UserPresetService::get_FilePath()
+FNDA:0,System.String StemForge.Services.UserPresetService::get_FilePath()
+DA:13,0
+DA:14,0
+DA:15,0
+DA:16,0
+FN:17,System.Collections.ObjectModel.ObservableCollection`1<StemForge.Models.Preset> StemForge.Services.UserPresetService::get_Presets()
+FNDA:0,System.Collections.ObjectModel.ObservableCollection`1<StemForge.Models.Preset> StemForge.Services.UserPresetService::get_Presets()
+DA:18,0
+FN:20,StemForge.Services.UserPresetService StemForge.Services.UserPresetService::Load()
+FNDA:0,StemForge.Services.UserPresetService StemForge.Services.UserPresetService::Load()
+DA:21,0
+DA:22,0
+DA:24,0
+DA:25,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:29,0
+DA:30,0
+DA:31,0
+DA:32,0
+DA:33,0
+DA:34,0
+DA:35,0
+DA:36,0
+DA:37,0
+DA:38,0
+DA:39,0
+DA:40,0
+DA:41,0
+DA:42,0
+BRDA:25,20,0,0
+BRDA:29,54,0,0
+BRDA:30,102,1,0
+BRDA:30,102,0,0
+BRDA:29,54,1,0
+BRDA:25,20,1,0
+FN:44,System.Void StemForge.Services.UserPresetService::Add(StemForge.Models.Preset)
+FNDA:0,System.Void StemForge.Services.UserPresetService::Add(StemForge.Models.Preset)
+DA:45,0
+DA:46,0
+DA:47,0
+DA:48,0
+FN:50,System.Void StemForge.Services.UserPresetService::Remove(System.String)
+FNDA:0,System.Void StemForge.Services.UserPresetService::Remove(System.String)
+DA:51,0
+DA:52,0
+DA:53,0
+DA:54,0
+DA:55,0
+DA:56,0
+DA:57,0
+DA:58,0
+BRDA:53,44,0,0
+BRDA:53,44,1,0
+FN:60,System.Void StemForge.Services.UserPresetService::Save()
+FNDA:0,System.Void StemForge.Services.UserPresetService::Save()
+DA:61,0
+DA:63,0
+DA:64,0
+DA:65,0
+DA:66,0
+DA:67,0
+DA:68,0
+DA:69,0
+DA:70,0
+DA:71,0
+DA:72,0
+DA:73,0
+DA:74,0
+DA:75,0
+DA:76,0
+FN:9,System.Void StemForge.Services.UserPresetService::.cctor()
+FNDA:0,System.Void StemForge.Services.UserPresetService::.cctor()
+DA:10,0
+FN:79,System.String StemForge.Services.UserPresetService/PresetDto::get_Id()
+FNDA:0,System.String StemForge.Services.UserPresetService/PresetDto::get_Id()
+DA:80,0
+FN:80,System.String StemForge.Services.UserPresetService/PresetDto::get_Label()
+FNDA:0,System.String StemForge.Services.UserPresetService/PresetDto::get_Label()
+DA:81,0
+FN:81,System.String StemForge.Services.UserPresetService/PresetDto::get_Category()
+FNDA:0,System.String StemForge.Services.UserPresetService/PresetDto::get_Category()
+DA:82,0
+FN:82,System.String StemForge.Services.UserPresetService/PresetDto::get_Description()
+FNDA:0,System.String StemForge.Services.UserPresetService/PresetDto::get_Description()
+DA:83,0
+FN:83,System.Int32 StemForge.Services.UserPresetService/PresetDto::get_ModelCount()
+FNDA:0,System.Int32 StemForge.Services.UserPresetService/PresetDto::get_ModelCount()
+DA:84,0
+FN:84,System.String StemForge.Services.UserPresetService/PresetDto::get_Vram()
+FNDA:0,System.String StemForge.Services.UserPresetService/PresetDto::get_Vram()
+DA:85,0
+FN:85,System.String StemForge.Services.UserPresetService/PresetDto::get_Mode()
+FNDA:0,System.String StemForge.Services.UserPresetService/PresetDto::get_Mode()
+DA:86,0
+FN:86,System.String StemForge.Services.UserPresetService/PresetDto::get_PrimaryModel()
+FNDA:0,System.String StemForge.Services.UserPresetService/PresetDto::get_PrimaryModel()
+DA:87,0
+FN:87,System.String StemForge.Services.UserPresetService/PresetDto::get_EnsembleAlgorithm()
+FNDA:0,System.String StemForge.Services.UserPresetService/PresetDto::get_EnsembleAlgorithm()
+DA:88,0
+FN:88,System.Collections.Generic.List`1<System.String> StemForge.Services.UserPresetService/PresetDto::get_ExtraModels()
+FNDA:0,System.Collections.Generic.List`1<System.String> StemForge.Services.UserPresetService/PresetDto::get_ExtraModels()
+DA:89,0
+FN:89,System.Collections.Generic.List`1<System.Double> StemForge.Services.UserPresetService/PresetDto::get_EnsembleWeights()
+FNDA:0,System.Collections.Generic.List`1<System.Double> StemForge.Services.UserPresetService/PresetDto::get_EnsembleWeights()
+DA:90,0
+FN:92,StemForge.Models.Preset StemForge.Services.UserPresetService/PresetDto::ToPreset()
+FNDA:0,StemForge.Models.Preset StemForge.Services.UserPresetService/PresetDto::ToPreset()
+DA:93,0
+DA:94,0
+DA:95,0
+DA:96,0
+DA:97,0
+DA:98,0
+DA:99,0
+DA:100,0
+DA:101,0
+DA:102,0
+DA:103,0
+DA:104,0
+DA:105,0
+DA:106,0
+DA:107,0
+BRDA:93,25,0,0
+BRDA:93,25,1,0
+BRDA:93,62,0,0
+BRDA:93,62,1,0
+FN:109,StemForge.Services.UserPresetService/PresetDto StemForge.Services.UserPresetService/PresetDto::FromPreset(StemForge.Models.Preset)
+FNDA:0,StemForge.Services.UserPresetService/PresetDto StemForge.Services.UserPresetService/PresetDto::FromPreset(StemForge.Models.Preset)
+DA:110,0
+DA:111,0
+DA:112,0
+DA:113,0
+DA:114,0
+DA:115,0
+DA:116,0
+DA:117,0
+DA:118,0
+DA:119,0
+DA:120,0
+DA:121,0
+DA:122,0
+DA:123,0
+BRDA:110,158,0,0
+BRDA:110,158,1,0
+BRDA:110,183,0,0
+BRDA:110,183,1,0
+LF:94
+LH:0
+BRF:16
+BRH:0
+FNF:20
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Models\AppSettings.cs
+FN:8,StemForge.Models.GpuVariant StemForge.Models.AppSettings::get_GpuVariant()
+FNDA:25,StemForge.Models.GpuVariant StemForge.Models.AppSettings::get_GpuVariant()
+DA:9,25
+FN:11,System.String StemForge.Models.AppSettings::get_OutputDirectory()
+FNDA:16,System.String StemForge.Models.AppSettings::get_OutputDirectory()
+DA:12,16
+BRDA:12,11,0,2
+BRDA:12,11,1,14
+FN:12,System.Void StemForge.Models.AppSettings::set_OutputDirectory(System.String)
+FNDA:3,System.Void StemForge.Models.AppSettings::set_OutputDirectory(System.String)
+DA:13,3
+FN:16,System.String StemForge.Models.AppSettings::get_ModelsDirectory()
+FNDA:16,System.String StemForge.Models.AppSettings::get_ModelsDirectory()
+DA:17,16
+BRDA:17,11,0,2
+BRDA:17,11,1,14
+FN:17,System.Void StemForge.Models.AppSettings::set_ModelsDirectory(System.String)
+FNDA:3,System.Void StemForge.Models.AppSettings::set_ModelsDirectory(System.String)
+DA:18,3
+FN:21,System.String StemForge.Models.AppSettings::get_YtdlpPath()
+FNDA:3,System.String StemForge.Models.AppSettings::get_YtdlpPath()
+DA:22,3
+BRDA:22,11,0,2
+BRDA:22,11,1,1
+FN:22,System.Void StemForge.Models.AppSettings::set_YtdlpPath(System.String)
+FNDA:2,System.Void StemForge.Models.AppSettings::set_YtdlpPath(System.String)
+DA:23,2
+FN:26,System.String StemForge.Models.AppSettings::get_YtdlpCookiesFromBrowser()
+FNDA:2,System.String StemForge.Models.AppSettings::get_YtdlpCookiesFromBrowser()
+DA:27,2
+FN:29,System.String StemForge.Models.AppSettings::get_YtdlpJsRuntime()
+FNDA:2,System.String StemForge.Models.AppSettings::get_YtdlpJsRuntime()
+DA:30,2
+FN:30,System.Boolean StemForge.Models.AppSettings::get_FirstRunComplete()
+FNDA:24,System.Boolean StemForge.Models.AppSettings::get_FirstRunComplete()
+DA:31,24
+FN:31,System.Nullable`1<StemForge.Models.GpuVariant> StemForge.Models.AppSettings::get_InstalledVariant()
+FNDA:4,System.Nullable`1<StemForge.Models.GpuVariant> StemForge.Models.AppSettings::get_InstalledVariant()
+DA:32,4
+FN:34,StemForge.Models.AppSettings StemForge.Models.AppSettings::Load()
+FNDA:0,StemForge.Models.AppSettings StemForge.Models.AppSettings::Load()
+DA:35,0
+DA:37,0
+DA:38,0
+DA:39,0
+DA:40,0
+DA:41,0
+DA:43,0
+DA:44,0
+DA:45,0
+DA:46,0
+DA:47,0
+DA:48,0
+BRDA:38,14,0,0
+BRDA:41,40,0,0
+BRDA:41,40,1,0
+BRDA:38,14,1,0
+FN:66,System.String StemForge.Models.AppSettings::get_DefaultOutputDirectory()
+FNDA:14,System.String StemForge.Models.AppSettings::get_DefaultOutputDirectory()
+DA:67,14
+FN:69,System.String StemForge.Models.AppSettings::get_DefaultModelsDirectory()
+FNDA:14,System.String StemForge.Models.AppSettings::get_DefaultModelsDirectory()
+DA:70,14
+FN:56,System.Void StemForge.Models.AppSettings::.cctor()
+FNDA:0,System.Void StemForge.Models.AppSettings::.cctor()
+DA:57,0
+DA:58,0
+DA:60,0
+DA:61,0
+DA:62,0
+DA:63,0
+DA:64,0
+FN:50,System.Void StemForge.Models.AppSettings/<SaveAsync>d__33::MoveNext()
+FNDA:0,System.Void StemForge.Models.AppSettings/<SaveAsync>d__33::MoveNext()
+DA:51,0
+DA:52,0
+DA:53,0
+DA:54,0
+DA:55,0
+LF:37
+LH:13
+BRF:10
+BRH:6
+FNF:16
+FNH:13
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Models\JobRecord.cs
+FN:4,System.Guid StemForge.Models.JobRecord::get_Id()
+FNDA:0,System.Guid StemForge.Models.JobRecord::get_Id()
+DA:5,0
+FN:5,System.String StemForge.Models.JobRecord::get_InputFilePath()
+FNDA:0,System.String StemForge.Models.JobRecord::get_InputFilePath()
+DA:6,0
+FN:6,System.String StemForge.Models.JobRecord::get_SourceUrl()
+FNDA:0,System.String StemForge.Models.JobRecord::get_SourceUrl()
+DA:7,0
+FN:7,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.Preset> StemForge.Models.JobRecord::get_Presets()
+FNDA:0,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.Preset> StemForge.Models.JobRecord::get_Presets()
+DA:8,0
+FN:8,System.String StemForge.Models.JobRecord::get_OutputDir()
+FNDA:0,System.String StemForge.Models.JobRecord::get_OutputDir()
+DA:9,0
+FN:9,System.String StemForge.Models.JobRecord::get_ModelsDir()
+FNDA:0,System.String StemForge.Models.JobRecord::get_ModelsDir()
+DA:10,0
+FN:13,System.String StemForge.Models.JobRecord::get_InputFileName()
+FNDA:0,System.String StemForge.Models.JobRecord::get_InputFileName()
+DA:14,0
+BRDA:14,6,0,0
+BRDA:14,15,0,0
+BRDA:14,6,1,0
+BRDA:14,15,1,0
+FN:16,System.String StemForge.Models.JobRecord::get_PresetSummary()
+FNDA:0,System.String StemForge.Models.JobRecord::get_PresetSummary()
+DA:17,0
+BRDA:17,12,0,0
+BRDA:17,12,1,0
+FN:3,System.Void StemForge.Models.JobRecord::.ctor(System.Guid,System.String,System.String,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.Preset>,System.String,System.String)
+FNDA:0,System.Void StemForge.Models.JobRecord::.ctor(System.Guid,System.String,System.String,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.Preset>,System.String,System.String)
+DA:4,0
+DA:11,0
+LF:10
+LH:0
+BRF:6
+BRH:0
+FNF:9
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Models\ModelInfo.cs
+FN:2,System.String StemForge.Models.StemSdr::get_Name()
+FNDA:25,System.String StemForge.Models.StemSdr::get_Name()
+DA:3,25
+FN:5,System.String StemForge.Models.ModelInfo::get_Filename()
+FNDA:4,System.String StemForge.Models.ModelInfo::get_Filename()
+DA:6,4
+FN:6,System.String StemForge.Models.ModelInfo::get_Architecture()
+FNDA:1,System.String StemForge.Models.ModelInfo::get_Architecture()
+DA:7,1
+FN:7,System.String StemForge.Models.ModelInfo::get_FriendlyName()
+FNDA:1,System.String StemForge.Models.ModelInfo::get_FriendlyName()
+DA:8,1
+FN:8,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.StemSdr> StemForge.Models.ModelInfo::get_Stems()
+FNDA:4,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.StemSdr> StemForge.Models.ModelInfo::get_Stems()
+DA:9,4
+FN:4,System.Void StemForge.Models.ModelInfo::.ctor(System.String,System.String,System.String,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.StemSdr>)
+FNDA:6,System.Void StemForge.Models.ModelInfo::.ctor(System.String,System.String,System.String,System.Collections.Generic.IReadOnlyList`1<StemForge.Models.StemSdr>)
+DA:5,6
+DA:10,6
+LF:7
+LH:7
+BRF:0
+BRH:0
+FNF:6
+FNH:6
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Models\Preset.cs
+FN:21,System.String StemForge.Models.Preset::get_Id()
+FNDA:0,System.String StemForge.Models.Preset::get_Id()
+DA:22,0
+FN:22,System.String StemForge.Models.Preset::get_Label()
+FNDA:0,System.String StemForge.Models.Preset::get_Label()
+DA:23,0
+FN:23,StemForge.Models.PresetCategory StemForge.Models.Preset::get_Category()
+FNDA:0,StemForge.Models.PresetCategory StemForge.Models.Preset::get_Category()
+DA:24,0
+FN:24,System.String StemForge.Models.Preset::get_Description()
+FNDA:0,System.String StemForge.Models.Preset::get_Description()
+DA:25,0
+FN:25,System.Int32 StemForge.Models.Preset::get_ModelCount()
+FNDA:0,System.Int32 StemForge.Models.Preset::get_ModelCount()
+DA:26,0
+FN:26,System.String StemForge.Models.Preset::get_Vram()
+FNDA:0,System.String StemForge.Models.Preset::get_Vram()
+DA:27,0
+FN:27,StemForge.Models.SeparationMode StemForge.Models.Preset::get_Mode()
+FNDA:3,StemForge.Models.SeparationMode StemForge.Models.Preset::get_Mode()
+DA:28,3
+FN:30,System.String StemForge.Models.Preset::get_PrimaryModel()
+FNDA:3,System.String StemForge.Models.Preset::get_PrimaryModel()
+DA:31,3
+FN:31,System.String StemForge.Models.Preset::get_EnsembleAlgorithm()
+FNDA:2,System.String StemForge.Models.Preset::get_EnsembleAlgorithm()
+DA:32,2
+FN:32,System.Collections.Generic.IReadOnlyList`1<System.String> StemForge.Models.Preset::get_ExtraModels()
+FNDA:2,System.Collections.Generic.IReadOnlyList`1<System.String> StemForge.Models.Preset::get_ExtraModels()
+DA:33,2
+FN:33,System.Collections.Generic.IReadOnlyList`1<System.Double> StemForge.Models.Preset::get_EnsembleWeights()
+FNDA:1,System.Collections.Generic.IReadOnlyList`1<System.Double> StemForge.Models.Preset::get_EnsembleWeights()
+DA:34,1
+FN:20,System.Void StemForge.Models.Preset::.ctor(System.String,System.String,StemForge.Models.PresetCategory,System.String,System.Int32,System.String,StemForge.Models.SeparationMode,System.String,System.String,System.Collections.Generic.IReadOnlyList`1<System.String>,System.Collections.Generic.IReadOnlyList`1<System.Double>)
+FNDA:3,System.Void StemForge.Models.Preset::.ctor(System.String,System.String,StemForge.Models.PresetCategory,System.String,System.Int32,System.String,StemForge.Models.SeparationMode,System.String,System.String,System.Collections.Generic.IReadOnlyList`1<System.String>,System.Collections.Generic.IReadOnlyList`1<System.Double>)
+DA:21,3
+DA:29,3
+DA:30,3
+DA:35,3
+LF:15
+LH:9
+BRF:0
+BRH:0
+FNF:12
+FNH:6
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Models\SeparationProgress.cs
+FN:3,System.Int32 StemForge.Models.SeparationProgress::get_PresetIndex()
+FNDA:0,System.Int32 StemForge.Models.SeparationProgress::get_PresetIndex()
+DA:4,0
+FN:4,System.Int32 StemForge.Models.SeparationProgress::get_PresetCount()
+FNDA:0,System.Int32 StemForge.Models.SeparationProgress::get_PresetCount()
+DA:5,0
+FN:5,System.String StemForge.Models.SeparationProgress::get_PresetLabel()
+FNDA:0,System.String StemForge.Models.SeparationProgress::get_PresetLabel()
+DA:6,0
+FN:6,System.String StemForge.Models.SeparationProgress::get_StepLabel()
+FNDA:0,System.String StemForge.Models.SeparationProgress::get_StepLabel()
+DA:7,0
+FN:7,System.Int32 StemForge.Models.SeparationProgress::get_StepPercent()
+FNDA:0,System.Int32 StemForge.Models.SeparationProgress::get_StepPercent()
+DA:8,0
+FN:2,System.Void StemForge.Models.SeparationProgress::.ctor(System.Int32,System.Int32,System.String,System.String,System.Int32)
+FNDA:0,System.Void StemForge.Models.SeparationProgress::.ctor(System.Int32,System.Int32,System.String,System.String,System.Int32)
+DA:3,0
+DA:9,0
+LF:7
+LH:0
+BRF:0
+BRH:0
+FNF:6
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Extensions\SpecialFolderExtensions.cs
+FN:7,System.String StemForge.Extensions.SpecialFolderExtensions::GetFolderPath(System.Environment/SpecialFolder,System.ReadOnlySpan`1<System.String>)
+FNDA:37,System.String StemForge.Extensions.SpecialFolderExtensions::GetFolderPath(System.Environment/SpecialFolder,System.ReadOnlySpan`1<System.String>)
+DA:8,37
+LF:1
+LH:1
+BRF:0
+BRH:0
+FNF:1
+FNH:1
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Styles\Tokens.axaml
+FN:0,System.Void CompiledAvaloniaXaml.!AvaloniaResources::Populate:/Styles/Tokens.axaml(System.IServiceProvider,Avalonia.Controls.ResourceDictionary)
+FNDA:0,System.Void CompiledAvaloniaXaml.!AvaloniaResources::Populate:/Styles/Tokens.axaml(System.IServiceProvider,Avalonia.Controls.ResourceDictionary)
+DA:1,0
+DA:7,0
+DA:8,0
+DA:9,0
+DA:10,0
+DA:13,0
+DA:14,0
+DA:15,0
+DA:18,0
+DA:19,0
+DA:20,0
+DA:23,0
+DA:24,0
+DA:25,0
+DA:26,0
+DA:29,0
+DA:30,0
+DA:31,0
+DA:35,0
+DA:36,0
+DA:37,0
+DA:38,0
+DA:40,0
+DA:41,0
+DA:42,0
+DA:44,0
+DA:45,0
+DA:46,0
+DA:48,0
+DA:49,0
+DA:50,0
+DA:51,0
+DA:53,0
+DA:54,0
+DA:55,0
+DA:58,0
+DA:65,0
+DA:66,0
+DA:69,0
+DA:70,0
+DA:71,0
+DA:72,0
+DA:74,0
+DA:75,0
+DA:76,0
+DA:77,0
+BRDA:1,64,0,0
+BRDA:1,64,1,0
+BRDA:1,2341,0,0
+BRDA:1,2341,1,0
+FN:58,System.Object CompiledAvaloniaXaml.!AvaloniaResources/XamlClosure_1::Build_18(System.IServiceProvider)
+FNDA:0,System.Object CompiledAvaloniaXaml.!AvaloniaResources/XamlClosure_1::Build_18(System.IServiceProvider)
+DA:59,0
+DA:60,0
+LF:48
+LH:0
+BRF:4
+BRH:0
+FNF:2
+FNH:0
+end_of_record
+SF:V:\Repos\StemForge\src\StemForge\Styles\Controls.axaml
+FN:0,System.Void CompiledAvaloniaXaml.!AvaloniaResources::Populate:/Styles/Controls.axaml(System.IServiceProvider,Avalonia.Styling.Styles)
+FNDA:0,System.Void CompiledAvaloniaXaml.!AvaloniaResources::Populate:/Styles/Controls.axaml(System.IServiceProvider,Avalonia.Styling.Styles)
+DA:1,0
+DA:5,0
+DA:6,0
+DA:7,0
+DA:8,0
+DA:12,0
+DA:13,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:20,0
+DA:24,0
+DA:25,0
+DA:26,0
+DA:27,0
+DA:28,0
+DA:32,0
+DA:33,0
+DA:35,0
+DA:36,0
+DA:40,0
+DA:41,0
+DA:45,0
+DA:46,0
+DA:47,0
+DA:48,0
+DA:49,0
+DA:50,0
+DA:51,0
+DA:53,0
+DA:54,0
+DA:56,0
+DA:57,0
+DA:61,0
+DA:62,0
+DA:63,0
+DA:64,0
+DA:65,0
+DA:66,0
+DA:67,0
+DA:68,0
+DA:70,0
+DA:71,0
+DA:72,0
+BRDA:1,4026,0,0
+BRDA:1,4026,1,0
+LF:44
+LH:0
+BRF:2
+BRH:0
+FNF:1
+FNH:0
+end_of_record
