@@ -23,10 +23,10 @@ public sealed class AppSettings
         set;
     }
 
-    // Browser name for --cookies-from-browser (e.g. "firefox", "chrome", "edge"). Null = no cookies.
+    /// <summary>Browser name for --cookies-from-browser (e.g. "firefox", "chrome", "edge"). Null = no cookies.</summary>
     public string? YtdlpCookiesFromBrowser { get; set; }
 
-    // JS runtime for --js-runtime (e.g. "deno", "node"). Null = let yt-dlp auto-detect.
+    /// <summary>JS runtime for --js-runtime (e.g. "deno", "node"). Null = let yt-dlp auto-detect.</summary>
     public string? YtdlpJsRuntime { get; set; }
     public bool FirstRunComplete { get; set; } = false;
     public GpuVariant? InstalledVariant { get; set; }

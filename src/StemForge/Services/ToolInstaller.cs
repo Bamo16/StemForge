@@ -3,16 +3,15 @@ using StemForge.Models;
 
 namespace StemForge.Services;
 
-public static class ToolInstaller
+public sealed class ToolInstaller(IProcessRunner runner)
 {
-    public static async Task InstallUvAsync(
-        IProgress<string> progress,
-        CancellationToken ct = default
-    )
+    private readonly IProcessRunner _runner = runner;
+
+    public async Task InstallUvAsync(IProgress<string> progress, CancellationToken ct = default)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            await ProcessRunner.RunStreamingAsync(
+            await _runner.RunStreamingAsync(
                 "powershell",
                 ["-ExecutionPolicy", "ByPass", "-c", "irm https://astral.sh/uv/install.ps1 | iex"],
                 progress,
@@ -21,7 +20,7 @@ public static class ToolInstaller
         }
         else
         {
-            await ProcessRunner.RunStreamingAsync(
+            await _runner.RunStreamingAsync(
                 "sh",
                 ["-c", "curl -LsSf https://astral.sh/uv/install.sh | sh"],
                 progress,
@@ -30,11 +29,11 @@ public static class ToolInstaller
         }
     }
 
-    public static async Task<bool> IsUvAvailableAsync()
+    public async Task<bool> IsUvAvailableAsync()
     {
         try
         {
-            return (await ProcessRunner.RunAsync("uv", ["--version"])).Success;
+            return (await _runner.RunAsync("uv", ["--version"])).Success;
         }
         catch
         {
@@ -42,11 +41,11 @@ public static class ToolInstaller
         }
     }
 
-    public static async Task<bool> IsYtdlpAvailableAsync()
+    public async Task<bool> IsYtdlpAvailableAsync()
     {
         try
         {
-            return (await ProcessRunner.RunAsync("yt-dlp", ["--version"])).Success;
+            return (await _runner.RunAsync("yt-dlp", ["--version"])).Success;
         }
         catch
         {
@@ -54,11 +53,11 @@ public static class ToolInstaller
         }
     }
 
-    public static async Task<bool> IsFfmpegAvailableAsync()
+    public async Task<bool> IsFfmpegAvailableAsync()
     {
         try
         {
-            return (await ProcessRunner.RunAsync("ffmpeg", ["-version"])).Success;
+            return (await _runner.RunAsync("ffmpeg", ["-version"])).Success;
         }
         catch
         {
@@ -66,18 +65,15 @@ public static class ToolInstaller
         }
     }
 
-    public static Task InstallYtdlpAsync(
+    public Task InstallYtdlpAsync(
         IProgress<string> progress,
         CancellationToken ct = default
-    ) => ProcessRunner.RunStreamingAsync("uv", ["tool", "install", "yt-dlp"], progress, ct);
+    ) => _runner.RunStreamingAsync("uv", ["tool", "install", "yt-dlp"], progress, ct);
 
-    public static Task InstallFfmpegAsync(
-        IProgress<string> progress,
-        CancellationToken ct = default
-    )
+    public Task InstallFfmpegAsync(IProgress<string> progress, CancellationToken ct = default)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return ProcessRunner.RunStreamingAsync(
+            return _runner.RunStreamingAsync(
                 "winget",
                 [
                     "install",
@@ -92,18 +88,18 @@ public static class ToolInstaller
             );
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            return ProcessRunner.RunStreamingAsync("brew", ["install", "ffmpeg"], progress, ct);
+            return _runner.RunStreamingAsync("brew", ["install", "ffmpeg"], progress, ct);
 
         throw new PlatformNotSupportedException(
             "Automatic ffmpeg install is not supported on this platform. Install ffmpeg via your package manager."
         );
     }
 
-    public static async Task<GpuVariant?> DetectInstalledVariantAsync()
+    public async Task<GpuVariant?> DetectInstalledVariantAsync()
     {
         try
         {
-            var toolDir = (await ProcessRunner.RunAsync("uv", ["tool", "dir"])).Stdout;
+            var toolDir = (await _runner.RunAsync("uv", ["tool", "dir"])).Stdout;
             if (string.IsNullOrWhiteSpace(toolDir))
                 return null;
 
@@ -127,7 +123,7 @@ public static class ToolInstaller
                 print('Cuda' if torch_gpu and 'CUDAExecutionProvider' in providers else ('DirectML' if 'DMLExecutionProvider' in providers else 'Cpu'))
                 """;
 
-            var result = (await ProcessRunner.RunAsync(pythonExe, ["-c", script])).Stdout;
+            var result = (await _runner.RunAsync(pythonExe, ["-c", script])).Stdout;
 
             return Enum.TryParse<GpuVariant>(result, out var variant) ? variant : null;
         }
@@ -137,7 +133,7 @@ public static class ToolInstaller
         }
     }
 
-    public static async Task InstallAudioSeparatorAsync(
+    public async Task InstallAudioSeparatorAsync(
         GpuVariant variant,
         IProgress<string> progress,
         CancellationToken ct = default
@@ -158,6 +154,6 @@ public static class ToolInstaller
         if (variant == GpuVariant.Cuda)
             args.AddRange(["--extra-index-url", "https://download.pytorch.org/whl/cu121"]);
 
-        await ProcessRunner.RunStreamingAsync("uv", [.. args], progress, ct);
+        await _runner.RunStreamingAsync("uv", [.. args], progress, ct);
     }
 }

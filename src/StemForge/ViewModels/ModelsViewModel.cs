@@ -16,13 +16,14 @@ public partial class ModelsViewModel : PageViewModelBase
 {
     public override string Title => "Model Library";
 
-    private readonly ModelCatalogService _catalog = new();
+    private readonly ModelCatalogService _catalog;
     private readonly AppSettings _settings;
     private readonly UserPresetService _userPresets;
     private readonly List<ModelItemViewModel> _all = [];
 
-    public ModelsViewModel(AppSettings settings, UserPresetService userPresets)
+    public ModelsViewModel(AppSettings settings, UserPresetService userPresets, ModelCatalogService catalog)
     {
+        _catalog = catalog;
         _settings = settings;
         _userPresets = userPresets;
         EnsembleAlgorithm = EnsembleAlgorithmOptions[0];

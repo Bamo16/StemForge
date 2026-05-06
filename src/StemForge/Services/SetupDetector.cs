@@ -5,8 +5,10 @@ namespace StemForge.Services;
 
 public sealed record ToolInfo(string Name, bool Found, string? Version, bool IsRequired);
 
-public static class SetupDetector
+public sealed class SetupDetector(IProcessRunner runner)
 {
+    private readonly IProcessRunner _runner = runner;
+
     /// <summary>
     /// Known path where uv installs the audio-separator shim on Windows.
     /// Falls back to PATH lookup.
@@ -23,7 +25,7 @@ public static class SetupDetector
         return File.Exists(uvShim) ? uvShim : "audio-separator";
     }
 
-    public static Task<IReadOnlyList<ToolInfo>> DetectAllAsync(string? ytdlpPath) =>
+    public Task<IReadOnlyList<ToolInfo>> DetectAllAsync(string? ytdlpPath) =>
         Task.Run(async () =>
         {
             var results = await Task.WhenAll(
@@ -40,7 +42,7 @@ public static class SetupDetector
             return (IReadOnlyList<ToolInfo>)results;
         });
 
-    private static async Task<ToolInfo> DetectAsync(
+    private async Task<ToolInfo> DetectAsync(
         string name,
         string exe,
         string versionArg,
@@ -49,7 +51,7 @@ public static class SetupDetector
     {
         try
         {
-            var r = await ProcessRunner.RunAsync(exe, [versionArg]);
+            var r = await _runner.RunAsync(exe, [versionArg]);
             var version = r.Output.Split('\n')[0].Trim();
             return new ToolInfo(name, Found: true, Version: version, IsRequired: required);
         }

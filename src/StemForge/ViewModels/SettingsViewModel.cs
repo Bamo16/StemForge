@@ -9,6 +9,9 @@ namespace StemForge.ViewModels;
 public partial class SettingsViewModel : PageViewModelBase
 {
     private readonly AppSettings _settings;
+    private readonly SetupDetector _setupDetector;
+    private readonly GpuDetector _gpuDetector;
+    private readonly ToolInstaller _toolInstaller;
 
     public override string Title => "Settings";
 
@@ -57,9 +60,17 @@ public partial class SettingsViewModel : PageViewModelBase
     [ObservableProperty]
     public partial bool SaveSuccess { get; set; }
 
-    public SettingsViewModel(AppSettings settings)
+    public SettingsViewModel(
+        AppSettings settings,
+        SetupDetector setupDetector,
+        GpuDetector gpuDetector,
+        ToolInstaller toolInstaller
+    )
     {
         _settings = settings;
+        _setupDetector = setupDetector;
+        _gpuDetector = gpuDetector;
+        _toolInstaller = toolInstaller;
         LoadFromSettings(settings);
         _ = DetectToolsAsync();
     }
@@ -94,10 +105,10 @@ public partial class SettingsViewModel : PageViewModelBase
         GpuHint = string.Empty;
         try
         {
-            var toolsTask = SetupDetector.DetectAllAsync(
+            var toolsTask = _setupDetector.DetectAllAsync(
                 string.IsNullOrWhiteSpace(YtdlpPath) ? null : YtdlpPath
             );
-            var gpuTask = GpuDetector.DetectAsync();
+            var gpuTask = _gpuDetector.DetectAsync();
 
             await Task.WhenAll(toolsTask, gpuTask);
 
@@ -128,7 +139,7 @@ public partial class SettingsViewModel : PageViewModelBase
 
                 // Auto-select the best variant only before the user has ever saved settings
                 if (!_settings.FirstRunComplete)
-                    GpuVariant = GpuDetector.SuggestVariant(gpus);
+                    GpuVariant = GpuDetector.SuggestVariant(gpus); // static pure method
             }
         }
         finally
@@ -145,7 +156,7 @@ public partial class SettingsViewModel : PageViewModelBase
         if (!(tools.FirstOrDefault(t => t.Name == "audio-separator")?.Found ?? false))
             return;
 
-        if (await ToolInstaller.DetectInstalledVariantAsync() is { } detected)
+        if (await _toolInstaller.DetectInstalledVariantAsync() is { } detected)
             _settings.InstalledVariant = detected;
     }
 

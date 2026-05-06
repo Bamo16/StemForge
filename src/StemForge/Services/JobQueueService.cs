@@ -10,10 +10,15 @@ namespace StemForge.Services;
 /// Runs separation jobs sequentially. One job at a time; all others wait in FIFO order.
 /// Thread-safe enqueue; all observable mutations happen on the UI thread.
 /// </summary>
-public sealed partial class JobQueueService(SeparationService separation, AppSettings settings)
+public sealed partial class JobQueueService(
+    SeparationService separation,
+    AppSettings settings,
+    IProcessRunner runner
+)
 {
     private readonly SeparationService _separation = separation;
     private readonly AppSettings _settings = settings;
+    private readonly IProcessRunner _runner = runner;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private CancellationTokenSource? _currentCts;
     private JobItemViewModel? _currentJob;
@@ -227,19 +232,19 @@ public sealed partial class JobQueueService(SeparationService separation, AppSet
 
         args.Add(NormalizeUrl(url));
 
-        await ProcessRunner.RunStreamingAsync(_settings.YtdlpPath, args, log, ct);
+        await _runner.RunStreamingAsync(_settings.YtdlpPath, args, log, ct);
 
         return Directory.GetFiles(dlDir).FirstOrDefault()
             ?? throw new InvalidOperationException("yt-dlp produced no output file.");
     }
 
-    // Normalise YouTube URLs to music.youtube.com for the best available audio format.
-    private static string NormalizeUrl(string url) =>
+    /// <summary>Normalise YouTube URLs to music.youtube.com for the best available audio format.</summary>
+    internal static string NormalizeUrl(string url) =>
         YtVideoIdRegex().Match(url).Groups["VideoId"] is { Success: true, Value: { } id }
             ? $"https://music.youtube.com/watch?v={id}"
             : url;
 
-    // Matches any YouTube URL or bare video ID and captures the 11-char video ID.
+    /// <summary>Matches any YouTube URL or bare video ID and captures the 11-char video ID.</summary>
     [GeneratedRegex(
         @"^(?:(?:(?:https?:\/\/)?(?:(?:www|music|m)\.)?)?(?:youtube\.com|youtu\.be)(?:\S*?(?:\?v=|\/)))?(?<VideoId>[0-9A-Za-z_-]{11})(?:[&?].*)?$",
         RegexOptions.IgnoreCase | RegexOptions.Compiled

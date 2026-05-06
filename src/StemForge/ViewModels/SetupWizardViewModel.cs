@@ -16,9 +16,17 @@ public enum WizardStep
     Finish,
 }
 
-public partial class SetupWizardViewModel(AppSettings settings) : ViewModelBase
+public partial class SetupWizardViewModel(
+    AppSettings settings,
+    SetupDetector setupDetector,
+    GpuDetector gpuDetector,
+    ToolInstaller toolInstaller
+) : ViewModelBase
 {
     private readonly AppSettings _settings = settings;
+    private readonly SetupDetector _setupDetector = setupDetector;
+    private readonly GpuDetector _gpuDetector = gpuDetector;
+    private readonly ToolInstaller _toolInstaller = toolInstaller;
 
     public event Action? SetupCompleted;
     public event Action? SetupDismissed;
@@ -216,8 +224,8 @@ public partial class SetupWizardViewModel(AppSettings settings) : ViewModelBase
                 _installLog.Append(line);
                 InstallLog = _installLog.ToString();
             });
-            await ToolInstaller.InstallUvAsync(progress);
-            UvFound = await ToolInstaller.IsUvAvailableAsync();
+            await _toolInstaller.InstallUvAsync(progress);
+            UvFound = await _toolInstaller.IsUvAvailableAsync();
             if (!UvFound)
                 UvInstallError =
                     "uv installed but could not be found on PATH. You may need to restart StemForge.";
@@ -249,7 +257,7 @@ public partial class SetupWizardViewModel(AppSettings settings) : ViewModelBase
                 _installLog.Append(line);
                 InstallLog = _installLog.ToString();
             });
-            await ToolInstaller.InstallAudioSeparatorAsync(GpuVariant, progress);
+            await _toolInstaller.InstallAudioSeparatorAsync(GpuVariant, progress);
             InstallSuccess = true;
             AudioSeparatorFound = true;
         }
@@ -280,8 +288,8 @@ public partial class SetupWizardViewModel(AppSettings settings) : ViewModelBase
                 _installLog.Append(line);
                 InstallLog = _installLog.ToString();
             });
-            await ToolInstaller.InstallYtdlpAsync(progress);
-            YtdlpFound = await ToolInstaller.IsYtdlpAvailableAsync();
+            await _toolInstaller.InstallYtdlpAsync(progress);
+            YtdlpFound = await _toolInstaller.IsYtdlpAvailableAsync();
             if (!YtdlpFound)
                 YtdlpInstallError =
                     "yt-dlp installed but could not be found on PATH. You may need to restart StemForge.";
@@ -315,8 +323,8 @@ public partial class SetupWizardViewModel(AppSettings settings) : ViewModelBase
                 _installLog.Append(line);
                 InstallLog = _installLog.ToString();
             });
-            await ToolInstaller.InstallFfmpegAsync(progress);
-            FfmpegFound = await ToolInstaller.IsFfmpegAvailableAsync();
+            await _toolInstaller.InstallFfmpegAsync(progress);
+            FfmpegFound = await _toolInstaller.IsFfmpegAvailableAsync();
             if (!FfmpegFound)
                 FfmpegInstallError =
                     "ffmpeg installed but could not be found on PATH. You may need to restart StemForge.";
@@ -388,8 +396,8 @@ public partial class SetupWizardViewModel(AppSettings settings) : ViewModelBase
 
         try
         {
-            var toolsTask = SetupDetector.DetectAllAsync(null);
-            var gpuTask = GpuDetector.DetectAsync();
+            var toolsTask = _setupDetector.DetectAllAsync(null);
+            var gpuTask = _gpuDetector.DetectAsync();
             await Task.WhenAll(toolsTask, gpuTask);
 
             var tools = await toolsTask;
@@ -420,7 +428,7 @@ public partial class SetupWizardViewModel(AppSettings settings) : ViewModelBase
             if (best is not null)
             {
                 GpuHint = $"Detected: {best.Name}";
-                GpuVariant = GpuDetector.SuggestVariant(gpus);
+                GpuVariant = GpuDetector.SuggestVariant(gpus); // static pure method
             }
         }
         finally
@@ -431,9 +439,9 @@ public partial class SetupWizardViewModel(AppSettings settings) : ViewModelBase
 
     private async Task RecheckToolsAsync()
     {
-        UvFound = await ToolInstaller.IsUvAvailableAsync();
-        YtdlpFound = await ToolInstaller.IsYtdlpAvailableAsync();
-        FfmpegFound = await ToolInstaller.IsFfmpegAvailableAsync();
+        UvFound = await _toolInstaller.IsUvAvailableAsync();
+        YtdlpFound = await _toolInstaller.IsYtdlpAvailableAsync();
+        FfmpegFound = await _toolInstaller.IsFfmpegAvailableAsync();
     }
 
     private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolInfo> tools)
@@ -442,7 +450,7 @@ public partial class SetupWizardViewModel(AppSettings settings) : ViewModelBase
             return;
         if (!(tools.FirstOrDefault(t => t.Name == "audio-separator")?.Found ?? false))
             return;
-        var detected = await ToolInstaller.DetectInstalledVariantAsync();
+        var detected = await _toolInstaller.DetectInstalledVariantAsync();
         if (detected is not null)
             _settings.InstalledVariant = detected;
     }

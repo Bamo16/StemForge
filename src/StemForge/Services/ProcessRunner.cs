@@ -10,7 +10,7 @@ namespace StemForge.Services;
 /// All overloads drain both stdout and stderr to prevent OS pipe-buffer deadlocks.
 /// Cancellation kills the entire process tree; the token is checked after exit.
 /// </summary>
-public static class ProcessRunner
+public sealed class ProcessRunner : IProcessRunner
 {
     // ── Result ──────────────────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ public static class ProcessRunner
     // ── Public API ──────────────────────────────────────────────────────────────
 
     /// Run to completion and capture output. Returns the result regardless of exit code.
-    public static Task<Result> RunAsync(
+    public Task<Result> RunAsync(
         string exe,
         IEnumerable<string> args,
         CancellationToken ct = default
@@ -47,7 +47,7 @@ public static class ProcessRunner
 
     /// Run to completion and capture output. Throws <see cref="ProcessFailedException"/>
     /// if the process exits with a non-zero code.
-    public static Task<Result> RunCheckedAsync(
+    public Task<Result> RunCheckedAsync(
         string exe,
         IEnumerable<string> args,
         CancellationToken ct = default
@@ -55,7 +55,7 @@ public static class ProcessRunner
 
     /// Run and stream each output line to <paramref name="progress"/> as it arrives.
     /// Throws <see cref="ProcessFailedException"/> on non-zero exit.
-    public static async Task RunStreamingAsync(
+    public async Task RunStreamingAsync(
         string exe,
         IEnumerable<string> args,
         IProgress<string>? progress = null,

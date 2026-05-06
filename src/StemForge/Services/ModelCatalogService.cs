@@ -7,8 +7,9 @@ namespace StemForge.Services;
 /// Runs audio-separator --list_models --list_format=json and parses the result.
 /// Results are cached until Invalidate() or a forced refresh.
 /// </summary>
-public sealed class ModelCatalogService
+public sealed class ModelCatalogService(IProcessRunner runner)
 {
+    private readonly IProcessRunner _runner = runner;
     private IReadOnlyList<ModelInfo>? _cache;
 
     public void Invalidate() => _cache = null;
@@ -22,7 +23,7 @@ public sealed class ModelCatalogService
         if (!forceRefresh && _cache is not null)
             return _cache;
 
-        var result = await ProcessRunner.RunAsync(
+        var result = await _runner.RunAsync(
             audioSeparatorExe,
             ["--list_models", "--list_format=json"],
             ct
@@ -38,7 +39,7 @@ public sealed class ModelCatalogService
 
     // ── Parsing ───────────────────────────────────────────────────────────────
 
-    private static IReadOnlyList<ModelInfo> TryParseJson(string raw)
+    internal static IReadOnlyList<ModelInfo> TryParseJson(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
             return [];
@@ -90,8 +91,8 @@ public sealed class ModelCatalogService
         }
     }
 
-    // Pull stems from the "stems" string array and look up SDR from "scores".
-    private static IReadOnlyList<StemSdr> ParseStems(JsonElement modelEl)
+    /// <summary>Pull stems from the "stems" string array and look up SDR from "scores".</summary>
+    internal static IReadOnlyList<StemSdr> ParseStems(JsonElement modelEl)
     {
         var result = new List<StemSdr>();
 
