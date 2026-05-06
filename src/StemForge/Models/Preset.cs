@@ -18,6 +18,7 @@ public enum PresetCategory
     Other,
 }
 
+/// <param name="PrimaryModel">BuiltinPreset: null → use Id as preset name. SingleModel / CustomEnsemble: the primary model filename.</param>
 public sealed record Preset(
     string Id,
     string Label,
@@ -26,8 +27,6 @@ public sealed record Preset(
     int ModelCount,
     string Vram,
     SeparationMode Mode = SeparationMode.BuiltinPreset,
-    // BuiltinPreset: null → use Id as preset name
-    // SingleModel / CustomEnsemble: the primary model filename
     string? PrimaryModel = null,
     string? EnsembleAlgorithm = null,
     IReadOnlyList<string>? ExtraModels = null,

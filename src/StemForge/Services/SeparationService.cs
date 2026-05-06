@@ -10,7 +10,7 @@ public sealed partial class SeparationService(string audioSeparatorPath = "audio
 {
     private readonly string _audioSeparatorPath = audioSeparatorPath;
 
-    // Matches any tqdm progress bar — captures the leading percentage.
+    /// <summary>Matches any tqdm progress bar — captures the leading percentage.</summary>
     [GeneratedRegex(@"^\s*(\d+)%\|")]
     private static partial Regex TqdmPctRegex();
 

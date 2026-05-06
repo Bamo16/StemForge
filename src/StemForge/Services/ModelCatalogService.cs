@@ -91,7 +91,7 @@ public sealed class ModelCatalogService(IProcessRunner runner)
         }
     }
 
-    // Pull stems from the "stems" string array and look up SDR from "scores".
+    /// <summary>Pull stems from the "stems" string array and look up SDR from "scores".</summary>
     internal static IReadOnlyList<StemSdr> ParseStems(JsonElement modelEl)
     {
         var result = new List<StemSdr>();

@@ -238,13 +238,13 @@ public sealed partial class JobQueueService(
             ?? throw new InvalidOperationException("yt-dlp produced no output file.");
     }
 
-    // Normalise YouTube URLs to music.youtube.com for the best available audio format.
+    /// <summary>Normalise YouTube URLs to music.youtube.com for the best available audio format.</summary>
     internal static string NormalizeUrl(string url) =>
         YtVideoIdRegex().Match(url).Groups["VideoId"] is { Success: true, Value: { } id }
             ? $"https://music.youtube.com/watch?v={id}"
             : url;
 
-    // Matches any YouTube URL or bare video ID and captures the 11-char video ID.
+    /// <summary>Matches any YouTube URL or bare video ID and captures the 11-char video ID.</summary>
     [GeneratedRegex(
         @"^(?:(?:(?:https?:\/\/)?(?:(?:www|music|m)\.)?)?(?:youtube\.com|youtu\.be)(?:\S*?(?:\?v=|\/)))?(?<VideoId>[0-9A-Za-z_-]{11})(?:[&?].*)?$",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
