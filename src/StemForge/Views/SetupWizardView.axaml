@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:StemForge.ViewModels"
+             xmlns:ext="using:StemForge.Extensions"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
@@ -251,131 +252,131 @@
                         <TextBlock Text="Install tools"
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock FontSize="12" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="Choose what to install. Already-installed tools are checked off — uncheck anything you'd like to skip." />
 
-                        <!-- audio-separator (required) -->
-                        <StackPanel IsVisible="{Binding !UvFound}" Spacing="10">
-                            <TextBlock FontSize="13"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       TextWrapping="Wrap"
-                                       Text="uv is required to install audio-separator. Click below to install it automatically." />
-                            <Button Classes="accent"
-                                    Content="Install uv"
-                                    Command="{Binding InstallUvCommand}"
-                                    IsEnabled="{Binding !IsInstallingUv}"
-                                    HorizontalAlignment="Left" />
-                            <TextBlock IsVisible="{Binding UvInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                       Text="{Binding UvInstallError}"
-                                       FontSize="12"
-                                       Foreground="{DynamicResource ErrorBrush}"
-                                       TextWrapping="Wrap" />
-                        </StackPanel>
-
-                        <StackPanel IsVisible="{Binding UvFound}" Spacing="10">
+                        <!-- uv -->
+                        <CheckBox IsChecked="{Binding WantInstallUv, Mode=TwoWay}"
+                                  IsEnabled="{Binding !UvFound}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Ellipse Classes="statusDot ok" />
                                 <TextBlock FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Text="uv (required)" />
+                                <TextBlock FontSize="11"
                                            Foreground="{DynamicResource SuccessBrush}"
-                                           Text="uv is available" />
+                                           Text="✓ already installed"
+                                           IsVisible="{Binding UvFound}" />
+                                <TextBlock FontSize="11"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="— Python tool installer used to install audio-separator"
+                                           IsVisible="{Binding !UvFound}" />
                             </StackPanel>
+                        </CheckBox>
 
-                            <StackPanel IsVisible="{Binding !AudioSeparatorFound}" Spacing="8">
-                                <TextBlock FontSize="13"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           TextWrapping="Wrap"
-                                           Text="audio-separator was not detected. Click Install to set it up now." />
-                                <Button Classes="accent"
-                                        Content="Install audio-separator"
-                                        Command="{Binding InstallCommand}"
-                                        IsEnabled="{Binding !IsInstalling}"
-                                        HorizontalAlignment="Left" />
-                                <TextBlock IsVisible="{Binding InstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                           Text="{Binding InstallError}"
-                                           FontSize="12"
-                                           Foreground="{DynamicResource ErrorBrush}"
-                                           TextWrapping="Wrap" />
+                        <!-- audio-separator (with variant picker) -->
+                        <StackPanel Spacing="8">
+                            <CheckBox IsChecked="{Binding WantInstallAudioSeparator, Mode=TwoWay}"
+                                      IsEnabled="{Binding !AudioSeparatorFound}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               Text="audio-separator (required)" />
+                                    <TextBlock FontSize="11"
+                                               Foreground="{DynamicResource SuccessBrush}"
+                                               Text="✓ already installed"
+                                               IsVisible="{Binding AudioSeparatorFound}" />
+                                    <TextBlock FontSize="11"
+                                               Foreground="{DynamicResource TextPlaceholderBrush}"
+                                               Text="— stem separation engine"
+                                               IsVisible="{Binding !AudioSeparatorFound}" />
+                                </StackPanel>
+                            </CheckBox>
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="28,0,0,0"
+                                        IsVisible="{Binding WantInstallAudioSeparator}">
+                                <Button Classes="variantTab"
+                                        Classes.active="{Binding IsCpu}"
+                                        Command="{Binding SetGpuVariantCommand}"
+                                        CommandParameter="Cpu" Content="CPU" />
+                                <Button Classes="variantTab"
+                                        Classes.active="{Binding IsCuda}"
+                                        Command="{Binding SetGpuVariantCommand}"
+                                        CommandParameter="Cuda" Content="CUDA" />
+                                <Button Classes="variantTab"
+                                        Classes.active="{Binding IsDirectML}"
+                                        Command="{Binding SetGpuVariantCommand}"
+                                        CommandParameter="DirectML" Content="DirectML" />
                             </StackPanel>
-
-                            <StackPanel IsVisible="{Binding AudioSeparatorFound}"
-                                        Orientation="Horizontal" Spacing="8">
-                                <Ellipse Classes="statusDot ok" />
-                                <TextBlock FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource SuccessBrush}"
-                                           Text="audio-separator is available" />
-                            </StackPanel>
+                            <TextBlock FontSize="11" Margin="28,0,0,0"
+                                       Foreground="{DynamicResource TextPlaceholderBrush}"
+                                       TextWrapping="Wrap"
+                                       Text="{Binding GpuHint}"
+                                       IsVisible="{Binding GpuHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                         </StackPanel>
 
-                        <!-- Optional tools -->
-                        <StackPanel IsVisible="{Binding UvFound}" Spacing="8">
-                            <TextBlock FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Text="Optional tools" />
-
-                            <!-- yt-dlp -->
-                            <StackPanel Spacing="6">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Ellipse Classes="statusDot"
-                                             Classes.ok="{Binding YtdlpFound}"
-                                             Classes.fail="{Binding !YtdlpFound}"
-                                             VerticalAlignment="Center" />
-                                    <TextBlock FontSize="12" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               Text="yt-dlp"
-                                               VerticalAlignment="Center" />
-                                    <TextBlock FontSize="11"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"
-                                               Text="— enables YouTube URL downloads"
-                                               VerticalAlignment="Center" />
-                                </StackPanel>
-                                <Button Classes="ghost"
-                                        Content="Install yt-dlp"
-                                        Command="{Binding InstallYtdlpCommand}"
-                                        IsEnabled="{Binding !IsInstallingYtdlp}"
-                                        IsVisible="{Binding !YtdlpFound}"
-                                        HorizontalAlignment="Left"
-                                        Margin="15,0,0,0" />
-                                <TextBlock IsVisible="{Binding YtdlpInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                           Text="{Binding YtdlpInstallError}"
-                                           FontSize="11"
-                                           Foreground="{DynamicResource ErrorBrush}"
-                                           TextWrapping="Wrap"
-                                           Margin="15,0,0,0" />
+                        <!-- yt-dlp -->
+                        <CheckBox IsChecked="{Binding WantInstallYtdlp, Mode=TwoWay}"
+                                  IsEnabled="{Binding !YtdlpFound}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Text="yt-dlp (optional)" />
+                                <TextBlock FontSize="11"
+                                           Foreground="{DynamicResource SuccessBrush}"
+                                           Text="✓ already installed"
+                                           IsVisible="{Binding YtdlpFound}" />
+                                <TextBlock FontSize="11"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="— enables downloading audio from YouTube URLs"
+                                           IsVisible="{Binding !YtdlpFound}" />
                             </StackPanel>
+                        </CheckBox>
 
-                            <!-- ffmpeg -->
-                            <StackPanel Spacing="6">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Ellipse Classes="statusDot"
-                                             Classes.ok="{Binding FfmpegFound}"
-                                             Classes.fail="{Binding !FfmpegFound}"
-                                             VerticalAlignment="Center" />
-                                    <TextBlock FontSize="12" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               Text="ffmpeg"
-                                               VerticalAlignment="Center" />
-                                    <TextBlock FontSize="11"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"
-                                               Text="— required for audio conversion"
-                                               VerticalAlignment="Center" />
-                                </StackPanel>
-                                <Button Classes="ghost"
-                                        Content="Install ffmpeg"
-                                        Command="{Binding InstallFfmpegCommand}"
-                                        IsEnabled="{Binding !IsInstallingFfmpeg}"
-                                        IsVisible="{Binding !FfmpegFound}"
-                                        HorizontalAlignment="Left"
-                                        Margin="15,0,0,0" />
-                                <TextBlock IsVisible="{Binding FfmpegInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                           Text="{Binding FfmpegInstallError}"
-                                           FontSize="11"
-                                           Foreground="{DynamicResource ErrorBrush}"
-                                           TextWrapping="Wrap"
-                                           Margin="15,0,0,0" />
+                        <!-- ffmpeg -->
+                        <CheckBox IsChecked="{Binding WantInstallFfmpeg, Mode=TwoWay}"
+                                  IsEnabled="{Binding !FfmpegFound}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Text="ffmpeg (optional)" />
+                                <TextBlock FontSize="11"
+                                           Foreground="{DynamicResource SuccessBrush}"
+                                           Text="✓ already installed"
+                                           IsVisible="{Binding FfmpegFound}" />
+                                <TextBlock FontSize="11"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="— required by yt-dlp for URL audio post-processing"
+                                           IsVisible="{Binding !FfmpegFound}" />
                             </StackPanel>
+                        </CheckBox>
+
+                        <!-- Install button -->
+                        <Button Classes="accent"
+                                Content="Install selected"
+                                Command="{Binding InstallSelectedCommand}"
+                                IsEnabled="{Binding !IsAnyInstallInProgress}"
+                                HorizontalAlignment="Left" />
+
+                        <!-- Aggregated errors -->
+                        <StackPanel Spacing="4">
+                            <TextBlock IsVisible="{Binding UvInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       Text="{Binding UvInstallError}" FontSize="11"
+                                       Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+                            <TextBlock IsVisible="{Binding InstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       Text="{Binding InstallError}" FontSize="11"
+                                       Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+                            <TextBlock IsVisible="{Binding YtdlpInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       Text="{Binding YtdlpInstallError}" FontSize="11"
+                                       Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+                            <TextBlock IsVisible="{Binding FfmpegInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       Text="{Binding FfmpegInstallError}" FontSize="11"
+                                       Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
                         </StackPanel>
 
                         <!-- Shared install log -->
                         <ScrollViewer MaxHeight="120"
                                       HorizontalScrollBarVisibility="Disabled"
+                                      ext:ScrollViewerExtensions.AutoScrollToEnd="True"
                                       IsVisible="{Binding InstallLog, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                             <TextBlock Classes="mono"
                                        Text="{Binding InstallLog}"

@@ -142,6 +142,22 @@ public partial class SetupWizardViewModel(
     [ObservableProperty]
     public partial string? InstallError { get; set; }
 
+    // Checkbox-style "what to install" — pre-checked for missing tools.
+    [ObservableProperty]
+    public partial bool WantInstallUv { get; set; }
+
+    [ObservableProperty]
+    public partial bool WantInstallAudioSeparator { get; set; }
+
+    [ObservableProperty]
+    public partial bool WantInstallYtdlp { get; set; }
+
+    [ObservableProperty]
+    public partial bool WantInstallFfmpeg { get; set; }
+
+    public bool IsAnyInstallInProgress =>
+        IsInstallingUv || IsInstalling || IsInstallingYtdlp || IsInstallingFfmpeg;
+
     // ── Partial hooks ─────────────────────────────────────────────────────────
 
     partial void OnCurrentStepChanged(WizardStep value)
@@ -448,6 +464,26 @@ public partial class SetupWizardViewModel(
         UvFound = await _toolInstaller.IsUvAvailableAsync();
         YtdlpFound = await _toolInstaller.IsYtdlpAvailableAsync();
         FfmpegFound = await _toolInstaller.IsFfmpegAvailableAsync();
+
+        // Pre-check anything missing so the user just clicks Install.
+        WantInstallUv = !UvFound;
+        WantInstallAudioSeparator = !AudioSeparatorFound;
+        WantInstallYtdlp = !YtdlpFound;
+        WantInstallFfmpeg = !FfmpegFound;
+    }
+
+    [RelayCommand]
+    private async Task InstallSelectedAsync()
+    {
+        // Order matters: uv must be available before audio-separator/yt-dlp.
+        if (WantInstallUv && !UvFound)
+            await InstallUvAsync();
+        if (WantInstallAudioSeparator && UvFound && !AudioSeparatorFound)
+            await InstallAsync();
+        if (WantInstallYtdlp && UvFound && !YtdlpFound)
+            await InstallYtdlpAsync();
+        if (WantInstallFfmpeg && !FfmpegFound)
+            await InstallFfmpegAsync();
     }
 
     private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolInfo> tools)
