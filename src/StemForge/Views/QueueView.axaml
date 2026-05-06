@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:StemForge.ViewModels"
+             xmlns:ext="using:StemForge.Extensions"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="1044" d:DesignHeight="720"
@@ -225,6 +226,7 @@
                                                        Foreground="{DynamicResource TextSecondaryBrush}" />
                                             <ScrollViewer MaxHeight="100"
                                                           HorizontalScrollBarVisibility="Disabled"
+                                                          ext:ScrollViewerExtensions.AutoScrollToEnd="True"
                                                           IsVisible="{Binding LogOutput, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                                                 <SelectableTextBlock Classes="mono"
                                                                      Text="{Binding LogOutput}"

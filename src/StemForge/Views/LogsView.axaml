@@ -8,7 +8,8 @@ xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              x:DataType="vm:LogsViewModel">
 
     <UserControl.Styles>
-        <!-- Level toggle buttons -->
+        <!-- Level toggle buttons — minimal custom template so Fluent's :pointerover
+             theme brushes don't clobber our level colors. -->
         <Style Selector="Button.levelToggle">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
@@ -19,17 +20,39 @@ xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
             <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="PART_Border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
         </Style>
-        <Style Selector="Button.levelToggle:pointerover /template/ ContentPresenter">
+
+        <!-- Hover: tint background only; foreground/border stay as set per state -->
+        <Style Selector="Button.levelToggle:pointerover /template/ Border#PART_Border">
             <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
         </Style>
+        <Style Selector="Button.levelToggle:pressed /template/ Border#PART_Border">
+            <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+        </Style>
+
+        <!-- On states: distinct color per level -->
         <Style Selector="Button.levelToggle.on">
             <Setter Property="BorderBrush" Value="{DynamicResource TextSecondaryBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
         </Style>
         <Style Selector="Button.levelToggle.debug.on">
-            <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource TextPlaceholderBrush}" />
+            <Setter Property="Foreground" Value="#7AA7D9" />
+            <Setter Property="BorderBrush" Value="#7AA7D9" />
         </Style>
         <Style Selector="Button.levelToggle.warn.on">
             <Setter Property="Foreground" Value="#E8A000" />

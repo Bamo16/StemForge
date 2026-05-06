@@ -31,6 +31,12 @@ public sealed class AppSettings
     public bool FirstRunComplete { get; set; } = false;
     public GpuVariant? InstalledVariant { get; set; }
 
+    /// <summary>Max entries retained in the global Logs view ring buffer.</summary>
+    public int MaxLogEntries { get; set; } = 2000;
+
+    /// <summary>Max lines retained in each per-job log card on the Queue page.</summary>
+    public int MaxJobLogLines { get; set; } = 500;
+
     public static AppSettings Load()
     {
         try

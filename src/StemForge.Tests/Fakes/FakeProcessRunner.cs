@@ -23,7 +23,8 @@ public sealed class FakeProcessRunner : IProcessRunner
     public Task<ProcessRunner.Result> RunAsync(
         string exe,
         IEnumerable<string> args,
-        CancellationToken ct = default
+        CancellationToken ct = default,
+        bool logRawLines = true
     )
     {
         var argList = args.ToList();
@@ -35,7 +36,8 @@ public sealed class FakeProcessRunner : IProcessRunner
     public Task<ProcessRunner.Result> RunCheckedAsync(
         string exe,
         IEnumerable<string> args,
-        CancellationToken ct = default
+        CancellationToken ct = default,
+        bool logRawLines = true
     )
     {
         var argList = args.ToList();
@@ -50,7 +52,8 @@ public sealed class FakeProcessRunner : IProcessRunner
         string exe,
         IEnumerable<string> args,
         IProgress<string>? progress = null,
-        CancellationToken ct = default
+        CancellationToken ct = default,
+        bool logRawLines = true
     )
     {
         var argList = args.ToList();

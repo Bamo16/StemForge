@@ -29,7 +29,10 @@ public sealed partial class JobQueueService(
 
     public void Enqueue(JobRecord record)
     {
-        var vm = new JobItemViewModel(record) { CancelRequested = OnCancelRequested };
+        var vm = new JobItemViewModel(record, _settings.MaxJobLogLines)
+        {
+            CancelRequested = OnCancelRequested,
+        };
 
         Dispatcher.UIThread.Post(() => Jobs.Add(vm));
 
@@ -200,6 +203,10 @@ public sealed partial class JobQueueService(
         var args = new List<string>
         {
             "--no-playlist",
+            "--no-warnings",
+            "--newline",
+            "--progress-template",
+            "[download] %(progress._percent_str)s of %(progress._total_bytes_str)s at %(progress._speed_str)s ETA %(progress._eta_str)s",
             "--format",
             "bestaudio/best",
             "--extract-audio",
@@ -232,7 +239,7 @@ public sealed partial class JobQueueService(
 
         args.Add(NormalizeUrl(url));
 
-        await _runner.RunStreamingAsync(_settings.YtdlpPath, args, log, ct);
+        await _runner.RunStreamingAsync(_settings.YtdlpPath, args, log, ct, logRawLines: false);
 
         return Directory.GetFiles(dlDir).FirstOrDefault()
             ?? throw new InvalidOperationException("yt-dlp produced no output file.");

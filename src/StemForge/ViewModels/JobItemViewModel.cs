@@ -1,4 +1,3 @@
-using System.Text;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -15,10 +14,13 @@ public partial class JobItemViewModel : ObservableObject
     [ObservableProperty]
     public partial string InputFileName { get; set; }
 
-    public JobItemViewModel(JobRecord job)
+    private readonly int _maxLogLines;
+
+    public JobItemViewModel(JobRecord job, int maxLogLines = 500)
     {
         Job = job;
         InputFileName = job.InputFileName;
+        _maxLogLines = Math.Max(50, maxLogLines);
     }
 
     [ObservableProperty]
@@ -40,7 +42,7 @@ public partial class JobItemViewModel : ObservableObject
     public partial bool IsExpanded { get; set; }
     public List<string> OutputFiles { get; } = [];
 
-    private readonly StringBuilder _logBuilder = new();
+    private readonly Queue<string> _logLines = new();
 
     [ObservableProperty]
     public partial string LogOutput { get; set; } = string.Empty;
@@ -48,13 +50,10 @@ public partial class JobItemViewModel : ObservableObject
     /// <summary>Append a line of subprocess output. Must be called on the UI thread.</summary>
     public void AppendLog(string line)
     {
-        if (_logBuilder.Length > 0)
-        {
-            _logBuilder.Append('\n');
-        }
-
-        _logBuilder.Append(line);
-        LogOutput = _logBuilder.ToString();
+        _logLines.Enqueue(line);
+        while (_logLines.Count > _maxLogLines)
+            _logLines.Dequeue();
+        LogOutput = string.Join('\n', _logLines);
     }
 
     public bool HasOutputFiles => OutputFiles.Count > 0;

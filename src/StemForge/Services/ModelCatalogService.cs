@@ -26,7 +26,8 @@ public sealed class ModelCatalogService(IProcessRunner runner)
         var result = await _runner.RunAsync(
             audioSeparatorExe,
             ["--list_models", "--list_format=json"],
-            ct
+            ct,
+            logRawLines: false
         );
 
         // JSON goes to stdout; fall back to combined output if stdout is empty.

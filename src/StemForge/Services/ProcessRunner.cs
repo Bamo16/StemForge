@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 
 namespace StemForge.Services;
 
@@ -42,16 +43,18 @@ public sealed class ProcessRunner : IProcessRunner
     public Task<Result> RunAsync(
         string exe,
         IEnumerable<string> args,
-        CancellationToken ct = default
-    ) => CoreAsync(exe, args, progress: null, throwOnFailure: false, ct);
+        CancellationToken ct = default,
+        bool logRawLines = true
+    ) => CoreAsync(exe, args, progress: null, throwOnFailure: false, logRawLines, ct);
 
     /// Run to completion and capture output. Throws <see cref="ProcessFailedException"/>
     /// if the process exits with a non-zero code.
     public Task<Result> RunCheckedAsync(
         string exe,
         IEnumerable<string> args,
-        CancellationToken ct = default
-    ) => CoreAsync(exe, args, progress: null, throwOnFailure: true, ct);
+        CancellationToken ct = default,
+        bool logRawLines = true
+    ) => CoreAsync(exe, args, progress: null, throwOnFailure: true, logRawLines, ct);
 
     /// Run and stream each output line to <paramref name="progress"/> as it arrives.
     /// Throws <see cref="ProcessFailedException"/> on non-zero exit.
@@ -59,8 +62,9 @@ public sealed class ProcessRunner : IProcessRunner
         string exe,
         IEnumerable<string> args,
         IProgress<string>? progress = null,
-        CancellationToken ct = default
-    ) => await CoreAsync(exe, args, progress, throwOnFailure: true, ct);
+        CancellationToken ct = default,
+        bool logRawLines = true
+    ) => await CoreAsync(exe, args, progress, throwOnFailure: true, logRawLines, ct);
 
     // ── Core ────────────────────────────────────────────────────────────────────
 
@@ -69,6 +73,7 @@ public sealed class ProcessRunner : IProcessRunner
         IEnumerable<string> args,
         IProgress<string>? progress,
         bool throwOnFailure,
+        bool logRawLines,
         CancellationToken ct
     )
     {
@@ -77,16 +82,21 @@ public sealed class ProcessRunner : IProcessRunner
 
         AppLogger.Debug("Process", $"→ {Path.GetFileName(exe)} {string.Join(' ', argList)}");
 
+        var startInfo = new ProcessStartInfo(exe, argList)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+        };
+        startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
+        startInfo.Environment["PYTHONUTF8"] = "1";
+
         using var p =
-            Process.Start(
-                new ProcessStartInfo(exe, argList)
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                }
-            ) ?? throw new InvalidOperationException($"Failed to start '{Path.GetFileName(exe)}'");
+            Process.Start(startInfo)
+            ?? throw new InvalidOperationException($"Failed to start '{Path.GetFileName(exe)}'");
 
         // Kill the entire tree when the token fires; reads below complete once streams close.
         using var _ = ct.Register(() =>
@@ -112,7 +122,8 @@ public sealed class ProcessRunner : IProcessRunner
                     while (p.StandardOutput.ReadLine() is { } line)
                     {
                         progress.Report(line);
-                        AppLogger.Debug($"{exeName}.out", line);
+                        if (logRawLines)
+                            AppLogger.Debug($"{exeName}.out", line);
                     }
                 },
                 CancellationToken.None
@@ -123,7 +134,8 @@ public sealed class ProcessRunner : IProcessRunner
                     while (p.StandardError.ReadLine() is { } line)
                     {
                         progress.Report(line);
-                        AppLogger.Debug($"{exeName}.err", line);
+                        if (logRawLines)
+                            AppLogger.Debug($"{exeName}.err", line);
                     }
                 },
                 CancellationToken.None
@@ -140,25 +152,27 @@ public sealed class ProcessRunner : IProcessRunner
             stdout = (await outTask).Trim();
             stderr = (await errTask).Trim();
 
-            // Log each non-empty output line at Debug level.
-            foreach (
-                var line in stdout.Split(
-                    '\n',
-                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
-                )
-            )
+            if (logRawLines)
             {
-                AppLogger.Debug($"{exeName}.out", line);
-            }
+                foreach (
+                    var line in stdout.Split(
+                        '\n',
+                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                    )
+                )
+                {
+                    AppLogger.Debug($"{exeName}.out", line);
+                }
 
-            foreach (
-                var line in stderr.Split(
-                    '\n',
-                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                foreach (
+                    var line in stderr.Split(
+                        '\n',
+                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                    )
                 )
-            )
-            {
-                AppLogger.Debug($"{exeName}.err", line);
+                {
+                    AppLogger.Debug($"{exeName}.err", line);
+                }
             }
         }
 

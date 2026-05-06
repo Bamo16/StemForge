@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using StemForge.Models;
 using StemForge.Services;
 using StemForge.ViewModels;
 using StemForge.Views;
@@ -16,7 +17,7 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        AppLogger.Initialize();
+        AppLogger.Initialize(AppSettings.Load().MaxLogEntries);
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

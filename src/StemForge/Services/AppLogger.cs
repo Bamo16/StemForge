@@ -39,8 +39,8 @@ public sealed record LogEntry(
 
 public static class AppLogger
 {
-    private const int MaxEntries = 2000;
     private const int MaxLogFiles = 10;
+    private static int _maxEntries = 2000;
 
     private static readonly object _fileLock = new();
     private static StreamWriter? _fileWriter;
@@ -53,8 +53,10 @@ public static class AppLogger
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     /// Call once at startup. Creates a new dated log file and prunes old ones.
-    public static void Initialize()
+    public static void Initialize(int maxEntries = 2000)
     {
+        _maxEntries = Math.Max(100, maxEntries);
+
         var dir = Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "logs");
         try
         {
@@ -137,7 +139,7 @@ public static class AppLogger
 
     private static void AddOnUiThread(LogEntry entry)
     {
-        if (Entries.Count >= MaxEntries)
+        while (Entries.Count >= _maxEntries)
             Entries.RemoveAt(0);
         Entries.Add(entry);
     }
