@@ -133,6 +133,11 @@ public sealed class ToolInstaller(IProcessRunner runner)
         }
     }
 
+    public Task UninstallAudioSeparatorAsync(
+        IProgress<string> progress,
+        CancellationToken ct = default
+    ) => _runner.RunStreamingAsync("uv", ["tool", "uninstall", "audio-separator"], progress, ct);
+
     public async Task InstallAudioSeparatorAsync(
         GpuVariant variant,
         IProgress<string> progress,

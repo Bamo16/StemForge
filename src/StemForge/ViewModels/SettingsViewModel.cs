@@ -37,6 +37,55 @@ public partial class SettingsViewModel : PageViewModelBase
     public bool IsCuda => GpuVariant == GpuVariant.Cuda;
     public bool IsDirectML => GpuVariant == GpuVariant.DirectML;
 
+    // ── audio-separator lifecycle ──────────────────────────────────────────────
+
+    public bool IsAudioSeparatorInstalled => _toolState.IsAudioSeparatorAvailable;
+
+    public string InstalledVariantLabel =>
+        _settings.InstalledVariant switch
+        {
+            Models.GpuVariant.Cuda => "CUDA",
+            Models.GpuVariant.DirectML => "DirectML",
+            Models.GpuVariant.Cpu => "CPU",
+            _ => "Unknown",
+        };
+
+    [ObservableProperty]
+    public partial bool IsChangeVariantOpen { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsReinstallConfirmOpen { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsUninstallConfirmOpen { get; set; }
+
+    [ObservableProperty]
+    public partial GpuVariant PendingVariant { get; set; }
+
+    public bool IsPendingCpu => PendingVariant == Models.GpuVariant.Cpu;
+    public bool IsPendingCuda => PendingVariant == Models.GpuVariant.Cuda;
+    public bool IsPendingDirectML => PendingVariant == Models.GpuVariant.DirectML;
+
+    [ObservableProperty]
+    public partial bool IsManagingTool { get; set; }
+
+    [ObservableProperty]
+    public partial string ManageStatus { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string ManageLog { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string? ManageError { get; set; }
+
+    partial void OnPendingVariantChanged(GpuVariant value)
+    {
+        OnPropertyChanged(nameof(IsPendingCpu));
+        OnPropertyChanged(nameof(IsPendingCuda));
+        OnPropertyChanged(nameof(IsPendingDirectML));
+        ConfirmChangeVariantCommand.NotifyCanExecuteChanged();
+    }
+
     // ── Directories ────────────────────────────────────────────────────────────
 
     [ObservableProperty]
@@ -82,7 +131,13 @@ public partial class SettingsViewModel : PageViewModelBase
     private void OnToolStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(ToolStateService.Tools))
+        {
             SyncToolsFromState();
+            OnPropertyChanged(nameof(IsAudioSeparatorInstalled));
+            OnPropertyChanged(nameof(InstalledVariantLabel));
+        }
+        else if (e.PropertyName == nameof(ToolStateService.IsAudioSeparatorAvailable))
+            OnPropertyChanged(nameof(IsAudioSeparatorInstalled));
         else if (e.PropertyName == nameof(ToolStateService.IsLoading))
             ToolsLoading = _toolState.IsLoading;
     }
@@ -118,6 +173,131 @@ public partial class SettingsViewModel : PageViewModelBase
     private void SetGpuVariant(string variant)
     {
         GpuVariant = Enum.Parse<GpuVariant>(variant);
+    }
+
+    // ── audio-separator lifecycle commands ─────────────────────────────────────
+
+    [RelayCommand]
+    private void BeginChangeVariant()
+    {
+        CloseAllPanels();
+        PendingVariant = _settings.InstalledVariant ?? GpuVariant;
+        IsChangeVariantOpen = true;
+    }
+
+    [RelayCommand]
+    private void SetPendingVariant(string variant) =>
+        PendingVariant = Enum.Parse<GpuVariant>(variant);
+
+    private bool CanConfirmChangeVariant =>
+        !IsManagingTool && PendingVariant != _settings.InstalledVariant;
+
+    [RelayCommand(CanExecute = nameof(CanConfirmChangeVariant))]
+    private async Task ConfirmChangeVariant()
+    {
+        await RunInstallAsync(
+            $"Switching audio-separator variant to {PendingVariant}…",
+            PendingVariant
+        );
+    }
+
+    [RelayCommand]
+    private void BeginReinstall()
+    {
+        CloseAllPanels();
+        IsReinstallConfirmOpen = true;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmReinstall()
+    {
+        var variant = _settings.InstalledVariant ?? GpuVariant;
+        await RunInstallAsync($"Reinstalling audio-separator ({variant})…", variant);
+    }
+
+    [RelayCommand]
+    private void BeginUninstall()
+    {
+        CloseAllPanels();
+        IsUninstallConfirmOpen = true;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmUninstall()
+    {
+        IsUninstallConfirmOpen = false;
+        await RunManageActionAsync(
+            "Uninstalling audio-separator…",
+            (progress, ct) => _toolInstaller.UninstallAudioSeparatorAsync(progress, ct),
+            onSuccess: () =>
+            {
+                _settings.InstalledVariant = null;
+                OnPropertyChanged(nameof(InstalledVariantLabel));
+            }
+        );
+    }
+
+    [RelayCommand]
+    private void CancelManage() => CloseAllPanels();
+
+    private void CloseAllPanels()
+    {
+        IsChangeVariantOpen = false;
+        IsReinstallConfirmOpen = false;
+        IsUninstallConfirmOpen = false;
+        ManageError = null;
+    }
+
+    private async Task RunInstallAsync(string status, GpuVariant variant)
+    {
+        await RunManageActionAsync(
+            status,
+            (progress, ct) => _toolInstaller.InstallAudioSeparatorAsync(variant, progress, ct),
+            onSuccess: () =>
+            {
+                _settings.InstalledVariant = variant;
+                OnPropertyChanged(nameof(InstalledVariantLabel));
+            }
+        );
+    }
+
+    private async Task RunManageActionAsync(
+        string status,
+        Func<IProgress<string>, CancellationToken, Task> action,
+        Action onSuccess
+    )
+    {
+        IsManagingTool = true;
+        ManageStatus = status;
+        ManageLog = string.Empty;
+        ManageError = null;
+        var sb = new System.Text.StringBuilder();
+        var progress = new Progress<string>(line =>
+        {
+            if (sb.Length > 0)
+                sb.Append('\n');
+            sb.Append(line);
+            ManageLog = sb.ToString();
+        });
+
+        try
+        {
+            await action(progress, CancellationToken.None);
+            onSuccess();
+            await _toolState.RefreshAsync();
+            await _settings.SaveAsync();
+            CloseAllPanels();
+        }
+        catch (Exception ex)
+        {
+            ManageError = ex.Message;
+        }
+        finally
+        {
+            IsManagingTool = false;
+            ManageStatus = string.Empty;
+            ConfirmChangeVariantCommand.NotifyCanExecuteChanged();
+        }
     }
 
     private async Task DetectGpuAsync()

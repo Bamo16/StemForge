@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:StemForge.ViewModels"
+             xmlns:ext="using:StemForge.Extensions"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="1044" d:DesignHeight="720"
@@ -195,34 +196,158 @@
                     <TextBlock Classes="settingSection" Text="audio-separator" />
                     <Border Classes="card">
                         <StackPanel Spacing="14">
-                            <!-- GPU variant -->
-                            <StackPanel Spacing="8">
-                                <TextBlock Classes="settingLabel" Text="GPU variant" />
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Button Classes="variantTab"
-                                            Classes.active="{Binding IsCpu}"
-                                            Command="{Binding SetGpuVariantCommand}"
-                                            CommandParameter="Cpu"
-                                            Content="CPU" />
-                                    <Button Classes="variantTab"
-                                            Classes.active="{Binding IsCuda}"
-                                            Command="{Binding SetGpuVariantCommand}"
-                                            CommandParameter="Cuda"
-                                            Content="CUDA" />
-                                    <Button Classes="variantTab"
-                                            Classes.active="{Binding IsDirectML}"
-                                            Command="{Binding SetGpuVariantCommand}"
-                                            CommandParameter="DirectML"
-                                            Content="DirectML" />
+                            <!-- Installed status -->
+                            <StackPanel IsVisible="{Binding IsAudioSeparatorInstalled}" Spacing="6">
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
+                                               Text="Installed:" VerticalAlignment="Center" />
+                                    <Border Background="{DynamicResource AccentDimBgBrush}"
+                                            CornerRadius="3" Padding="6,1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding InstalledVariantLabel}"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AccentBrush}" />
+                                    </Border>
                                 </StackPanel>
                                 <TextBlock FontSize="11"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="CPU works everywhere. CUDA requires an NVIDIA GPU. DirectML works on most Windows GPUs (AMD/Intel/NVIDIA)."
+                                           Text="The variant determines whether audio-separator runs on CPU, NVIDIA CUDA, or Windows DirectML. Change it if you swap GPU hardware."
                                            TextWrapping="Wrap" />
                                 <TextBlock FontSize="11" FontWeight="Medium"
                                            Foreground="{DynamicResource AccentBrush}"
                                            Text="{Binding GpuHint}"
                                            IsVisible="{Binding GpuHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                                <!-- Action buttons (hidden while a manage action is in progress) -->
+                                <StackPanel Orientation="Horizontal" Spacing="8"
+                                            IsVisible="{Binding !IsManagingTool}">
+                                    <Button Classes="ghost" Content="Change variant…"
+                                            Command="{Binding BeginChangeVariantCommand}" />
+                                    <Button Classes="ghost" Content="Reinstall"
+                                            Command="{Binding BeginReinstallCommand}" />
+                                    <Button Classes="ghost" Content="Uninstall"
+                                            Foreground="{DynamicResource ErrorBrush}"
+                                            BorderBrush="{DynamicResource ErrorBrush}"
+                                            Command="{Binding BeginUninstallCommand}" />
+                                </StackPanel>
+
+                                <!-- Change-variant panel -->
+                                <Border IsVisible="{Binding IsChangeVariantOpen}"
+                                        Background="{DynamicResource Bg1Brush}"
+                                        BorderBrush="{DynamicResource Bg3Brush}"
+                                        BorderThickness="1" CornerRadius="6" Padding="12">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   Text="Pick a variant to switch to" />
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Classes="variantTab"
+                                                    Classes.active="{Binding IsPendingCpu}"
+                                                    Command="{Binding SetPendingVariantCommand}"
+                                                    CommandParameter="Cpu" Content="CPU" />
+                                            <Button Classes="variantTab"
+                                                    Classes.active="{Binding IsPendingCuda}"
+                                                    Command="{Binding SetPendingVariantCommand}"
+                                                    CommandParameter="Cuda" Content="CUDA" />
+                                            <Button Classes="variantTab"
+                                                    Classes.active="{Binding IsPendingDirectML}"
+                                                    Command="{Binding SetPendingVariantCommand}"
+                                                    CommandParameter="DirectML" Content="DirectML" />
+                                        </StackPanel>
+                                        <TextBlock FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                   Text="Switching variants will reinstall audio-separator. This can take a few minutes." />
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Classes="accent" Content="Confirm reinstall"
+                                                    Command="{Binding ConfirmChangeVariantCommand}" />
+                                            <Button Classes="ghost" Content="Cancel"
+                                                    Command="{Binding CancelManageCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Reinstall confirm -->
+                                <Border IsVisible="{Binding IsReinstallConfirmOpen}"
+                                        Background="{DynamicResource Bg1Brush}"
+                                        BorderBrush="{DynamicResource Bg3Brush}"
+                                        BorderThickness="1" CornerRadius="6" Padding="12">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock FontSize="12" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   Text="Reinstall audio-separator with the current variant? This can take a few minutes." />
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Classes="accent" Content="Reinstall"
+                                                    Command="{Binding ConfirmReinstallCommand}" />
+                                            <Button Classes="ghost" Content="Cancel"
+                                                    Command="{Binding CancelManageCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Uninstall confirm -->
+                                <Border IsVisible="{Binding IsUninstallConfirmOpen}"
+                                        Background="{DynamicResource Bg1Brush}"
+                                        BorderBrush="{DynamicResource Bg3Brush}"
+                                        BorderThickness="1" CornerRadius="6" Padding="12">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock FontSize="12" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource ErrorBrush}"
+                                                   Text="Uninstall audio-separator? StemForge will be unable to run separations until you reinstall it." />
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Classes="accent" Content="Uninstall"
+                                                    Foreground="{DynamicResource ErrorBrush}"
+                                                    Command="{Binding ConfirmUninstallCommand}" />
+                                            <Button Classes="ghost" Content="Cancel"
+                                                    Command="{Binding CancelManageCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- In-progress + log -->
+                                <Border IsVisible="{Binding IsManagingTool}"
+                                        Background="{DynamicResource Bg1Brush}"
+                                        BorderBrush="{DynamicResource Bg3Brush}"
+                                        BorderThickness="1" CornerRadius="6" Padding="12">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   Text="{Binding ManageStatus}" />
+                                        <ProgressBar IsIndeterminate="True" Height="2"
+                                                     Foreground="{DynamicResource AccentBrush}"
+                                                     Background="Transparent" />
+                                        <ScrollViewer MaxHeight="120"
+                                                      HorizontalScrollBarVisibility="Disabled"
+                                                      ext:ScrollViewerExtensions.AutoScrollToEnd="True"
+                                                      IsVisible="{Binding ManageLog, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                            <SelectableTextBlock Classes="mono"
+                                                                 Text="{Binding ManageLog}"
+                                                                 FontSize="10"
+                                                                 Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                                 TextWrapping="Wrap" />
+                                        </ScrollViewer>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Error message -->
+                                <Border IsVisible="{Binding ManageError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                        Background="{DynamicResource ErrorDimBgBrush}"
+                                        CornerRadius="6" Padding="12">
+                                    <TextBlock FontSize="12" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource ErrorBrush}"
+                                               Text="{Binding ManageError}" />
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Not installed: prompt to run setup wizard -->
+                            <StackPanel IsVisible="{Binding !IsAudioSeparatorInstalled}" Spacing="6">
+                                <TextBlock FontSize="12"
+                                           Foreground="{DynamicResource ErrorBrush}"
+                                           Text="audio-separator is not installed." />
+                                <TextBlock FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="Run the setup wizard to install it." />
+                                <Button Classes="ghost" Content="Re-run setup wizard"
+                                        Command="{Binding ShowWizardCommand}"
+                                        HorizontalAlignment="Left" />
                             </StackPanel>
                         </StackPanel>
                     </Border>
