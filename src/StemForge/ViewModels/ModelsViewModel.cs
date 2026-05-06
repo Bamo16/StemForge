@@ -19,14 +19,32 @@ public partial class ModelsViewModel : PageViewModelBase
     private readonly ModelCatalogService _catalog;
     private readonly AppSettings _settings;
     private readonly UserPresetService _userPresets;
+    private readonly ToolStateService _toolState;
     private readonly List<ModelItemViewModel> _all = [];
+    private bool _wasAudioSeparatorAvailable;
 
-    public ModelsViewModel(AppSettings settings, UserPresetService userPresets, ModelCatalogService catalog)
+    public ModelsViewModel(
+        AppSettings settings,
+        UserPresetService userPresets,
+        ModelCatalogService catalog,
+        ToolStateService toolState
+    )
     {
         _catalog = catalog;
         _settings = settings;
         _userPresets = userPresets;
+        _toolState = toolState;
         EnsembleAlgorithm = EnsembleAlgorithmOptions[0];
+        _wasAudioSeparatorAvailable = _toolState.IsAudioSeparatorAvailable;
+        _toolState.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != nameof(ToolStateService.IsAudioSeparatorAvailable))
+                return;
+            var nowAvailable = _toolState.IsAudioSeparatorAvailable;
+            if (nowAvailable && !_wasAudioSeparatorAvailable)
+                _ = LoadModelsAsync(forceRefresh: true);
+            _wasAudioSeparatorAvailable = nowAvailable;
+        };
         _ = LoadModelsAsync();
     }
 

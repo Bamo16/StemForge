@@ -20,13 +20,15 @@ public partial class SetupWizardViewModel(
     AppSettings settings,
     SetupDetector setupDetector,
     GpuDetector gpuDetector,
-    ToolInstaller toolInstaller
+    ToolInstaller toolInstaller,
+    ToolStateService toolState
 ) : ViewModelBase
 {
     private readonly AppSettings _settings = settings;
     private readonly SetupDetector _setupDetector = setupDetector;
     private readonly GpuDetector _gpuDetector = gpuDetector;
     private readonly ToolInstaller _toolInstaller = toolInstaller;
+    private readonly ToolStateService _toolState = toolState;
 
     public event Action? SetupCompleted;
     public event Action? SetupDismissed;
@@ -226,6 +228,7 @@ public partial class SetupWizardViewModel(
             });
             await _toolInstaller.InstallUvAsync(progress);
             UvFound = await _toolInstaller.IsUvAvailableAsync();
+            await _toolState.RefreshAsync();
             if (!UvFound)
                 UvInstallError =
                     "uv installed but could not be found on PATH. You may need to restart StemForge.";
@@ -260,6 +263,7 @@ public partial class SetupWizardViewModel(
             await _toolInstaller.InstallAudioSeparatorAsync(GpuVariant, progress);
             InstallSuccess = true;
             AudioSeparatorFound = true;
+            await _toolState.RefreshAsync();
         }
         catch (Exception ex)
         {
@@ -290,6 +294,7 @@ public partial class SetupWizardViewModel(
             });
             await _toolInstaller.InstallYtdlpAsync(progress);
             YtdlpFound = await _toolInstaller.IsYtdlpAvailableAsync();
+            await _toolState.RefreshAsync();
             if (!YtdlpFound)
                 YtdlpInstallError =
                     "yt-dlp installed but could not be found on PATH. You may need to restart StemForge.";
@@ -325,6 +330,7 @@ public partial class SetupWizardViewModel(
             });
             await _toolInstaller.InstallFfmpegAsync(progress);
             FfmpegFound = await _toolInstaller.IsFfmpegAvailableAsync();
+            await _toolState.RefreshAsync();
             if (!FfmpegFound)
                 FfmpegInstallError =
                     "ffmpeg installed but could not be found on PATH. You may need to restart StemForge.";

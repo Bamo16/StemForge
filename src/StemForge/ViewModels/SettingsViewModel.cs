@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StemForge.Models;
@@ -9,9 +10,9 @@ namespace StemForge.ViewModels;
 public partial class SettingsViewModel : PageViewModelBase
 {
     private readonly AppSettings _settings;
-    private readonly SetupDetector _setupDetector;
     private readonly GpuDetector _gpuDetector;
     private readonly ToolInstaller _toolInstaller;
+    private readonly ToolStateService _toolState;
 
     public override string Title => "Settings";
 
@@ -64,15 +65,36 @@ public partial class SettingsViewModel : PageViewModelBase
         AppSettings settings,
         SetupDetector setupDetector,
         GpuDetector gpuDetector,
-        ToolInstaller toolInstaller
+        ToolInstaller toolInstaller,
+        ToolStateService toolState
     )
     {
         _settings = settings;
-        _setupDetector = setupDetector;
         _gpuDetector = gpuDetector;
         _toolInstaller = toolInstaller;
+        _toolState = toolState;
         LoadFromSettings(settings);
-        _ = DetectToolsAsync();
+        _toolState.PropertyChanged += OnToolStatePropertyChanged;
+        SyncToolsFromState();
+        _ = DetectGpuAsync();
+    }
+
+    private void OnToolStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ToolStateService.Tools))
+            SyncToolsFromState();
+        else if (e.PropertyName == nameof(ToolStateService.IsLoading))
+            ToolsLoading = _toolState.IsLoading;
+    }
+
+    private async void SyncToolsFromState()
+    {
+        Tools.Clear();
+        await TryFillInstalledVariantAsync(_toolState.Tools);
+        foreach (var t in _toolState.Tools)
+            Tools.Add(new ToolStatusViewModel(t, VariantTagFor(t.Name, t.Found)));
+        AllSystemsGo = _toolState.Tools.All(t => t.Found || !t.IsRequired);
+        ToolsLoading = _toolState.IsLoading;
     }
 
     private void LoadFromSettings(AppSettings s)
@@ -98,53 +120,27 @@ public partial class SettingsViewModel : PageViewModelBase
         GpuVariant = Enum.Parse<GpuVariant>(variant);
     }
 
-    public async Task DetectToolsAsync()
+    private async Task DetectGpuAsync()
     {
-        ToolsLoading = true;
-        Tools.Clear();
         GpuHint = string.Empty;
-        try
+        var gpus = await _gpuDetector.DetectAsync();
+
+        var best = gpus.OrderBy(g =>
+                g.Vendor switch
+                {
+                    GpuVendor.Nvidia => 0,
+                    GpuVendor.Amd => 1,
+                    GpuVendor.Intel => 2,
+                    _ => 3,
+                }
+            )
+            .FirstOrDefault();
+
+        if (best is not null)
         {
-            var toolsTask = _setupDetector.DetectAllAsync(
-                string.IsNullOrWhiteSpace(YtdlpPath) ? null : YtdlpPath
-            );
-            var gpuTask = _gpuDetector.DetectAsync();
-
-            await Task.WhenAll(toolsTask, gpuTask);
-
-            var results = await toolsTask;
-            var gpus = await gpuTask;
-
-            await TryFillInstalledVariantAsync(results);
-
-            foreach (var t in results)
-                Tools.Add(new ToolStatusViewModel(t, VariantTagFor(t.Name, t.Found)));
-            AllSystemsGo = results.All(t => t.Found || !t.IsRequired);
-
-            // Pick the most capable GPU for the hint (NVIDIA > AMD/Intel > unknown)
-            var best = gpus.OrderBy(g =>
-                    g.Vendor switch
-                    {
-                        GpuVendor.Nvidia => 0,
-                        GpuVendor.Amd => 1,
-                        GpuVendor.Intel => 2,
-                        _ => 3,
-                    }
-                )
-                .FirstOrDefault();
-
-            if (best is not null)
-            {
-                GpuHint = $"Detected: {best.Name}";
-
-                // Auto-select the best variant only before the user has ever saved settings
-                if (!_settings.FirstRunComplete)
-                    GpuVariant = GpuDetector.SuggestVariant(gpus); // static pure method
-            }
-        }
-        finally
-        {
-            ToolsLoading = false;
+            GpuHint = $"Detected: {best.Name}";
+            if (!_settings.FirstRunComplete)
+                GpuVariant = GpuDetector.SuggestVariant(gpus);
         }
     }
 
@@ -177,7 +173,11 @@ public partial class SettingsViewModel : PageViewModelBase
     private void ShowWizard() => ShowWizardRequested?.Invoke();
 
     [RelayCommand]
-    private async Task RefreshTools() => await DetectToolsAsync();
+    private async Task RefreshTools()
+    {
+        await _toolState.RefreshAsync();
+        await DetectGpuAsync();
+    }
 
     [RelayCommand]
     private async Task Save()

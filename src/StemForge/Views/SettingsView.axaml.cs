@@ -16,7 +16,7 @@ public partial class SettingsView : UserControl
     {
         base.OnLoaded(e);
         if (DataContext is SettingsViewModel vm && vm.Tools.Count == 0)
-            await vm.DetectToolsAsync();
+            await vm.RefreshToolsCommand.ExecuteAsync(null);
     }
 
     private SettingsViewModel Vm => (SettingsViewModel)DataContext!;

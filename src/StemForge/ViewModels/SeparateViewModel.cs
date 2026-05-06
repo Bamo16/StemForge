@@ -54,7 +54,7 @@ public partial class SeparateViewModel : PageViewModelBase
     private readonly JobQueueService _queue;
     private readonly AppSettings _settings;
     private readonly UserPresetService _userPresets;
-    private readonly ToolInstaller _toolInstaller;
+    private readonly ToolStateService _toolState;
 
     public event Action? NavigateToQueueRequested;
 
@@ -77,16 +77,20 @@ public partial class SeparateViewModel : PageViewModelBase
         JobQueueService queue,
         AppSettings settings,
         UserPresetService userPresets,
-        ToolInstaller toolInstaller
+        ToolStateService toolState
     )
     {
         _queue = queue;
         _settings = settings;
         _userPresets = userPresets;
-        _toolInstaller = toolInstaller;
+        _toolState = toolState;
         OutputPath = settings.OutputDirectory;
-        IsUrlInputEnabled = true;
-        _ = CheckUrlToolsAsync();
+        IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
+        _toolState.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ToolStateService.CanDownloadFromUrl))
+                IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
+        };
         Categories = new ObservableCollection<PresetCategoryGroup>(BuildGroups());
 
         foreach (var g in Categories)
@@ -235,13 +239,6 @@ public partial class SeparateViewModel : PageViewModelBase
     {
         OnPropertyChanged(nameof(CanStartRun));
         RunCommand.NotifyCanExecuteChanged();
-    }
-
-    private async Task CheckUrlToolsAsync()
-    {
-        var ytdlp = await _toolInstaller.IsYtdlpAvailableAsync();
-        var ffmpeg = await _toolInstaller.IsFfmpegAvailableAsync();
-        IsUrlInputEnabled = ytdlp && ffmpeg;
     }
 
     partial void OnModeChanged(SeparateMode value)

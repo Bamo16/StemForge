@@ -13,11 +13,13 @@ public sealed class SetupWizardViewModelTests
         fake ??= new FakeProcessRunner();
         var settings = new AppSettings();
         var runner = (IProcessRunner)fake;
+        var setupDetector = new SetupDetector(runner);
         return new SetupWizardViewModel(
             settings,
-            new SetupDetector(runner),
+            setupDetector,
             new GpuDetector(runner),
-            new ToolInstaller(runner)
+            new ToolInstaller(runner),
+            new ToolStateService(setupDetector, settings)
         );
     }
 
