@@ -13,12 +13,14 @@ namespace StemForge.Services;
 public sealed partial class JobQueueService(
     SeparationService separation,
     AppSettings settings,
-    IProcessRunner runner
+    IProcessRunner runner,
+    YouTubeAudioService youTubeAudio
 )
 {
     private readonly SeparationService _separation = separation;
     private readonly AppSettings _settings = settings;
     private readonly IProcessRunner _runner = runner;
+    private readonly YouTubeAudioService _youTubeAudio = youTubeAudio;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private CancellationTokenSource? _currentCts;
     private JobItemViewModel? _currentJob;
@@ -67,14 +69,33 @@ public sealed partial class JobQueueService(
                     vm.StatusText = "Downloading…";
                 });
 
-                dlTempDir = Path.Combine(Path.GetTempPath(), $"stemforge-dl-{Guid.NewGuid():N}");
-                Directory.CreateDirectory(dlTempDir);
-
                 var dlLog = new Progress<string>(line =>
                     Dispatcher.UIThread.Post(() => vm.AppendLog(line))
                 );
 
-                inputFile = await DownloadAudioAsync(url, dlTempDir, dlLog, cts.Token);
+                string downloadDir;
+                if (vm.Job.KeepSourceFile)
+                {
+                    downloadDir = vm.Job.OutputDir;
+                    Directory.CreateDirectory(downloadDir);
+                }
+                else
+                {
+                    dlTempDir = Path.Combine(
+                        Path.GetTempPath(),
+                        $"stemforge-dl-{Guid.NewGuid():N}"
+                    );
+                    Directory.CreateDirectory(dlTempDir);
+                    downloadDir = dlTempDir;
+                }
+
+                inputFile = await DownloadAudioAsync(
+                    url,
+                    downloadDir,
+                    vm.Job.DownloadFormat,
+                    dlLog,
+                    cts.Token
+                );
                 var downloadedName = Path.GetFileName(inputFile);
                 Dispatcher.UIThread.Post(() => vm.InputFileName = downloadedName);
             }
@@ -119,6 +140,9 @@ public sealed partial class JobQueueService(
                 )
                 .Where(File.Exists)
                 .ToList();
+
+            // Embed provenance tags so each stem traces back to its source.
+            await TagSeparationOutputsAsync(outputFiles, inputFile, vm.Job.Presets, cts.Token);
 
             Dispatcher.UIThread.Post(() =>
             {
@@ -193,56 +217,67 @@ public sealed partial class JobQueueService(
 
     private void OnPropertyChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
 
+    private async Task TagSeparationOutputsAsync(
+        IReadOnlyList<string> stemPaths,
+        string sourceFile,
+        IReadOnlyList<Preset> presets,
+        CancellationToken ct
+    )
+    {
+        if (stemPaths.Count == 0)
+            return;
+
+        var version =
+            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString()
+            ?? "dev";
+        var separationDate = DateTimeOffset.UtcNow.ToString(
+            "o",
+            System.Globalization.CultureInfo.InvariantCulture
+        );
+        var modelDescriptor = string.Join(
+            ", ",
+            presets.Select(p => $"{p.Mode}:{p.PrimaryModel ?? p.Id}")
+        );
+
+        var tags = new (string, string)[]
+        {
+            ("source_file", Path.GetFileName(sourceFile)),
+            ("separation_model", modelDescriptor),
+            ("separation_date", separationDate),
+            ("tool", $"stemforge/{version}"),
+        };
+
+        foreach (var stem in stemPaths)
+        {
+            try
+            {
+                var tmp = stem + ".tagged";
+                var args = new List<string>();
+                args.AddRange(FfmpegArgs.Baseline());
+                args.AddRange(["-i", stem, "-c", "copy"]);
+                args.AddRange(FfmpegArgs.Metadata(tags));
+                args.Add(tmp);
+
+                await _runner.RunCheckedAsync("ffmpeg", args, ct, logRawLines: false);
+                File.Move(tmp, stem, overwrite: true);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Warning("provenance", $"Failed to tag {Path.GetFileName(stem)}: {ex.Message}");
+            }
+        }
+    }
+
     private async Task<string> DownloadAudioAsync(
         string url,
         string dlDir,
+        AudioFormat format,
         IProgress<string> log,
         CancellationToken ct
     )
     {
-        var args = new List<string>
-        {
-            "--no-playlist",
-            "--no-warnings",
-            "--newline",
-            "--progress-template",
-            "[download] %(progress._percent_str)s of %(progress._total_bytes_str)s at %(progress._speed_str)s ETA %(progress._eta_str)s",
-            "--format",
-            "bestaudio/best",
-            "--extract-audio",
-            "--audio-format",
-            "flac",
-            "--audio-quality",
-            "0",
-            "--output",
-            "%(title)s.%(ext)s",
-            "--paths",
-            dlDir,
-        };
-
-        var cookies = _settings.YtdlpCookiesFromBrowser;
-        if (!string.IsNullOrWhiteSpace(cookies))
-        {
-            // If it looks like a file path, use --cookies; otherwise use --cookies-from-browser.
-            var flag =
-                cookies.Contains(Path.DirectorySeparatorChar)
-                || cookies.Contains(Path.AltDirectorySeparatorChar)
-                || cookies.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
-                    ? "--cookies"
-                    : "--cookies-from-browser";
-            args.AddRange([flag, cookies]);
-        }
-
-        var jsRuntime = _settings.YtdlpJsRuntime;
-        if (!string.IsNullOrWhiteSpace(jsRuntime))
-            args.AddRange(["--js-runtime", jsRuntime]);
-
-        args.Add(NormalizeUrl(url));
-
-        await _runner.RunStreamingAsync(_settings.YtdlpPath, args, log, ct, logRawLines: false);
-
-        return Directory.GetFiles(dlDir).FirstOrDefault()
-            ?? throw new InvalidOperationException("yt-dlp produced no output file.");
+        var meta = await _youTubeAudio.ResolveAsync(NormalizeUrl(url), _settings, ct);
+        return await _youTubeAudio.DownloadAsync(meta, format, dlDir, log, ct);
     }
 
     /// <summary>Normalise YouTube URLs to music.youtube.com for the best available audio format.</summary>

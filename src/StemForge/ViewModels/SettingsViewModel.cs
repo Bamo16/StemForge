@@ -105,6 +105,14 @@ public partial class SettingsViewModel : PageViewModelBase
     [ObservableProperty]
     public partial string YtdlpJsRuntime { get; set; } = string.Empty;
 
+    // ── Default audio format ───────────────────────────────────────────────────
+
+    [ObservableProperty]
+    public partial AudioFormat DefaultAudioFormat { get; set; } = AudioFormat.Flac;
+
+    public IReadOnlyList<AudioFormat> AudioFormatOptions { get; } =
+        [AudioFormat.Flac, AudioFormat.Wav, AudioFormat.Mp3];
+
     // ── Save state ─────────────────────────────────────────────────────────────
 
     [ObservableProperty]
@@ -160,6 +168,7 @@ public partial class SettingsViewModel : PageViewModelBase
         YtdlpPath = s.YtdlpPath;
         YtdlpCookiesFromBrowser = s.YtdlpCookiesFromBrowser ?? string.Empty;
         YtdlpJsRuntime = s.YtdlpJsRuntime ?? string.Empty;
+        DefaultAudioFormat = s.DefaultAudioFormat;
     }
 
     partial void OnGpuVariantChanged(GpuVariant value)
@@ -372,6 +381,7 @@ public partial class SettingsViewModel : PageViewModelBase
         _settings.YtdlpJsRuntime = string.IsNullOrWhiteSpace(YtdlpJsRuntime)
             ? null
             : YtdlpJsRuntime;
+        _settings.DefaultAudioFormat = DefaultAudioFormat;
         _settings.FirstRunComplete = true;
 
         await _settings.SaveAsync();

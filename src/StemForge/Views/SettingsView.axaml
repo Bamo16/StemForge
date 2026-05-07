@@ -381,6 +381,16 @@
                             </StackPanel>
                             <StackPanel Spacing="6">
                                 <TextBlock Classes="settingLabel"
+                                           Text="Default download format" />
+                                <ComboBox ItemsSource="{Binding AudioFormatOptions}"
+                                          SelectedItem="{Binding DefaultAudioFormat, Mode=TwoWay}"
+                                          MinWidth="120" />
+                                <TextBlock FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="FLAC: lossless. WAV: lossless 24-bit, larger files. MP3: lossy 320 kbps, smallest." />
+                            </StackPanel>
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel"
                                            Text="JS runtime (deno, node, bun, quickjs)" />
                                 <TextBox Classes="settingInput"
                                          Text="{Binding YtdlpJsRuntime, Mode=TwoWay}"

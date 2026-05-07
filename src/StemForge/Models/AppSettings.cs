@@ -31,6 +31,9 @@ public sealed class AppSettings
     public bool FirstRunComplete { get; set; } = false;
     public GpuVariant? InstalledVariant { get; set; }
 
+    /// <summary>Default download format for URL-sourced audio (yt-dlp + ffmpeg).</summary>
+    public AudioFormat DefaultAudioFormat { get; set; } = AudioFormat.Flac;
+
     /// <summary>Max entries retained in the global Logs view ring buffer.</summary>
     public int MaxLogEntries { get; set; } = 2000;
 

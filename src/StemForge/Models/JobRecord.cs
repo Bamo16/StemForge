@@ -7,7 +7,9 @@ public sealed record JobRecord(
     string? SourceUrl,
     IReadOnlyList<Preset> Presets,
     string OutputDir,
-    string ModelsDir
+    string ModelsDir,
+    AudioFormat DownloadFormat = AudioFormat.Flac,
+    bool KeepSourceFile = false
 )
 {
     public string InputFileName =>

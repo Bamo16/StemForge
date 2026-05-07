@@ -37,7 +37,8 @@ public partial class MainWindowViewModel : ViewModelBase
         var toolInstaller = new ToolInstaller(runner);
         var modelCatalog = new ModelCatalogService(runner);
         var separation = new SeparationService(SetupDetector.ResolveAudioSeparatorPath());
-        var queue = new JobQueueService(separation, appSettings, runner);
+        var youTubeAudio = new YouTubeAudioService(runner);
+        var queue = new JobQueueService(separation, appSettings, runner, youTubeAudio);
         var toolState = new ToolStateService(setupDetector, appSettings);
 
         var separate = new SeparateViewModel(queue, appSettings, userPresets, toolState);

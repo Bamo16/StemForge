@@ -61,6 +61,15 @@ public partial class SeparateViewModel : PageViewModelBase
     [ObservableProperty]
     public partial bool IsUrlInputEnabled { get; set; }
 
+    [ObservableProperty]
+    public partial AudioFormat DownloadFormat { get; set; } = AudioFormat.Flac;
+
+    [ObservableProperty]
+    public partial bool KeepSourceFile { get; set; }
+
+    public IReadOnlyList<AudioFormat> AudioFormatOptions { get; } =
+        [AudioFormat.Flac, AudioFormat.Wav, AudioFormat.Mp3];
+
     public bool CanStartRun =>
         SelectedCount > 0
         && (
@@ -85,6 +94,7 @@ public partial class SeparateViewModel : PageViewModelBase
         _userPresets = userPresets;
         _toolState = toolState;
         OutputPath = settings.OutputDirectory;
+        DownloadFormat = settings.DefaultAudioFormat;
         IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
         _toolState.PropertyChanged += (_, e) =>
         {
@@ -293,7 +303,9 @@ public partial class SeparateViewModel : PageViewModelBase
             hasUrl ? UrlInput : null,
             selectedPresets,
             ExpandPath(OutputPath),
-            _settings.ModelsDirectory
+            _settings.ModelsDirectory,
+            DownloadFormat,
+            KeepSourceFile && hasUrl
         );
 
         _queue.Enqueue(record);
