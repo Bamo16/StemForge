@@ -3,9 +3,10 @@ using StemForge.Models;
 
 namespace StemForge.Services;
 
-public sealed class ToolInstaller(IProcessRunner runner)
+public sealed class ToolInstaller(IProcessRunner runner, AppPaths paths)
 {
     private readonly IProcessRunner _runner = runner;
+    private readonly AppPaths _paths = paths;
 
     public async Task InstallUvAsync(IProgress<string> progress, CancellationToken ct = default)
     {
@@ -33,7 +34,7 @@ public sealed class ToolInstaller(IProcessRunner runner)
     {
         try
         {
-            return (await _runner.RunAsync("uv", ["--version"])).Success;
+            return (await _runner.RunAsync(_paths.Uv, ["--version"])).Success;
         }
         catch
         {
@@ -45,7 +46,7 @@ public sealed class ToolInstaller(IProcessRunner runner)
     {
         try
         {
-            return (await _runner.RunAsync("yt-dlp", ["--version"])).Success;
+            return (await _runner.RunAsync(_paths.Ytdlp, ["--version"])).Success;
         }
         catch
         {
@@ -57,7 +58,7 @@ public sealed class ToolInstaller(IProcessRunner runner)
     {
         try
         {
-            return (await _runner.RunAsync("ffmpeg", ["-version"])).Success;
+            return (await _runner.RunAsync(_paths.Ffmpeg, ["-version"])).Success;
         }
         catch
         {
@@ -65,10 +66,8 @@ public sealed class ToolInstaller(IProcessRunner runner)
         }
     }
 
-    public Task InstallYtdlpAsync(
-        IProgress<string> progress,
-        CancellationToken ct = default
-    ) => _runner.RunStreamingAsync("uv", ["tool", "install", "yt-dlp"], progress, ct);
+    public Task InstallYtdlpAsync(IProgress<string> progress, CancellationToken ct = default) =>
+        _runner.RunStreamingAsync(_paths.Uv, ["tool", "install", "yt-dlp"], progress, ct);
 
     public Task InstallFfmpegAsync(IProgress<string> progress, CancellationToken ct = default)
     {
@@ -99,7 +98,7 @@ public sealed class ToolInstaller(IProcessRunner runner)
     {
         try
         {
-            var toolDir = (await _runner.RunAsync("uv", ["tool", "dir"])).Stdout;
+            var toolDir = (await _runner.RunAsync(_paths.Uv, ["tool", "dir"])).Stdout;
             if (string.IsNullOrWhiteSpace(toolDir))
                 return null;
 
@@ -136,7 +135,13 @@ public sealed class ToolInstaller(IProcessRunner runner)
     public Task UninstallAudioSeparatorAsync(
         IProgress<string> progress,
         CancellationToken ct = default
-    ) => _runner.RunStreamingAsync("uv", ["tool", "uninstall", "audio-separator"], progress, ct);
+    ) =>
+        _runner.RunStreamingAsync(
+            _paths.Uv,
+            ["tool", "uninstall", "audio-separator"],
+            progress,
+            ct
+        );
 
     public async Task InstallAudioSeparatorAsync(
         GpuVariant variant,
@@ -159,6 +164,6 @@ public sealed class ToolInstaller(IProcessRunner runner)
         if (variant == GpuVariant.Cuda)
             args.AddRange(["--extra-index-url", "https://download.pytorch.org/whl/cu121"]);
 
-        await _runner.RunStreamingAsync("uv", [.. args], progress, ct);
+        await _runner.RunStreamingAsync(_paths.Uv, [.. args], progress, ct);
     }
 }

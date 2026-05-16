@@ -18,24 +18,15 @@ public sealed class AppSettingsTests
     }
 
     [Fact]
-    public void Defaults_YtdlpPath_FallsBackToYtdlp()
+    public void Defaults_PathsAreNull()
     {
         var s = new AppSettings();
-        Assert.Equal("yt-dlp", s.YtdlpPath);
-    }
-
-    [Fact]
-    public void OutputDirectory_WhenEmpty_ReturnsDefault()
-    {
-        var s = new AppSettings { OutputDirectory = "" };
-        Assert.False(string.IsNullOrWhiteSpace(s.OutputDirectory));
-    }
-
-    [Fact]
-    public void ModelsDirectory_WhenEmpty_ReturnsDefault()
-    {
-        var s = new AppSettings { ModelsDirectory = "" };
-        Assert.False(string.IsNullOrWhiteSpace(s.ModelsDirectory));
+        Assert.Null(s.UvPath);
+        Assert.Null(s.AudioSeparatorPath);
+        Assert.Null(s.YtdlpPath);
+        Assert.Null(s.FfmpegPath);
+        Assert.Null(s.OutputDirectory);
+        Assert.Null(s.ModelsDirectory);
     }
 
     [Fact]
@@ -53,6 +44,7 @@ public sealed class AppSettingsTests
                 OutputDirectory = @"C:\Music\Stems",
                 ModelsDirectory = @"C:\Models",
                 YtdlpPath = @"C:\Tools\yt-dlp.exe",
+                FfmpegPath = @"C:\Tools\ffmpeg.exe",
                 FirstRunComplete = true,
             };
 
@@ -63,7 +55,10 @@ public sealed class AppSettingsTests
                     new System.Text.Json.JsonSerializerOptions
                     {
                         WriteIndented = true,
-                        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
+                        Converters =
+                        {
+                            new System.Text.Json.Serialization.JsonStringEnumConverter(),
+                        },
                     }
                 ),
                 TestContext.Current.CancellationToken
@@ -74,7 +69,10 @@ public sealed class AppSettingsTests
                 json,
                 new System.Text.Json.JsonSerializerOptions
                 {
-                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
+                    Converters =
+                    {
+                        new System.Text.Json.Serialization.JsonStringEnumConverter(),
+                    },
                 }
             )!;
 
@@ -82,6 +80,7 @@ public sealed class AppSettingsTests
             Assert.Equal(@"C:\Music\Stems", loaded.OutputDirectory);
             Assert.Equal(@"C:\Models", loaded.ModelsDirectory);
             Assert.Equal(@"C:\Tools\yt-dlp.exe", loaded.YtdlpPath);
+            Assert.Equal(@"C:\Tools\ffmpeg.exe", loaded.FfmpegPath);
             Assert.True(loaded.FirstRunComplete);
         }
         finally

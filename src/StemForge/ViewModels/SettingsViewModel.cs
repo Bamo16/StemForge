@@ -94,10 +94,19 @@ public partial class SettingsViewModel : PageViewModelBase
     [ObservableProperty]
     public partial string ModelsDirectory { get; set; } = string.Empty;
 
-    // ── Optional tool paths ────────────────────────────────────────────────────
+    // ── Optional tool paths (blank = use AppPaths default) ─────────────────────
+
+    [ObservableProperty]
+    public partial string UvPath { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string AudioSeparatorPath { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial string YtdlpPath { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string FfmpegPath { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial string YtdlpCookiesFromBrowser { get; set; } = string.Empty;
@@ -163,9 +172,12 @@ public partial class SettingsViewModel : PageViewModelBase
     private void LoadFromSettings(AppSettings s)
     {
         GpuVariant = s.GpuVariant;
-        OutputDirectory = s.OutputDirectory;
-        ModelsDirectory = s.ModelsDirectory;
-        YtdlpPath = s.YtdlpPath;
+        OutputDirectory = s.OutputDirectory ?? string.Empty;
+        ModelsDirectory = s.ModelsDirectory ?? string.Empty;
+        UvPath = s.UvPath ?? string.Empty;
+        AudioSeparatorPath = s.AudioSeparatorPath ?? string.Empty;
+        YtdlpPath = s.YtdlpPath ?? string.Empty;
+        FfmpegPath = s.FfmpegPath ?? string.Empty;
         YtdlpCookiesFromBrowser = s.YtdlpCookiesFromBrowser ?? string.Empty;
         YtdlpJsRuntime = s.YtdlpJsRuntime ?? string.Empty;
         DefaultAudioFormat = s.DefaultAudioFormat;
@@ -372,15 +384,14 @@ public partial class SettingsViewModel : PageViewModelBase
     private async Task Save()
     {
         _settings.GpuVariant = GpuVariant;
-        _settings.OutputDirectory = OutputDirectory;
-        _settings.ModelsDirectory = ModelsDirectory;
-        _settings.YtdlpPath = YtdlpPath;
-        _settings.YtdlpCookiesFromBrowser = string.IsNullOrWhiteSpace(YtdlpCookiesFromBrowser)
-            ? null
-            : YtdlpCookiesFromBrowser;
-        _settings.YtdlpJsRuntime = string.IsNullOrWhiteSpace(YtdlpJsRuntime)
-            ? null
-            : YtdlpJsRuntime;
+        _settings.OutputDirectory = NullIfBlank(OutputDirectory);
+        _settings.ModelsDirectory = NullIfBlank(ModelsDirectory);
+        _settings.UvPath = NullIfBlank(UvPath);
+        _settings.AudioSeparatorPath = NullIfBlank(AudioSeparatorPath);
+        _settings.YtdlpPath = NullIfBlank(YtdlpPath);
+        _settings.FfmpegPath = NullIfBlank(FfmpegPath);
+        _settings.YtdlpCookiesFromBrowser = NullIfBlank(YtdlpCookiesFromBrowser);
+        _settings.YtdlpJsRuntime = NullIfBlank(YtdlpJsRuntime);
         _settings.DefaultAudioFormat = DefaultAudioFormat;
         _settings.FirstRunComplete = true;
 
@@ -390,4 +401,7 @@ public partial class SettingsViewModel : PageViewModelBase
         await Task.Delay(2000);
         SaveSuccess = false;
     }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
 }

@@ -17,21 +17,21 @@ public partial class ModelsViewModel : PageViewModelBase
     public override string Title => "Model Library";
 
     private readonly ModelCatalogService _catalog;
-    private readonly AppSettings _settings;
+    private readonly AppPaths _paths;
     private readonly UserPresetService _userPresets;
     private readonly ToolStateService _toolState;
     private readonly List<ModelItemViewModel> _all = [];
     private bool _wasAudioSeparatorAvailable;
 
     public ModelsViewModel(
-        AppSettings settings,
+        AppPaths paths,
         UserPresetService userPresets,
         ModelCatalogService catalog,
         ToolStateService toolState
     )
     {
         _catalog = catalog;
-        _settings = settings;
+        _paths = paths;
         _userPresets = userPresets;
         _toolState = toolState;
         EnsembleAlgorithm = EnsembleAlgorithmOptions[0];
@@ -230,7 +230,7 @@ public partial class ModelsViewModel : PageViewModelBase
     [RelayCommand]
     private void DeleteModel(ModelItemViewModel item)
     {
-        var path = Path.Combine(_settings.ModelsDirectory, item.Filename);
+        var path = Path.Combine(_paths.ModelsDirectory, item.Filename);
         try
         {
             if (File.Exists(path))
@@ -271,9 +271,8 @@ public partial class ModelsViewModel : PageViewModelBase
 
         try
         {
-            var exe = SetupDetector.ResolveAudioSeparatorPath();
-            var models = await _catalog.ListModelsAsync(exe, forceRefresh);
-            var modelsDir = _settings.ModelsDirectory;
+            var models = await _catalog.ListModelsAsync(_paths.AudioSeparator, forceRefresh);
+            var modelsDir = _paths.ModelsDirectory;
 
             foreach (var m in models)
             {

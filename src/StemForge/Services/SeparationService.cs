@@ -6,9 +6,10 @@ using StemForge.Models;
 
 namespace StemForge.Services;
 
-public sealed partial class SeparationService(string audioSeparatorPath = "audio-separator")
+public sealed partial class SeparationService(AppPaths paths)
 {
-    private readonly string _audioSeparatorPath = audioSeparatorPath;
+    private readonly AppPaths _paths = paths;
+    private string AudioSeparatorPath => _paths.AudioSeparator;
 
     /// <summary>Matches any tqdm progress bar — captures the leading percentage.</summary>
     [GeneratedRegex(@"^\s*(\d+)%\|")]
@@ -108,7 +109,7 @@ public sealed partial class SeparationService(string audioSeparatorPath = "audio
     {
         var args = BuildArgs(inputFile, preset, modelsDir, passDir);
 
-        var startInfo = new ProcessStartInfo(_audioSeparatorPath, args)
+        var startInfo = new ProcessStartInfo(AudioSeparatorPath, args)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -122,7 +123,7 @@ public sealed partial class SeparationService(string audioSeparatorPath = "audio
 
         using var process =
             Process.Start(startInfo)
-            ?? throw new InvalidOperationException($"Failed to start '{_audioSeparatorPath}'");
+            ?? throw new InvalidOperationException($"Failed to start '{AudioSeparatorPath}'");
 
         using var killReg = ct.Register(() =>
         {

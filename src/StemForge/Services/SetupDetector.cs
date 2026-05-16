@@ -1,43 +1,22 @@
-using StemForge.Extensions;
 using StemForge.Models;
 
 namespace StemForge.Services;
 
 public sealed record ToolInfo(string Name, bool Found, string? Version, bool IsRequired);
 
-public sealed class SetupDetector(IProcessRunner runner)
+public sealed class SetupDetector(IProcessRunner runner, AppPaths paths)
 {
     private readonly IProcessRunner _runner = runner;
+    private readonly AppPaths _paths = paths;
 
-    /// <summary>
-    /// Known path where uv installs the audio-separator shim on Windows.
-    /// Falls back to PATH lookup.
-    /// </summary>
-    public static string ResolveAudioSeparatorPath()
-    {
-        var uvShim = Environment.SpecialFolder.ApplicationData.GetFolderPath(
-            "uv",
-            "tools",
-            "audio-separator",
-            "Scripts",
-            "audio-separator.exe"
-        );
-        return File.Exists(uvShim) ? uvShim : "audio-separator";
-    }
-
-    public Task<IReadOnlyList<ToolInfo>> DetectAllAsync(string? ytdlpPath) =>
+    public Task<IReadOnlyList<ToolInfo>> DetectAllAsync() =>
         Task.Run(async () =>
         {
             var results = await Task.WhenAll(
-                DetectAsync("uv", "uv", "--version", required: true),
-                DetectAsync(
-                    "audio-separator",
-                    ResolveAudioSeparatorPath(),
-                    "--version",
-                    required: true
-                ),
-                DetectAsync("yt-dlp", ytdlpPath ?? "yt-dlp", "--version", required: false),
-                DetectAsync("ffmpeg", "ffmpeg", "-version", required: false)
+                DetectAsync("uv", _paths.Uv, "--version", required: true),
+                DetectAsync("audio-separator", _paths.AudioSeparator, "--version", required: true),
+                DetectAsync("yt-dlp", _paths.Ytdlp, "--version", required: false),
+                DetectAsync("ffmpeg", _paths.Ffmpeg, "-version", required: false)
             );
             return (IReadOnlyList<ToolInfo>)results;
         });

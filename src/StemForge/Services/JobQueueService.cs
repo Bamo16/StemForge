@@ -14,13 +14,15 @@ public sealed partial class JobQueueService(
     SeparationService separation,
     AppSettings settings,
     IProcessRunner runner,
-    YouTubeAudioService youTubeAudio
+    YouTubeAudioService youTubeAudio,
+    AppPaths paths
 )
 {
     private readonly SeparationService _separation = separation;
     private readonly AppSettings _settings = settings;
     private readonly IProcessRunner _runner = runner;
     private readonly YouTubeAudioService _youTubeAudio = youTubeAudio;
+    private readonly AppPaths _paths = paths;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private CancellationTokenSource? _currentCts;
     private JobItemViewModel? _currentJob;
@@ -258,7 +260,7 @@ public sealed partial class JobQueueService(
                 args.AddRange(FfmpegArgs.Metadata(tags));
                 args.Add(tmp);
 
-                await _runner.RunCheckedAsync("ffmpeg", args, ct, logRawLines: false);
+                await _runner.RunCheckedAsync(_paths.Ffmpeg, args, ct, logRawLines: false);
                 File.Move(tmp, stem, overwrite: true);
             }
             catch (Exception ex)

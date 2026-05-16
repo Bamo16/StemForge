@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StemForge.Models;
-using StemForge.Services;
 
 namespace StemForge.ViewModels;
 
@@ -27,83 +26,31 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool IsSetupRequired { get; set; }
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(
+        SeparateViewModel separate,
+        QueueViewModel queueVm,
+        ModelsViewModel models,
+        SettingsViewModel settings,
+        SetupWizardViewModel wizard,
+        LogsViewModel logs,
+        AppSettings appSettings
+    )
     {
-        var runner = new ProcessRunner();
-        var appSettings = AppSettings.Load();
-        var userPresets = UserPresetService.Load();
-        var setupDetector = new SetupDetector(runner);
-        var gpuDetector = new GpuDetector(runner);
-        var toolInstaller = new ToolInstaller(runner);
-        var modelCatalog = new ModelCatalogService(runner);
-        var separation = new SeparationService(SetupDetector.ResolveAudioSeparatorPath());
-        var youTubeAudio = new YouTubeAudioService(runner);
-        var queue = new JobQueueService(separation, appSettings, runner, youTubeAudio);
-        var toolState = new ToolStateService(setupDetector, appSettings);
-
-        var separate = new SeparateViewModel(queue, appSettings, userPresets, toolState);
-        var queueVm = new QueueViewModel(queue);
-        var models = new ModelsViewModel(appSettings, userPresets, modelCatalog, toolState);
-        var settings = new SettingsViewModel(
-            appSettings,
-            setupDetector,
-            gpuDetector,
-            toolInstaller,
-            toolState
-        );
-
-        _ = toolState.RefreshAsync();
+        Wizard = wizard;
+        Logs = logs;
 
         NavItems =
         [
-            new()
-            {
-                Label = "Separate",
-                IconData = IconSeparate,
-                Target = separate,
-                IsActive = true,
-            },
-            new()
-            {
-                Label = "Queue",
-                IconData = IconQueue,
-                Target = queueVm,
-            },
-            new()
-            {
-                Label = "Models",
-                IconData = IconModels,
-                Target = models,
-            },
-            new()
-            {
-                Label = "Settings",
-                IconData = IconSettings,
-                Target = settings,
-            },
+            new() { Label = "Separate", IconData = IconSeparate, Target = separate, IsActive = true },
+            new() { Label = "Queue", IconData = IconQueue, Target = queueVm },
+            new() { Label = "Models", IconData = IconModels, Target = models },
+            new() { Label = "Settings", IconData = IconSettings, Target = settings },
         ];
 
-        Logs = new LogsViewModel();
-
-        void GoToQueue()
-        {
-            var queueNav = NavItems.First(n => n.Label == "Queue");
-            foreach (var n in NavItems)
-                n.IsActive = ReferenceEquals(n, queueNav);
-            CurrentPage = queueNav.Target;
-        }
+        CurrentPage = separate;
+        IsSetupRequired = !appSettings.FirstRunComplete;
 
         separate.NavigateToQueueRequested += GoToQueue;
-        CurrentPage = separate;
-
-        Wizard = new SetupWizardViewModel(
-            appSettings,
-            setupDetector,
-            gpuDetector,
-            toolInstaller,
-            toolState
-        );
-        IsSetupRequired = !appSettings.FirstRunComplete;
         Wizard.SetupCompleted += () => IsSetupRequired = false;
         Wizard.SetupDismissed += () => IsSetupRequired = false;
         settings.ShowWizardRequested += () =>
@@ -111,6 +58,14 @@ public partial class MainWindowViewModel : ViewModelBase
             Wizard.Reset();
             IsSetupRequired = true;
         };
+    }
+
+    private void GoToQueue()
+    {
+        var queueNav = NavItems.First(n => n.Label == "Queue");
+        foreach (var n in NavItems)
+            n.IsActive = ReferenceEquals(n, queueNav);
+        CurrentPage = queueNav.Target;
     }
 
     [RelayCommand]

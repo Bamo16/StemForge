@@ -21,7 +21,8 @@ public partial class SetupWizardViewModel(
     SetupDetector setupDetector,
     GpuDetector gpuDetector,
     ToolInstaller toolInstaller,
-    ToolStateService toolState
+    ToolStateService toolState,
+    AppPaths paths
 ) : ViewModelBase
 {
     private readonly AppSettings _settings = settings;
@@ -29,6 +30,7 @@ public partial class SetupWizardViewModel(
     private readonly GpuDetector _gpuDetector = gpuDetector;
     private readonly ToolInstaller _toolInstaller = toolInstaller;
     private readonly ToolStateService _toolState = toolState;
+    private readonly AppPaths _paths = paths;
 
     public event Action? SetupCompleted;
     public event Action? SetupDismissed;
@@ -88,10 +90,10 @@ public partial class SetupWizardViewModel(
     // ── Directories ───────────────────────────────────────────────────────────
 
     [ObservableProperty]
-    public partial string OutputDirectory { get; set; } = settings.OutputDirectory;
+    public partial string OutputDirectory { get; set; } = paths.OutputDirectory;
 
     [ObservableProperty]
-    public partial string ModelsDirectory { get; set; } = settings.ModelsDirectory;
+    public partial string ModelsDirectory { get; set; } = paths.ModelsDirectory;
 
     // ── Install ───────────────────────────────────────────────────────────────
 
@@ -367,8 +369,8 @@ public partial class SetupWizardViewModel(
     private async Task FinishAsync()
     {
         _settings.GpuVariant = GpuVariant;
-        _settings.OutputDirectory = OutputDirectory;
-        _settings.ModelsDirectory = ModelsDirectory;
+        _settings.OutputDirectory = NullIfBlank(OutputDirectory);
+        _settings.ModelsDirectory = NullIfBlank(ModelsDirectory);
         _settings.FirstRunComplete = true;
         if (InstallSuccess)
             _settings.InstalledVariant = GpuVariant;
@@ -403,8 +405,8 @@ public partial class SetupWizardViewModel(
         FfmpegInstallError = null;
         _installLog.Clear();
         InstallLog = string.Empty;
-        OutputDirectory = _settings.OutputDirectory;
-        ModelsDirectory = _settings.ModelsDirectory;
+        OutputDirectory = _paths.OutputDirectory;
+        ModelsDirectory = _paths.ModelsDirectory;
         GpuVariant = _settings.GpuVariant;
     }
 
@@ -418,7 +420,7 @@ public partial class SetupWizardViewModel(
 
         try
         {
-            var toolsTask = _setupDetector.DetectAllAsync(null);
+            var toolsTask = _setupDetector.DetectAllAsync();
             var gpuTask = _gpuDetector.DetectAsync();
             await Task.WhenAll(toolsTask, gpuTask);
 
@@ -496,6 +498,9 @@ public partial class SetupWizardViewModel(
         if (detected is not null)
             _settings.InstalledVariant = detected;
     }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
 
     private string? VariantTagFor(string toolName, bool found)
     {

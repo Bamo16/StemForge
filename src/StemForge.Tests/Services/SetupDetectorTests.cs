@@ -6,8 +6,13 @@ namespace StemForge.Tests.Services;
 
 public sealed class SetupDetectorTests
 {
-    // The key used in DetectAllAsync — may be a full shim path if audio-separator is installed.
-    private static readonly string AudioSeparatorExe = SetupDetector.ResolveAudioSeparatorPath();
+    private static (SetupDetector detector, FakeProcessRunner fake, AppPaths paths) Build()
+    {
+        var fake = new FakeProcessRunner();
+        var settings = new AppSettings();
+        var paths = new AppPaths(settings);
+        return (new SetupDetector(fake, paths), fake, paths);
+    }
 
     [Theory]
     [InlineData(GpuVariant.Cuda, "gpu")]
@@ -21,14 +26,13 @@ public sealed class SetupDetectorTests
     [Fact]
     public async Task DetectAllAsync_AllFound_ReturnsFoundResults()
     {
-        var fake = new FakeProcessRunner();
-        fake.Setup("uv", "uv 0.4.0");
-        fake.Setup(AudioSeparatorExe, "audio-separator 0.27.2");
-        fake.Setup("yt-dlp", "2024.12.13");
-        fake.Setup("ffmpeg", "ffmpeg version 7.0");
+        var (detector, fake, paths) = Build();
+        fake.Setup(paths.Uv, "uv 0.4.0");
+        fake.Setup(paths.AudioSeparator, "audio-separator 0.27.2");
+        fake.Setup(paths.Ytdlp, "2024.12.13");
+        fake.Setup(paths.Ffmpeg, "ffmpeg version 7.0");
 
-        var detector = new SetupDetector(fake);
-        var results = await detector.DetectAllAsync(ytdlpPath: null);
+        var results = await detector.DetectAllAsync();
 
         Assert.Equal(4, results.Count);
         Assert.All(results, r => Assert.True(r.Found));
@@ -37,14 +41,13 @@ public sealed class SetupDetectorTests
     [Fact]
     public async Task DetectAllAsync_UvMissing_MarksUvNotFound()
     {
-        var fake = new FakeProcessRunner();
-        fake.Setup(AudioSeparatorExe, "audio-separator 0.27.2");
-        fake.Setup("yt-dlp", "2024.12.13");
-        fake.Setup("ffmpeg", "ffmpeg version 7.0");
+        var (detector, fake, paths) = Build();
+        fake.Setup(paths.AudioSeparator, "audio-separator 0.27.2");
+        fake.Setup(paths.Ytdlp, "2024.12.13");
+        fake.Setup(paths.Ffmpeg, "ffmpeg version 7.0");
         // uv not registered → throws → Found = false
 
-        var detector = new SetupDetector(fake);
-        var results = await detector.DetectAllAsync(ytdlpPath: null);
+        var results = await detector.DetectAllAsync();
 
         var uv = results.Single(r => r.Name == "uv");
         Assert.False(uv.Found);
@@ -54,13 +57,12 @@ public sealed class SetupDetectorTests
     [Fact]
     public async Task DetectAllAsync_OptionalToolsMissing_AllSystemsGoStillPossible()
     {
-        var fake = new FakeProcessRunner();
-        fake.Setup("uv", "uv 0.4.0");
-        fake.Setup(AudioSeparatorExe, "audio-separator 0.27.2");
+        var (detector, fake, paths) = Build();
+        fake.Setup(paths.Uv, "uv 0.4.0");
+        fake.Setup(paths.AudioSeparator, "audio-separator 0.27.2");
         // yt-dlp and ffmpeg not registered → throw → Found = false
 
-        var detector = new SetupDetector(fake);
-        var results = await detector.DetectAllAsync(ytdlpPath: null);
+        var results = await detector.DetectAllAsync();
 
         var ytdlp = results.Single(r => r.Name == "yt-dlp");
         var ffmpeg = results.Single(r => r.Name == "ffmpeg");
@@ -69,8 +71,6 @@ public sealed class SetupDetectorTests
         Assert.False(ytdlp.IsRequired);
         Assert.False(ffmpeg.Found);
         Assert.False(ffmpeg.IsRequired);
-
-        // Required tools are found — AllSystemsGo logic would pass
         Assert.True(results.All(r => r.Found || !r.IsRequired));
     }
 
@@ -78,13 +78,16 @@ public sealed class SetupDetectorTests
     public async Task DetectAllAsync_CustomYtdlpPath_UsesProvidedPath()
     {
         var fake = new FakeProcessRunner();
-        fake.Setup("uv", "uv 0.4.0");
-        fake.Setup(AudioSeparatorExe, "audio-separator 0.27.2");
-        fake.Setup(@"C:\Tools\yt-dlp.exe", "2024.12.13");
-        fake.Setup("ffmpeg", "ffmpeg version 7.0");
+        var settings = new AppSettings { YtdlpPath = @"C:\Tools\yt-dlp.exe" };
+        var paths = new AppPaths(settings);
+        var detector = new SetupDetector(fake, paths);
 
-        var detector = new SetupDetector(fake);
-        var results = await detector.DetectAllAsync(ytdlpPath: @"C:\Tools\yt-dlp.exe");
+        fake.Setup(paths.Uv, "uv 0.4.0");
+        fake.Setup(paths.AudioSeparator, "audio-separator 0.27.2");
+        fake.Setup(@"C:\Tools\yt-dlp.exe", "2024.12.13");
+        fake.Setup(paths.Ffmpeg, "ffmpeg version 7.0");
+
+        var results = await detector.DetectAllAsync();
 
         var ytdlp = results.Single(r => r.Name == "yt-dlp");
         Assert.True(ytdlp.Found);

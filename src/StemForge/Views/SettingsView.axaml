@@ -353,18 +353,47 @@
                     </Border>
                 </StackPanel>
 
+                <!-- ── Tool paths ── -->
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="settingSection" Text="Tool paths" />
+                    <Border Classes="card">
+                        <StackPanel Spacing="14">
+                            <TextBlock FontSize="11" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextPlaceholderBrush}"
+                                       Text="Override the path StemForge uses to invoke each tool. Leave blank to auto-resolve from PATH or the standard install location." />
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel" Text="uv" />
+                                <TextBox Classes="settingInput"
+                                         Text="{Binding UvPath, Mode=TwoWay}"
+                                         PlaceholderText="uv (auto-detect from PATH)" />
+                            </StackPanel>
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel" Text="audio-separator" />
+                                <TextBox Classes="settingInput"
+                                         Text="{Binding AudioSeparatorPath, Mode=TwoWay}"
+                                         PlaceholderText="auto-detect from uv shim or PATH" />
+                            </StackPanel>
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel" Text="yt-dlp" />
+                                <TextBox Classes="settingInput"
+                                         Text="{Binding YtdlpPath, Mode=TwoWay}"
+                                         PlaceholderText="yt-dlp (auto-detect from PATH)" />
+                            </StackPanel>
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel" Text="ffmpeg" />
+                                <TextBox Classes="settingInput"
+                                         Text="{Binding FfmpegPath, Mode=TwoWay}"
+                                         PlaceholderText="ffmpeg (auto-detect from PATH)" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
                 <!-- ── yt-dlp ── -->
                 <StackPanel Spacing="12">
                     <TextBlock Classes="settingSection" Text="yt-dlp" />
                     <Border Classes="card">
                         <StackPanel Spacing="14">
-                            <StackPanel Spacing="6">
-                                <TextBlock Classes="settingLabel"
-                                           Text="yt-dlp path (leave blank to use system PATH)" />
-                                <TextBox Classes="settingInput"
-                                         Text="{Binding YtdlpPath, Mode=TwoWay}"
-                                         PlaceholderText="Auto-detect from PATH" />
-                            </StackPanel>
                             <StackPanel Spacing="6">
                                 <TextBlock Classes="settingLabel"
                                            Text="Cookies from browser (e.g. firefox, chrome, edge)" />

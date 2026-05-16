@@ -4,41 +4,67 @@ using StemForge.Extensions;
 
 namespace StemForge.Models;
 
+/// <summary>
+/// User-configurable application settings, persisted as JSON in
+/// %AppData%\StemForge\settings.json. Every property holds the user's
+/// <i>intent</i> only — fall-back logic for unset paths lives in
+/// <c>AppPaths</c>, not here.
+/// </summary>
 public sealed class AppSettings
 {
+    /// <summary>GPU compute variant the user prefers for new audio-separator installs.</summary>
     public GpuVariant GpuVariant { get; set; } = GpuVariant.Cpu;
-    public string OutputDirectory
-    {
-        get => string.IsNullOrWhiteSpace(field) ? DefaultOutputDirectory : field;
-        set;
-    }
-    public string ModelsDirectory
-    {
-        get => string.IsNullOrWhiteSpace(field) ? DefaultModelsDirectory : field;
-        set;
-    }
-    public string YtdlpPath
-    {
-        get => string.IsNullOrWhiteSpace(field) ? "yt-dlp" : field;
-        set;
-    }
+
+    /// <summary>Variant actually installed on disk, recorded after a successful install.</summary>
+    public GpuVariant? InstalledVariant { get; set; }
+
+    /// <summary>True once the first-run setup wizard has been dismissed or completed.</summary>
+    public bool FirstRunComplete { get; set; } = false;
+
+    // ── Tool path overrides (null = use AppPaths default) ─────────────────────
+
+    /// <summary>Override path to the uv binary. Null to use PATH.</summary>
+    public string? UvPath { get; set; }
+
+    /// <summary>Override path to the audio-separator binary. Null to use the uv shim or PATH.</summary>
+    public string? AudioSeparatorPath { get; set; }
+
+    /// <summary>Override path to the yt-dlp binary. Null to use PATH.</summary>
+    public string? YtdlpPath { get; set; }
+
+    /// <summary>Override path to the ffmpeg binary. Null to use PATH.</summary>
+    public string? FfmpegPath { get; set; }
+
+    // ── Directory overrides (null = use AppPaths default) ────────────────────
+
+    /// <summary>Override directory for stem outputs. Null to use ~/Music/Stems.</summary>
+    public string? OutputDirectory { get; set; }
+
+    /// <summary>Override directory for downloaded model files. Null to use LocalAppData.</summary>
+    public string? ModelsDirectory { get; set; }
+
+    // ── yt-dlp options ────────────────────────────────────────────────────────
 
     /// <summary>Browser name for --cookies-from-browser (e.g. "firefox", "chrome", "edge"). Null = no cookies.</summary>
     public string? YtdlpCookiesFromBrowser { get; set; }
 
     /// <summary>JS runtime for --js-runtime (e.g. "deno", "node"). Null = let yt-dlp auto-detect.</summary>
     public string? YtdlpJsRuntime { get; set; }
-    public bool FirstRunComplete { get; set; } = false;
-    public GpuVariant? InstalledVariant { get; set; }
 
-    /// <summary>Default download format for URL-sourced audio (yt-dlp + ffmpeg).</summary>
-    public AudioFormat DefaultAudioFormat { get; set; } = AudioFormat.Flac;
+    // ── Logging ───────────────────────────────────────────────────────────────
 
     /// <summary>Max entries retained in the global Logs view ring buffer.</summary>
     public int MaxLogEntries { get; set; } = 2000;
 
     /// <summary>Max lines retained in each per-job log card on the Queue page.</summary>
     public int MaxJobLogLines { get; set; } = 500;
+
+    // ── Audio output ──────────────────────────────────────────────────────────
+
+    /// <summary>Default download format for URL-sourced audio (yt-dlp + ffmpeg).</summary>
+    public AudioFormat DefaultAudioFormat { get; set; } = AudioFormat.Flac;
+
+    // ── Persistence ───────────────────────────────────────────────────────────
 
     public static AppSettings Load()
     {
@@ -70,11 +96,6 @@ public sealed class AppSettings
     {
         WriteIndented = true,
         Converters = { new JsonStringEnumConverter() },
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
-
-    private static string DefaultOutputDirectory =>
-        Environment.SpecialFolder.UserProfile.GetFolderPath("Music", "Stems");
-
-    private static string DefaultModelsDirectory =>
-        Environment.SpecialFolder.LocalApplicationData.GetFolderPath("audio-separator", "models");
 }

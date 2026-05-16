@@ -52,9 +52,9 @@ public partial class SeparateViewModel : PageViewModelBase
     public bool HasSelection => SelectedCount > 0;
 
     private readonly JobQueueService _queue;
-    private readonly AppSettings _settings;
     private readonly UserPresetService _userPresets;
     private readonly ToolStateService _toolState;
+    private readonly AppPaths _paths;
 
     public event Action? NavigateToQueueRequested;
 
@@ -86,14 +86,15 @@ public partial class SeparateViewModel : PageViewModelBase
         JobQueueService queue,
         AppSettings settings,
         UserPresetService userPresets,
-        ToolStateService toolState
+        ToolStateService toolState,
+        AppPaths paths
     )
     {
         _queue = queue;
-        _settings = settings;
         _userPresets = userPresets;
         _toolState = toolState;
-        OutputPath = settings.OutputDirectory;
+        _paths = paths;
+        OutputPath = paths.OutputDirectory;
         DownloadFormat = settings.DefaultAudioFormat;
         IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
         _toolState.PropertyChanged += (_, e) =>
@@ -303,7 +304,7 @@ public partial class SeparateViewModel : PageViewModelBase
             hasUrl ? UrlInput : null,
             selectedPresets,
             ExpandPath(OutputPath),
-            _settings.ModelsDirectory,
+            _paths.ModelsDirectory,
             DownloadFormat,
             KeepSourceFile && hasUrl
         );

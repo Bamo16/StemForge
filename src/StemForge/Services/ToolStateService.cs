@@ -9,11 +9,9 @@ namespace StemForge.Services;
 /// anywhere in the app can drive a one-shot <see cref="RefreshAsync"/> and have
 /// every page (Settings, Separate, Models) react automatically.
 /// </summary>
-public sealed partial class ToolStateService(SetupDetector detector, AppSettings settings)
-    : ObservableObject
+public sealed partial class ToolStateService(SetupDetector detector) : ObservableObject
 {
     private readonly SetupDetector _detector = detector;
-    private readonly AppSettings _settings = settings;
 
     [ObservableProperty]
     public partial bool IsLoading { get; set; }
@@ -32,10 +30,7 @@ public sealed partial class ToolStateService(SetupDetector detector, AppSettings
         IsLoading = true;
         try
         {
-            var ytdlpPath = string.IsNullOrWhiteSpace(_settings.YtdlpPath)
-                ? null
-                : _settings.YtdlpPath;
-            Tools = await _detector.DetectAllAsync(ytdlpPath);
+            Tools = await _detector.DetectAllAsync();
         }
         finally
         {

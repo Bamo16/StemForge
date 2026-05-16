@@ -11,9 +11,10 @@ namespace StemForge.Services;
 ///   2. ffmpeg streams that URL to disk in the chosen format with provenance tags
 /// No temp file, no double-encoding, full visibility into ffmpeg args.
 /// </summary>
-public sealed class YouTubeAudioService(IProcessRunner runner)
+public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
 {
     private readonly IProcessRunner _runner = runner;
+    private readonly AppPaths _paths = paths;
 
     private static readonly HashSet<char> _invalidFileNameChars =
     [
@@ -65,8 +66,7 @@ public sealed class YouTubeAudioService(IProcessRunner runner)
         args.Add(url);
 
         // Capture stdout silently — we don't want the full JSON in the log file.
-        var ytdlpExe = string.IsNullOrWhiteSpace(settings.YtdlpPath) ? "yt-dlp" : settings.YtdlpPath;
-        var result = await _runner.RunCheckedAsync(ytdlpExe, args, ct, logRawLines: false);
+        var result = await _runner.RunCheckedAsync(_paths.Ytdlp, args, ct, logRawLines: false);
 
         var meta = ParseJson(url, result.Stdout);
         var summary =
@@ -114,7 +114,7 @@ public sealed class YouTubeAudioService(IProcessRunner runner)
         args.AddRange(FfmpegArgs.Codec(format));
         args.Add(outputPath);
 
-        await _runner.RunStreamingAsync("ffmpeg", args, log, ct);
+        await _runner.RunStreamingAsync(_paths.Ffmpeg, args, log, ct);
 
         return outputPath;
     }
