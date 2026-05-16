@@ -77,10 +77,10 @@ public sealed class ProcessRunner : IProcessRunner
         CancellationToken ct
     )
     {
-        // Materialise before the enumerator is consumed by ProcessStartInfo.
         var argList = args as IReadOnlyList<string> ?? [.. args];
+        var exeName = Path.GetFileName(exe);
 
-        AppLogger.Debug("Process", $"→ {Path.GetFileName(exe)} {string.Join(' ', argList)}");
+        AppLogger.Debug("Process", $"→ {exeName} {string.Join(' ', argList)}");
 
         var startInfo = new ProcessStartInfo(exe, argList)
         {
@@ -90,92 +90,51 @@ public sealed class ProcessRunner : IProcessRunner
             RedirectStandardError = true,
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
+            KillOnParentExit = true,
         };
         startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
         startInfo.Environment["PYTHONUTF8"] = "1";
 
         using var p =
             Process.Start(startInfo)
-            ?? throw new InvalidOperationException($"Failed to start '{Path.GetFileName(exe)}'");
+            ?? throw new InvalidOperationException($"Failed to start '{exeName}'");
 
         // Kill the entire tree when the token fires; reads below complete once streams close.
         using var _ = ct.Register(() =>
         {
-            try
-            {
-                p.Kill(entireProcessTree: true);
-            }
-            catch { }
+            try { p.Kill(entireProcessTree: true); } catch { }
         });
 
-        string stdout,
-            stderr;
-
-        var exeName = Path.GetFileName(exe);
+        string stdout, stderr;
 
         if (progress is not null)
         {
-            // Stream mode: report every line to both the caller and the log.
-            var outTask = Task.Run(
-                () =>
-                {
-                    while (p.StandardOutput.ReadLine() is { } line)
-                    {
-                        progress.Report(line);
-                        if (logRawLines)
-                            AppLogger.Debug($"{exeName}.out", line);
-                    }
-                },
-                CancellationToken.None
-            );
-            var errTask = Task.Run(
-                () =>
-                {
-                    while (p.StandardError.ReadLine() is { } line)
-                    {
-                        progress.Report(line);
-                        if (logRawLines)
-                            AppLogger.Debug($"{exeName}.err", line);
-                    }
-                },
-                CancellationToken.None
-            );
-            await Task.WhenAll(outTask, errTask, p.WaitForExitAsync(CancellationToken.None));
+            // Stream mode: ReadAllLinesAsync multiplexes stdout+stderr, reporting each line as it arrives.
+            await foreach (var line in p.ReadAllLinesAsync(CancellationToken.None))
+            {
+                progress.Report(line.Content);
+                if (logRawLines)
+                    AppLogger.Debug(line.StandardError ? $"{exeName}.err" : $"{exeName}.out", line.Content);
+            }
             stdout = stderr = string.Empty;
         }
         else
         {
-            // Capture mode: drain both streams concurrently to avoid pipe deadlocks.
-            var outTask = p.StandardOutput.ReadToEndAsync(CancellationToken.None);
-            var errTask = p.StandardError.ReadToEndAsync(CancellationToken.None);
-            await Task.WhenAll(outTask, errTask, p.WaitForExitAsync(CancellationToken.None));
-            stdout = (await outTask).Trim();
-            stderr = (await errTask).Trim();
+            // Capture mode: ReadAllTextAsync drains both streams concurrently to avoid pipe deadlocks.
+            (stdout, stderr) = await p.ReadAllTextAsync(CancellationToken.None);
+            stdout = stdout.Trim();
+            stderr = stderr.Trim();
 
             if (logRawLines)
             {
-                foreach (
-                    var line in stdout.Split(
-                        '\n',
-                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
-                    )
-                )
-                {
+                foreach (var line in stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                     AppLogger.Debug($"{exeName}.out", line);
-                }
-
-                foreach (
-                    var line in stderr.Split(
-                        '\n',
-                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
-                    )
-                )
-                {
+                foreach (var line in stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                     AppLogger.Debug($"{exeName}.err", line);
-                }
             }
         }
 
+        await p.WaitForExitAsync(CancellationToken.None);
         ct.ThrowIfCancellationRequested();
 
         var result = new Result(p.ExitCode, stdout, stderr);
