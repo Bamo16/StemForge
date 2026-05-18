@@ -45,6 +45,13 @@ public static class ScrollViewerExtensions
         if (e.Property != ScrollViewer.ExtentProperty || sender is not ScrollViewer sv)
             return;
 
+        // When extent goes from zero, the pane just became visible with existing content — jump to end.
+        if (e.OldValue is Size { Height: 0 } && sv.Extent.Height > 0)
+        {
+            Dispatcher.UIThread.Post(sv.ScrollToEnd, DispatcherPriority.Background);
+            return;
+        }
+
         var distanceFromBottom = sv.Extent.Height - sv.Offset.Y - sv.Viewport.Height;
         if (distanceFromBottom < StickyThresholdPx)
             Dispatcher.UIThread.Post(sv.ScrollToEnd, DispatcherPriority.Background);

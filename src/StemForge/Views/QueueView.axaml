@@ -41,15 +41,6 @@
             <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
         </Style>
 
-        <!-- Running job: amber left accent bar -->
-        <Style Selector="Border.runningAccent">
-            <Setter Property="Width" Value="2" />
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
-        <Style Selector="Border.runningAccent.visible">
-            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
-        </Style>
-
         <!-- Status label -->
         <Style Selector="TextBlock.statusLabel">
             <Setter Property="FontSize" Value="11" />
@@ -116,15 +107,14 @@
                     BorderBrush="{DynamicResource Bg3Brush}"
                     BorderThickness="0,0,0,1"
                     Padding="20,0">
-                <!-- 2px left-accent spacer + 2.4* File + 1.5* Preset + 3* Progress + 80 Status -->
-                <Grid ColumnDefinitions="2,2.4*,1.5*,3*,80" Height="32">
-                    <TextBlock Grid.Column="1" Classes="colHeader" Text="FILE"
+                <Grid ColumnDefinitions="2.4*,1.5*,3*,80" Height="32">
+                    <TextBlock Grid.Column="0" Classes="colHeader" Text="FILE"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2" Classes="colHeader" Text="PRESET"
+                    <TextBlock Grid.Column="1" Classes="colHeader" Text="PRESET"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="3" Classes="colHeader" Text="PROGRESS"
+                    <TextBlock Grid.Column="2" Classes="colHeader" Text="PROGRESS"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="4" Classes="colHeader" Text="STATUS"
+                    <TextBlock Grid.Column="3" Classes="colHeader" Text="STATUS"
                                HorizontalAlignment="Right" VerticalAlignment="Center" />
                 </Grid>
             </Border>
@@ -152,15 +142,10 @@
                                 <Button Classes="jobRow"
                                         Classes.expanded="{Binding IsExpanded}"
                                         Command="{Binding ToggleExpandCommand}">
-                                    <Grid ColumnDefinitions="2,2.4*,1.5*,3*,80" Margin="20,0"
+                                    <Grid ColumnDefinitions="2.4*,1.5*,3*,80" Margin="20,0"
                                           MinHeight="42">
-                                        <!-- Running accent bar -->
-                                        <Border Grid.Column="0" Classes="runningAccent"
-                                                Classes.visible="{Binding IsRunning}"
-                                                VerticalAlignment="Stretch" />
-
                                         <!-- File -->
-                                        <TextBlock Grid.Column="1" Classes="mono"
+                                        <TextBlock Grid.Column="0" Classes="mono"
                                                    Text="{Binding InputFileName}"
                                                    FontSize="12"
                                                    Foreground="{DynamicResource TextPrimaryBrush}"
@@ -168,7 +153,7 @@
                                                    TextTrimming="CharacterEllipsis" />
 
                                         <!-- Preset -->
-                                        <TextBlock Grid.Column="2" Classes="mono"
+                                        <TextBlock Grid.Column="1" Classes="mono"
                                                    Text="{Binding PresetSummary}"
                                                    FontSize="11"
                                                    Foreground="{DynamicResource TextPlaceholderBrush}"
@@ -176,7 +161,7 @@
                                                    TextTrimming="CharacterEllipsis" />
 
                                         <!-- Progress bar + status text + label -->
-                                        <StackPanel Grid.Column="3" Spacing="2"
+                                        <StackPanel Grid.Column="2" Spacing="2"
                                                     VerticalAlignment="Center">
                                             <Grid ColumnDefinitions="*,42" ColumnSpacing="10">
                                                 <ProgressBar Grid.Column="0"
@@ -203,7 +188,7 @@
                                         </StackPanel>
 
                                         <!-- Status chip -->
-                                        <TextBlock Grid.Column="4" Classes="statusLabel"
+                                        <TextBlock Grid.Column="3" Classes="statusLabel"
                                                    Text="{Binding StatusLabel}"
                                                    Foreground="{Binding StatusBrush}"
                                                    HorizontalAlignment="Right"

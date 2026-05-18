@@ -23,4 +23,14 @@ public interface IProcessRunner
         CancellationToken ct = default,
         bool logRawLines = true
     );
+
+    /// Captures stdout into the returned Result while streaming stderr lines live to
+    /// <paramref name="stderrProgress"/>. Throws on non-zero exit.
+    Task<ProcessRunner.Result> RunStreamingStderrAsync(
+        string exe,
+        IEnumerable<string> args,
+        IProgress<string>? stderrProgress = null,
+        CancellationToken ct = default,
+        bool logRawLines = true
+    );
 }

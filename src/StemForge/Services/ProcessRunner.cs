@@ -4,10 +4,11 @@ using System.Text;
 namespace StemForge.Services;
 
 /// <summary>
-/// Unified helper for spawning external processes. Three entry points:
-///   RunAsync         — capture stdout+stderr, no throw on non-zero exit
-///   RunCheckedAsync  — same, but throws ProcessFailedException on non-zero exit
-///   RunStreamingAsync — stream lines live via IProgress, throws on non-zero exit
+/// Unified helper for spawning external processes. Four entry points:
+///   RunAsync              — capture stdout+stderr, no throw on non-zero exit
+///   RunCheckedAsync       — same, but throws ProcessFailedException on non-zero exit
+///   RunStreamingAsync     — stream all lines live via IProgress, throws on non-zero exit
+///   RunStreamingStderrAsync — capture stdout silently, stream stderr live, throws on non-zero exit
 /// All overloads drain both stdout and stderr to prevent OS pipe-buffer deadlocks.
 /// Cancellation kills the entire process tree; the token is checked after exit.
 /// </summary>
@@ -56,7 +57,7 @@ public sealed class ProcessRunner : IProcessRunner
         bool logRawLines = true
     ) => CoreAsync(exe, args, progress: null, throwOnFailure: true, logRawLines, ct);
 
-    /// Run and stream each output line to <paramref name="progress"/> as it arrives.
+    /// Run and stream each line (stdout + stderr) to <paramref name="progress"/> as it arrives.
     /// Throws <see cref="ProcessFailedException"/> on non-zero exit.
     public async Task RunStreamingAsync(
         string exe,
@@ -66,6 +67,16 @@ public sealed class ProcessRunner : IProcessRunner
         bool logRawLines = true
     ) => await CoreAsync(exe, args, progress, throwOnFailure: true, logRawLines, ct);
 
+    /// Captures stdout into the returned <see cref="Result"/> while streaming stderr lines live
+    /// to <paramref name="stderrProgress"/>. Throws <see cref="ProcessFailedException"/> on non-zero exit.
+    public Task<Result> RunStreamingStderrAsync(
+        string exe,
+        IEnumerable<string> args,
+        IProgress<string>? stderrProgress = null,
+        CancellationToken ct = default,
+        bool logRawLines = true
+    ) => CoreAsync(exe, args, stderrProgress, throwOnFailure: true, logRawLines, ct, captureStdout: true);
+
     // ── Core ────────────────────────────────────────────────────────────────────
 
     private static async Task<Result> CoreAsync(
@@ -74,7 +85,8 @@ public sealed class ProcessRunner : IProcessRunner
         IProgress<string>? progress,
         bool throwOnFailure,
         bool logRawLines,
-        CancellationToken ct
+        CancellationToken ct,
+        bool captureStdout = false
     )
     {
         var argList = args as IReadOnlyList<string> ?? [.. args];
@@ -90,7 +102,6 @@ public sealed class ProcessRunner : IProcessRunner
             RedirectStandardError = true,
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
-            KillOnParentExit = true,
         };
         startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
         startInfo.Environment["PYTHONUTF8"] = "1";
@@ -109,14 +120,37 @@ public sealed class ProcessRunner : IProcessRunner
 
         if (progress is not null)
         {
-            // Stream mode: ReadAllLinesAsync multiplexes stdout+stderr, reporting each line as it arrives.
-            await foreach (var line in p.ReadAllLinesAsync(CancellationToken.None))
+            if (captureStdout)
             {
-                progress.Report(line.Content);
-                if (logRawLines)
-                    AppLogger.Debug(line.StandardError ? $"{exeName}.err" : $"{exeName}.out", line.Content);
+                // Mixed mode: capture stdout silently, stream stderr live.
+                var stdoutLines = new List<string>();
+                await foreach (var line in p.ReadAllLinesAsync(CancellationToken.None))
+                {
+                    if (line.StandardError)
+                    {
+                        progress.Report(line.Content);
+                        if (logRawLines)
+                            AppLogger.Debug($"{exeName}.err", line.Content);
+                    }
+                    else
+                    {
+                        stdoutLines.Add(line.Content);
+                    }
+                }
+                stdout = string.Join('\n', stdoutLines).Trim();
+                stderr = string.Empty;
             }
-            stdout = stderr = string.Empty;
+            else
+            {
+                // Stream mode: report all lines (stdout + stderr) as they arrive.
+                await foreach (var line in p.ReadAllLinesAsync(CancellationToken.None))
+                {
+                    progress.Report(line.Content);
+                    if (logRawLines)
+                        AppLogger.Debug(line.StandardError ? $"{exeName}.err" : $"{exeName}.out", line.Content);
+                }
+                stdout = stderr = string.Empty;
+            }
         }
         else
         {

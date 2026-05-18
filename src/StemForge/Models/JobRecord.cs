@@ -8,7 +8,7 @@ public sealed record JobRecord(
     IReadOnlyList<Preset> Presets,
     string OutputDir,
     string ModelsDir,
-    AudioFormat DownloadFormat = AudioFormat.Flac,
+    AudioFormat StemOutputFormat = AudioFormat.Flac,
     bool KeepSourceFile = false
 )
 {

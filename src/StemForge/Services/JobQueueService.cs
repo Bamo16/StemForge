@@ -94,7 +94,6 @@ public sealed partial class JobQueueService(
                 inputFile = await DownloadAudioAsync(
                     url,
                     downloadDir,
-                    vm.Job.DownloadFormat,
                     dlLog,
                     cts.Token
                 );
@@ -115,7 +114,13 @@ public sealed partial class JobQueueService(
             {
                 Dispatcher.UIThread.Post(() =>
                 {
-                    vm.Progress = p.StepPercent;
+                    // Cumulative formula so the bar never resets between presets or tqdm phases.
+                    var overall =
+                        p.PresetCount == 0
+                            ? 0
+                            : (int)
+                                Math.Round((p.PresetIndex * 100.0 + p.StepPercent) / p.PresetCount);
+                    vm.Progress = Math.Max(vm.Progress, overall);
                     vm.StatusText = p.StepLabel;
                     vm.PresetCounter = $"{p.PresetIndex + 1}/{p.PresetCount}";
                 });
@@ -125,23 +130,18 @@ public sealed partial class JobQueueService(
                 Dispatcher.UIThread.Post(() => vm.AppendLog(line))
             );
 
-            await _separation.RunAsync(
-                inputFile,
-                vm.Job.Presets,
-                vm.Job.OutputDir,
-                vm.Job.ModelsDir,
-                progress,
-                logProgress,
-                cts.Token
-            );
-
-            var baseName = Path.GetFileNameWithoutExtension(inputFile);
-            var outputFiles = vm
-                .Job.Presets.Select(p =>
-                    Path.Combine(vm.Job.OutputDir, $"{baseName} ({p.Category} - {p.Label}).flac")
+            var outputFiles = (
+                await _separation.RunAsync(
+                    inputFile,
+                    vm.Job.Presets,
+                    vm.Job.OutputDir,
+                    vm.Job.ModelsDir,
+                    vm.Job.StemOutputFormat,
+                    progress,
+                    logProgress,
+                    cts.Token
                 )
-                .Where(File.Exists)
-                .ToList();
+            ).ToList();
 
             // Embed provenance tags so each stem traces back to its source.
             await TagSeparationOutputsAsync(outputFiles, inputFile, vm.Job.Presets, cts.Token);
@@ -168,6 +168,7 @@ public sealed partial class JobQueueService(
         }
         catch (Exception ex)
         {
+            AppLogger.Error("job", $"Job failed — {ex.Message}");
             Dispatcher.UIThread.Post(() =>
             {
                 vm.ErrorMessage = ex.Message;
@@ -253,9 +254,10 @@ public sealed partial class JobQueueService(
         {
             try
             {
-                var tmp = stem + ".tagged";
+                var ext = Path.GetExtension(stem);
+                var tmp = Path.ChangeExtension(stem, null) + ".tmp" + ext;
                 var args = new List<string>();
-                args.AddRange(FfmpegArgs.Baseline());
+                args.AddRange(FfmpegArgs.Baseline);
                 args.AddRange(["-i", stem, "-c", "copy"]);
                 args.AddRange(FfmpegArgs.Metadata(tags));
                 args.Add(tmp);
@@ -265,7 +267,10 @@ public sealed partial class JobQueueService(
             }
             catch (Exception ex)
             {
-                AppLogger.Warning("provenance", $"Failed to tag {Path.GetFileName(stem)}: {ex.Message}");
+                AppLogger.Warning(
+                    "provenance",
+                    $"Failed to tag {Path.GetFileName(stem)}: {ex.Message}"
+                );
             }
         }
     }
@@ -273,13 +278,12 @@ public sealed partial class JobQueueService(
     private async Task<string> DownloadAudioAsync(
         string url,
         string dlDir,
-        AudioFormat format,
         IProgress<string> log,
         CancellationToken ct
     )
     {
-        var meta = await _youTubeAudio.ResolveAsync(NormalizeUrl(url), _settings, ct);
-        return await _youTubeAudio.DownloadAsync(meta, format, dlDir, log, ct);
+        var meta = await _youTubeAudio.ResolveAsync(NormalizeUrl(url), _settings, log, ct);
+        return await _youTubeAudio.DownloadAsync(meta, AudioFormat.Flac, dlDir, log, ct);
     }
 
     /// <summary>Normalise YouTube URLs to music.youtube.com for the best available audio format.</summary>

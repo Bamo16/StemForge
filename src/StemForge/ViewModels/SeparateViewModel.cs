@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using Avalonia;
 using Avalonia.Media;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StemForge.Extensions;
@@ -52,9 +53,12 @@ public partial class SeparateViewModel : PageViewModelBase
     public bool HasSelection => SelectedCount > 0;
 
     private readonly JobQueueService _queue;
+    private readonly AppSettings _settings;
     private readonly UserPresetService _userPresets;
     private readonly ToolStateService _toolState;
     private readonly AppPaths _paths;
+    private readonly YouTubeAudioService _ytAudio;
+    private CancellationTokenSource? _urlCheckCts;
 
     public event Action? NavigateToQueueRequested;
 
@@ -62,7 +66,38 @@ public partial class SeparateViewModel : PageViewModelBase
     public partial bool IsUrlInputEnabled { get; set; }
 
     [ObservableProperty]
-    public partial AudioFormat DownloadFormat { get; set; } = AudioFormat.Flac;
+    [NotifyPropertyChangedFor(nameof(HasUrlTitle))]
+    [NotifyPropertyChangedFor(nameof(ShowUrlFormatRow))]
+    public partial string? UrlTitle { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUrlCodec))]
+    public partial string? UrlCodec { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUrlBitrate))]
+    public partial string? UrlBitrate { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUrlDuration))]
+    public partial string? UrlDuration { get; set; }
+
+    public bool HasUrlTitle => UrlTitle is not null;
+    public bool HasUrlCodec => UrlCodec is not null;
+    public bool HasUrlBitrate => UrlBitrate is not null;
+    public bool HasUrlDuration => UrlDuration is not null;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowUrlFormatRow))]
+    public partial bool IsCheckingUrl { get; set; }
+
+    [ObservableProperty]
+    public partial string LoadingDots { get; set; } = "";
+
+    public bool ShowUrlFormatRow => IsUrlInputEnabled && (IsCheckingUrl || UrlTitle is not null);
+
+    [ObservableProperty]
+    public partial AudioFormat StemOutputFormat { get; set; } = AudioFormat.Flac;
 
     [ObservableProperty]
     public partial bool KeepSourceFile { get; set; }
@@ -87,15 +122,18 @@ public partial class SeparateViewModel : PageViewModelBase
         AppSettings settings,
         UserPresetService userPresets,
         ToolStateService toolState,
-        AppPaths paths
+        AppPaths paths,
+        YouTubeAudioService ytAudio
     )
     {
         _queue = queue;
+        _settings = settings;
+        _ytAudio = ytAudio;
         _userPresets = userPresets;
         _toolState = toolState;
         _paths = paths;
         OutputPath = paths.OutputDirectory;
-        DownloadFormat = settings.DefaultAudioFormat;
+        StemOutputFormat = settings.DefaultAudioFormat;
         IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
         _toolState.PropertyChanged += (_, e) =>
         {
@@ -244,11 +282,86 @@ public partial class SeparateViewModel : PageViewModelBase
     {
         OnPropertyChanged(nameof(CanStartRun));
         RunCommand.NotifyCanExecuteChanged();
+
+        _urlCheckCts?.Cancel();
+        _urlCheckCts = null;
+        ClearUrlMetadata();
+        IsCheckingUrl = false;
+
+        if (!IsUrlInputEnabled || string.IsNullOrWhiteSpace(value))
+            return;
+
+        var cts = new CancellationTokenSource();
+        _urlCheckCts = cts;
+        _ = FetchUrlFormatAsync(value, cts.Token);
+    }
+
+    private static readonly string[] _dotFrames = [".", "..", "..."];
+    private int _dotIndex;
+    private DispatcherTimer? _dotTimer;
+
+    partial void OnIsCheckingUrlChanged(bool value)
+    {
+        if (value)
+        {
+            _dotIndex = 0;
+            LoadingDots = _dotFrames[0];
+            _dotTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(380) };
+            _dotTimer.Tick += (_, _) =>
+            {
+                _dotIndex = (_dotIndex + 1) % _dotFrames.Length;
+                LoadingDots = _dotFrames[_dotIndex];
+            };
+            _dotTimer.Start();
+        }
+        else
+        {
+            _dotTimer?.Stop();
+            _dotTimer = null;
+            LoadingDots = "";
+        }
+    }
+
+    private void ClearUrlMetadata()
+    {
+        UrlTitle = null;
+        UrlCodec = null;
+        UrlBitrate = null;
+        UrlDuration = null;
+    }
+
+    private async Task FetchUrlFormatAsync(string url, CancellationToken ct)
+    {
+        IsCheckingUrl = true;
+        try
+        {
+            await Task.Delay(800, ct);
+            var meta = await _ytAudio.GetAudioFormatInfoAsync(url, _settings, ct);
+            if (meta is null)
+                return;
+
+            UrlTitle = meta.Title;
+            if (meta.SourceCodec is { Length: > 0 } codec && codec != "none")
+                UrlCodec = codec;
+            if (meta.SourceBitrateKbps is { } kbps)
+                UrlBitrate = $"{kbps:F0} kb/s";
+            if (meta.DurationSeconds is { } dur)
+            {
+                var ts = TimeSpan.FromSeconds(dur);
+                UrlDuration = ts.TotalHours >= 1 ? ts.ToString(@"h\:mm\:ss") : ts.ToString(@"m\:ss");
+            }
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            IsCheckingUrl = false;
+        }
     }
 
     partial void OnIsUrlInputEnabledChanged(bool value)
     {
         OnPropertyChanged(nameof(CanStartRun));
+        OnPropertyChanged(nameof(ShowUrlFormatRow));
         RunCommand.NotifyCanExecuteChanged();
     }
 
@@ -305,7 +418,7 @@ public partial class SeparateViewModel : PageViewModelBase
             selectedPresets,
             ExpandPath(OutputPath),
             _paths.ModelsDirectory,
-            DownloadFormat,
+            StemOutputFormat,
             KeepSourceFile && hasUrl
         );
 

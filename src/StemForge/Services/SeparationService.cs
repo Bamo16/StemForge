@@ -1,129 +1,51 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
-using StemForge.Extensions;
+using System.Text;
+using System.Text.Json;
 using StemForge.Models;
 
 namespace StemForge.Services;
 
-public sealed partial class SeparationService(AppPaths paths)
+public sealed class SeparationService(AppPaths paths)
 {
     private readonly AppPaths _paths = paths;
-    private string AudioSeparatorPath => _paths.AudioSeparator;
 
-    /// <summary>Matches any tqdm progress bar — captures the leading percentage.</summary>
-    [GeneratedRegex(@"^\s*(\d+)%\|")]
-    private static partial Regex TqdmPctRegex();
-
-    public static string ResolveModelsDir() =>
-        Environment.GetEnvironmentVariable("AUDIO_SEPARATOR_MODEL_DIR") is { Length: > 0 } envDir
-            ? envDir
-            : Environment.SpecialFolder.LocalApplicationData.GetFolderPath(
-                "audio-separator",
-                "models"
-            );
-
-    public async Task RunAsync(
+    public async Task<IReadOnlyList<string>> RunAsync(
         string inputFile,
         IReadOnlyList<Preset> presets,
         string outputDir,
         string modelsDir,
+        AudioFormat stemFormat = AudioFormat.Flac,
         IProgress<SeparationProgress>? progress = null,
         IProgress<string>? logProgress = null,
         CancellationToken ct = default
     )
     {
         Directory.CreateDirectory(outputDir);
-        var baseName = Path.GetFileNameWithoutExtension(inputFile);
-        var tempRoot = Path.Combine(Path.GetTempPath(), $"stemforge-{Guid.NewGuid():N}");
-        var total = presets.Count;
 
-        try
-        {
-            for (int i = 0; i < total; i++)
-            {
-                ct.ThrowIfCancellationRequested();
-                var preset = presets[i];
-                var passDir = Path.Combine(tempRoot, preset.Id);
-                Directory.CreateDirectory(passDir);
+        var jobJson = BuildJobJson(inputFile, presets, outputDir, modelsDir, stemFormat);
 
-                progress?.Report(new SeparationProgress(i, total, preset.Label, preset.Label, 0));
-
-                await RunPassAsync(
-                    inputFile,
-                    preset,
-                    modelsDir,
-                    passDir,
-                    i,
-                    total,
-                    progress,
-                    logProgress,
-                    ct
-                );
-
-                if (preset.Mode == SeparationMode.BuiltinPreset)
-                {
-                    // Built-in presets produce exactly one relevant stem; pick it by category.
-                    var stemFile =
-                        FindStem(passDir, preset.Category)
-                        ?? throw new FileNotFoundException(
-                            $"audio-separator produced no output in '{passDir}' for preset '{preset.Id}'"
-                        );
-                    var outPath = Path.Combine(
-                        outputDir,
-                        $"{baseName} ({preset.Category} - {preset.Label}).flac"
-                    );
-                    File.Copy(stemFile, outPath, overwrite: true);
-                }
-                else
-                {
-                    // Single-model and custom ensemble: copy every stem produced.
-                    foreach (var f in Directory.GetFiles(passDir, "*.flac"))
-                        File.Copy(f, Path.Combine(outputDir, Path.GetFileName(f)), overwrite: true);
-                }
-            }
-
-            progress?.Report(new SeparationProgress(total - 1, total, string.Empty, "Done", 100));
-        }
-        finally
-        {
-            try
-            {
-                Directory.Delete(tempRoot, recursive: true);
-            }
-            catch { }
-        }
-    }
-
-    private async Task RunPassAsync(
-        string inputFile,
-        Preset preset,
-        string modelsDir,
-        string passDir,
-        int passIndex,
-        int totalPasses,
-        IProgress<SeparationProgress>? progress,
-        IProgress<string>? logProgress,
-        CancellationToken ct
-    )
-    {
-        var args = BuildArgs(inputFile, preset, modelsDir, passDir);
-
-        var startInfo = new ProcessStartInfo(AudioSeparatorPath, args)
+        var startInfo = new ProcessStartInfo(
+            _paths.SeparationDriverPython,
+            [AppPaths.SeparationDriverScript]
+        )
         {
             UseShellExecute = false,
             CreateNoWindow = true,
+            RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            StandardOutputEncoding = System.Text.Encoding.UTF8,
-            StandardErrorEncoding = System.Text.Encoding.UTF8,
+            StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
         };
         startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
         startInfo.Environment["PYTHONUTF8"] = "1";
 
+        AppLogger.Debug("driver", $"python {AppPaths.SeparationDriverScript}");
+
         using var process =
             Process.Start(startInfo)
-            ?? throw new InvalidOperationException($"Failed to start '{AudioSeparatorPath}'");
+            ?? throw new InvalidOperationException("Failed to start separation driver");
 
         using var killReg = ct.Register(() =>
         {
@@ -134,245 +56,233 @@ public sealed partial class SeparationService(AppPaths paths)
             catch { }
         });
 
-        var queue = new BlockingCollection<string>();
+        // Write job JSON to stdin then close so the driver reads to EOF.
+        await process.StandardInput.WriteAsync(jobJson);
+        process.StandardInput.Close();
 
-        var outTask = Task.Run(
-            () =>
-            {
-                while (process.StandardOutput.ReadLine() is { } line)
-                    queue.Add(line);
-            },
-            CancellationToken.None
-        );
-        var errTask = Task.Run(
-            () =>
-            {
-                while (process.StandardError.ReadLine() is { } line)
-                    queue.Add(line);
-            },
-            CancellationToken.None
-        );
-        _ = Task.Run(
+        var outputFiles = new List<string>();
+        var presetMap = presets.ToDictionary(p => p.Id);
+
+        // Read stdout (JSON events) and stderr (log noise) concurrently.
+        var stdoutTask = Task.Run(
             async () =>
             {
-                await Task.WhenAll(outTask, errTask);
-                queue.CompleteAdding();
-            },
-            CancellationToken.None
-        );
+                var currentLabel = string.Empty;
 
-        await Task.Run(
-            () =>
-            {
-                var stepLabel = preset.Label;
-
-                foreach (var line in queue.GetConsumingEnumerable(ct))
+                while (await process.StandardOutput.ReadLineAsync() is { } line)
                 {
-                    var match = TqdmPctRegex().Match(line);
-                    if (match.Success)
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+                    try
                     {
-                        var tqdmPct = int.Parse(match.Groups[1].Value);
-                        progress?.Report(
-                            new SeparationProgress(
-                                passIndex,
-                                totalPasses,
-                                preset.Label,
-                                stepLabel,
-                                tqdmPct
-                            )
-                        );
-                    }
-                    else
-                    {
-                        var newStep = ParseStepLabel(line);
-                        if (newStep is not null)
-                        {
-                            stepLabel = newStep;
-                            progress?.Report(
-                                new SeparationProgress(
-                                    passIndex,
-                                    totalPasses,
-                                    preset.Label,
-                                    stepLabel,
-                                    0
-                                )
-                            );
-                        }
+                        var evt = JsonSerializer.Deserialize<JsonElement>(line);
+                        if (!evt.TryGetProperty("event", out var evtProp))
+                            continue;
 
-                        var cleaned = CleanLogLine(line);
-                        if (cleaned is not null)
+                        switch (evtProp.GetString())
                         {
-                            AppLogger.Info("audio-separator", cleaned);
-                            logProgress?.Report(cleaned);
+                            case "init":
+                            {
+                                var ver = evt.GetProperty("version").GetString() ?? "?";
+                                var n = evt.GetProperty("preset_count").GetInt32();
+                                AppLogger.Info("separator", $"audio-separator {ver}, {n} preset(s)");
+                                break;
+                            }
+
+                            case "model_status":
+                            {
+                                var model = evt.GetProperty("model").GetString() ?? "";
+                                var cached = evt.GetProperty("cached").GetBoolean();
+                                AppLogger.Info(
+                                    "separator",
+                                    $"Model {model}: {(cached ? "cached" : "needs download")}"
+                                );
+                                break;
+                            }
+
+                            case "preset_start":
+                            {
+                                var idx = evt.GetProperty("index").GetInt32();
+                                var total = evt.GetProperty("total").GetInt32();
+                                var id = evt.GetProperty("preset_id").GetString() ?? "";
+                                currentLabel =
+                                    presetMap.TryGetValue(id, out var p) ? p.Label : id;
+                                progress?.Report(
+                                    new SeparationProgress(idx, total, currentLabel, "Loading model", 0)
+                                );
+                                break;
+                            }
+
+                            case "preset_progress":
+                            {
+                                var idx = evt.GetProperty("index").GetInt32();
+                                var total = evt.GetProperty("total").GetInt32();
+                                var pct = evt.GetProperty("pct").GetInt32();
+                                progress?.Report(
+                                    new SeparationProgress(idx, total, currentLabel, "Separating", pct)
+                                );
+                                break;
+                            }
+
+                            case "preset_done":
+                            {
+                                var idx = evt.GetProperty("index").GetInt32();
+                                var total = evt.GetProperty("total").GetInt32();
+                                var id = evt.GetProperty("preset_id").GetString() ?? "";
+                                var label = presetMap.TryGetValue(id, out var p) ? p.Label : id;
+                                progress?.Report(
+                                    new SeparationProgress(idx, total, label, "Done", 100)
+                                );
+
+                                if (evt.TryGetProperty("files", out var filesEl))
+                                {
+                                    foreach (var f in filesEl.EnumerateArray())
+                                    {
+                                        var fname = f.GetString();
+                                        if (string.IsNullOrWhiteSpace(fname))
+                                            continue;
+                                        var full = Path.IsPathRooted(fname)
+                                            ? fname
+                                            : Path.Combine(outputDir, fname);
+                                        if (File.Exists(full))
+                                            outputFiles.Add(full);
+                                    }
+                                }
+                                break;
+                            }
+
+                            case "preset_error":
+                            {
+                                var id = evt.GetProperty("preset_id").GetString() ?? "";
+                                var msg = evt.GetProperty("message").GetString() ?? "unknown error";
+                                AppLogger.Error("separator", $"Preset '{id}' failed: {msg}");
+                                logProgress?.Report($"[Error] {id}: {msg}");
+                                break;
+                            }
+
+                            case "job_error":
+                            {
+                                var msg =
+                                    evt.GetProperty("message").GetString() ?? "unknown error";
+                                throw new InvalidOperationException(
+                                    $"Separation job failed: {msg}"
+                                );
+                            }
+
+                            case "job_done":
+                                AppLogger.Info("separator", "Job complete");
+                                break;
                         }
+                    }
+                    catch (JsonException)
+                    {
+                        AppLogger.Warning("driver", $"Unreadable event: {line}");
                     }
                 }
             },
-            ct
+            CancellationToken.None
         );
 
+        var stderrTask = Task.Run(
+            async () =>
+            {
+                while (await process.StandardError.ReadLineAsync() is { } line)
+                {
+                    var cleaned = CleanStderrLine(line);
+                    if (cleaned is null)
+                        continue;
+                    AppLogger.Info("separator", cleaned);
+                    logProgress?.Report(cleaned);
+                }
+            },
+            CancellationToken.None
+        );
+
+        await Task.WhenAll(stdoutTask, stderrTask);
         await process.WaitForExitAsync(CancellationToken.None);
         ct.ThrowIfCancellationRequested();
 
         if (process.ExitCode != 0)
             throw new InvalidOperationException(
-                $"audio-separator exited with code {process.ExitCode} on preset '{preset.Id}'"
+                $"Separation driver exited with code {process.ExitCode}"
             );
+
+        return outputFiles;
     }
 
-    internal static IEnumerable<string> BuildArgs(
+    // ── Job JSON ──────────────────────────────────────────────────────────────
+
+    private static string BuildJobJson(
         string inputFile,
-        Preset preset,
+        IReadOnlyList<Preset> presets,
+        string outputDir,
         string modelsDir,
-        string passDir
+        AudioFormat stemFormat
     )
     {
-        // Common tail args shared by all modes.
-        IEnumerable<string> Tail() =>
-            ["--model_file_dir", modelsDir, "--output_dir", passDir, "--output_format", "FLAC"];
-
-        return preset.Mode switch
+        var job = new
         {
-            SeparationMode.SingleModel =>
-            [
-                inputFile,
-                "--model_filename",
-                preset.PrimaryModel
-                    ?? throw new InvalidOperationException(
-                        $"Preset '{preset.Id}' is SingleModel but has no PrimaryModel set."
-                    ),
-                .. Tail(),
-            ],
-
-            SeparationMode.CustomEnsemble => BuildCustomEnsembleArgs(inputFile, preset, Tail()),
-
-            // BuiltinPreset (default)
-            _ => [inputFile, "--ensemble_preset", preset.PrimaryModel ?? preset.Id, .. Tail()],
+            input_file = inputFile,
+            output_dir = outputDir,
+            model_dir = modelsDir,
+            stem_format = FfmpegArgs.Extension(stemFormat).ToUpperInvariant(),
+            presets = presets.Select(BuildPresetDto).ToArray(),
         };
+        return JsonSerializer.Serialize(job);
     }
 
-    internal static IEnumerable<string> BuildCustomEnsembleArgs(
-        string inputFile,
-        Preset preset,
-        IEnumerable<string> tail
-    )
-    {
-        var primary =
-            preset.PrimaryModel
-            ?? throw new InvalidOperationException(
-                $"Preset '{preset.Id}' is CustomEnsemble but has no PrimaryModel set."
-            );
-
-        var args = new List<string> { inputFile, "--model_filename", primary };
-
-        if (preset.ExtraModels is { Count: > 0 })
+    private static object BuildPresetDto(Preset preset) =>
+        preset.Mode switch
         {
-            args.Add("--extra_models");
-            args.AddRange(preset.ExtraModels);
-        }
+            SeparationMode.SingleModel => new
+            {
+                id = preset.Id,
+                category = preset.Category.ToString(),
+                models = new[]
+                {
+                    preset.PrimaryModel
+                        ?? throw new InvalidOperationException(
+                            $"Preset '{preset.Id}' is SingleModel but has no PrimaryModel."
+                        ),
+                },
+            },
 
-        if (!string.IsNullOrWhiteSpace(preset.EnsembleAlgorithm))
-        {
-            args.Add("--ensemble_algorithm");
-            args.Add(preset.EnsembleAlgorithm);
-        }
+            SeparationMode.CustomEnsemble => (object)
+                new
+                {
+                    id = preset.Id,
+                    category = preset.Category.ToString(),
+                    models = new[]
+                    {
+                        preset.PrimaryModel
+                            ?? throw new InvalidOperationException(
+                                $"Preset '{preset.Id}' is CustomEnsemble but has no PrimaryModel."
+                            ),
+                    }
+                        .Concat(preset.ExtraModels ?? [])
+                        .ToArray(),
+                    ensemble_algorithm = preset.EnsembleAlgorithm ?? "avg_wave",
+                },
 
-        if (preset.EnsembleWeights is { Count: > 0 })
-        {
-            args.Add("--ensemble_weights");
-            args.AddRange(preset.EnsembleWeights.Select(w => w.ToString("G")));
-        }
+            // BuiltinPreset (default): driver passes the ID as the ensemble preset name.
+            _ => (object)
+                new
+                {
+                    id = preset.Id,
+                    category = preset.Category.ToString(),
+                    ensemble_preset = preset.PrimaryModel ?? preset.Id,
+                },
+        };
 
-        args.AddRange(tail);
-        return args;
-    }
+    // ── Stderr cleanup ────────────────────────────────────────────────────────
 
-    // Detect a step change from a non-tqdm log line and return a short label, or null.
-    internal static string? ParseStepLabel(string line)
-    {
-        // audio-separator emits either "LEVEL:module:message" or "timestamp - LEVEL - module - message"
-        var msg = line;
-        var dashIdx = line.IndexOf(" - INFO - ", StringComparison.Ordinal);
-        if (dashIdx >= 0)
-        {
-            var msgStart = line.IndexOf(" - ", dashIdx + 10, StringComparison.Ordinal);
-            msg = msgStart >= 0 ? line[(msgStart + 3)..] : line[(dashIdx + 10)..];
-        }
-
-        if (msg.Contains("Starting separation", StringComparison.OrdinalIgnoreCase))
-            return "Separating";
-        if (msg.Contains("Downloading", StringComparison.OrdinalIgnoreCase))
-            return "Downloading model";
-        if (
-            msg.Contains("Processing with model:", StringComparison.OrdinalIgnoreCase)
-            || msg.Contains("Loading model", StringComparison.OrdinalIgnoreCase)
-        )
-            return "Loading model";
-        if (
-            msg.Contains("ensemble", StringComparison.OrdinalIgnoreCase)
-            && (
-                msg.Contains("processing", StringComparison.OrdinalIgnoreCase)
-                || msg.Contains("creating", StringComparison.OrdinalIgnoreCase)
-                || msg.Contains("running", StringComparison.OrdinalIgnoreCase)
-            )
-        )
-            return "Creating ensemble";
-        return null;
-    }
-
-    // Strip Python logging prefix from a log line for display.
-    internal static string? CleanLogLine(string raw)
+    // Driver formats stderr as "{logger_name} - {message}". Strip the prefix.
+    private static string? CleanStderrLine(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
             return null;
         var s = raw.Trim();
-
-        // "timestamp - LEVEL - module - message"
-        var dashIdx = s.IndexOf(" - INFO - ", StringComparison.Ordinal);
-        if (dashIdx < 0)
-            dashIdx = s.IndexOf(" - WARNING - ", StringComparison.Ordinal);
-        if (dashIdx < 0)
-            dashIdx = s.IndexOf(" - ERROR - ", StringComparison.Ordinal);
-        if (dashIdx >= 0)
-        {
-            var msgStart = s.IndexOf(" - ", dashIdx + 4, StringComparison.Ordinal);
-            if (msgStart >= 0)
-                s = s[(msgStart + 3)..].TrimStart();
-        }
-        else
-        {
-            // "INFO:some.module:message"
-            var first = s.IndexOf(':', StringComparison.Ordinal);
-            if (first > 0)
-            {
-                var second = s.IndexOf(':', first + 1);
-                if (second > 0)
-                    s = s[(second + 1)..].TrimStart();
-            }
-        }
-
-        return string.IsNullOrWhiteSpace(s) ? null : s;
-    }
-
-    internal static string? FindStem(string passDir, PresetCategory category)
-    {
-        var keyword = category switch
-        {
-            PresetCategory.Vocals => "(Vocals)",
-            PresetCategory.Instrumentals => "(Instrumental)",
-            PresetCategory.Drums => "(Drums)",
-            PresetCategory.Bass => "(Bass)",
-            PresetCategory.Guitar => "(Guitar)",
-            PresetCategory.Piano => "(Piano)",
-            PresetCategory.Other => "(Other)",
-            _ => null,
-        };
-        if (keyword is null)
-            return null;
-        return Directory
-            .GetFiles(passDir, "*.flac")
-            .FirstOrDefault(f =>
-                Path.GetFileName(f).Contains(keyword, StringComparison.OrdinalIgnoreCase)
-            );
+        var dashIdx = s.IndexOf(" - ", StringComparison.Ordinal);
+        return dashIdx > 0 ? s[(dashIdx + 3)..].TrimStart() : s;
     }
 }

@@ -70,6 +70,28 @@ public sealed class FakeProcessRunner : IProcessRunner
         return Task.CompletedTask;
     }
 
+    public Task<ProcessRunner.Result> RunStreamingStderrAsync(
+        string exe,
+        IEnumerable<string> args,
+        IProgress<string>? stderrProgress = null,
+        CancellationToken ct = default,
+        bool logRawLines = true
+    )
+    {
+        var argList = args.ToList();
+        _calls.Add((exe, argList));
+        var fake = Resolve(exe);
+
+        if (!string.IsNullOrEmpty(fake.Stderr))
+            foreach (var line in fake.Stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                stderrProgress?.Report(line);
+
+        if (fake.ExitCode != 0)
+            throw new ProcessRunner.ProcessFailedException(exe, fake.ExitCode, fake.Stderr);
+
+        return Task.FromResult(new ProcessRunner.Result(fake.ExitCode, fake.Stdout, fake.Stderr));
+    }
+
     private FakeResult Resolve(string exe)
     {
         if (_responses.TryGetValue(exe, out var r))

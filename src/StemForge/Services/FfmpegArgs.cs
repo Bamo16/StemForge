@@ -8,14 +8,8 @@ namespace StemForge.Services;
 /// </summary>
 public static class FfmpegArgs
 {
-    public static IEnumerable<string> Baseline()
-    {
-        yield return "-hide_banner";
-        yield return "-nostats";
-        yield return "-loglevel";
-        yield return "warning";
-        yield return "-y";
-    }
+    public static IEnumerable<string> Baseline =>
+        ["-hide_banner", "-nostats", "-loglevel", "warning", "-y"];
 
     /// <summary>Codec + format-specific flags for the chosen output format.</summary>
     public static IEnumerable<string> Codec(AudioFormat format) =>

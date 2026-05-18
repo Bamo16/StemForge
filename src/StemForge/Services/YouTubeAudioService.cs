@@ -7,9 +7,9 @@ namespace StemForge.Services;
 
 /// <summary>
 /// Two-stage YouTube audio download:
-///   1. yt-dlp --dump-single-json resolves metadata + a direct media URL
+///   1. yt-dlp --dump-single-json resolves metadata + a direct media URL (stderr streamed live)
 ///   2. ffmpeg streams that URL to disk in the chosen format with provenance tags
-/// No temp file, no double-encoding, full visibility into ffmpeg args.
+/// No temp file, no double-encoding, full visibility into yt-dlp and ffmpeg progress.
 /// </summary>
 public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
 {
@@ -20,6 +20,11 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
     [
         .. Path.GetInvalidFileNameChars(),
     ];
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    };
 
     public sealed record YtMetadata(
         string SourceUrl,
@@ -35,14 +40,14 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
     public async Task<YtMetadata> ResolveAsync(
         string url,
         AppSettings settings,
-        CancellationToken ct
+        IProgress<string>? log = null,
+        CancellationToken ct = default
     )
     {
         var args = new List<string>
         {
             "--dump-single-json",
             "--no-playlist",
-            "--no-warnings",
             "--format",
             "bestaudio/best",
         };
@@ -65,22 +70,64 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
 
         args.Add(url);
 
-        // Capture stdout silently — we don't want the full JSON in the log file.
-        var result = await _runner.RunCheckedAsync(_paths.Ytdlp, args, ct, logRawLines: false);
+        // Stderr streams live (yt-dlp info lines); stdout (the JSON blob) is captured silently.
+        var result = await _runner.RunStreamingStderrAsync(_paths.Ytdlp, args, log, ct);
 
-        var meta = ParseJson(url, result.Stdout);
+        var info = DeserializeVideoInfo(result.Stdout);
+        var mediaUrl =
+            info.Url
+            ?? throw new InvalidOperationException(
+                "yt-dlp metadata missing direct media URL; check format selector."
+            );
+
         var summary =
-            $"resolved: {meta.Title}"
-            + (meta.SourceCodec is not null ? $" · {meta.SourceCodec}" : string.Empty)
-            + (meta.SourceBitrateKbps is { } kbps
-                ? $" @ {kbps.ToString("F0", CultureInfo.InvariantCulture)}k"
-                : string.Empty)
-            + (meta.DurationSeconds is { } dur
-                ? $" · {dur.ToString("F0", CultureInfo.InvariantCulture)}s"
-                : string.Empty);
+            $"resolved: {info.Title}"
+            + (info.Acodec is not null ? $" · {info.Acodec}" : string.Empty)
+            + (
+                info.Abr is { } kbps
+                    ? $" @ {kbps.ToString("F0", CultureInfo.InvariantCulture)}k"
+                    : string.Empty
+            )
+            + (
+                info.Duration is { } dur
+                    ? $" · {dur.ToString("F0", CultureInfo.InvariantCulture)}s"
+                    : string.Empty
+            );
         AppLogger.Info("yt-dlp", summary);
 
-        return meta;
+        return new YtMetadata(
+            url,
+            info.Title,
+            info.Uploader,
+            info.Acodec,
+            info.Abr,
+            info.Duration,
+            info.FormatId,
+            mediaUrl
+        );
+    }
+
+    /// Resolves metadata for a URL and returns it, or null if the URL is invalid or yt-dlp fails.
+    /// Used for format preview — never throws.
+    public async Task<YtMetadata?> GetAudioFormatInfoAsync(
+        string url,
+        AppSettings settings,
+        CancellationToken ct = default
+    )
+    {
+        try
+        {
+            return await ResolveAsync(url, settings, log: null, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Debug("yt-dlp", $"Format preview failed: {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<string> DownloadAsync(
@@ -100,15 +147,17 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         {
             ("source_url", meta.SourceUrl),
             ("source_codec", meta.SourceCodec ?? string.Empty),
-            ("source_bitrate", meta.SourceBitrateKbps?.ToString("F1", CultureInfo.InvariantCulture)
-                ?? string.Empty),
+            (
+                "source_bitrate",
+                meta.SourceBitrateKbps?.ToString("F1", CultureInfo.InvariantCulture) ?? string.Empty
+            ),
             ("source_format_id", meta.FormatId ?? string.Empty),
             ("download_date", DateTimeOffset.UtcNow.ToString("o", CultureInfo.InvariantCulture)),
             ("tool", $"stemforge/{version}"),
         };
 
         var args = new List<string>();
-        args.AddRange(FfmpegArgs.Baseline());
+        args.AddRange(FfmpegArgs.Baseline);
         args.AddRange(["-i", meta.MediaUrl]);
         args.AddRange(FfmpegArgs.Metadata(tags));
         args.AddRange(FfmpegArgs.Codec(format));
@@ -121,53 +170,20 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
 
     // ── Parsing ───────────────────────────────────────────────────────────────
 
-    internal static YtMetadata ParseJson(string sourceUrl, string raw)
+    internal static YtDlpVideoInfo DeserializeVideoInfo(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
             throw new InvalidOperationException("yt-dlp returned no metadata.");
 
-        // Strip any stray prefix/suffix lines around the JSON object.
+        // Strip any stray non-JSON lines (warnings, stderr bleed, etc.).
         var start = raw.IndexOf('{');
         var end = raw.LastIndexOf('}');
         if (start < 0 || end <= start)
             throw new InvalidOperationException("yt-dlp metadata was not valid JSON.");
 
-        using var doc = JsonDocument.Parse(raw[start..(end + 1)]);
-        var root = doc.RootElement;
-
-        var title = GetString(root, "title") ?? "Unknown";
-        var uploader = GetString(root, "uploader");
-        var acodec = GetString(root, "acodec");
-        var abr = GetDouble(root, "abr");
-        var duration = GetDouble(root, "duration");
-        var formatId = GetString(root, "format_id");
-        var mediaUrl =
-            GetString(root, "url")
-            ?? throw new InvalidOperationException(
-                "yt-dlp metadata missing direct media URL; check format selector."
-            );
-
-        return new YtMetadata(
-            sourceUrl,
-            title,
-            uploader,
-            acodec,
-            abr,
-            duration,
-            formatId,
-            mediaUrl
-        );
+        return JsonSerializer.Deserialize<YtDlpVideoInfo>(raw[start..(end + 1)], _jsonOptions)
+            ?? throw new InvalidOperationException("yt-dlp metadata deserialization returned null.");
     }
-
-    private static string? GetString(JsonElement el, string key) =>
-        el.TryGetProperty(key, out var prop) && prop.ValueKind == JsonValueKind.String
-            ? prop.GetString()
-            : null;
-
-    private static double? GetDouble(JsonElement el, string key) =>
-        el.TryGetProperty(key, out var prop) && prop.ValueKind == JsonValueKind.Number
-            ? prop.GetDouble()
-            : null;
 
     private static string SanitizeFileName(string value) =>
         string.Concat(value.Where(c => !_invalidFileNameChars.Contains(c)));

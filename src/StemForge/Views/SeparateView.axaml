@@ -244,19 +244,46 @@
                     <!-- URL-only options -->
                     <StackPanel Orientation="Horizontal" Spacing="12"
                                 IsVisible="{Binding IsUrlInputEnabled}">
-                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                            <TextBlock Text="Format:" FontSize="11"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       VerticalAlignment="Center" />
-                            <ComboBox ItemsSource="{Binding AudioFormatOptions}"
-                                      SelectedItem="{Binding DownloadFormat, Mode=TwoWay}"
-                                      MinWidth="80" />
-                        </StackPanel>
                         <CheckBox IsChecked="{Binding KeepSourceFile, Mode=TwoWay}"
                                   Content="Keep source file"
                                   FontSize="11"
-                                  ToolTip.Tip="Save the downloaded audio alongside the separation outputs (useful for stitching original audio back in Ableton)." />
+                                  ToolTip.Tip="Save the downloaded source audio alongside the separation outputs." />
                     </StackPanel>
+
+                    <!-- Format preview -->
+                    <Panel IsVisible="{Binding ShowUrlFormatRow}" Height="18">
+                        <!-- Checking state: animated dots -->
+                        <StackPanel Orientation="Horizontal"
+                                    IsVisible="{Binding IsCheckingUrl}"
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="Checking format"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextPlaceholderBrush}" />
+                            <TextBlock Text="{Binding LoadingDots}"
+                                       FontSize="11"
+                                       Width="20"
+                                       Foreground="{DynamicResource TextPlaceholderBrush}" />
+                        </StackPanel>
+                        <!-- Resolved state: styled chips -->
+                        <StackPanel Orientation="Horizontal" Spacing="6"
+                                    IsVisible="{Binding !IsCheckingUrl}"
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="{Binding UrlTitle}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="200" />
+                            <Border Classes="tag" IsVisible="{Binding HasUrlCodec}">
+                                <TextBlock Text="{Binding UrlCodec}" />
+                            </Border>
+                            <Border Classes="tag" IsVisible="{Binding HasUrlBitrate}">
+                                <TextBlock Text="{Binding UrlBitrate}" />
+                            </Border>
+                            <Border Classes="tag" IsVisible="{Binding HasUrlDuration}">
+                                <TextBlock Text="{Binding UrlDuration}" />
+                            </Border>
+                        </StackPanel>
+                    </Panel>
                 </StackPanel>
             </Grid>
         </Border>
@@ -423,7 +450,7 @@
                 BorderBrush="{DynamicResource Bg3Brush}"
                 BorderThickness="0,1,0,0"
                 Padding="20,0">
-            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="12">
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12">
                 <Path Grid.Column="0"
                       Data="M2 11 V3 A1 1 0 0 1 3 2 H11 A1 1 0 0 1 12 3 V11 M5 13 H9"
                       Width="14" Height="14" Stretch="None"
@@ -441,8 +468,21 @@
                 <Border Grid.Column="4" Width="1" Height="24"
                         Background="{DynamicResource Bg3Brush}"
                         VerticalAlignment="Center" />
+                <!-- Stem output format -->
+                <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="Stems:"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               VerticalAlignment="Center" />
+                    <ComboBox ItemsSource="{Binding AudioFormatOptions}"
+                              SelectedItem="{Binding StemOutputFormat, Mode=TwoWay}"
+                              MinWidth="80" />
+                </StackPanel>
+                <Border Grid.Column="6" Width="1" Height="24"
+                        Background="{DynamicResource Bg3Brush}"
+                        VerticalAlignment="Center" />
                 <!-- Preset count -->
-                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="7" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{Binding SelectedCount}"
                                FontSize="12"
                                FontWeight="SemiBold"
@@ -453,7 +493,7 @@
                                Foreground="{DynamicResource TextSecondaryBrush}" />
                 </StackPanel>
                 <!-- Action buttons -->
-                <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button Classes="ghost"
                             Content="Add to Queue"
                             Command="{Binding AddToQueueCommand}" />

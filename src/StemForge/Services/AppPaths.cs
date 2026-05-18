@@ -49,6 +49,14 @@ public sealed class AppPaths(AppSettings settings)
     public static string DefaultModelsDirectory =>
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("audio-separator", "models");
 
+    /// <summary>Python executable inside the uv-managed audio-separator tool environment.</summary>
+    public string SeparationDriverPython =>
+        File.Exists(UvAudioSeparatorPython) ? UvAudioSeparatorPython : "python";
+
+    /// <summary>Path to the separation driver script, co-located with the app binary.</summary>
+    public static string SeparationDriverScript =>
+        Path.Combine(AppContext.BaseDirectory, "tools", "separator_driver.py");
+
     private static string UvAudioSeparatorShim =>
         Environment.SpecialFolder.ApplicationData.GetFolderPath(
             "uv",
@@ -56,6 +64,15 @@ public sealed class AppPaths(AppSettings settings)
             "audio-separator",
             "Scripts",
             "audio-separator.exe"
+        );
+
+    private static string UvAudioSeparatorPython =>
+        Environment.SpecialFolder.ApplicationData.GetFolderPath(
+            "uv",
+            "tools",
+            "audio-separator",
+            "Scripts",
+            "python.exe"
         );
 
     private static string? Override(string? value) =>
