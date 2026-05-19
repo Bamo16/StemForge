@@ -182,8 +182,36 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             throw new InvalidOperationException("yt-dlp metadata was not valid JSON.");
 
         return JsonSerializer.Deserialize<YtDlpVideoInfo>(raw[start..(end + 1)], _jsonOptions)
-            ?? throw new InvalidOperationException("yt-dlp metadata deserialization returned null.");
+            ?? throw new InvalidOperationException(
+                "yt-dlp metadata deserialization returned null."
+            );
     }
+
+    /*
+
+    Todo: refine this, extend it to support our YouTube video ID regex stuff and give an out var with the Uri
+
+    private static bool IsValidYtDlpUrl(string inputUrl)
+    {
+        // 1. Null or empty check
+        if (string.IsNullOrWhiteSpace(inputUrl))
+            return false;
+
+        // 2. Try to parse the URL
+        if (Uri.TryCreate(inputUrl, UriKind.Absolute, out Uri parsedUri))
+        {
+            // 3. Strictly enforce HTTP or HTTPS.
+            // This blocks file://, ftp://, javascript:, etc.
+            return parsedUri.Scheme == Uri.UriSchemeHttp || parsedUri.Scheme == Uri.UriSchemeHttps;
+        }
+
+        // If you want to support raw YouTube IDs (11 chars, alphanumeric/dash/underscore),
+        // you could add a fallback Regex check *only* for that specific format here.
+        // Otherwise, fail fast.
+        return false;
+    }
+
+    */
 
     private static string SanitizeFileName(string value) =>
         string.Concat(value.Where(c => !_invalidFileNameChars.Contains(c)));

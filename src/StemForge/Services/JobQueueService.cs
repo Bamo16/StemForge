@@ -7,18 +7,18 @@ using StemForge.ViewModels;
 namespace StemForge.Services;
 
 /// <summary>
-/// Runs separation jobs sequentially. One job at a time; all others wait in FIFO order.
-/// Thread-safe enqueue; all observable mutations happen on the UI thread.
+/// Runs separation jobs sequentially. One user-submitted job at a time; all others
+/// wait in FIFO order. Thread-safe enqueue; all observable mutations happen on the UI thread.
 /// </summary>
 public sealed partial class JobQueueService(
-    SeparationService separation,
+    ISeparatorDriverService driver,
     AppSettings settings,
     IProcessRunner runner,
     YouTubeAudioService youTubeAudio,
     AppPaths paths
 )
 {
-    private readonly SeparationService _separation = separation;
+    private readonly ISeparatorDriverService _driver = driver;
     private readonly AppSettings _settings = settings;
     private readonly IProcessRunner _runner = runner;
     private readonly YouTubeAudioService _youTubeAudio = youTubeAudio;
@@ -59,6 +59,8 @@ public sealed partial class JobQueueService(
         });
 
         string? dlTempDir = null;
+        var outputFiles = new List<string>();
+
         try
         {
             // ── Download step (URL input only) ─────────────────────────────────
@@ -91,12 +93,7 @@ public sealed partial class JobQueueService(
                     downloadDir = dlTempDir;
                 }
 
-                inputFile = await DownloadAudioAsync(
-                    url,
-                    downloadDir,
-                    dlLog,
-                    cts.Token
-                );
+                inputFile = await DownloadAudioAsync(url, downloadDir, dlLog, cts.Token);
                 var downloadedName = Path.GetFileName(inputFile);
                 Dispatcher.UIThread.Post(() => vm.InputFileName = downloadedName);
             }
@@ -109,41 +106,42 @@ public sealed partial class JobQueueService(
                     );
             }
 
-            // ── Separation step ────────────────────────────────────────────────
-            var progress = new Progress<SeparationProgress>(p =>
+            // ── Separation step — one driver run per preset ────────────────────
+            var presets = vm.Job.Presets;
+            var format = FfmpegArgs.Extension(vm.Job.StemOutputFormat).ToUpperInvariant();
+
+            for (int i = 0; i < presets.Count; i++)
             {
+                int presetIndex = i;
+                int presetCount = presets.Count;
+                var preset = presets[i];
+
                 Dispatcher.UIThread.Post(() =>
                 {
-                    // Cumulative formula so the bar never resets between presets or tqdm phases.
-                    var overall =
-                        p.PresetCount == 0
-                            ? 0
-                            : (int)
-                                Math.Round((p.PresetIndex * 100.0 + p.StepPercent) / p.PresetCount);
-                    vm.Progress = Math.Max(vm.Progress, overall);
-                    vm.StatusText = p.StepLabel;
-                    vm.PresetCounter = $"{p.PresetIndex + 1}/{p.PresetCount}";
+                    vm.PresetCounter = $"{presetIndex + 1}/{presetCount}";
+                    vm.StatusText = "Starting…";
                 });
-            });
 
-            var logProgress = new Progress<string>(line =>
-                Dispatcher.UIThread.Post(() => vm.AppendLog(line))
-            );
+                var progress = new Progress<JobProgress>(p =>
+                    Dispatcher.UIThread.Post(() => HandleProgress(vm, p, presetIndex, presetCount))
+                );
 
-            var outputFiles = (
-                await _separation.RunAsync(
-                    inputFile,
-                    vm.Job.Presets,
-                    vm.Job.OutputDir,
-                    vm.Job.ModelsDir,
-                    vm.Job.StemOutputFormat,
-                    progress,
-                    logProgress,
-                    cts.Token
-                )
-            ).ToList();
+                var request = BuildRequest(preset, inputFile, vm.Job.OutputDir, format);
+                var result = await _driver.RunAsync(request, progress, cts.Token);
 
-            // Embed provenance tags so each stem traces back to its source.
+                if (!result.Succeeded)
+                    throw new InvalidOperationException(result.ErrorMessage ?? "Separation failed");
+
+                outputFiles.AddRange(result.Outputs.Select(o => o.Path));
+
+                // Advance the bar to the end of this preset's segment.
+                Dispatcher.UIThread.Post(() =>
+                {
+                    vm.Progress = (int)Math.Round((presetIndex + 1) * 100.0 / presetCount);
+                });
+            }
+
+            // ── Tag step ───────────────────────────────────────────────────────
             await TagSeparationOutputsAsync(outputFiles, inputFile, vm.Job.Presets, cts.Token);
 
             Dispatcher.UIThread.Post(() =>
@@ -192,13 +190,122 @@ public sealed partial class JobQueueService(
         }
     }
 
+    // ── Progress mapping ──────────────────────────────────────────────────────
+
+    private static void HandleProgress(
+        JobItemViewModel vm,
+        JobProgress p,
+        int presetIndex,
+        int presetCount
+    )
+    {
+        switch (p.Phase)
+        {
+            case "downloading_model":
+                if (p.Cached == false)
+                    vm.StatusText =
+                        p.ModelCount > 1
+                            ? $"Downloading model {p.ModelIndex}/{p.ModelCount}…"
+                            : "Downloading model…";
+                break;
+
+            case "loading_model":
+                vm.StatusText =
+                    p.ModelCount > 1
+                        ? $"Loading model {p.ModelIndex}/{p.ModelCount}…"
+                        : "Loading model…";
+                break;
+
+            case "separating":
+                vm.StatusText =
+                    p.ModelCount > 1 ? $"Separating ({p.ModelCount} models)…" : "Separating…";
+                break;
+
+            case "progress":
+                if (p.Total is > 0 && p.Current is { } cur)
+                {
+                    var withinPreset = Math.Min(100, cur * 100 / p.Total.Value);
+                    var overall = (int)
+                        Math.Round((presetIndex * 100.0 + withinPreset) / presetCount);
+                    vm.Progress = Math.Max(vm.Progress, overall);
+                }
+                break;
+
+            case "ensembling":
+                vm.StatusText = p.Stem is { } stem ? $"Combining {stem}…" : "Combining stems…";
+                break;
+
+            case "stem_written":
+                if (p.OutputPath is { } path)
+                    vm.AppendLog(path);
+                break;
+
+            case "log":
+                if (p.LogMessage is { Length: > 0 } msg)
+                    vm.AppendLog(msg);
+                break;
+        }
+    }
+
+    // ── Request builder ───────────────────────────────────────────────────────
+
+    private static JobRequest BuildRequest(
+        Preset preset,
+        string audioPath,
+        string outputDir,
+        string format
+    ) =>
+        preset.Mode switch
+        {
+            SeparationMode.SingleModel => new JobRequest(
+                audioPath,
+                outputDir,
+                format,
+                PresetId: null,
+                Models:
+                [
+                    preset.PrimaryModel
+                        ?? throw new InvalidOperationException(
+                            $"Preset '{preset.Id}' has no PrimaryModel"
+                        ),
+                ],
+                Algorithm: null
+            ),
+
+            SeparationMode.CustomEnsemble => new JobRequest(
+                audioPath,
+                outputDir,
+                format,
+                PresetId: null,
+                Models:
+                [
+                    preset.PrimaryModel
+                        ?? throw new InvalidOperationException(
+                            $"Preset '{preset.Id}' has no PrimaryModel"
+                        ),
+                    .. preset.ExtraModels ?? [],
+                ],
+                Algorithm: preset.EnsembleAlgorithm ?? "avg_wave"
+            ),
+
+            _ => new JobRequest( // BuiltinPreset
+                audioPath,
+                outputDir,
+                format,
+                PresetId: preset.Id,
+                Models: null,
+                Algorithm: null
+            ),
+        };
+
+    // ── Cancel / clear ────────────────────────────────────────────────────────
+
     private void OnCancelRequested(JobItemViewModel vm)
     {
         if (_currentJob == vm)
             _currentCts?.Cancel();
         else if (vm.Status == JobStatus.Queued)
         {
-            // Job hasn't started yet — mark cancelled immediately
             Dispatcher.UIThread.Post(() =>
             {
                 vm.Status = JobStatus.Cancelled;
@@ -219,6 +326,8 @@ public sealed partial class JobQueueService(
     public event EventHandler? StateChanged;
 
     private void OnPropertyChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
+
+    // ── Provenance tagging ────────────────────────────────────────────────────
 
     private async Task TagSeparationOutputsAsync(
         IReadOnlyList<string> stemPaths,
@@ -275,6 +384,8 @@ public sealed partial class JobQueueService(
         }
     }
 
+    // ── Download helpers ──────────────────────────────────────────────────────
+
     private async Task<string> DownloadAudioAsync(
         string url,
         string dlDir,
@@ -286,13 +397,11 @@ public sealed partial class JobQueueService(
         return await _youTubeAudio.DownloadAsync(meta, AudioFormat.Flac, dlDir, log, ct);
     }
 
-    /// <summary>Normalise YouTube URLs to music.youtube.com for the best available audio format.</summary>
     internal static string NormalizeUrl(string url) =>
         YtVideoIdRegex().Match(url).Groups["VideoId"] is { Success: true, Value: { } id }
             ? $"https://music.youtube.com/watch?v={id}"
             : url;
 
-    /// <summary>Matches any YouTube URL or bare video ID and captures the 11-char video ID.</summary>
     [GeneratedRegex(
         @"^(?:(?:(?:https?:\/\/)?(?:(?:www|music|m)\.)?)?(?:youtube\.com|youtu\.be)(?:\S*?(?:\?v=|\/)))?(?<VideoId>[0-9A-Za-z_-]{11})(?:[&?].*)?$",
         RegexOptions.IgnoreCase | RegexOptions.Compiled

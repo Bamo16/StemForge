@@ -27,8 +27,8 @@ public static class ServiceRegistration
         services.AddSingleton<ModelCatalogService>();
         services.AddSingleton<ToolStateService>();
         services.AddSingleton<YouTubeAudioService>();
+        services.AddSingleton<ISeparatorDriverService, SeparatorDriverService>();
         services.AddSingleton<JobQueueService>();
-        services.AddSingleton<SeparationService>();
 
         // View-models
         services.AddSingleton<SeparateViewModel>();
