@@ -354,6 +354,8 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                     : "unknown";
                 var tb = root.TryGetProperty("traceback", out var t) ? t.GetString() : null;
                 AppLogger.Error("driver", $"Job failed: {err}");
+                if (tb is { Length: > 0 })
+                    AppLogger.Debug("driver.tb", tb);
                 job.Tcs.TrySetResult(new JobResult(false, [], [], 0, err, tb));
                 break;
             }

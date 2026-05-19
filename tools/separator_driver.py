@@ -173,7 +173,11 @@ _phase_local = threading.local()
 
 
 def _get_phase() -> dict:
-    return getattr(_phase_local, "phase", {"phase": "unknown"})
+    # getattr only returns the default when the attribute is *absent*; if the phase
+    # context manager restored prev=None (no outer phase), the attribute exists but
+    # is None, so we must guard against that explicitly.
+    phase = getattr(_phase_local, "phase", None)
+    return phase if phase is not None else {"phase": "unknown"}
 
 
 @contextmanager
