@@ -18,6 +18,7 @@
     <Color x:Key="AccentColor">#d4703a</Color>
     <Color x:Key="AccentBrightColor">#e88040</Color>
     <Color x:Key="AccentDimBgColor">#1AD4703A</Color> <!-- ~10% alpha -->
+    <Color x:Key="AccentMedBgColor">#4DD4703A</Color>  <!-- ~30% alpha -->
 
     <!-- Status -->
     <Color x:Key="SuccessColor">#30d158</Color>
@@ -44,6 +45,7 @@
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
     <SolidColorBrush x:Key="AccentBrightBrush" Color="{StaticResource AccentBrightColor}" />
     <SolidColorBrush x:Key="AccentDimBgBrush" Color="{StaticResource AccentDimBgColor}" />
+    <SolidColorBrush x:Key="AccentMedBgBrush" Color="{StaticResource AccentMedBgColor}" />
 
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
     <SolidColorBrush x:Key="SuccessDimBgBrush" Color="{StaticResource SuccessDimBgColor}" />

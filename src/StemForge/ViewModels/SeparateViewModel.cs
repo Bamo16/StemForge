@@ -58,7 +58,9 @@ public partial class SeparateViewModel : PageViewModelBase
     private readonly ToolStateService _toolState;
     private readonly AppPaths _paths;
     private readonly YouTubeAudioService _ytAudio;
+    private readonly ISeparatorDriverService _driver;
     private CancellationTokenSource? _urlCheckCts;
+    private YtMetadata? _cachedUrlMeta;
 
     public event Action? NavigateToQueueRequested;
 
@@ -92,9 +94,17 @@ public partial class SeparateViewModel : PageViewModelBase
     public partial bool IsCheckingUrl { get; set; }
 
     [ObservableProperty]
-    public partial string LoadingDots { get; set; } = "";
+    public partial double SpinnerAngle { get; set; }
 
-    public bool ShowUrlFormatRow => IsUrlInputEnabled && (IsCheckingUrl || UrlTitle is not null);
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUrlFetchError))]
+    [NotifyPropertyChangedFor(nameof(ShowUrlFormatRow))]
+    public partial string? UrlFetchError { get; set; }
+
+    public bool HasUrlFetchError => UrlFetchError is not null;
+
+    public bool ShowUrlFormatRow =>
+        IsUrlInputEnabled && (IsCheckingUrl || UrlTitle is not null || HasUrlFetchError);
 
     [ObservableProperty]
     public partial AudioFormat StemOutputFormat { get; set; } = AudioFormat.Flac;
@@ -102,14 +112,68 @@ public partial class SeparateViewModel : PageViewModelBase
     [ObservableProperty]
     public partial bool KeepSourceFile { get; set; }
 
+    [ObservableProperty]
+    public partial bool ExtractDrums { get; set; }
+
     public IReadOnlyList<AudioFormat> AudioFormatOptions { get; } =
-        [AudioFormat.Flac, AudioFormat.Wav, AudioFormat.Mp3];
+    [AudioFormat.Flac, AudioFormat.Wav, AudioFormat.Mp3];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUrlInputError))]
+    public partial string? UrlInputError { get; set; }
+
+    public bool HasUrlInputError => UrlInputError is not null;
+
+    // ── Format picker ─────────────────────────────────────────────────────────
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowFormatPicker))]
+    [NotifyPropertyChangedFor(nameof(FormatPickerToggleLabel))]
+    public partial bool IsFormatPickerOpen { get; set; }
+
+    public bool HasFormatPicker => FormatPickerItems.Count > 1;
+    public bool ShowFormatPicker => IsFormatPickerOpen && HasFormatPicker;
+    public string FormatPickerToggleLabel =>
+        IsFormatPickerOpen
+            ? "▴ Hide format options"
+            : $"▾ Show format options ({FormatPickerItems.Count} available)";
+
+    public ObservableCollection<FormatPickerItem> FormatPickerItems { get; } = [];
+
+    private YtDlpFormat? _selectedFormatOverride;
+
+    [RelayCommand]
+    private void ToggleFormatPicker() => IsFormatPickerOpen = !IsFormatPickerOpen;
+
+    [RelayCommand]
+    private void SelectFormat(FormatPickerItem item)
+    {
+        _selectedFormatOverride = item.IsAutoRecommended ? null : item.Format;
+        foreach (var f in FormatPickerItems)
+            f.IsSelected = f == item;
+
+        // Update chips to reflect the active format
+        if (_selectedFormatOverride is { } ov)
+        {
+            if (ov.Acodec is { Length: > 0 } codec && codec != "none")
+                UrlCodec = codec;
+            var kbps = ov.Abr ?? ov.Tbr;
+            if (kbps.HasValue)
+                UrlBitrate = $"{kbps.Value:F0} kb/s";
+        }
+        else if (_cachedUrlMeta is { } auto)
+        {
+            UrlCodec =
+                auto.SourceCodec is { Length: > 0 } c && c != "none" ? auto.SourceCodec : null;
+            UrlBitrate = auto.SourceBitrateKbps is { } k ? $"{k:F0} kb/s" : null;
+        }
+    }
 
     public bool CanStartRun =>
         SelectedCount > 0
         && (
             !string.IsNullOrWhiteSpace(InputFilePath)
-            || (IsUrlInputEnabled && !string.IsNullOrWhiteSpace(UrlInput))
+            || (IsUrlInputEnabled && _cachedUrlMeta is not null)
         );
 
     // ── User presets ──────────────────────────────────────────────────────────
@@ -123,7 +187,8 @@ public partial class SeparateViewModel : PageViewModelBase
         UserPresetService userPresets,
         ToolStateService toolState,
         AppPaths paths,
-        YouTubeAudioService ytAudio
+        YouTubeAudioService ytAudio,
+        ISeparatorDriverService driver
     )
     {
         _queue = queue;
@@ -132,6 +197,7 @@ public partial class SeparateViewModel : PageViewModelBase
         _userPresets = userPresets;
         _toolState = toolState;
         _paths = paths;
+        _driver = driver;
         OutputPath = paths.OutputDirectory;
         StemOutputFormat = settings.DefaultAudioFormat;
         IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
@@ -140,7 +206,10 @@ public partial class SeparateViewModel : PageViewModelBase
             if (e.PropertyName == nameof(ToolStateService.CanDownloadFromUrl))
                 IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
         };
-        Categories = new ObservableCollection<PresetCategoryGroup>(BuildGroups());
+        Categories = new ObservableCollection<PresetCategoryGroup>(
+            BuildGroups(PresetCatalog.BuiltIn)
+        );
+        _driver.PresetsLoaded += OnDriverPresetsLoaded;
 
         foreach (var g in Categories)
         foreach (var item in g.Items)
@@ -198,7 +267,40 @@ public partial class SeparateViewModel : PageViewModelBase
 
     // ── Preset building ───────────────────────────────────────────────────────
 
-    private static IEnumerable<PresetCategoryGroup> BuildGroups()
+    private void OnDriverPresetsLoaded(IReadOnlyList<Preset> presets)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => RefreshBuiltInCategories(presets));
+    }
+
+    private void RefreshBuiltInCategories(IReadOnlyList<Preset> presets)
+    {
+        // Preserve selection for any presets that are still present after the refresh.
+        var selectedIds = Categories
+            .SelectMany(g => g.Items)
+            .Where(i => i.IsSelected)
+            .Select(i => i.Id)
+            .ToHashSet();
+
+        foreach (var g in Categories)
+        foreach (var item in g.Items)
+            item.PropertyChanged -= OnItemPropertyChanged;
+
+        Categories.Clear();
+        foreach (var group in BuildGroups(presets))
+        {
+            foreach (var item in group.Items)
+            {
+                if (selectedIds.Contains(item.Id))
+                    item.IsSelected = true;
+                item.PropertyChanged += OnItemPropertyChanged;
+            }
+            Categories.Add(group);
+        }
+
+        RecomputeSelectedCount();
+    }
+
+    private static IEnumerable<PresetCategoryGroup> BuildGroups(IReadOnlyList<Preset> presets)
     {
         var app = Application.Current!;
         IBrush Brush(string key)
@@ -211,8 +313,8 @@ public partial class SeparateViewModel : PageViewModelBase
             return Brushes.Transparent;
         }
 
-        var byCategory = PresetCatalog
-            .BuiltIn.GroupBy(p => p.Category)
+        var byCategory = presets
+            .GroupBy(p => p.Category)
             .ToDictionary(g => g.Key, g => g.Select(p => new PresetItemViewModel(p)));
 
         foreach (
@@ -259,17 +361,14 @@ public partial class SeparateViewModel : PageViewModelBase
     {
         OnPropertyChanged(nameof(SelectedCountLabel));
         OnPropertyChanged(nameof(HasSelection));
-        OnPropertyChanged(nameof(CanStartRun));
-        RunCommand.NotifyCanExecuteChanged();
-        AddToQueueCommand.NotifyCanExecuteChanged();
+        NotifyCanRunChanged();
     }
 
     partial void OnInputFilePathChanged(string? value)
     {
-        OnPropertyChanged(nameof(CanStartRun));
         OnPropertyChanged(nameof(HasInputFile));
         OnPropertyChanged(nameof(InputFileName));
-        RunCommand.NotifyCanExecuteChanged();
+        NotifyCanRunChanged();
     }
 
     [RelayCommand]
@@ -280,67 +379,107 @@ public partial class SeparateViewModel : PageViewModelBase
 
     partial void OnUrlInputChanged(string value)
     {
-        OnPropertyChanged(nameof(CanStartRun));
-        RunCommand.NotifyCanExecuteChanged();
+        NotifyCanRunChanged();
 
         _urlCheckCts?.Cancel();
         _urlCheckCts = null;
         ClearUrlMetadata();
         IsCheckingUrl = false;
 
+        // Clear the error whenever the field changes to empty or a valid URL.
+        if (string.IsNullOrWhiteSpace(value) || YtUrlHelper.TryNormalize(value, out _))
+            UrlInputError = null;
+
         if (!IsUrlInputEnabled || string.IsNullOrWhiteSpace(value))
+            return;
+
+        // Only spawn yt-dlp for recognisable URLs/video IDs.
+        if (!YtUrlHelper.TryNormalize(value, out var normalized))
             return;
 
         var cts = new CancellationTokenSource();
         _urlCheckCts = cts;
-        _ = FetchUrlFormatAsync(value, cts.Token);
+        _ = FetchUrlFormatAsync(normalized, cts.Token);
     }
 
-    private static readonly string[] _dotFrames = [".", "..", "..."];
-    private int _dotIndex;
-    private DispatcherTimer? _dotTimer;
+    private DispatcherTimer? _spinnerTimer;
 
     partial void OnIsCheckingUrlChanged(bool value)
     {
         if (value)
         {
-            _dotIndex = 0;
-            LoadingDots = _dotFrames[0];
-            _dotTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(380) };
-            _dotTimer.Tick += (_, _) =>
-            {
-                _dotIndex = (_dotIndex + 1) % _dotFrames.Length;
-                LoadingDots = _dotFrames[_dotIndex];
-            };
-            _dotTimer.Start();
+            SpinnerAngle = 0;
+            _spinnerTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+            _spinnerTimer.Tick += (_, _) => SpinnerAngle = (SpinnerAngle + 7.68) % 360;
+            _spinnerTimer.Start();
         }
         else
         {
-            _dotTimer?.Stop();
-            _dotTimer = null;
-            LoadingDots = "";
+            _spinnerTimer?.Stop();
+            _spinnerTimer = null;
         }
+    }
+
+    [RelayCommand]
+    private void RetryFetch()
+    {
+        if (!IsUrlInputEnabled || !YtUrlHelper.TryNormalize(UrlInput, out var normalized))
+            return;
+        _urlCheckCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _urlCheckCts = cts;
+        ClearUrlMetadata();
+        _ = FetchUrlFormatAsync(normalized, cts.Token, skipDelay: true);
+    }
+
+    private void NotifyCanRunChanged()
+    {
+        OnPropertyChanged(nameof(CanStartRun));
+        RunCommand.NotifyCanExecuteChanged();
+        AddToQueueCommand.NotifyCanExecuteChanged();
     }
 
     private void ClearUrlMetadata()
     {
+        _cachedUrlMeta = null;
+        _selectedFormatOverride = null;
         UrlTitle = null;
         UrlCodec = null;
         UrlBitrate = null;
         UrlDuration = null;
+        UrlFetchError = null;
+        FormatPickerItems.Clear();
+        IsFormatPickerOpen = false;
+        OnPropertyChanged(nameof(HasFormatPicker));
+        OnPropertyChanged(nameof(ShowFormatPicker));
+        NotifyCanRunChanged();
     }
 
-    private async Task FetchUrlFormatAsync(string url, CancellationToken ct)
+    private async Task FetchUrlFormatAsync(
+        string normalizedUrl,
+        CancellationToken ct,
+        bool skipDelay = false
+    )
     {
         IsCheckingUrl = true;
         try
         {
-            await Task.Delay(800, ct);
-            var meta = await _ytAudio.GetAudioFormatInfoAsync(url, _settings, ct);
-            if (meta is null)
-                return;
+            if (!skipDelay)
+                await Task.Delay(800, ct);
 
-            UrlTitle = meta.Title;
+            var meta = await _ytAudio.GetAudioFormatInfoAsync(normalizedUrl, _settings, ct);
+            if (meta is null)
+            {
+                if (!ct.IsCancellationRequested)
+                    UrlFetchError = "Couldn't resolve format — check the URL";
+                return;
+            }
+
+            _cachedUrlMeta = meta;
+            _selectedFormatOverride = null;
+            NotifyCanRunChanged();
+
+            UrlTitle = meta.DisplayTitle;
             if (meta.SourceCodec is { Length: > 0 } codec && codec != "none")
                 UrlCodec = codec;
             if (meta.SourceBitrateKbps is { } kbps)
@@ -348,8 +487,33 @@ public partial class SeparateViewModel : PageViewModelBase
             if (meta.DurationSeconds is { } dur)
             {
                 var ts = TimeSpan.FromSeconds(dur);
-                UrlDuration = ts.TotalHours >= 1 ? ts.ToString(@"h\:mm\:ss") : ts.ToString(@"m\:ss");
+                UrlDuration =
+                    ts.TotalHours >= 1 ? ts.ToString(@"h\:mm\:ss") : ts.ToString(@"m\:ss");
             }
+
+            FormatPickerItems.Clear();
+            if (meta.AudioFormats is { Count: > 1 } formats)
+            {
+                foreach (var f in formats)
+                {
+                    var br = f.Abr ?? f.Tbr;
+                    FormatPickerItems.Add(
+                        new FormatPickerItem
+                        {
+                            Format = f,
+                            Codec = f.Acodec ?? "",
+                            Bitrate = br is { } b ? $"{b:F0} kb/s" : "—",
+                            SampleRate = f.Asr is { } hz ? $"{hz / 1000.0:F1} kHz" : "—",
+                            FormatNote = f.FormatNote ?? "",
+                            IsAutoRecommended = f.FormatId == meta.FormatId,
+                            IsSelected = f.FormatId == meta.FormatId,
+                        }
+                    );
+                }
+            }
+            OnPropertyChanged(nameof(HasFormatPicker));
+            OnPropertyChanged(nameof(ShowFormatPicker));
+            OnPropertyChanged(nameof(FormatPickerToggleLabel));
         }
         catch (OperationCanceledException) { }
         finally
@@ -360,9 +524,8 @@ public partial class SeparateViewModel : PageViewModelBase
 
     partial void OnIsUrlInputEnabledChanged(bool value)
     {
-        OnPropertyChanged(nameof(CanStartRun));
         OnPropertyChanged(nameof(ShowUrlFormatRow));
-        RunCommand.NotifyCanExecuteChanged();
+        NotifyCanRunChanged();
     }
 
     partial void OnModeChanged(SeparateMode value)
@@ -388,40 +551,136 @@ public partial class SeparateViewModel : PageViewModelBase
     [RelayCommand(CanExecute = nameof(CanStartRun))]
     private void Run()
     {
-        AddToQueue();
-        NavigateToQueueRequested?.Invoke();
+        if (TryAddToQueue())
+            NavigateToQueueRequested?.Invoke();
     }
 
-    private static string ExpandPath(string path) =>
+    internal static string ExpandPath(string path) =>
         path.StartsWith('~')
             ? Environment.SpecialFolder.UserProfile.GetFolderPath(path.TrimStart('~', '/', '\\'))
             : path;
 
-    [RelayCommand(CanExecute = nameof(HasSelection))]
-    private void AddToQueue()
+    public string ExpandedOutputPath => ExpandPath(OutputPath);
+
+    [RelayCommand(CanExecute = nameof(CanStartRun))]
+    private void AddToQueue() => TryAddToQueue();
+
+    private bool TryAddToQueue()
     {
         if (string.IsNullOrWhiteSpace(InputFilePath) && string.IsNullOrWhiteSpace(UrlInput))
+            return false;
+
+        var selectedPresets = SelectedPresets();
+        var hasUrl = !string.IsNullOrWhiteSpace(UrlInput);
+
+        if (hasUrl)
+        {
+            // Require a recognisable URL/ID — show inline error if invalid.
+            if (_cachedUrlMeta is null && !YtUrlHelper.TryNormalize(UrlInput, out _))
+            {
+                UrlInputError =
+                    "Invalid URL — paste a YouTube link, video ID, or any yt-dlp-supported URL";
+                return false;
+            }
+
+            UrlInputError = null;
+
+            var sourceUrl =
+                _cachedUrlMeta?.SourceUrl
+                ?? (YtUrlHelper.TryNormalize(UrlInput, out var n) ? n : UrlInput);
+
+            var preResolvedMeta = _cachedUrlMeta;
+            if (preResolvedMeta is not null && _selectedFormatOverride is { } ov)
+                preResolvedMeta = preResolvedMeta with
+                {
+                    MediaUrl = ov.Url!,
+                    FormatId = ov.FormatId,
+                    SourceCodec = ov.Acodec,
+                    SourceBitrateKbps = ov.Abr ?? ov.Tbr,
+                };
+
+            _queue.Enqueue(
+                new JobRecord(
+                    Guid.NewGuid(),
+                    InputFilePath: null,
+                    SourceUrl: sourceUrl,
+                    selectedPresets,
+                    ExpandPath(OutputPath),
+                    _paths.ModelsDirectory,
+                    StemOutputFormat,
+                    KeepSourceFile,
+                    PreResolvedMeta: preResolvedMeta,
+                    ExtractDrums: ExtractDrums
+                )
+            );
+
+            _urlCheckCts?.Cancel();
+            _urlCheckCts = null;
+            UrlInput = string.Empty;
+            ClearUrlMetadata();
+        }
+        else
+        {
+            _queue.Enqueue(
+                new JobRecord(
+                    Guid.NewGuid(),
+                    InputFilePath: InputFilePath,
+                    SourceUrl: null,
+                    selectedPresets,
+                    ExpandPath(OutputPath),
+                    _paths.ModelsDirectory,
+                    StemOutputFormat,
+                    ExtractDrums: ExtractDrums
+                )
+            );
+
+            InputFilePath = null;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Queues one job per path. If only one path and no presets are selected, just sets
+    /// <see cref="InputFilePath"/> so the user can pick presets before queuing manually.
+    /// </summary>
+    public void AddFilesToQueue(IEnumerable<string> filePaths)
+    {
+        var paths = filePaths.ToList();
+        if (paths.Count == 0)
             return;
 
-        var selectedPresets = Categories
+        if (paths.Count == 1 || SelectedCount == 0)
+        {
+            InputFilePath = paths[0];
+            return;
+        }
+
+        var presets = SelectedPresets();
+        foreach (var path in paths)
+        {
+            _queue.Enqueue(
+                new JobRecord(
+                    Guid.NewGuid(),
+                    InputFilePath: path,
+                    SourceUrl: null,
+                    presets,
+                    ExpandPath(OutputPath),
+                    _paths.ModelsDirectory,
+                    StemOutputFormat,
+                    ExtractDrums: ExtractDrums
+                )
+            );
+        }
+
+        NavigateToQueueRequested?.Invoke();
+    }
+
+    private List<Preset> SelectedPresets() =>
+        Categories
             .SelectMany(g => g.Items)
             .Concat(UserPresetItems)
             .Where(i => i.IsSelected)
             .Select(i => i.Preset)
             .ToList();
-
-        var hasUrl = !string.IsNullOrWhiteSpace(UrlInput);
-        var record = new JobRecord(
-            Guid.NewGuid(),
-            hasUrl ? null : InputFilePath,
-            hasUrl ? UrlInput : null,
-            selectedPresets,
-            ExpandPath(OutputPath),
-            _paths.ModelsDirectory,
-            StemOutputFormat,
-            KeepSourceFile && hasUrl
-        );
-
-        _queue.Enqueue(record);
-    }
 }

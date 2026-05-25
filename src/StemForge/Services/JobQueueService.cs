@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Text.RegularExpressions;
 using Avalonia.Threading;
 using StemForge.Models;
 using StemForge.ViewModels;
@@ -10,7 +9,7 @@ namespace StemForge.Services;
 /// Runs separation jobs sequentially. One user-submitted job at a time; all others
 /// wait in FIFO order. Thread-safe enqueue; all observable mutations happen on the UI thread.
 /// </summary>
-public sealed partial class JobQueueService(
+public sealed class JobQueueService(
     ISeparatorDriverService driver,
     AppSettings settings,
     IProcessRunner runner,
@@ -24,12 +23,14 @@ public sealed partial class JobQueueService(
     private readonly YouTubeAudioService _youTubeAudio = youTubeAudio;
     private readonly AppPaths _paths = paths;
     private readonly SemaphoreSlim _gate = new(1, 1);
+
     private CancellationTokenSource? _currentCts;
     private JobItemViewModel? _currentJob;
 
     public ObservableCollection<JobItemViewModel> Jobs { get; } = [];
 
-    public int ActiveCount => Jobs.Count(j => j.Status is JobStatus.Running or JobStatus.Queued);
+    public int ActiveCount =>
+        Jobs.Count(job => job is { Status: JobStatus.Running or JobStatus.Queued });
 
     public void Enqueue(JobRecord record)
     {
@@ -40,7 +41,7 @@ public sealed partial class JobQueueService(
 
         Dispatcher.UIThread.Post(() => Jobs.Add(vm));
 
-        _ = RunWhenReadyAsync(vm);
+        _ = Task.Run(() => RunWhenReadyAsync(vm));
     }
 
     private async Task RunWhenReadyAsync(JobItemViewModel vm)
@@ -60,6 +61,7 @@ public sealed partial class JobQueueService(
 
         string? dlTempDir = null;
         var outputFiles = new List<string>();
+        SourceTagInfo? sourceInfo = null;
 
         try
         {
@@ -77,23 +79,18 @@ public sealed partial class JobQueueService(
                     Dispatcher.UIThread.Post(() => vm.AppendLog(line))
                 );
 
-                string downloadDir;
-                if (vm.Job.KeepSourceFile)
-                {
-                    downloadDir = vm.Job.OutputDir;
-                    Directory.CreateDirectory(downloadDir);
-                }
-                else
-                {
-                    dlTempDir = Path.Combine(
-                        Path.GetTempPath(),
-                        $"stemforge-dl-{Guid.NewGuid():N}"
-                    );
-                    Directory.CreateDirectory(dlTempDir);
-                    downloadDir = dlTempDir;
-                }
+                // Always download FLAC to a temp dir — it feeds the separator at full quality.
+                // KeepSourceFile is handled after separation (transcode to chosen format).
+                dlTempDir = Path.Combine(Path.GetTempPath(), $"stemforge-dl-{Guid.NewGuid():N}");
+                Directory.CreateDirectory(dlTempDir);
 
-                inputFile = await DownloadAudioAsync(url, downloadDir, dlLog, cts.Token);
+                (inputFile, sourceInfo) = await DownloadAudioAsync(
+                    url,
+                    dlTempDir,
+                    dlLog,
+                    cts.Token,
+                    vm.Job.PreResolvedMeta
+                );
                 var downloadedName = Path.GetFileName(inputFile);
                 Dispatcher.UIThread.Post(() => vm.InputFileName = downloadedName);
             }
@@ -104,26 +101,38 @@ public sealed partial class JobQueueService(
                     ?? throw new InvalidOperationException(
                         "Job has neither a file path nor a source URL."
                     );
+                // Read existing tags and cover art from the local source file.
+                sourceInfo = AudioTagger.ReadFromFile(inputFile);
             }
 
             // ── Separation step — one driver run per preset ────────────────────
+            var version =
+                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString()
+                ?? "dev";
+            var modelDescriptor = string.Join(
+                ", ",
+                vm.Job.Presets.Select(p => $"{p.Mode}:{p.PrimaryModel ?? p.Id}")
+            );
             var presets = vm.Job.Presets;
             var format = FfmpegArgs.Extension(vm.Job.StemOutputFormat).ToUpperInvariant();
+            var totalSteps = presets.Count + (vm.Job.ExtractDrums ? 1 : 0);
 
             for (int i = 0; i < presets.Count; i++)
             {
                 int presetIndex = i;
-                int presetCount = presets.Count;
                 var preset = presets[i];
 
+                var presetLabel = EffectiveLabel(preset);
                 Dispatcher.UIThread.Post(() =>
                 {
-                    vm.PresetCounter = $"{presetIndex + 1}/{presetCount}";
-                    vm.StatusText = "Starting…";
+                    vm.PresetCounter = totalSteps > 1 ? $"{presetIndex + 1}/{totalSteps}" : "";
+                    vm.StatusText = $"{presetLabel} — Starting…";
                 });
 
                 var progress = new Progress<JobProgress>(p =>
-                    Dispatcher.UIThread.Post(() => HandleProgress(vm, p, presetIndex, presetCount))
+                    Dispatcher.UIThread.Post(() =>
+                        HandleProgress(vm, p, presetIndex, totalSteps, presetLabel)
+                    )
                 );
 
                 var request = BuildRequest(preset, inputFile, vm.Job.OutputDir, format);
@@ -132,17 +141,125 @@ public sealed partial class JobQueueService(
                 if (!result.Succeeded)
                     throw new InvalidOperationException(result.ErrorMessage ?? "Separation failed");
 
-                outputFiles.AddRange(result.Outputs.Select(o => o.Path));
+                foreach (var o in result.Outputs)
+                {
+                    outputFiles.Add(o.Path);
+                    AudioTagger.ApplyToFile(o.Path, sourceInfo, modelDescriptor, version);
+                }
 
                 // Advance the bar to the end of this preset's segment.
                 Dispatcher.UIThread.Post(() =>
                 {
-                    vm.Progress = (int)Math.Round((presetIndex + 1) * 100.0 / presetCount);
+                    vm.Progress = (int)Math.Round((presetIndex + 1) * 100.0 / totalSteps);
                 });
             }
 
-            // ── Tag step ───────────────────────────────────────────────────────
-            await TagSeparationOutputsAsync(outputFiles, inputFile, vm.Job.Presets, cts.Token);
+            // ── Drum extraction step ───────────────────────────────────────────
+            if (vm.Job.ExtractDrums)
+            {
+                int drumIndex = presets.Count;
+                Dispatcher.UIThread.Post(() =>
+                {
+                    vm.PresetCounter = $"{drumIndex + 1}/{totalSteps}";
+                    vm.StatusText = "Drums — Starting…";
+                });
+
+                var drumOutDir =
+                    _settings.DrumStemLocation == DrumStemLocation.WithStems
+                        ? vm.Job.OutputDir
+                        : _paths.DrumCacheDirectory;
+
+                Directory.CreateDirectory(drumOutDir);
+
+                var drumProgress = new Progress<JobProgress>(p =>
+                    Dispatcher.UIThread.Post(() =>
+                        HandleProgress(vm, p, drumIndex, totalSteps, "Drums")
+                    )
+                );
+
+                var drumTitle = Path.GetFileNameWithoutExtension(inputFile);
+                var drumRequest = new JobRequest(
+                    inputFile,
+                    drumOutDir,
+                    format,
+                    PresetId: null,
+                    Models: [_settings.DrumExtractionModel],
+                    Algorithm: null,
+                    StemsToKeep: ["Drums"]
+                );
+
+                var drumResult = await _driver.RunAsync(drumRequest, drumProgress, cts.Token);
+
+                if (drumResult.Succeeded)
+                {
+                    var drumStem = drumResult.Outputs.FirstOrDefault(o =>
+                        o.Stem.Equals("Drums", StringComparison.OrdinalIgnoreCase)
+                    );
+
+                    // Delete all non-Drums files written by the model (htdemucs writes all 4 stems
+                    // to disk regardless of StemsToKeep; clean up the ones we don't want).
+                    foreach (
+                        var o in drumResult
+                            .Outputs.Concat(drumResult.Discarded)
+                            .Where(o => !o.Stem.Equals("Drums", StringComparison.OrdinalIgnoreCase))
+                    )
+                        try
+                        {
+                            if (File.Exists(o.Path))
+                                File.Delete(o.Path);
+                        }
+                        catch (Exception ex)
+                        {
+                            AppLogger.Warning(
+                                "job",
+                                $"Could not delete unwanted drum stem {Path.GetFileName(o.Path)}: {ex.Message}"
+                            );
+                        }
+
+                    if (drumStem is not null)
+                    {
+                        // Rename to the clean "{title} (Drums).ext" pattern — Demucs ignores
+                        // CustomOutputNames, so we fix the filename in C# after the fact.
+                        var drumExt = Path.GetExtension(drumStem.Path).ToLowerInvariant();
+                        var renamedPath = Path.Combine(drumOutDir, $"{drumTitle} (Drums){drumExt}");
+                        if (
+                            !string.Equals(
+                                drumStem.Path,
+                                renamedPath,
+                                StringComparison.OrdinalIgnoreCase
+                            )
+                        )
+                            File.Move(drumStem.Path, renamedPath, overwrite: true);
+
+                        AudioTagger.ApplyToFile(renamedPath, sourceInfo, modelDescriptor, version);
+                        if (_settings.DrumStemLocation == DrumStemLocation.WithStems)
+                            outputFiles.Add(renamedPath);
+                    }
+                }
+                else
+                {
+                    AppLogger.Warning("job", $"Drum extraction failed: {drumResult.ErrorMessage}");
+                }
+
+                Dispatcher.UIThread.Post(() => vm.Progress = 100);
+            }
+
+            // ── Keep source file step ──────────────────────────────────────────
+            if (vm.Job.KeepSourceFile && vm.Job.SourceUrl is not null)
+            {
+                Dispatcher.UIThread.Post(() => vm.StatusText = "Saving source…");
+                var keptSource = await KeepSourceFileAsync(
+                    inputFile,
+                    vm.Job.StemOutputFormat,
+                    vm.Job.OutputDir,
+                    cts.Token
+                );
+                if (keptSource is not null)
+                {
+                    AudioTagger.ApplyToFile(keptSource, sourceInfo, modelDescriptor, version);
+                    outputFiles.Add(keptSource);
+                }
+            }
 
             Dispatcher.UIThread.Post(() =>
             {
@@ -196,29 +313,34 @@ public sealed partial class JobQueueService(
         JobItemViewModel vm,
         JobProgress p,
         int presetIndex,
-        int presetCount
+        int totalSteps,
+        string presetLabel
     )
     {
+        var prefix = presetLabel;
+
         switch (p.Phase)
         {
             case "downloading_model":
                 if (p.Cached == false)
                     vm.StatusText =
                         p.ModelCount > 1
-                            ? $"Downloading model {p.ModelIndex}/{p.ModelCount}…"
-                            : "Downloading model…";
+                            ? $"{prefix} — Downloading model {p.ModelIndex}/{p.ModelCount}…"
+                            : $"{prefix} — Downloading model…";
                 break;
 
             case "loading_model":
                 vm.StatusText =
                     p.ModelCount > 1
-                        ? $"Loading model {p.ModelIndex}/{p.ModelCount}…"
-                        : "Loading model…";
+                        ? $"{prefix} — Loading model {p.ModelIndex}/{p.ModelCount}…"
+                        : $"{prefix} — Loading model…";
                 break;
 
             case "separating":
                 vm.StatusText =
-                    p.ModelCount > 1 ? $"Separating ({p.ModelCount} models)…" : "Separating…";
+                    p.ModelCount > 1
+                        ? $"{prefix} — Separating ({p.ModelCount} models)…"
+                        : $"{prefix} — Separating…";
                 break;
 
             case "progress":
@@ -226,13 +348,20 @@ public sealed partial class JobQueueService(
                 {
                     var withinPreset = Math.Min(100, cur * 100 / p.Total.Value);
                     var overall = (int)
-                        Math.Round((presetIndex * 100.0 + withinPreset) / presetCount);
+                        Math.Round((presetIndex * 100.0 + withinPreset) / totalSteps);
                     vm.Progress = Math.Max(vm.Progress, overall);
+                    if (
+                        !vm.StatusText.Contains("Separating")
+                        && !vm.StatusText.Contains("Combining")
+                    )
+                        vm.StatusText = $"{prefix} — Separating…";
                 }
                 break;
 
             case "ensembling":
-                vm.StatusText = p.Stem is { } stem ? $"Combining {stem}…" : "Combining stems…";
+                vm.StatusText = p.Stem is { } stem
+                    ? $"{prefix} — Combining {stem}…"
+                    : $"{prefix} — Combining stems…";
                 break;
 
             case "stem_written":
@@ -294,9 +423,46 @@ public sealed partial class JobQueueService(
                 format,
                 PresetId: preset.Id,
                 Models: null,
-                Algorithm: null
+                Algorithm: null,
+                CustomOutputNames: BuildPresetOutputNames(preset, audioPath)
             ),
         };
+
+    private static Dictionary<string, string> BuildPresetOutputNames(
+        Preset preset,
+        string audioPath
+    )
+    {
+        var title = Path.GetFileNameWithoutExtension(audioPath);
+        var stemKey = preset.Category == PresetCategory.Vocals ? "Vocals" : "Instrumental";
+        var label =
+            preset.Id == "karaoke"
+                ? "Karaoke"
+                : $"{(preset.Category == PresetCategory.Vocals ? "Vocal" : "Instrumental")} - {SanitizeLabel(preset.Label)}";
+        return new Dictionary<string, string> { [stemKey] = $"{title} ({label})" };
+    }
+
+    private static string EffectiveLabel(Preset preset) =>
+        preset.Mode == SeparationMode.BuiltinPreset
+            ? $"{CategoryName(preset.Category)} {preset.Label}"
+            : preset.Label;
+
+    private static string CategoryName(PresetCategory category) =>
+        category switch
+        {
+            PresetCategory.Vocals => "Vocals",
+            PresetCategory.Instrumentals => "Instrumental",
+            PresetCategory.Drums => "Drums",
+            PresetCategory.Bass => "Bass",
+            PresetCategory.Guitar => "Guitar",
+            PresetCategory.Piano => "Piano",
+            _ => category.ToString(),
+        };
+
+    private static readonly char[] _invalidFileNameChars = Path.GetInvalidFileNameChars();
+
+    private static string SanitizeLabel(string label) =>
+        string.Concat(label.Select(c => _invalidFileNameChars.Contains(c) ? '-' : c)).Trim();
 
     // ── Cancel / clear ────────────────────────────────────────────────────────
 
@@ -327,84 +493,75 @@ public sealed partial class JobQueueService(
 
     private void OnPropertyChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
 
-    // ── Provenance tagging ────────────────────────────────────────────────────
+    // ── Keep-source helper ────────────────────────────────────────────────────
 
-    private async Task TagSeparationOutputsAsync(
-        IReadOnlyList<string> stemPaths,
-        string sourceFile,
-        IReadOnlyList<Preset> presets,
+    /// <summary>
+    /// Copies (FLAC) or transcodes (all other formats) the downloaded source FLAC into
+    /// <paramref name="outputDir"/> using the user's chosen stem output format.
+    /// Metadata embedded by yt-dlp/ffmpeg in the FLAC is carried over automatically.
+    /// Returns the destination path, or null on failure (non-fatal).
+    /// </summary>
+    private async Task<string?> KeepSourceFileAsync(
+        string sourceFlac,
+        AudioFormat format,
+        string outputDir,
         CancellationToken ct
     )
     {
-        if (stemPaths.Count == 0)
-            return;
-
-        var version =
-            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString()
-            ?? "dev";
-        var separationDate = DateTimeOffset.UtcNow.ToString(
-            "o",
-            System.Globalization.CultureInfo.InvariantCulture
-        );
-        var modelDescriptor = string.Join(
-            ", ",
-            presets.Select(p => $"{p.Mode}:{p.PrimaryModel ?? p.Id}")
-        );
-
-        var tags = new (string, string)[]
+        try
         {
-            ("source_file", Path.GetFileName(sourceFile)),
-            ("separation_model", modelDescriptor),
-            ("separation_date", separationDate),
-            ("tool", $"stemforge/{version}"),
-        };
+            Directory.CreateDirectory(outputDir);
+            var baseName = Path.GetFileNameWithoutExtension(sourceFlac);
+            var dest = Path.Combine(outputDir, $"{baseName}.{FfmpegArgs.Extension(format)}");
 
-        foreach (var stem in stemPaths)
-        {
-            try
+            if (format == AudioFormat.Flac)
             {
-                var ext = Path.GetExtension(stem);
-                var tmp = Path.ChangeExtension(stem, null) + ".tmp" + ext;
+                File.Copy(sourceFlac, dest, overwrite: true);
+            }
+            else
+            {
                 var args = new List<string>();
                 args.AddRange(FfmpegArgs.Baseline);
-                args.AddRange(["-i", stem, "-c", "copy"]);
-                args.AddRange(FfmpegArgs.Metadata(tags));
-                args.Add(tmp);
-
+                args.AddRange(["-i", sourceFlac]);
+                args.AddRange(FfmpegArgs.Codec(format));
+                args.Add(dest);
                 await _runner.RunCheckedAsync(_paths.Ffmpeg, args, ct, logRawLines: false);
-                File.Move(tmp, stem, overwrite: true);
             }
-            catch (Exception ex)
-            {
-                AppLogger.Warning(
-                    "provenance",
-                    $"Failed to tag {Path.GetFileName(stem)}: {ex.Message}"
-                );
-            }
+
+            return dest;
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning("job", $"Failed to keep source file: {ex.Message}");
+            return null;
         }
     }
 
     // ── Download helpers ──────────────────────────────────────────────────────
 
-    private async Task<string> DownloadAudioAsync(
+    private async Task<(string AudioPath, SourceTagInfo SourceInfo)> DownloadAudioAsync(
         string url,
         string dlDir,
         IProgress<string> log,
-        CancellationToken ct
+        CancellationToken ct,
+        YtMetadata? preResolved = null
     )
     {
-        var meta = await _youTubeAudio.ResolveAsync(NormalizeUrl(url), _settings, log, ct);
-        return await _youTubeAudio.DownloadAsync(meta, AudioFormat.Flac, dlDir, log, ct);
+        var meta =
+            preResolved
+            ?? await _youTubeAudio.ResolveAsync(
+                YtUrlHelper.TryNormalize(url, out var n) ? n : url,
+                _settings,
+                log,
+                ct
+            );
+        var thumbPath = await YouTubeAudioService.DownloadThumbnailAsync(
+            meta.ThumbnailUrl,
+            dlDir,
+            ct
+        );
+        var sourceInfo = AudioTagger.FromYtMetadata(meta, thumbPath);
+        var audioPath = await _youTubeAudio.DownloadAsync(meta, AudioFormat.Flac, dlDir, log, ct);
+        return (audioPath, sourceInfo);
     }
-
-    internal static string NormalizeUrl(string url) =>
-        YtVideoIdRegex().Match(url).Groups["VideoId"] is { Success: true, Value: { } id }
-            ? $"https://music.youtube.com/watch?v={id}"
-            : url;
-
-    [GeneratedRegex(
-        @"^(?:(?:(?:https?:\/\/)?(?:(?:www|music|m)\.)?)?(?:youtube\.com|youtu\.be)(?:\S*?(?:\?v=|\/)))?(?<VideoId>[0-9A-Za-z_-]{11})(?:[&?].*)?$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled
-    )]
-    private static partial Regex YtVideoIdRegex();
 }

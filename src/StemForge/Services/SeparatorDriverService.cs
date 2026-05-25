@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using StemForge.Models;
 
 namespace StemForge.Services;
@@ -42,6 +43,8 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
         public required string Id { get; init; }
         public TaskCompletionSource<JobResult> Tcs { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource CancelAcknowledged { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
         public IProgress<JobProgress>? Progress { get; init; }
     }
 
@@ -50,6 +53,8 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
     private CancellationTokenSource? _idleCts;
 
     // ── Public API ───────────────────────────────────────────────────────────
+
+    public event Action<IReadOnlyList<Preset>>? PresetsLoaded;
 
     public async Task<JobResult> RunAsync(
         JobRequest request,
@@ -70,22 +75,41 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
 
             await SendCommandAsync(BuildRunCommand(jobId, request), ct);
 
-            // Register cancellation: kill the process so the reader loop faults the TCS.
-            using var ctReg = ct.Register(() =>
-            {
-                try
-                {
-                    _process?.Kill(entireProcessTree: true);
-                }
-                catch { }
-            });
-
             try
             {
                 return await job.Tcs.Task.WaitAsync(ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
+                // Ask the driver to stop the current job cleanly rather than
+                // killing the whole process. Fall back to killing if it doesn't
+                // respond within 10 s (e.g. stuck in non-interruptible I/O).
+                if (!job.Tcs.Task.IsCompleted)
+                {
+                    try
+                    {
+                        await SendCommandAsync(
+                            new { cmd = "cancel", id = jobId },
+                            CancellationToken.None
+                        );
+                    }
+                    catch { }
+
+                    using var ackTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                    try
+                    {
+                        await job.CancelAcknowledged.Task.WaitAsync(ackTimeout.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        AppLogger.Warning("driver", "Cancel ack timeout — killing driver process");
+                        try
+                        {
+                            _process?.Kill(entireProcessTree: true);
+                        }
+                        catch { }
+                    }
+                }
                 throw;
             }
         }
@@ -264,6 +288,17 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 var ver = root.TryGetProperty("separator_version", out var v) ? v.GetString() : "?";
                 AppLogger.Info("driver", $"Ready — audio-separator {ver} on {device}");
                 _readyTcs?.TrySetResult();
+                _ = SendCommandAsync(new { cmd = "list_presets" }, CancellationToken.None);
+                break;
+            }
+
+            case "presets":
+            {
+                if (!root.TryGetProperty("presets", out var presetsEl))
+                    break;
+                var presets = ParsePresetsFromJson(presetsEl);
+                if (presets.Count > 0)
+                    PresetsLoaded?.Invoke(presets);
                 break;
             }
 
@@ -345,6 +380,16 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 break;
             }
 
+            case "job_cancelled":
+            {
+                if (job is null)
+                    break;
+                AppLogger.Debug("driver", "Job cancelled by driver");
+                job.CancelAcknowledged.TrySetResult();
+                job.Tcs.TrySetCanceled();
+                break;
+            }
+
             case "job_failed":
             {
                 if (job is null)
@@ -396,6 +441,11 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 Phase = phase,
                 Stem = root.TryGetProperty("stem", out var s) ? s.GetString() : null,
             },
+            "separating" => new JobProgress
+            {
+                Phase = phase,
+                ModelCount = root.TryGetProperty("model_count", out var mc) ? mc.GetInt32() : null,
+            },
             _ => new JobProgress { Phase = phase },
         };
 
@@ -444,6 +494,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 output_dir = req.OutputDir,
                 output_format = req.OutputFormat,
                 preset,
+                custom_names = req.CustomOutputNames,
             },
             { Weights: { Count: > 0 } weights } => new
             {
@@ -517,6 +568,85 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 AppLogger.Info("separator", message);
                 break;
         }
+    }
+
+    // ── Preset parsing ───────────────────────────────────────────────────────
+
+    private sealed class PresetEntryDto
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = "";
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = "";
+
+        [JsonPropertyName("models")]
+        public List<string> Models { get; set; } = [];
+
+        [JsonPropertyName("algorithm")]
+        public string? Algorithm { get; set; }
+
+        [JsonPropertyName("weights")]
+        public List<double>? Weights { get; set; }
+    }
+
+    private static readonly JsonSerializerOptions _presetJsonOpts = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
+    private static IReadOnlyList<Preset> ParsePresetsFromJson(JsonElement presetsEl)
+    {
+        Dictionary<string, PresetEntryDto>? dict;
+        try
+        {
+            dict = presetsEl.Deserialize<Dictionary<string, PresetEntryDto>>(_presetJsonOpts);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning("driver", $"Failed to parse preset catalog: {ex.Message}");
+            return [];
+        }
+
+        if (dict is null)
+            return [];
+
+        var result = new List<Preset>(dict.Count);
+        foreach (var (id, entry) in dict)
+        {
+            var category = InferPresetCategory(id);
+            var label = StripCategoryPrefix(entry.Name.Length > 0 ? entry.Name : id, category);
+            result.Add(
+                new Preset(
+                    id,
+                    label,
+                    category,
+                    entry.Description,
+                    ModelCount: entry.Models.Count,
+                    Vram: string.Empty,
+                    Models: entry.Models
+                )
+            );
+        }
+        return result;
+    }
+
+    private static PresetCategory InferPresetCategory(string id) =>
+        id.StartsWith("vocal_") ? PresetCategory.Vocals
+        : id.StartsWith("instrumental_") || id == "karaoke" ? PresetCategory.Instrumentals
+        : PresetCategory.Other;
+
+    private static string StripCategoryPrefix(string name, PresetCategory category)
+    {
+        var prefix = category switch
+        {
+            PresetCategory.Vocals => "Vocal ",
+            PresetCategory.Instrumentals => "Instrumental ",
+            _ => "",
+        };
+        return name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            ? name[prefix.Length..]
+            : name;
     }
 
     // ── IAsyncDisposable ─────────────────────────────────────────────────────

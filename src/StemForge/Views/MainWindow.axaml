@@ -8,7 +8,6 @@
         x:Class="StemForge.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="StemForge"
-        Icon="avares://StemForge/Assets/icon.png"
         Width="1100" Height="800"
         MinWidth="900" MinHeight="680"
         Background="{DynamicResource Bg1Brush}"

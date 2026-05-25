@@ -12,5 +12,6 @@ public sealed record JobRequest(
     IReadOnlyList<string>? Models,
     string? Algorithm,
     IReadOnlyList<double>? Weights = null,
-    IReadOnlyList<string>? StemsToKeep = null
+    IReadOnlyList<string>? StemsToKeep = null,
+    IReadOnlyDictionary<string, string>? CustomOutputNames = null
 );

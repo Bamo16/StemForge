@@ -371,7 +371,7 @@
                                 <TextBlock Classes="settingLabel" Text="audio-separator" />
                                 <TextBox Classes="settingInput"
                                          Text="{Binding AudioSeparatorPath, Mode=TwoWay}"
-                                         PlaceholderText="auto-detect from uv shim or PATH" />
+                                         PlaceholderText="audio-separator (auto-detect from uv shim or PATH)" />
                             </StackPanel>
                             <StackPanel Spacing="6">
                                 <TextBlock Classes="settingLabel" Text="yt-dlp" />
@@ -463,6 +463,30 @@
                                             Click="OnBrowseModelsClicked" />
                                 </Grid>
                             </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ── Drum extraction ── -->
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="settingSection" Text="Drum extraction" />
+                    <Border Classes="card">
+                        <StackPanel Spacing="14">
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel" Text="Model" />
+                                <TextBox Classes="settingInput"
+                                         Text="{Binding DrumExtractionModel, Mode=TwoWay}"
+                                         PlaceholderText="htdemucs_ft.yaml" />
+                                <TextBlock FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="audio-separator model used for drum stem extraction. Leave blank to use the default." />
+                            </StackPanel>
+                            <CheckBox IsChecked="{Binding DrumStemsWithOutputs, Mode=TwoWay}"
+                                      Content="Write drum stem alongside other output files"
+                                      FontSize="12" />
+                            <TextBlock FontSize="11" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextPlaceholderBrush}"
+                                       Text="When unchecked, the drum stem is cached internally and not shown in the output folder. Useful if drums are only needed for BPM detection (coming soon)." />
                         </StackPanel>
                     </Border>
                 </StackPanel>

@@ -1,5 +1,5 @@
 using System.Globalization;
-using System.Reflection;
+using System.Net.Http;
 using System.Text.Json;
 using StemForge.Models;
 
@@ -7,7 +7,7 @@ namespace StemForge.Services;
 
 /// <summary>
 /// Two-stage YouTube audio download:
-///   1. yt-dlp --dump-single-json resolves metadata + a direct media URL (stderr streamed live)
+///   1. yt-dlp --dump-single-json resolves metadata + selects best audio format URL
 ///   2. ffmpeg streams that URL to disk in the chosen format with provenance tags
 /// No temp file, no double-encoding, full visibility into yt-dlp and ffmpeg progress.
 /// </summary>
@@ -26,16 +26,7 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
     };
 
-    public sealed record YtMetadata(
-        string SourceUrl,
-        string Title,
-        string? Uploader,
-        string? SourceCodec,
-        double? SourceBitrateKbps,
-        double? DurationSeconds,
-        string? FormatId,
-        string MediaUrl
-    );
+    private static readonly HttpClient _http = new();
 
     public async Task<YtMetadata> ResolveAsync(
         string url,
@@ -74,18 +65,42 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         var result = await _runner.RunStreamingStderrAsync(_paths.Ytdlp, args, log, ct);
 
         var info = DeserializeVideoInfo(result.Stdout);
+
+        // Pick the best audio format — prefer 44.1 kHz to avoid resampling loss (audio-separator
+        // normalises everything to 44.1 kHz internally). Fall back to yt-dlp's top-level url.
+        var selected = SelectBestAudioFormat(info);
         var mediaUrl =
-            info.Url
+            selected?.Url
+            ?? info.Url
             ?? throw new InvalidOperationException(
                 "yt-dlp metadata missing direct media URL; check format selector."
             );
 
+        var codec = selected?.Acodec ?? info.Acodec;
+        var bitrate = selected?.Abr ?? selected?.Tbr ?? info.Abr;
+        var asr = selected?.Asr ?? info.Asr;
+
+        IReadOnlyList<YtDlpFormat>? audioFormats = null;
+        if (info is { Formats.Count: > 0 })
+        {
+            audioFormats =
+            [
+                .. info.Formats.Where(IsAudioOnly).OrderByDescending(f => f.Abr ?? f.Tbr ?? 0),
+            ];
+            LogAudioFormats(info.Formats, selected);
+        }
+
         var summary =
-            $"resolved: {info.Title}"
-            + (info.Acodec is not null ? $" · {info.Acodec}" : string.Empty)
+            $"resolved: {info.DisplayTitle()}"
+            + (codec is not null ? $" · {codec}" : string.Empty)
             + (
-                info.Abr is { } kbps
+                bitrate is { } kbps
                     ? $" @ {kbps.ToString("F0", CultureInfo.InvariantCulture)}k"
+                    : string.Empty
+            )
+            + (
+                asr is { } hz
+                    ? $" · {(hz / 1000.0).ToString("F1", CultureInfo.InvariantCulture)}kHz"
                     : string.Empty
             )
             + (
@@ -96,14 +111,17 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         AppLogger.Info("yt-dlp", summary);
 
         return new YtMetadata(
-            url,
-            info.Title,
-            info.Uploader,
-            info.Acodec,
-            info.Abr,
-            info.Duration,
-            info.FormatId,
-            mediaUrl
+            SourceUrl: url,
+            Title: info.Title,
+            Artist: info.Artist,
+            Uploader: info.Uploader,
+            SourceCodec: codec,
+            SourceBitrateKbps: bitrate,
+            DurationSeconds: info.Duration,
+            FormatId: selected?.FormatId ?? info.FormatId,
+            MediaUrl: mediaUrl,
+            ThumbnailUrl: info.Thumbnail,
+            AudioFormats: audioFormats
         );
     }
 
@@ -139,33 +157,124 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
     )
     {
         Directory.CreateDirectory(outDir);
-        var fileName = $"{SanitizeFileName(meta.Title)}.{FfmpegArgs.Extension(format)}";
+        var fileName = $"{SanitizeFileName(meta.DisplayTitle)}.{FfmpegArgs.Extension(format)}";
         var outputPath = Path.Combine(outDir, fileName);
-
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "dev";
-        var tags = new List<(string Key, string Value)>
-        {
-            ("source_url", meta.SourceUrl),
-            ("source_codec", meta.SourceCodec ?? string.Empty),
-            (
-                "source_bitrate",
-                meta.SourceBitrateKbps?.ToString("F1", CultureInfo.InvariantCulture) ?? string.Empty
-            ),
-            ("source_format_id", meta.FormatId ?? string.Empty),
-            ("download_date", DateTimeOffset.UtcNow.ToString("o", CultureInfo.InvariantCulture)),
-            ("tool", $"stemforge/{version}"),
-        };
 
         var args = new List<string>();
         args.AddRange(FfmpegArgs.Baseline);
         args.AddRange(["-i", meta.MediaUrl]);
-        args.AddRange(FfmpegArgs.Metadata(tags));
+        // Normalise to 44.1 kHz: audio-separator uses this internally, so keeping 48 kHz
+        // sources at their native rate only introduces a resampling step at separation time.
+        args.AddRange(["-ar", "44100"]);
         args.AddRange(FfmpegArgs.Codec(format));
         args.Add(outputPath);
 
         await _runner.RunStreamingAsync(_paths.Ffmpeg, args, log, ct);
 
         return outputPath;
+    }
+
+    /// <summary>
+    /// Downloads the thumbnail image at <paramref name="url"/> into <paramref name="outDir"/>
+    /// and returns the local path. Returns null on failure (non-fatal).
+    /// </summary>
+    public static async Task<string?> DownloadThumbnailAsync(
+        string? url,
+        string outDir,
+        CancellationToken ct
+    )
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return null;
+        try
+        {
+            // Derive extension from URL path; default to .jpg which ffmpeg handles universally.
+            var uriPath = new Uri(url).LocalPath;
+            var ext = Path.GetExtension(uriPath);
+            if (string.IsNullOrEmpty(ext))
+                ext = ".jpg";
+
+            var dest = Path.Combine(outDir, $"thumbnail{ext}");
+            var bytes = await _http.GetByteArrayAsync(url, ct);
+            await File.WriteAllBytesAsync(dest, bytes, ct);
+            return dest;
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Debug("yt-dlp", $"Thumbnail download failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    // ── Format selection ──────────────────────────────────────────────────────
+
+    private static bool IsAudioOnly(YtDlpFormat f) =>
+        f.Url is not null
+        && !string.IsNullOrEmpty(f.Acodec)
+        && f.Acodec != "none"
+        && (string.IsNullOrEmpty(f.Vcodec) || f.Vcodec == "none");
+
+    /// <summary>
+    /// Selects the best audio-only format from the formats list.
+    /// Prefers 44.1 kHz unless the best 48 kHz option has more than 10% higher bitrate
+    /// (audio-separator always resamples to 44.1 kHz, so starting at 48 kHz just adds
+    /// a lossy resampling step with no quality benefit).
+    /// </summary>
+    internal static YtDlpFormat? SelectBestAudioFormat(YtDlpVideoInfo info)
+    {
+        var formats = info.Formats;
+        if (formats is null or { Count: 0 })
+            return null;
+
+        static double Bitrate(YtDlpFormat f) => f.Abr ?? f.Tbr ?? 0;
+
+        var audioOnly = formats.Where(IsAudioOnly).ToList();
+        if (audioOnly.Count == 0)
+            return null;
+
+        var best441 = audioOnly
+            .Where(f => f.Asr is >= 44099 and <= 44101)
+            .OrderByDescending(Bitrate)
+            .FirstOrDefault();
+
+        var best48 = audioOnly
+            .Where(f => f.Asr is >= 47999 and <= 48001)
+            .OrderByDescending(Bitrate)
+            .FirstOrDefault();
+
+        if (best441 is not null)
+        {
+            var br48 = best48 is not null ? Bitrate(best48) : 0;
+            // Prefer 44.1 kHz if it's within 10% of the best 48 kHz option.
+            if (br48 == 0 || Bitrate(best441) >= br48 * 0.90)
+                return best441;
+        }
+
+        return audioOnly.OrderByDescending(Bitrate).FirstOrDefault();
+    }
+
+    // ── Logging ───────────────────────────────────────────────────────────────
+
+    private static void LogAudioFormats(List<YtDlpFormat> formats, YtDlpFormat? selected)
+    {
+        var rows = formats.Where(IsAudioOnly).OrderByDescending(f => f.Abr ?? f.Tbr ?? 0).ToList();
+
+        if (rows.Count == 0)
+            return;
+
+        AppLogger.Info("yt-dlp", $"  {"ID", -14} {"Codec", -8} {"kbps", 6} {"kHz", 6}  Note");
+        foreach (var f in rows)
+        {
+            var marker = f.FormatId == selected?.FormatId ? ">" : " ";
+            var kbps = (f.Abr ?? f.Tbr ?? 0).ToString("F0", CultureInfo.InvariantCulture);
+            var khz = f.Asr is { } hz
+                ? (hz / 1000.0).ToString("F1", CultureInfo.InvariantCulture)
+                : "?";
+            AppLogger.Info(
+                "yt-dlp",
+                $"{marker} {f.FormatId, -14} {f.Acodec, -8} {kbps, 6} {khz, 6}  {f.FormatNote ?? ""}"
+            );
+        }
     }
 
     // ── Parsing ───────────────────────────────────────────────────────────────
@@ -187,32 +296,12 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             );
     }
 
-    /*
-
-    Todo: refine this, extend it to support our YouTube video ID regex stuff and give an out var with the Uri
-
-    private static bool IsValidYtDlpUrl(string inputUrl)
-    {
-        // 1. Null or empty check
-        if (string.IsNullOrWhiteSpace(inputUrl))
-            return false;
-
-        // 2. Try to parse the URL
-        if (Uri.TryCreate(inputUrl, UriKind.Absolute, out Uri parsedUri))
-        {
-            // 3. Strictly enforce HTTP or HTTPS.
-            // This blocks file://, ftp://, javascript:, etc.
-            return parsedUri.Scheme == Uri.UriSchemeHttp || parsedUri.Scheme == Uri.UriSchemeHttps;
-        }
-
-        // If you want to support raw YouTube IDs (11 chars, alphanumeric/dash/underscore),
-        // you could add a fallback Regex check *only* for that specific format here.
-        // Otherwise, fail fast.
-        return false;
-    }
-
-    */
-
     private static string SanitizeFileName(string value) =>
         string.Concat(value.Where(c => !_invalidFileNameChars.Contains(c)));
+}
+
+file static class YtDlpVideoInfoExtensions
+{
+    internal static string DisplayTitle(this YtDlpVideoInfo info) =>
+        string.IsNullOrWhiteSpace(info.Artist) ? info.Title : $"{info.Artist} - {info.Title}";
 }

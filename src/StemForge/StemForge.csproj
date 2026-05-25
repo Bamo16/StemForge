@@ -12,7 +12,11 @@
     <ItemGroup>
         <Folder Include="Models\" />
         <AvaloniaResource Include="Assets\**" />
-        <Content Include="..\..\tools\separator_driver.py" CopyToOutputDirectory="PreserveNewest" Link="tools\separator_driver.py" />
+        <Content
+            Include="..\..\tools\separator_driver.py"
+            CopyToOutputDirectory="PreserveNewest"
+            Link="tools\separator_driver.py"
+        />
     </ItemGroup>
 
     <ItemGroup>
@@ -30,5 +34,6 @@
         </PackageReference>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
+        <PackageReference Include="TagLibSharp" Version="2.3.0" />
     </ItemGroup>
 </Project>

@@ -41,10 +41,31 @@ public partial class MainWindowViewModel : ViewModelBase
 
         NavItems =
         [
-            new() { Label = "Separate", IconData = IconSeparate, Target = separate, IsActive = true },
-            new() { Label = "Queue", IconData = IconQueue, Target = queueVm },
-            new() { Label = "Models", IconData = IconModels, Target = models },
-            new() { Label = "Settings", IconData = IconSettings, Target = settings },
+            new()
+            {
+                Label = "Separate",
+                IconData = IconSeparate,
+                Target = separate,
+                IsActive = true,
+            },
+            new()
+            {
+                Label = "Queue",
+                IconData = IconQueue,
+                Target = queueVm,
+            },
+            new()
+            {
+                Label = "Models",
+                IconData = IconModels,
+                Target = models,
+            },
+            new()
+            {
+                Label = "Settings",
+                IconData = IconSettings,
+                Target = settings,
+            },
         ];
 
         CurrentPage = separate;

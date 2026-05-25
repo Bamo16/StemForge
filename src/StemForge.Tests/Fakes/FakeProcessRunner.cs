@@ -10,7 +10,9 @@ public sealed class FakeProcessRunner : IProcessRunner
 {
     public record FakeResult(int ExitCode = 0, string Stdout = "", string Stderr = "");
 
-    private readonly Dictionary<string, FakeResult> _responses = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, FakeResult> _responses = new(
+        StringComparer.OrdinalIgnoreCase
+    );
     private readonly List<(string Exe, IReadOnlyList<string> Args)> _calls = [];
 
     public IReadOnlyList<(string Exe, IReadOnlyList<string> Args)> Calls => _calls;

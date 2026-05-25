@@ -64,6 +64,14 @@ public sealed class AppSettings
     /// <summary>Default download format for URL-sourced audio (yt-dlp + ffmpeg).</summary>
     public AudioFormat DefaultAudioFormat { get; set; } = AudioFormat.Flac;
 
+    // ── Drum extraction ───────────────────────────────────────────────────────
+
+    /// <summary>audio-separator model used for per-job drum stem extraction.</summary>
+    public string DrumExtractionModel { get; set; } = "htdemucs_ft.yaml";
+
+    /// <summary>Where the drum stem file is written when drum extraction is enabled.</summary>
+    public DrumStemLocation DrumStemLocation { get; set; } = DrumStemLocation.WithStems;
+
     // ── Persistence ───────────────────────────────────────────────────────────
 
     public static AppSettings Load()

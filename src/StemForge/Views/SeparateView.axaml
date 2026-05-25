@@ -136,6 +136,43 @@
             <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
             <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
         </Style>
+
+        <!-- Format picker row -->
+        <Style Selector="Border.fmtRow">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="6,4" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Border.fmtRow:pointerover">
+            <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+        </Style>
+        <Style Selector="Border.fmtRow.selected">
+            <Setter Property="Background" Value="{DynamicResource AccentMedBgBrush}" />
+        </Style>
+
+        <!-- Format picker toggle link -->
+        <Style Selector="Button.fmtToggle">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Padding" Value="0,2" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.fmtToggle:pointerover /template/ ContentPresenter">
+            <Setter Property="TextBlock.Foreground" Value="{DynamicResource AccentBrightBrush}" />
+        </Style>
+
+        <!-- Tooltip skin consistent with the app's dark palette -->
+        <Style Selector="ToolTip">
+            <Setter Property="Background" Value="{DynamicResource Bg1Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+        </Style>
     </UserControl.Styles>
 
     <!-- Row heights mirror tokens in Styles/Tokens.axaml: ToolbarHeight=50, FooterBarHeight=56. -->
@@ -241,32 +278,56 @@
                                      VerticalContentAlignment="Center" />
                         </Grid>
                     </Border>
-                    <!-- URL-only options -->
-                    <StackPanel Orientation="Horizontal" Spacing="12"
-                                IsVisible="{Binding IsUrlInputEnabled}">
+                    <!-- URL validation error -->
+                    <TextBlock Text="{Binding UrlInputError}"
+                               IsVisible="{Binding HasUrlInputError}"
+                               FontSize="11"
+                               Foreground="{DynamicResource ErrorBrush}" />
+
+                    <!-- Job options -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
                         <CheckBox IsChecked="{Binding KeepSourceFile, Mode=TwoWay}"
+                                  IsVisible="{Binding IsUrlInputEnabled}"
                                   Content="Keep source file"
                                   FontSize="11"
                                   ToolTip.Tip="Save the downloaded source audio alongside the separation outputs." />
+                        <CheckBox IsChecked="{Binding ExtractDrums, Mode=TwoWay}"
+                                  Content="Also extract drums"
+                                  FontSize="11"
+                                  ToolTip.Tip="Run a second separation pass to isolate the drum stem." />
                     </StackPanel>
 
-                    <!-- Format preview -->
-                    <Panel IsVisible="{Binding ShowUrlFormatRow}" Height="18">
-                        <!-- Checking state: animated dots -->
-                        <StackPanel Orientation="Horizontal"
+                    <!-- Format status row -->
+                    <Panel IsVisible="{Binding ShowUrlFormatRow}">
+                        <!-- Checking state: spinner arc + label -->
+                        <StackPanel Orientation="Horizontal" Spacing="8"
                                     IsVisible="{Binding IsCheckingUrl}"
                                     VerticalAlignment="Center">
-                            <TextBlock Text="Checking format"
+                            <Panel Width="14" Height="14" VerticalAlignment="Center">
+                                <Ellipse Width="14" Height="14"
+                                         Stroke="{DynamicResource Bg3Brush}"
+                                         StrokeThickness="1.5"
+                                         IsHitTestVisible="False" />
+                                <Path Data="M 7,1 A 6,6 0 1 1 1,7"
+                                      Stroke="{DynamicResource AccentBrush}"
+                                      StrokeThickness="1.5"
+                                      StrokeLineCap="Round"
+                                      Stretch="None"
+                                      RenderTransformOrigin="50%,50%">
+                                    <Path.RenderTransform>
+                                        <RotateTransform Angle="{Binding SpinnerAngle}" />
+                                    </Path.RenderTransform>
+                                </Path>
+                            </Panel>
+                            <TextBlock Text="Resolving format…"
                                        FontSize="11"
-                                       Foreground="{DynamicResource TextPlaceholderBrush}" />
-                            <TextBlock Text="{Binding LoadingDots}"
-                                       FontSize="11"
-                                       Width="20"
-                                       Foreground="{DynamicResource TextPlaceholderBrush}" />
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       VerticalAlignment="Center" />
                         </StackPanel>
+
                         <!-- Resolved state: styled chips -->
                         <StackPanel Orientation="Horizontal" Spacing="6"
-                                    IsVisible="{Binding !IsCheckingUrl}"
+                                    IsVisible="{Binding HasUrlTitle}"
                                     VerticalAlignment="Center">
                             <TextBlock Text="{Binding UrlTitle}"
                                        FontSize="11"
@@ -283,14 +344,128 @@
                                 <TextBlock Text="{Binding UrlDuration}" />
                             </Border>
                         </StackPanel>
+
+                        <!-- Error state -->
+                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                    IsVisible="{Binding HasUrlFetchError}"
+                                    VerticalAlignment="Center">
+                            <Path Data="M 7 1 L 13 12 L 1 12 Z M 7 5 L 7 8 M 7 10 L 7 10.5"
+                                  Stroke="{DynamicResource ErrorBrush}"
+                                  StrokeThickness="1.3"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round"
+                                  Width="14" Height="14"
+                                  Stretch="None"
+                                  VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding UrlFetchError}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource ErrorBrush}"
+                                       VerticalAlignment="Center" />
+                            <Button Classes="ghost"
+                                    Content="Retry"
+                                    Command="{Binding RetryFetchCommand}"
+                                    FontSize="11"
+                                    Padding="4,1"
+                                    VerticalAlignment="Center" />
+                        </StackPanel>
                     </Panel>
+
+                    <!-- Format picker toggle (separate line, accent link) -->
+                    <Button Classes="fmtToggle"
+                            IsVisible="{Binding HasFormatPicker}"
+                            Command="{Binding ToggleFormatPickerCommand}"
+                            Content="{Binding FormatPickerToggleLabel}" />
+
+                    <!-- Format picker panel -->
+                    <Border IsVisible="{Binding ShowFormatPicker}"
+                            Background="{DynamicResource Bg0Brush}"
+                            BorderBrush="{DynamicResource Bg3Brush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="6,6">
+                        <StackPanel>
+                            <!-- Column headers -->
+                            <Grid ColumnDefinitions="44,90,76,64,*,36" ColumnSpacing="8"
+                                  Margin="6,0,6,4">
+                                <TextBlock Grid.Column="0" Text="ID"
+                                           Classes="sectionLabel"
+                                           FontSize="9" LetterSpacing="1" />
+                                <TextBlock Grid.Column="1" Text="CODEC"
+                                           Classes="sectionLabel"
+                                           FontSize="9" LetterSpacing="1" />
+                                <TextBlock Grid.Column="2" Text="BITRATE"
+                                           Classes="sectionLabel"
+                                           FontSize="9" LetterSpacing="1" />
+                                <TextBlock Grid.Column="3" Text="SR"
+                                           Classes="sectionLabel"
+                                           FontSize="9" LetterSpacing="1" />
+                                <TextBlock Grid.Column="4" Text="NOTE"
+                                           Classes="sectionLabel"
+                                           FontSize="9" LetterSpacing="1" />
+                            </Grid>
+
+                            <!-- Format rows -->
+                            <ItemsControl ItemsSource="{Binding FormatPickerItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:FormatPickerItem">
+                                        <Border Classes="fmtRow"
+                                                Classes.selected="{Binding IsSelected}"
+                                                PointerPressed="OnFormatRowClicked">
+                                            <Grid ColumnDefinitions="44,90,76,64,*,36" ColumnSpacing="8">
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding FormatId}"
+                                                           Classes="mono"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <Border Grid.Column="1" Classes="tag" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Codec}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               MaxWidth="78" />
+                                                </Border>
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding Bitrate}"
+                                                           Classes="mono"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="3"
+                                                           Text="{Binding SampleRate}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="4"
+                                                           Text="{Binding FormatNote}"
+                                                           FontSize="10"
+                                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <Border Grid.Column="5"
+                                                        IsVisible="{Binding IsAutoRecommended}"
+                                                        Background="{DynamicResource AccentDimBgBrush}"
+                                                        CornerRadius="3"
+                                                        Padding="5,2"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="Auto"
+                                                               FontSize="9"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource AccentBrush}" />
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- ===== Content: preset grid or models table ===== -->
-        <ScrollViewer Grid.Row="2" Padding="20,16" HorizontalScrollBarVisibility="Disabled">
-            <Grid>
+        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled">
+            <Grid Margin="20,16,20,16">
                 <!-- Built-in presets -->
                 <ItemsControl ItemsSource="{Binding Categories}"
                               IsVisible="{Binding IsBuiltInMode}">
@@ -316,7 +491,7 @@
                                 <ItemsControl ItemsSource="{Binding Items}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <UniformGrid Columns="2" />
+                                            <UniformGrid Columns="2" Margin="0,0,-7,0" />
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
@@ -346,10 +521,29 @@
                                                                    TextWrapping="Wrap" />
                                                         <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,4,0,0">
                                                             <Border Classes="tag">
+                                                                <ToolTip.Tip>
+                                                                    <StackPanel Spacing="4"
+                                                                                IsVisible="{Binding HasModelsList}">
+                                                                        <TextBlock Text="MODELS"
+                                                                                   FontSize="9"
+                                                                                   FontWeight="SemiBold"
+                                                                                   Foreground="{DynamicResource AccentBrush}"
+                                                                                   Margin="0,0,0,4"
+                                                                                   LetterSpacing="1" />
+                                                                        <ItemsControl ItemsSource="{Binding ModelsList}">
+                                                                            <ItemsControl.ItemTemplate>
+                                                                                <DataTemplate>
+                                                                                    <TextBlock Text="{Binding}"
+                                                                                               FontSize="11"
+                                                                                               FontFamily="{DynamicResource MonoFont}"
+                                                                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                                               TextWrapping="NoWrap" />
+                                                                                </DataTemplate>
+                                                                            </ItemsControl.ItemTemplate>
+                                                                        </ItemsControl>
+                                                                    </StackPanel>
+                                                                </ToolTip.Tip>
                                                                 <TextBlock Text="{Binding ModelsTag}" />
-                                                            </Border>
-                                                            <Border Classes="tag">
-                                                                <TextBlock Text="{Binding VramTag}" />
                                                             </Border>
                                                         </StackPanel>
                                                     </StackPanel>
@@ -385,7 +579,7 @@
                                   ItemsSource="{Binding UserPresetItems}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <UniformGrid Columns="2" />
+                                <UniformGrid Columns="2" Margin="0,0,-7,0" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
@@ -418,6 +612,28 @@
                                                            TextTrimming="CharacterEllipsis" />
                                                 <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,4,0,0">
                                                     <Border Classes="tag">
+                                                        <ToolTip.Tip>
+                                                            <StackPanel Spacing="4"
+                                                                        IsVisible="{Binding HasModelsList}">
+                                                                <TextBlock Text="MODELS"
+                                                                           FontSize="9"
+                                                                           FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource AccentBrush}"
+                                                                           Margin="0,0,0,4"
+                                                                           LetterSpacing="1" />
+                                                                <ItemsControl ItemsSource="{Binding ModelsList}">
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <TextBlock Text="{Binding}"
+                                                                                       FontSize="11"
+                                                                                       FontFamily="{DynamicResource MonoFont}"
+                                                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                                       TextWrapping="NoWrap" />
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+                                                            </StackPanel>
+                                                        </ToolTip.Tip>
                                                         <TextBlock Text="{Binding ModelsTag}" />
                                                     </Border>
                                                 </StackPanel>

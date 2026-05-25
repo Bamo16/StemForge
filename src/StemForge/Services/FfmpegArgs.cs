@@ -9,15 +9,15 @@ namespace StemForge.Services;
 public static class FfmpegArgs
 {
     public static IEnumerable<string> Baseline =>
-        ["-hide_banner", "-nostats", "-loglevel", "warning", "-y"];
+        ["-hide_banner", "-nostats", "-loglevel", "warning", "-y", "-vn"];
 
     /// <summary>Codec + format-specific flags for the chosen output format.</summary>
     public static IEnumerable<string> Codec(AudioFormat format) =>
         format switch
         {
-            AudioFormat.Flac => ["-c:a", "flac", "-compression_level", "8"],
-            AudioFormat.Wav => ["-c:a", "pcm_s24le"],
-            AudioFormat.Mp3 => ["-c:a", "libmp3lame", "-b:a", "320k"],
+            AudioFormat.Flac => ["-codec:a", "flac", "-compression_level", "8"],
+            AudioFormat.Wav => ["-codec:a", "pcm_s24le"],
+            AudioFormat.Mp3 => ["-codec:a", "libmp3lame", "-b:a", "320k"],
             _ => throw new ArgumentOutOfRangeException(nameof(format), format, null),
         };
 
@@ -29,19 +29,4 @@ public static class FfmpegArgs
             AudioFormat.Mp3 => "mp3",
             _ => throw new ArgumentOutOfRangeException(nameof(format), format, null),
         };
-
-    /// <summary>
-    /// Pairs of (key, value) to embed as ffmpeg `-metadata key=value` flags.
-    /// Each pair becomes two argv entries: ["-metadata", "key=value"].
-    /// </summary>
-    public static IEnumerable<string> Metadata(IEnumerable<(string Key, string Value)> tags)
-    {
-        foreach (var (key, value) in tags)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                continue;
-            yield return "-metadata";
-            yield return $"{key}={value}";
-        }
-    }
 }

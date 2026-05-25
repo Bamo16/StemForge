@@ -75,7 +75,16 @@ public sealed class ProcessRunner : IProcessRunner
         IProgress<string>? stderrProgress = null,
         CancellationToken ct = default,
         bool logRawLines = true
-    ) => CoreAsync(exe, args, stderrProgress, throwOnFailure: true, logRawLines, ct, captureStdout: true);
+    ) =>
+        CoreAsync(
+            exe,
+            args,
+            stderrProgress,
+            throwOnFailure: true,
+            logRawLines,
+            ct,
+            captureStdout: true
+        );
 
     // ── Core ────────────────────────────────────────────────────────────────────
 
@@ -113,10 +122,15 @@ public sealed class ProcessRunner : IProcessRunner
         // Kill the entire tree when the token fires; reads below complete once streams close.
         using var _ = ct.Register(() =>
         {
-            try { p.Kill(entireProcessTree: true); } catch { }
+            try
+            {
+                p.Kill(entireProcessTree: true);
+            }
+            catch { }
         });
 
-        string stdout, stderr;
+        string stdout,
+            stderr;
 
         if (progress is not null)
         {
@@ -147,7 +161,10 @@ public sealed class ProcessRunner : IProcessRunner
                 {
                     progress.Report(line.Content);
                     if (logRawLines)
-                        AppLogger.Debug(line.StandardError ? $"{exeName}.err" : $"{exeName}.out", line.Content);
+                        AppLogger.Debug(
+                            line.StandardError ? $"{exeName}.err" : $"{exeName}.out",
+                            line.Content
+                        );
                 }
                 stdout = stderr = string.Empty;
             }
@@ -161,9 +178,21 @@ public sealed class ProcessRunner : IProcessRunner
 
             if (logRawLines)
             {
-                foreach (var line in stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                    AppLogger.Debug($"{exeName}.out", line);
-                foreach (var line in stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                // stdout captured for programmatic use (e.g. JSON blobs) is never raw-logged.
+                if (!captureStdout)
+                    foreach (
+                        var line in stdout.Split(
+                            '\n',
+                            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                        )
+                    )
+                        AppLogger.Debug($"{exeName}.out", line);
+                foreach (
+                    var line in stderr.Split(
+                        '\n',
+                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                    )
+                )
                     AppLogger.Debug($"{exeName}.err", line);
             }
         }

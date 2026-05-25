@@ -69,10 +69,7 @@ public sealed class AppSettingsTests
                 json,
                 new System.Text.Json.JsonSerializerOptions
                 {
-                    Converters =
-                    {
-                        new System.Text.Json.Serialization.JsonStringEnumConverter(),
-                    },
+                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
                 }
             )!;
 

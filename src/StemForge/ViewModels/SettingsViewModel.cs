@@ -120,7 +120,16 @@ public partial class SettingsViewModel : PageViewModelBase
     public partial AudioFormat DefaultAudioFormat { get; set; } = AudioFormat.Flac;
 
     public IReadOnlyList<AudioFormat> AudioFormatOptions { get; } =
-        [AudioFormat.Flac, AudioFormat.Wav, AudioFormat.Mp3];
+    [AudioFormat.Flac, AudioFormat.Wav, AudioFormat.Mp3];
+
+    // ── Drum extraction ────────────────────────────────────────────────────────
+
+    [ObservableProperty]
+    public partial string DrumExtractionModel { get; set; } = string.Empty;
+
+    /// <summary>True = DrumStemLocation.WithStems; false = CacheOnly.</summary>
+    [ObservableProperty]
+    public partial bool DrumStemsWithOutputs { get; set; } = true;
 
     // ── Save state ─────────────────────────────────────────────────────────────
 
@@ -181,6 +190,8 @@ public partial class SettingsViewModel : PageViewModelBase
         YtdlpCookiesFromBrowser = s.YtdlpCookiesFromBrowser ?? string.Empty;
         YtdlpJsRuntime = s.YtdlpJsRuntime ?? string.Empty;
         DefaultAudioFormat = s.DefaultAudioFormat;
+        DrumExtractionModel = s.DrumExtractionModel;
+        DrumStemsWithOutputs = s.DrumStemLocation == DrumStemLocation.WithStems;
     }
 
     partial void OnGpuVariantChanged(GpuVariant value)
@@ -393,6 +404,12 @@ public partial class SettingsViewModel : PageViewModelBase
         _settings.YtdlpCookiesFromBrowser = NullIfBlank(YtdlpCookiesFromBrowser);
         _settings.YtdlpJsRuntime = NullIfBlank(YtdlpJsRuntime);
         _settings.DefaultAudioFormat = DefaultAudioFormat;
+        _settings.DrumExtractionModel = string.IsNullOrWhiteSpace(DrumExtractionModel)
+            ? "htdemucs_ft.yaml"
+            : DrumExtractionModel;
+        _settings.DrumStemLocation = DrumStemsWithOutputs
+            ? DrumStemLocation.WithStems
+            : DrumStemLocation.CacheOnly;
         _settings.FirstRunComplete = true;
 
         await _settings.SaveAsync();

@@ -41,6 +41,10 @@ public sealed class AppPaths(AppSettings settings)
     /// <summary>Where audio-separator looks for / stores model files. Defaults to LocalAppData.</summary>
     public string ModelsDirectory => Override(_settings.ModelsDirectory) ?? DefaultModelsDirectory;
 
+    /// <summary>Cache directory for drum stems when DrumStemLocation is CacheOnly.</summary>
+    public string DrumCacheDirectory =>
+        Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "drum-cache");
+
     // ── Defaults (exposed so the Settings UI can show placeholder text) ──────
 
     public static string DefaultOutputDirectory =>

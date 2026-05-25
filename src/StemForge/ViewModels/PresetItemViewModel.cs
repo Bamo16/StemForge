@@ -15,6 +15,10 @@ public partial class PresetItemViewModel(Preset preset) : ObservableObject
         : Preset.ModelCount > 0 ? $"{Preset.ModelCount} models"
         : string.Empty;
     public string VramTag => Preset.Vram;
+    public bool HasVramTag => !string.IsNullOrEmpty(Preset.Vram);
+
+    public IReadOnlyList<string> ModelsList => Preset.AllModels;
+    public bool HasModelsList => Preset.AllModels.Count > 0;
 
     [ObservableProperty]
     public partial bool IsSelected { get; set; }

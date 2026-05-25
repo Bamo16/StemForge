@@ -8,5 +8,7 @@ namespace StemForge.Tests;
 public sealed class AppTestApplication : Application
 {
     public static AppBuilder BuildAvaloniaApp() =>
-        AppBuilder.Configure<AppTestApplication>().UseHeadless(new AvaloniaHeadlessPlatformOptions());
+        AppBuilder
+            .Configure<AppTestApplication>()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions());
 }

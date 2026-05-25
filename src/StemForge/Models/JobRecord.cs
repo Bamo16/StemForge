@@ -9,12 +9,19 @@ public sealed record JobRecord(
     string OutputDir,
     string ModelsDir,
     AudioFormat StemOutputFormat = AudioFormat.Flac,
-    bool KeepSourceFile = false
+    bool KeepSourceFile = false,
+    YtMetadata? PreResolvedMeta = null,
+    bool ExtractDrums = false
 )
 {
     public string InputFileName =>
-        InputFilePath is not null ? Path.GetFileName(InputFilePath) : SourceUrl ?? string.Empty;
+        PreResolvedMeta?.Title
+        ?? (
+            InputFilePath is not null ? Path.GetFileName(InputFilePath) : SourceUrl ?? string.Empty
+        );
 
     public string PresetSummary =>
-        Presets.Count == 1 ? Presets[0].Label : $"{Presets.Count} presets";
+        ExtractDrums ? $"{Presets.Count} preset{(Presets.Count == 1 ? "" : "s")} + Drums"
+        : Presets.Count == 1 ? Presets[0].Label
+        : $"{Presets.Count} presets";
 }

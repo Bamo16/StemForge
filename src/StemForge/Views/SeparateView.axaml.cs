@@ -26,7 +26,7 @@ public partial class SeparateView : UserControl
         var files = await topLevel.StorageProvider.OpenFilePickerAsync(
             new FilePickerOpenOptions
             {
-                AllowMultiple = false,
+                AllowMultiple = true,
                 FileTypeFilter =
                 [
                     new FilePickerFileType("Audio Files")
@@ -38,7 +38,7 @@ public partial class SeparateView : UserControl
         );
 
         if (files.Count > 0)
-            Vm.InputFilePath = files[0].Path.LocalPath;
+            Vm.AddFilesToQueue(files.Select(f => f.Path.LocalPath));
     }
 
     private static void OnDropZoneDragOver(object? sender, DragEventArgs e)
@@ -52,7 +52,7 @@ public partial class SeparateView : UserControl
     {
         var files = e.DataTransfer.TryGetFiles()?.ToList();
         if (files is { Count: > 0 })
-            Vm.InputFilePath = files[0].Path.LocalPath;
+            Vm.AddFilesToQueue(files.Select(f => f.Path.LocalPath));
     }
 
     private async void OnBrowseOutputClicked(object? sender, RoutedEventArgs e)
@@ -61,8 +61,21 @@ public partial class SeparateView : UserControl
         if (topLevel is null)
             return;
 
+        IStorageFolder? startLocation = null;
+        try
+        {
+            startLocation = await topLevel.StorageProvider.TryGetFolderFromPathAsync(
+                Vm.ExpandedOutputPath
+            );
+        }
+        catch { }
+
         var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
-            new FolderPickerOpenOptions { AllowMultiple = false }
+            new FolderPickerOpenOptions
+            {
+                AllowMultiple = false,
+                SuggestedStartLocation = startLocation,
+            }
         );
 
         if (folders.Count > 0)
@@ -73,5 +86,11 @@ public partial class SeparateView : UserControl
     {
         if (sender is Control { DataContext: PresetItemViewModel item })
             item.IsSelected = !item.IsSelected;
+    }
+
+    private void OnFormatRowClicked(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Control { DataContext: FormatPickerItem item })
+            Vm.SelectFormatCommand.Execute(item);
     }
 }

@@ -97,13 +97,14 @@ public sealed class UserPresetService
                 Description,
                 ModelCount,
                 Vram,
-                Enum.TryParse<SeparationMode>(Mode, out var mode)
+                Models: null,
+                Mode: Enum.TryParse<SeparationMode>(Mode, out var mode)
                     ? mode
                     : SeparationMode.SingleModel,
-                PrimaryModel,
-                EnsembleAlgorithm,
-                ExtraModels,
-                EnsembleWeights
+                PrimaryModel: PrimaryModel,
+                EnsembleAlgorithm: EnsembleAlgorithm,
+                ExtraModels: ExtraModels,
+                EnsembleWeights: EnsembleWeights
             );
 
         public static PresetDto FromPreset(Preset p) =>

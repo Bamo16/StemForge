@@ -104,11 +104,11 @@ names, values are filenames *without* extension; the library appends the
 extension based on `output_format`).
 
 If not, the driver synthesises predictable names:
-  with preset:   "{base}_(preset_{preset_id})_({stem})"
-  with custom:   "{base}_(custom_{algorithm})_({stem})"
+  "{base} ({stem})"   e.g. "Song (Vocals)", "Song (Drums)"
 
-This makes it trivial for the host to predict where each stem will land
-without parsing the library's default naming scheme.
+This makes it trivial for the host to predict where each stem will land.
+The driver also enforces the expected name after separation — if the model
+ignores custom_output_names (e.g. Demucs) the file is renamed in place.
 """
 
 import argparse
@@ -152,6 +152,25 @@ except (OSError, io.UnsupportedOperation):
     sys.stdout = sys.stderr
 
 _emit_lock = threading.Lock()
+
+# ---------------------------------------------------------------------------
+# Cancellation
+# ---------------------------------------------------------------------------
+# Set by the main thread when the host sends {"cmd": "cancel"}.
+# Cleared by the job thread before each new run.
+# Checked in EventTqdm.update() (fires on every inference tick) and at
+# explicit checkpoints in _run_job so cancellation is prompt.
+
+_job_cancel_event = threading.Event()
+
+
+class JobCancelledError(Exception):
+    pass
+
+
+def _check_cancelled():
+    if _job_cancel_event.is_set():
+        raise JobCancelledError("Job cancelled by host")
 
 
 def emit(event: str, **fields) -> None:
@@ -240,6 +259,7 @@ class EventTqdm(_OriginalTqdm):
         self._unit = self.unit or ""
 
     def update(self, n=1):
+        _check_cancelled()
         ret = super().update(n)
         now = time.monotonic()
         if now - self._last_emit >= _PROGRESS_THROTTLE_SEC or (
@@ -445,6 +465,63 @@ def _canon(name: str) -> str:
     return name.strip().title()
 
 
+def _trim_stems_to_source_length(
+    source_path: str, stem_paths: list[str], job_id: str | None
+):
+    """Trim or pad each stem so its sample count exactly matches the source file.
+
+    audio-separator pads the last model chunk to fill the window, so outputs
+    are typically a handful of samples longer than the input. That sub-ms
+    discrepancy prevents DAWs like Ableton from multi-clip warping across
+    source + stems. We fix it here, before reporting job_completed.
+    """
+    try:
+        import soundfile as sf
+        import numpy as np
+    except ImportError:
+        return  # shouldn't happen — audio-separator depends on both
+
+    try:
+        src_info = sf.info(source_path)
+        source_frames = src_info.frames
+        source_sr = src_info.samplerate
+    except Exception as e:
+        emit("log", id=job_id, level="warning", module="driver",
+             message=f"trim: could not read source info: {e}")
+        return
+
+    for stem_path in stem_paths:
+        if not os.path.isfile(stem_path):
+            continue
+        try:
+            info = sf.info(stem_path)
+            # Compute the target frame count in the stem's own sample rate.
+            # Source and stem may differ (e.g. 48 kHz opus download → 44.1 kHz
+            # separator output), so compare durations, not raw frame counts.
+            target_frames = round(source_frames * info.samplerate / source_sr)
+            diff = info.frames - target_frames
+            if diff == 0:
+                continue  # already exact
+
+            data, sr = sf.read(stem_path, always_2d=True)
+            if diff > 0:
+                data = data[:target_frames]
+            else:
+                data = np.pad(data, ((0, -diff), (0, 0)))
+
+            sf.write(stem_path, data, sr, subtype=info.subtype)
+            direction = "trimmed" if diff > 0 else "padded"
+            emit("log", id=job_id, level="debug", module="driver",
+                 message=(
+                     f"trim: {direction} {os.path.basename(stem_path)}"
+                     f" by {abs(diff)} samples → {target_frames} total"
+                     f" (src {source_sr} Hz → stem {info.samplerate} Hz)"
+                 ))
+        except Exception as e:
+            emit("log", id=job_id, level="warning", module="driver",
+                 message=f"trim: could not adjust {os.path.basename(stem_path)}: {e}")
+
+
 def default_stems_to_keep(preset_id: str | None) -> list[str] | None:
     """Default keep-set for the curated presets, based on preset prefix."""
     if not preset_id:
@@ -537,6 +614,11 @@ class Driver:
         """
         return os.path.isfile(os.path.join(sep.model_file_dir, model_filename))
 
+    def cmd_cancel(self, _cmd):
+        # Sets the event; the job thread checks it on every tqdm tick and at
+        # explicit checkpoints. No-op if no job is running.
+        _job_cancel_event.set()
+
     def cmd_shutdown(self, _cmd):
         emit("bye")
         sys.exit(0)
@@ -545,8 +627,11 @@ class Driver:
 
     def cmd_run(self, cmd):
         job_id = cmd.get("id") or f"job_{int(time.time() * 1000)}"
+        _job_cancel_event.clear()
         try:
             self._run_job(job_id, cmd)
+        except JobCancelledError:
+            emit("job_cancelled", id=job_id)
         except Exception as e:
             emit(
                 "job_failed",
@@ -627,10 +712,7 @@ class Driver:
         provided_names = {_canon(k): v for k, v in provided_names.items()}
 
         def synth_name(stem: str) -> str:
-            if preset_id:
-                return f"{base}_(preset_{preset_id})_({stem})"
-            algo = sep.ensemble_algorithm
-            return f"{base}_(custom_{algo})_({stem})"
+            return f"{base} ({stem})"
 
         # We don't know all stems each model produces without loading them,
         # but for filename prediction we only need names for stems that
@@ -675,6 +757,21 @@ class Driver:
                 sep.download_model_and_data(m)
 
         # ---- run the ensemble (single or multi-model) --------------------
+        _check_cancelled()  # between download and load phases
+
+        # Snapshot files already present so we can detect orphans later.
+        # Some models (e.g. Demucs with output_single_stem) write all stems
+        # to disk but only return the single stem in `outputs`, leaving the
+        # others untracked and un-deletable without this snapshot.
+        try:
+            _before_files = {
+                os.path.normcase(os.path.abspath(os.path.join(output_dir, f)))
+                for f in os.listdir(output_dir)
+                if os.path.isfile(os.path.join(output_dir, f))
+            }
+        except OSError:
+            _before_files = set()
+
         t0 = time.perf_counter()
         with phase(job_id, "separating", model_count=len(models)):
             # load_model with a list (or a single name) sets up state for
@@ -684,16 +781,39 @@ class Driver:
             else:
                 sep.load_model(model_filename=list(models))  # type:ignore
 
+            _check_cancelled()  # between load and inference
             outputs = sep.separate(
                 audio, custom_output_names=custom_output_names or None)
 
+        # Detect files the library wrote that it didn't include in outputs.
+        try:
+            _after_files = {
+                os.path.normcase(os.path.abspath(os.path.join(output_dir, f)))
+                for f in os.listdir(output_dir)
+                if os.path.isfile(os.path.join(output_dir, f))
+            }
+        except OSError:
+            _after_files = set()
+
+        _known_paths = {
+            os.path.normcase(
+                os.path.abspath(p if os.path.isabs(p) else os.path.join(output_dir, p))
+            )
+            for p in outputs
+        }
+        _orphans = _after_files - _before_files - _known_paths
+        if _orphans:
+            outputs = list(outputs) + sorted(_orphans)
+            emit("log", id=job_id, level="debug", module="driver",
+                 message=f"detected {len(_orphans)} untracked output(s): "
+                         + ", ".join(os.path.basename(p) for p in sorted(_orphans)))
+
         # ---- post-process: keep only the wanted stems --------------------
-        # Build a reverse map: filename_stem -> canonical_stem. The values
-        # in custom_output_names are filenames WITHOUT extension that the
-        # library writes verbatim, so a strict match on the filename's
-        # stem (the bit before the extension) is unambiguous.
+        # Build a reverse map: filename_without_ext -> canonical_stem. Values
+        # in custom_output_names are already extension-free; using splitext
+        # would corrupt names that contain dots (e.g. "HUMBLE. (Instrumental)").
         name_to_stem = {
-            os.path.splitext(os.path.basename(v))[0]: k
+            os.path.basename(v): k
             for k, v in custom_output_names.items()
         }
 
@@ -728,8 +848,24 @@ class Driver:
                 discarded.append({"stem": stem, "path": out_path})
                 emit("stem_discarded", id=job_id, stem=stem, path=out_path)
             else:
+                # Enforce expected name if the library didn't honour custom_output_names.
+                expected = custom_output_names.get(stem)
+                if expected:
+                    ext = os.path.splitext(out_path)[1].lower()
+                    target = os.path.join(output_dir, expected + ext)
+                    if os.path.normcase(out_path) != os.path.normcase(target):
+                        try:
+                            os.replace(out_path, target)
+                            out_path = target
+                        except OSError as e:
+                            emit("log", id=job_id, level="warning", module="driver",
+                                 message=f"rename {os.path.basename(out_path)!r} → "
+                                         f"{os.path.basename(target)!r} failed: {e}")
                 kept.append({"stem": stem, "path": out_path})
                 emit("stem_written", id=job_id, stem=stem, path=out_path)
+
+        # ---- trim/pad stems to source length --------------------------------
+        _trim_stems_to_source_length(audio, [item["path"] for item in kept], job_id)
 
         emit(
             "job_completed",
@@ -746,7 +882,7 @@ class Driver:
         "list_presets": cmd_list_presets,
         "list_models": cmd_list_models,
         "download_models": cmd_download_models,
-        "run": cmd_run,
+        "cancel": cmd_cancel,
         "shutdown": cmd_shutdown,
     }
 
@@ -776,7 +912,12 @@ class Driver:
             preset_ids=sorted(sep.list_ensemble_presets().keys()),
         )
 
-        # Read commands line-by-line from stdin
+        # Read commands line-by-line from stdin.
+        # "run" is dispatched to a background thread so the main loop can
+        # receive "cancel" while a job is in progress. All other commands
+        # run on the main thread (they are fast and non-blocking).
+        self._job_thread: threading.Thread | None = None
+
         for raw in sys.stdin:
             raw = raw.strip()
             if not raw:
@@ -789,6 +930,25 @@ class Driver:
                 continue
 
             name = cmd.get("cmd")
+
+            if name == "run":
+                if self._job_thread and self._job_thread.is_alive():
+                    emit("error", error="a job is already running; send cancel first")
+                    continue
+                self._job_thread = threading.Thread(
+                    target=self.cmd_run, args=(cmd,), daemon=True
+                )
+                self._job_thread.start()
+                continue
+
+            if name == "shutdown":
+                # Cancel any running job and wait briefly before exiting.
+                if self._job_thread and self._job_thread.is_alive():
+                    _job_cancel_event.set()
+                    self._job_thread.join(timeout=10.0)
+                self.cmd_shutdown(cmd)
+                continue
+
             handler = self.DISPATCH.get(name)
             if handler is None:
                 emit("error", error=f"unknown command: {name!r}")
