@@ -360,30 +360,30 @@
                         <StackPanel Spacing="14">
                             <TextBlock FontSize="11" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextPlaceholderBrush}"
-                                       Text="Override the path StemForge uses to invoke each tool. Leave blank to auto-resolve from PATH or the standard install location." />
+                                       Text="Override which binary StemForge invokes for each tool. Leave blank to use StemForge's default discovery — described per-field below." />
                             <StackPanel Spacing="6">
                                 <TextBlock Classes="settingLabel" Text="uv" />
                                 <TextBox Classes="settingInput"
                                          Text="{Binding UvPath, Mode=TwoWay}"
-                                         PlaceholderText="uv (auto-detect from PATH)" />
+                                         PlaceholderText="Default: 'uv' on PATH" />
                             </StackPanel>
                             <StackPanel Spacing="6">
                                 <TextBlock Classes="settingLabel" Text="audio-separator" />
                                 <TextBox Classes="settingInput"
                                          Text="{Binding AudioSeparatorPath, Mode=TwoWay}"
-                                         PlaceholderText="audio-separator (auto-detect from uv shim or PATH)" />
+                                         PlaceholderText="Default: uv-installed shim, falls back to 'audio-separator' on PATH" />
                             </StackPanel>
                             <StackPanel Spacing="6">
                                 <TextBlock Classes="settingLabel" Text="yt-dlp" />
                                 <TextBox Classes="settingInput"
                                          Text="{Binding YtdlpPath, Mode=TwoWay}"
-                                         PlaceholderText="yt-dlp (auto-detect from PATH)" />
+                                         PlaceholderText="Default: 'yt-dlp' on PATH (typically uv-installed shim)" />
                             </StackPanel>
                             <StackPanel Spacing="6">
                                 <TextBlock Classes="settingLabel" Text="ffmpeg" />
                                 <TextBox Classes="settingInput"
                                          Text="{Binding FfmpegPath, Mode=TwoWay}"
-                                         PlaceholderText="ffmpeg (auto-detect from PATH)" />
+                                         PlaceholderText="Default: bundled binary in %LOCALAPPDATA%\StemForge\bin, falls back to 'ffmpeg' on PATH" />
                             </StackPanel>
                         </StackPanel>
                     </Border>
