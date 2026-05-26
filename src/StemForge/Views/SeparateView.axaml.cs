@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
+using StemForge.Extensions;
 using StemForge.ViewModels;
 
 namespace StemForge.Views;
@@ -77,26 +78,17 @@ public partial class SeparateView : UserControl
 
     private async void OnDropZoneClicked(object? sender, PointerPressedEventArgs e)
     {
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is null)
-            return;
-
-        var files = await topLevel.StorageProvider.OpenFilePickerAsync(
-            new FilePickerOpenOptions
-            {
-                AllowMultiple = true,
-                FileTypeFilter =
-                [
-                    new FilePickerFileType("Audio Files")
-                    {
-                        Patterns = ["*.mp3", "*.flac", "*.wav", "*.m4a"],
-                    },
-                ],
-            }
+        var files = await this.PickFilesAsync(
+            [
+                new FilePickerFileType("Audio Files")
+                {
+                    Patterns = ["*.mp3", "*.flac", "*.wav", "*.m4a"],
+                },
+            ]
         );
 
         if (files.Count > 0)
-            Vm.AddFilesToQueue(files.Select(f => f.Path.LocalPath));
+            Vm.AddFilesToQueue(files);
     }
 
     private static void OnDropZoneDragOver(object? sender, DragEventArgs e)
@@ -115,29 +107,8 @@ public partial class SeparateView : UserControl
 
     private async void OnBrowseOutputClicked(object? sender, RoutedEventArgs e)
     {
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is null)
-            return;
-
-        IStorageFolder? startLocation = null;
-        try
-        {
-            startLocation = await topLevel.StorageProvider.TryGetFolderFromPathAsync(
-                Vm.ExpandedOutputPath
-            );
-        }
-        catch { }
-
-        var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
-            new FolderPickerOpenOptions
-            {
-                AllowMultiple = false,
-                SuggestedStartLocation = startLocation,
-            }
-        );
-
-        if (folders.Count > 0)
-            Vm.OutputPath = folders[0].Path.LocalPath;
+        if (await this.PickFolderAsync(Vm.ExpandedOutputPath) is { } folder)
+            Vm.OutputPath = folder;
     }
 
     private void OnPresetCardClicked(object? sender, PointerPressedEventArgs e)

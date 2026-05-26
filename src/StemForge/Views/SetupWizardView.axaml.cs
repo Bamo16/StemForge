@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Platform.Storage;
+using StemForge.Extensions;
 using StemForge.ViewModels;
 
 namespace StemForge.Views;
@@ -16,22 +16,13 @@ public partial class SetupWizardView : UserControl
 
     private async void OnBrowseOutputClicked(object? sender, RoutedEventArgs e)
     {
-        if (await PickFolderAsync() is { } folder)
+        if (await this.PickFolderAsync(Vm.OutputDirectory) is { } folder)
             Vm.OutputDirectory = folder;
     }
 
     private async void OnBrowseModelsClicked(object? sender, RoutedEventArgs e)
     {
-        if (await PickFolderAsync() is { } folder)
+        if (await this.PickFolderAsync(Vm.ModelsDirectory) is { } folder)
             Vm.ModelsDirectory = folder;
     }
-
-    private async Task<string?> PickFolderAsync() =>
-        TopLevel.GetTopLevel(this) is { StorageProvider: { } provider }
-        && await provider.OpenFolderPickerAsync(
-            new FolderPickerOpenOptions { AllowMultiple = false }
-        )
-            is [{ Path.LocalPath: { } path }, ..]
-            ? path
-            : null;
 }
