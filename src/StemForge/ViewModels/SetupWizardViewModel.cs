@@ -232,21 +232,12 @@ public partial class SetupWizardViewModel(
     {
         IsInstallingUv = true;
         UvInstallError = null;
-        _installLog.Clear();
-        InstallLog = string.Empty;
 
         try
         {
-            var progress = new Progress<string>(line =>
-            {
-                if (_installLog.Length > 0)
-                    _installLog.Append('\n');
-                _installLog.Append(line);
-                InstallLog = _installLog.ToString();
-            });
-            await _toolInstaller.InstallUvAsync(progress);
-            UvFound = await _toolInstaller.IsUvAvailableAsync();
-            await _toolState.RefreshAsync();
+            await _toolInstaller.InstallUvAsync(NewLogProgress());
+            await _toolState.RefreshAsync("uv");
+            UvFound = _toolState.IsUvAvailable;
             if (!UvFound)
                 UvInstallError =
                     "uv installed but could not be found on PATH. You may need to restart StemForge.";
@@ -266,22 +257,13 @@ public partial class SetupWizardViewModel(
     {
         IsInstalling = true;
         InstallError = null;
-        _installLog.Clear();
-        InstallLog = string.Empty;
 
         try
         {
-            var progress = new Progress<string>(line =>
-            {
-                if (_installLog.Length > 0)
-                    _installLog.Append('\n');
-                _installLog.Append(line);
-                InstallLog = _installLog.ToString();
-            });
-            await _toolInstaller.InstallAudioSeparatorAsync(GpuVariant, progress);
-            InstallSuccess = true;
-            AudioSeparatorFound = true;
-            await _toolState.RefreshAsync();
+            await _toolInstaller.InstallAudioSeparatorAsync(GpuVariant, NewLogProgress());
+            await _toolState.RefreshAsync("audio-separator");
+            AudioSeparatorFound = _toolState.IsAudioSeparatorAvailable;
+            InstallSuccess = AudioSeparatorFound;
         }
         catch (Exception ex)
         {
@@ -298,21 +280,12 @@ public partial class SetupWizardViewModel(
     {
         IsInstallingYtdlp = true;
         YtdlpInstallError = null;
-        _installLog.Clear();
-        InstallLog = string.Empty;
 
         try
         {
-            var progress = new Progress<string>(line =>
-            {
-                if (_installLog.Length > 0)
-                    _installLog.Append('\n');
-                _installLog.Append(line);
-                InstallLog = _installLog.ToString();
-            });
-            await _toolInstaller.InstallYtdlpAsync(progress);
-            YtdlpFound = await _toolInstaller.IsYtdlpAvailableAsync();
-            await _toolState.RefreshAsync();
+            await _toolInstaller.InstallYtdlpAsync(NewLogProgress());
+            await _toolState.RefreshAsync("yt-dlp");
+            YtdlpFound = _toolState.IsYtdlpAvailable;
             if (!YtdlpFound)
                 YtdlpInstallError =
                     "yt-dlp installed but could not be found on PATH. You may need to restart StemForge.";
@@ -334,24 +307,15 @@ public partial class SetupWizardViewModel(
     {
         IsInstallingFfmpeg = true;
         FfmpegInstallError = null;
-        _installLog.Clear();
-        InstallLog = string.Empty;
 
         try
         {
-            var progress = new Progress<string>(line =>
-            {
-                if (_installLog.Length > 0)
-                    _installLog.Append('\n');
-                _installLog.Append(line);
-                InstallLog = _installLog.ToString();
-            });
-            await _toolInstaller.InstallFfmpegAsync(progress);
-            FfmpegFound = await _toolInstaller.IsFfmpegAvailableAsync();
-            await _toolState.RefreshAsync();
+            await _toolInstaller.InstallFfmpegAsync(NewLogProgress());
+            await _toolState.RefreshAsync("ffmpeg");
+            FfmpegFound = _toolState.IsFfmpegAvailable;
             if (!FfmpegFound)
                 FfmpegInstallError =
-                    "ffmpeg installed but could not be found on PATH. You may need to restart StemForge.";
+                    "ffmpeg installed but could not be found. You may need to restart StemForge.";
             else
                 FfmpegInstallSuccess = true;
         }
@@ -363,6 +327,19 @@ public partial class SetupWizardViewModel(
         {
             IsInstallingFfmpeg = false;
         }
+    }
+
+    private Progress<string> NewLogProgress()
+    {
+        _installLog.Clear();
+        InstallLog = string.Empty;
+        return new Progress<string>(line =>
+        {
+            if (_installLog.Length > 0)
+                _installLog.Append('\n');
+            _installLog.Append(line);
+            InstallLog = _installLog.ToString();
+        });
     }
 
     [RelayCommand]
@@ -463,9 +440,11 @@ public partial class SetupWizardViewModel(
 
     private async Task RecheckToolsAsync()
     {
-        UvFound = await _toolInstaller.IsUvAvailableAsync();
-        YtdlpFound = await _toolInstaller.IsYtdlpAvailableAsync();
-        FfmpegFound = await _toolInstaller.IsFfmpegAvailableAsync();
+        await _toolState.RefreshAsync();
+        UvFound = _toolState.IsUvAvailable;
+        YtdlpFound = _toolState.IsYtdlpAvailable;
+        FfmpegFound = _toolState.IsFfmpegAvailable;
+        AudioSeparatorFound = _toolState.IsAudioSeparatorAvailable;
 
         // Pre-check anything missing so the user just clicks Install.
         WantInstallUv = !UvFound;

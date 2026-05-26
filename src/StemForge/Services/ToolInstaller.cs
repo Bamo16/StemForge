@@ -30,42 +30,6 @@ public sealed class ToolInstaller(IProcessRunner runner, AppPaths paths)
         }
     }
 
-    public async Task<bool> IsUvAvailableAsync()
-    {
-        try
-        {
-            return (await _runner.RunAsync(_paths.Uv, ["--version"])).Success;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task<bool> IsYtdlpAvailableAsync()
-    {
-        try
-        {
-            return (await _runner.RunAsync(_paths.Ytdlp, ["--version"])).Success;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task<bool> IsFfmpegAvailableAsync()
-    {
-        try
-        {
-            return (await _runner.RunAsync(_paths.Ffmpeg, ["-version"])).Success;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     public Task InstallYtdlpAsync(IProgress<string> progress, CancellationToken ct = default) =>
         _runner.RunStreamingAsync(_paths.Uv, ["tool", "install", "yt-dlp"], progress, ct);
 

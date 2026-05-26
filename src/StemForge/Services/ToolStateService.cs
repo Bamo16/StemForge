@@ -24,12 +24,25 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
     public bool IsFfmpegAvailable => IsAvailable("ffmpeg");
     public bool CanDownloadFromUrl => IsYtdlpAvailable && IsFfmpegAvailable;
 
-    public async Task RefreshAsync()
+    /// <summary>
+    /// Re-detect tool availability. Pass no arguments to refresh all four tools; pass one
+    /// or more tool names to refresh only that subset (the others stay as they were).
+    /// If Tools is empty (no prior detection), always falls back to a full refresh so
+    /// subsequent reads don't see stale "not found" entries for tools we never checked.
+    /// </summary>
+    public async Task RefreshAsync(params string[] toolNames)
     {
         IsLoading = true;
         try
         {
-            Tools = await _detector.DetectAllAsync();
+            if (toolNames.Length == 0 || Tools.Count == 0)
+            {
+                Tools = await _detector.DetectAllAsync();
+                return;
+            }
+
+            var updated = await _detector.DetectAsync(toolNames);
+            Tools = [.. Tools.Select(t => updated.FirstOrDefault(u => u.Name == t.Name) ?? t)];
         }
         finally
         {
