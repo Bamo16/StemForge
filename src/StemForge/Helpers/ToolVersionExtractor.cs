@@ -23,11 +23,9 @@ public static class ToolVersionExtractor
             "uv" => MatchOr(rawOutput, @"^uv\s+(\S+)", FirstLine(rawOutput)),
             "yt-dlp" => MatchOr(rawOutput, @"^\s*(\d+(?:\.\d+)+)", FirstLine(rawOutput)),
             "audio-separator" => MatchOr(rawOutput, @"(\d+(?:\.\d+)+)", FirstLine(rawOutput)),
-            "ffmpeg" => MatchOr(
-                rawOutput,
-                @"ffmpeg version\s+(\d+(?:\.\d+)+)",
-                FirstLine(rawOutput)
-            ),
+            // \S+ rather than a dotted-numeric pattern because rolling autobuilds use
+            // identifiers like "N-124653-g0ac3b00a18-20260526" with no dotted version.
+            "ffmpeg" => MatchOr(rawOutput, @"ffmpeg version\s+(\S+)", FirstLine(rawOutput)),
             _ => FirstLine(rawOutput),
         };
 

@@ -727,12 +727,15 @@
                         <CheckBox IsChecked="{Binding ExtractDrums, Mode=TwoWay}"
                                   Content="Add drum stem to output"
                                   FontSize="11" />
-                        <Border Classes="infoIcon">
-                            <ToolTip.Tip>
-                                <TextBlock TextWrapping="Wrap" MaxWidth="320"
-                                           Text="Saves a separate drum-only file alongside your selected stems. Useful as a transient reference when warping audio in DAWs — drum hits give clearer warp-marker hints than vocal or instrumental clips alone." />
-                            </ToolTip.Tip>
-                            <TextBlock />
+                        <Border Classes="infoIcon"
+                                ToolTip.Tip="Saves a separate drum-only file alongside your selected stems. Useful as a transient reference when warping audio in DAWs — drum hits give clearer warp-marker hints than vocal or instrumental clips alone.">
+                            <TextBlock Text="i"
+                                       FontSize="9"
+                                       FontStyle="Italic"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
                         </Border>
                     </StackPanel>
                 </StackPanel>
