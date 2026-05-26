@@ -63,7 +63,9 @@ public partial class SetupWizardViewModel(
         CurrentStep switch
         {
             WizardStep.Detect => !IsDetecting,
-            WizardStep.Install => AudioSeparatorFound,
+            // All required tools (per ToolInfo.IsRequired) must be satisfied before the
+            // user can leave the Install step. yt-dlp is optional.
+            WizardStep.Install => UvFound && AudioSeparatorFound && FfmpegFound,
             _ => true,
         };
 
@@ -214,6 +216,8 @@ public partial class SetupWizardViewModel(
     }
 
     partial void OnUvFoundChanged(bool value) => OnPropertyChanged(nameof(CanGoNext));
+
+    partial void OnFfmpegFoundChanged(bool value) => OnPropertyChanged(nameof(CanGoNext));
 
     // ── Commands ──────────────────────────────────────────────────────────────
 

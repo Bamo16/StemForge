@@ -18,18 +18,23 @@ public sealed record FfmpegFetchProgress(long BytesDownloaded, long? TotalBytes,
 /// </summary>
 public sealed class FfmpegFetcher(AppPaths paths)
 {
-    // Bumped together with ExpectedSha256 when updating to a newer build.
-    // Tag picked from https://github.com/yt-dlp/FFmpeg-Builds/releases — same project that
-    // maintains yt-dlp, so trust chain stays narrow.
-    private const string ReleaseTag = "autobuild-2026-05-26-17-26";
-    private const string AssetName = "ffmpeg-master-latest-win64-gpl-shared.zip";
+    // Pinned to a specific dated autobuild from
+    // https://github.com/yt-dlp/FFmpeg-Builds/releases (same project that maintains yt-dlp,
+    // so trust chain stays narrow). Dated-tag assets carry the actual build commit hash in
+    // the filename — unlike the rolling 'latest' tag which uses "master-latest". To bump,
+    // pick a newer autobuild release, copy its win64-gpl-shared asset URL verbatim, and
+    // update ExpectedSha256 to match.
     private const string DownloadUrl =
-        $"https://github.com/yt-dlp/FFmpeg-Builds/releases/download/{ReleaseTag}/{AssetName}";
+        "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/"
+        + "autobuild-2026-05-26-17-26/"
+        + "ffmpeg-N-124653-g0ac3b00a18-win64-gpl-shared.zip";
 
     // SHA256 of the pinned asset. Empty string disables verification (logged as a warning
-    // by the install flow). Set this to the expected hex digest before publishing — compute
-    // once with Get-FileHash on Windows or sha256sum on Linux/macOS.
-    private const string ExpectedSha256 = "";
+    // by the install flow). Bump this in lockstep with DownloadUrl whenever the pinned
+    // autobuild release moves — compute via `Get-FileHash -Algorithm SHA256` on Windows or
+    // `sha256sum` on Linux/macOS against the actual downloaded zip.
+    private const string ExpectedSha256 =
+        "5ea46ea816a48f48e0d4c2ccf5997b4201bc8bed0be8ef05ccd169dc91d11dee";
 
     private readonly AppPaths _paths = paths;
 

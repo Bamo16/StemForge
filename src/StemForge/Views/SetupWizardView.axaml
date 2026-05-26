@@ -392,7 +392,7 @@
                                                Text="ffmpeg (required)" />
                                     <TextBlock FontSize="11"
                                                Foreground="{DynamicResource TextPlaceholderBrush}"
-                                               Text="— audio decoder used by audio-separator and URL downloads (~100 MB)" />
+                                               Text="— required by audio-separator (~100 MB download)" />
                                 </StackPanel>
                             </CheckBox>
                             <StackPanel Orientation="Horizontal" Spacing="8"
