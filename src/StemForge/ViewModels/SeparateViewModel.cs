@@ -64,9 +64,62 @@ public partial class SeparateViewModel : PageViewModelBase
     private YtMetadata? _cachedUrlMeta;
 
     public event Action? NavigateToQueueRequested;
+    public event Action? ShowWizardRequested;
 
     [ObservableProperty]
     public partial bool IsUrlInputEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsLocalInputEnabled { get; set; }
+
+    public string LocalInputBlockedMessage =>
+        BuildBlockedMessage(LocalRequiredTools, "local files");
+
+    public string UrlInputBlockedMessage => BuildBlockedMessage(UrlRequiredTools, "URL downloads");
+
+    private IReadOnlyList<string> LocalRequiredTools
+    {
+        get
+        {
+            var missing = new List<string>(2);
+            if (!_toolState.IsAudioSeparatorAvailable)
+                missing.Add("audio-separator");
+            if (!_toolState.IsFfmpegAvailable)
+                missing.Add("ffmpeg");
+            return missing;
+        }
+    }
+
+    private IReadOnlyList<string> UrlRequiredTools
+    {
+        get
+        {
+            var missing = new List<string>(3);
+            if (!_toolState.IsAudioSeparatorAvailable)
+                missing.Add("audio-separator");
+            if (!_toolState.IsFfmpegAvailable)
+                missing.Add("ffmpeg");
+            if (!_toolState.IsYtdlpAvailable)
+                missing.Add("yt-dlp");
+            return missing;
+        }
+    }
+
+    private static string BuildBlockedMessage(IReadOnlyList<string> missing, string featureLabel)
+    {
+        if (missing.Count == 0)
+            return string.Empty;
+        var list = missing.Count switch
+        {
+            1 => missing[0],
+            2 => $"{missing[0]} and {missing[1]}",
+            _ => $"{string.Join(", ", missing.Take(missing.Count - 1))}, and {missing[^1]}",
+        };
+        return $"Install {list} to enable {featureLabel}.";
+    }
+
+    [RelayCommand]
+    private void ShowWizard() => ShowWizardRequested?.Invoke();
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasUrlTitle))]
@@ -204,10 +257,16 @@ public partial class SeparateViewModel : PageViewModelBase
         OutputPath = paths.OutputDirectory;
         StemOutputFormat = settings.DefaultAudioFormat;
         IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
-        _toolState.PropertyChanged += (_, e) =>
+        IsLocalInputEnabled = _toolState.IsAudioSeparatorAvailable && _toolState.IsFfmpegAvailable;
+        _toolState.PropertyChanged += (_, _) =>
         {
-            if (e.PropertyName == nameof(ToolStateService.CanDownloadFromUrl))
-                IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
+            IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
+            IsLocalInputEnabled =
+                _toolState.IsAudioSeparatorAvailable && _toolState.IsFfmpegAvailable;
+            // Computed message properties depend on the same backing state — re-raise so
+            // bindings re-evaluate the text and visibility flags.
+            OnPropertyChanged(nameof(LocalInputBlockedMessage));
+            OnPropertyChanged(nameof(UrlInputBlockedMessage));
         };
         Categories = new ObservableCollection<PresetCategoryGroup>(
             BuildGroups(PresetCatalog.BuiltIn)

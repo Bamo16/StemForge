@@ -74,11 +74,14 @@ public partial class MainWindowViewModel : ViewModelBase
         separate.NavigateToQueueRequested += GoToQueue;
         Wizard.SetupCompleted += () => IsSetupRequired = false;
         Wizard.SetupDismissed += () => IsSetupRequired = false;
-        settings.ShowWizardRequested += () =>
+
+        void OpenWizard()
         {
             Wizard.Reset();
             IsSetupRequired = true;
-        };
+        }
+        settings.ShowWizardRequested += OpenWizard;
+        separate.ShowWizardRequested += OpenWizard;
     }
 
     private void GoToQueue()

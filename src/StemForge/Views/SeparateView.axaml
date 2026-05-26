@@ -40,6 +40,13 @@
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
             <Setter Property="Background" Value="{DynamicResource AccentDimBgBrush}" />
         </Style>
+        <Style Selector="Border.dropZone.disabled">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
+        <Style Selector="Border.dropZone.disabled:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
 
         <!-- ===== URL input field ===== -->
         <Style Selector="Border.urlField">
@@ -218,42 +225,58 @@
                 Padding="20,12">
             <Grid ColumnDefinitions="*,Auto,1.2*" ColumnSpacing="12">
 
-                <!-- Drop zone -->
-                <Border Grid.Column="0" Classes="dropZone"
-                        x:Name="DropZone"
-                        DragDrop.AllowDrop="True"
-                        PointerPressed="OnDropZoneClicked">
-                    <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Empty state -->
-                        <StackPanel Orientation="Horizontal" Spacing="10"
-                                    IsVisible="{Binding !HasInputFile}">
-                            <Path Data="M8 2 V10 M5 7 L8 10 L11 7 M2 11 V13 A1 1 0 0 0 3 14 H13 A1 1 0 0 0 14 13 V11"
-                                  Width="16" Height="16" Stretch="None"
-                                  Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5"
-                                  StrokeLineCap="Round" StrokeJoin="Round" />
-                            <TextBlock VerticalAlignment="Center" FontSize="13"
-                                       Foreground="{DynamicResource TextSecondaryBrush}">
-                                <Run Text="Drop audio file, or " />
-                                <Run Text="browse" Foreground="{DynamicResource AccentBrush}" />
-                            </TextBlock>
-                        </StackPanel>
-                        <!-- File selected state -->
-                        <StackPanel Orientation="Horizontal" Spacing="8"
-                                    IsVisible="{Binding HasInputFile}">
-                            <TextBlock Classes="mono"
-                                       Text="{Binding InputFileName}"
-                                       FontSize="12"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       VerticalAlignment="Center" />
-                            <Button Classes="ghost"
-                                    Content="×"
-                                    Command="{Binding ClearInputCommand}"
-                                    FontSize="16"
-                                    Padding="4,0"
-                                    VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Panel>
-                </Border>
+                <!-- Drop zone column: zone + inline blocked-message stack -->
+                <StackPanel Grid.Column="0" Spacing="6">
+                    <Border Classes="dropZone"
+                            Classes.disabled="{Binding !IsLocalInputEnabled}"
+                            IsEnabled="{Binding IsLocalInputEnabled}"
+                            x:Name="DropZone"
+                            DragDrop.AllowDrop="True"
+                            PointerPressed="OnDropZoneClicked">
+                        <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <!-- Empty state -->
+                            <StackPanel Orientation="Horizontal" Spacing="10"
+                                        IsVisible="{Binding !HasInputFile}">
+                                <Path Data="M8 2 V10 M5 7 L8 10 L11 7 M2 11 V13 A1 1 0 0 0 3 14 H13 A1 1 0 0 0 14 13 V11"
+                                      Width="16" Height="16" Stretch="None"
+                                      Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5"
+                                      StrokeLineCap="Round" StrokeJoin="Round" />
+                                <TextBlock VerticalAlignment="Center" FontSize="13"
+                                           Foreground="{DynamicResource TextSecondaryBrush}">
+                                    <Run Text="Drop audio file, or " />
+                                    <Run Text="browse" Foreground="{DynamicResource AccentBrush}" />
+                                </TextBlock>
+                            </StackPanel>
+                            <!-- File selected state -->
+                            <StackPanel Orientation="Horizontal" Spacing="8"
+                                        IsVisible="{Binding HasInputFile}">
+                                <TextBlock Classes="mono"
+                                           Text="{Binding InputFileName}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           VerticalAlignment="Center" />
+                                <Button Classes="ghost"
+                                        Content="×"
+                                        Command="{Binding ClearInputCommand}"
+                                        FontSize="16"
+                                        Padding="4,0"
+                                        VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Panel>
+                    </Border>
+                    <!-- Inline blocked message + wizard link -->
+                    <StackPanel Orientation="Horizontal" Spacing="6"
+                                IsVisible="{Binding !IsLocalInputEnabled}">
+                        <TextBlock Text="{Binding LocalInputBlockedMessage}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource ErrorBrush}"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap" />
+                        <Button Classes="fmtToggle"
+                                Content="Re-run setup wizard"
+                                Command="{Binding ShowWizardCommand}" />
+                    </StackPanel>
+                </StackPanel>
 
                 <TextBlock Grid.Column="1" Text="or"
                            FontSize="12"
@@ -265,10 +288,6 @@
                     <Border Classes="urlField"
                             Classes.urlDisabled="{Binding !IsUrlInputEnabled}"
                             IsEnabled="{Binding IsUrlInputEnabled}">
-                        <ToolTip.Tip>
-                            <TextBlock IsVisible="{Binding !IsUrlInputEnabled}"
-                                       Text="Install yt-dlp and ffmpeg to enable URL downloads (Settings → Re-run setup wizard)" />
-                        </ToolTip.Tip>
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
                             <Path Grid.Column="0"
                                   Data="M5.5 8.5 L8.5 5.5 M6.5 4.5 L7.8 3.2 A2.5 2.5 0 0 1 11.34 6.74 L10 8.1 M4 5.9 L2.66 7.26 A2.5 2.5 0 0 0 6.2 10.8 L7.5 9.5"
@@ -282,6 +301,18 @@
                                      VerticalContentAlignment="Center" />
                         </Grid>
                     </Border>
+                    <!-- Inline blocked message + wizard link (shown when URL prereqs missing) -->
+                    <StackPanel Orientation="Horizontal" Spacing="6"
+                                IsVisible="{Binding !IsUrlInputEnabled}">
+                        <TextBlock Text="{Binding UrlInputBlockedMessage}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource ErrorBrush}"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap" />
+                        <Button Classes="fmtToggle"
+                                Content="Re-run setup wizard"
+                                Command="{Binding ShowWizardCommand}" />
+                    </StackPanel>
                     <!-- URL validation error -->
                     <TextBlock Text="{Binding UrlInputError}"
                                IsVisible="{Binding HasUrlInputError}"
