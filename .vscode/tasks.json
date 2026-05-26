@@ -170,8 +170,8 @@
                 "${workspaceFolder}/publish/win-x64",
                 "-p:PublishSingleFile=true",
                 "-p:PublishReadyToRun=true",
-                "-p:UseAppHost=true",
-                "-p:IncludeNativeLibrariesForSelfExtract=true"
+                "-p:IncludeNativeLibrariesForSelfExtract=true",
+                "-p:DebugType=embedded"
             ],
             "presentation": {
                 "reveal": "always",
