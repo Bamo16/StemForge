@@ -27,8 +27,7 @@ public sealed class AppPaths(AppSettings settings)
     /// to bare 'ffmpeg' on PATH for users who already have a system install.
     /// </summary>
     public string Ffmpeg =>
-        Override(_settings.FfmpegPath)
-        ?? (File.Exists(BundledFfmpeg) ? BundledFfmpeg : "ffmpeg");
+        Override(_settings.FfmpegPath) ?? (File.Exists(BundledFfmpeg) ? BundledFfmpeg : "ffmpeg");
 
     /// <summary>
     /// Path or PATH-resolvable name of the audio-separator binary. If no user
@@ -62,10 +61,7 @@ public sealed class AppPaths(AppSettings settings)
 
     /// <summary>Path to the bundled ffmpeg binary inside <see cref="BundledBinDir"/>.</summary>
     public string BundledFfmpeg =>
-        Path.Combine(
-            BundledBinDir,
-            OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg"
-        );
+        Path.Combine(BundledBinDir, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg");
 
     // ── Defaults (exposed so the Settings UI can show placeholder text) ──────
 

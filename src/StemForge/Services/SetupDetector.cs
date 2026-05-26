@@ -7,8 +7,7 @@ public sealed record ToolInfo(string Name, bool Found, string? Version, bool IsR
 
 public sealed class SetupDetector(IProcessRunner runner, AppPaths paths)
 {
-    private static readonly string[] AllToolNames =
-        ["uv", "audio-separator", "yt-dlp", "ffmpeg"];
+    private static readonly string[] AllToolNames = ["uv", "audio-separator", "yt-dlp", "ffmpeg"];
 
     private readonly IProcessRunner _runner = runner;
     private readonly AppPaths _paths = paths;

@@ -520,7 +520,10 @@ public partial class SeparateViewModel : PageViewModelBase
                             FormatNote = f.FormatNote ?? "",
                             IsAutoRecommended = f.FormatId == meta.FormatId,
                             IsSelected = f.FormatId == meta.FormatId,
-                            IsYtPremium = AudioFormatInfo.IsYouTubePremium(f.FormatId, meta.Extractor),
+                            IsYtPremium = AudioFormatInfo.IsYouTubePremium(
+                                f.FormatId,
+                                meta.Extractor
+                            ),
                         }
                     );
                 }

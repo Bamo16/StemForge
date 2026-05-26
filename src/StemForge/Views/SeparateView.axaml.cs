@@ -78,14 +78,12 @@ public partial class SeparateView : UserControl
 
     private async void OnDropZoneClicked(object? sender, PointerPressedEventArgs e)
     {
-        var files = await this.PickFilesAsync(
-            [
-                new FilePickerFileType("Audio Files")
-                {
-                    Patterns = ["*.mp3", "*.flac", "*.wav", "*.m4a"],
-                },
-            ]
-        );
+        var files = await this.PickFilesAsync([
+            new FilePickerFileType("Audio Files")
+            {
+                Patterns = ["*.mp3", "*.flac", "*.wav", "*.m4a"],
+            },
+        ]);
 
         if (files.Count > 0)
             Vm.AddFilesToQueue(files);

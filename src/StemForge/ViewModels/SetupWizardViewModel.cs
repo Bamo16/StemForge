@@ -21,6 +21,7 @@ public partial class SetupWizardViewModel(
     SetupDetector setupDetector,
     GpuDetector gpuDetector,
     ToolInstaller toolInstaller,
+    FfmpegFetcher ffmpegFetcher,
     ToolStateService toolState,
     AppPaths paths
 ) : ViewModelBase
@@ -29,6 +30,7 @@ public partial class SetupWizardViewModel(
     private readonly SetupDetector _setupDetector = setupDetector;
     private readonly GpuDetector _gpuDetector = gpuDetector;
     private readonly ToolInstaller _toolInstaller = toolInstaller;
+    private readonly FfmpegFetcher _ffmpegFetcher = ffmpegFetcher;
     private readonly ToolStateService _toolState = toolState;
     private readonly AppPaths _paths = paths;
 
@@ -310,12 +312,28 @@ public partial class SetupWizardViewModel(
 
         try
         {
-            await _toolInstaller.InstallFfmpegAsync(NewLogProgress());
+            IProgress<string> lineProgress = NewLogProgress();
+            var fetchProgress = new Progress<FfmpegFetchProgress>(p =>
+            {
+                if (p.TotalBytes is { } total && total > 0)
+                {
+                    var pct = p.BytesDownloaded * 100.0 / total;
+                    lineProgress.Report(
+                        $"{p.Phase}: {FormatMB(p.BytesDownloaded)} / {FormatMB(total)} ({pct:F0}%)"
+                    );
+                }
+                else
+                {
+                    lineProgress.Report(p.Phase);
+                }
+            });
+
+            await _ffmpegFetcher.FetchAsync(fetchProgress);
             await _toolState.RefreshAsync("ffmpeg");
             FfmpegFound = _toolState.IsFfmpegAvailable;
             if (!FfmpegFound)
                 FfmpegInstallError =
-                    "ffmpeg installed but could not be found. You may need to restart StemForge.";
+                    "ffmpeg downloaded but could not be invoked. Check the install log above.";
             else
                 FfmpegInstallSuccess = true;
         }
@@ -328,6 +346,8 @@ public partial class SetupWizardViewModel(
             IsInstallingFfmpeg = false;
         }
     }
+
+    private static string FormatMB(long bytes) => $"{bytes / 1_048_576.0:F1} MB";
 
     private Progress<string> NewLogProgress()
     {

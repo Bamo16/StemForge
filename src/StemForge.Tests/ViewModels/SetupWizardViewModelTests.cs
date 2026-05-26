@@ -20,6 +20,7 @@ public sealed class SetupWizardViewModelTests
             setupDetector,
             new GpuDetector(runner),
             new ToolInstaller(runner, paths),
+            new FfmpegFetcher(paths),
             new ToolStateService(setupDetector),
             paths
         );
