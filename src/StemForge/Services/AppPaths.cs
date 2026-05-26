@@ -21,8 +21,14 @@ public sealed class AppPaths(AppSettings settings)
     /// <summary>Path or PATH-resolvable name of the yt-dlp binary.</summary>
     public string Ytdlp => Override(_settings.YtdlpPath) ?? "yt-dlp";
 
-    /// <summary>Path or PATH-resolvable name of the ffmpeg binary.</summary>
-    public string Ffmpeg => Override(_settings.FfmpegPath) ?? "ffmpeg";
+    /// <summary>
+    /// Path or PATH-resolvable name of the ffmpeg binary. Prefers the user's explicit
+    /// override, then the bundled binary downloaded on first run, and finally falls back
+    /// to bare 'ffmpeg' on PATH for users who already have a system install.
+    /// </summary>
+    public string Ffmpeg =>
+        Override(_settings.FfmpegPath)
+        ?? (File.Exists(BundledFfmpeg) ? BundledFfmpeg : "ffmpeg");
 
     /// <summary>
     /// Path or PATH-resolvable name of the audio-separator binary. If no user
@@ -44,6 +50,22 @@ public sealed class AppPaths(AppSettings settings)
     /// <summary>Cache directory for drum stems when DrumStemLocation is CacheOnly.</summary>
     public string DrumCacheDirectory =>
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "drum-cache");
+
+    /// <summary>
+    /// Directory holding bundled binaries that StemForge downloads on first run (currently:
+    /// ffmpeg). Prepended to PATH by <see cref="ProcessRunner"/> for every child process, so
+    /// tools that shell out to bare 'ffmpeg' find our binary without it ever being on the
+    /// system PATH.
+    /// </summary>
+    public string BundledBinDir =>
+        Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "bin");
+
+    /// <summary>Path to the bundled ffmpeg binary inside <see cref="BundledBinDir"/>.</summary>
+    public string BundledFfmpeg =>
+        Path.Combine(
+            BundledBinDir,
+            OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg"
+        );
 
     // ── Defaults (exposed so the Settings UI can show placeholder text) ──────
 

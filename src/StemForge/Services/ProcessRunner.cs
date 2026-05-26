@@ -12,8 +12,10 @@ namespace StemForge.Services;
 /// All overloads drain both stdout and stderr to prevent OS pipe-buffer deadlocks.
 /// Cancellation kills the entire process tree; the token is checked after exit.
 /// </summary>
-public sealed class ProcessRunner : IProcessRunner
+public sealed class ProcessRunner(AppPaths paths) : IProcessRunner
 {
+    private readonly AppPaths _paths = paths;
+
     // ── Result ──────────────────────────────────────────────────────────────────
 
     public sealed record Result(int ExitCode, string Stdout, string Stderr)
@@ -86,9 +88,20 @@ public sealed class ProcessRunner : IProcessRunner
             captureStdout: true
         );
 
+    private void InjectBundledBinIntoPath(ProcessStartInfo startInfo)
+    {
+        var bundled = _paths.BundledBinDir;
+        if (string.IsNullOrEmpty(bundled))
+            return;
+        var existing = startInfo.Environment.TryGetValue("PATH", out var p)
+            ? p
+            : Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        startInfo.Environment["PATH"] = bundled + Path.PathSeparator + existing;
+    }
+
     // ── Core ────────────────────────────────────────────────────────────────────
 
-    private static async Task<Result> CoreAsync(
+    private async Task<Result> CoreAsync(
         string exe,
         IEnumerable<string> args,
         IProgress<string>? progress,
@@ -114,6 +127,7 @@ public sealed class ProcessRunner : IProcessRunner
         };
         startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
         startInfo.Environment["PYTHONUTF8"] = "1";
+        InjectBundledBinIntoPath(startInfo);
 
         using var p =
             Process.Start(startInfo)
