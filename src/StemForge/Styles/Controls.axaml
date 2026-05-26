@@ -72,4 +72,31 @@
         <Setter Property="TextBlock.Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>
 
+    <!-- Info icon: small "ⓘ" affordance signalling that an element has a hover tooltip.
+         See docs/adr/0001-info-icon-tooltip-affordance.md. Attach ToolTip.Tip on the icon. -->
+    <Style Selector="Border.infoIcon">
+        <Setter Property="Width" Value="14" />
+        <Setter Property="Height" Value="14" />
+        <Setter Property="CornerRadius" Value="7" />
+        <Setter Property="BorderBrush" Value="{DynamicResource TextSecondaryBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Help" />
+    </Style>
+    <Style Selector="Border.infoIcon:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="Border.infoIcon > TextBlock">
+        <Setter Property="Text" Value="i" />
+        <Setter Property="FontSize" Value="9" />
+        <Setter Property="FontStyle" Value="Italic" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+    <Style Selector="Border.infoIcon:pointerover > TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+
 </Styles>
