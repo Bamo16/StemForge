@@ -602,9 +602,13 @@
                                    HorizontalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- User preset grid (same card style as built-in) -->
-                    <ItemsControl IsVisible="{Binding HasUserPresets}"
-                                  ItemsSource="{Binding UserPresetItems}">
+                    <!-- User preset grid (same card style as built-in).
+                         Wrapped in a StackPanel so the inner UniformGrid measures to its natural
+                         row-height; without it, a single row stretches vertically to fill the
+                         entire ScrollViewer viewport. Built-in presets get the same constraint
+                         implicitly because each category lives inside its own category StackPanel. -->
+                    <StackPanel IsVisible="{Binding HasUserPresets}">
+                    <ItemsControl ItemsSource="{Binding UserPresetItems}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <UniformGrid Columns="2" Margin="0,0,-7,0" />
@@ -635,8 +639,7 @@
                                                 <TextBlock Text="{Binding Description}"
                                                            FontSize="11"
                                                            Foreground="{DynamicResource TextSecondaryBrush}"
-                                                           TextWrapping="Wrap"
-                                                           MaxLines="2"
+                                                           TextWrapping="NoWrap"
                                                            TextTrimming="CharacterEllipsis" />
                                                 <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,4,0,0">
                                                     <Border Classes="tag">
@@ -683,6 +686,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    </StackPanel>
 
                 </Panel>
             </Grid>
