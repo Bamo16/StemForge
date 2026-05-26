@@ -134,9 +134,7 @@ public partial class SeparateViewModel : PageViewModelBase
     public bool HasFormatPicker => FormatPickerItems.Count > 1;
     public bool ShowFormatPicker => IsFormatPickerOpen && HasFormatPicker;
     public string FormatPickerToggleLabel =>
-        IsFormatPickerOpen
-            ? "▴ Hide format options"
-            : $"▾ Show format options ({FormatPickerItems.Count} available)";
+        $"{(IsFormatPickerOpen ? "▴" : "▾")} Format options ({FormatPickerItems.Count} available)";
 
     public ObservableCollection<FormatPickerItem> FormatPickerItems { get; } = [];
 
@@ -156,7 +154,7 @@ public partial class SeparateViewModel : PageViewModelBase
         if (_selectedFormatOverride is { } ov)
         {
             if (ov.Acodec is { Length: > 0 } codec && codec != "none")
-                UrlCodec = codec;
+                UrlCodec = AudioFormatInfo.PrettyCodec(codec);
             var kbps = ov.Abr ?? ov.Tbr;
             if (kbps.HasValue)
                 UrlBitrate = $"{kbps.Value:F0} kb/s";
@@ -164,9 +162,13 @@ public partial class SeparateViewModel : PageViewModelBase
         else if (_cachedUrlMeta is { } auto)
         {
             UrlCodec =
-                auto.SourceCodec is { Length: > 0 } c && c != "none" ? auto.SourceCodec : null;
+                auto.SourceCodec is { Length: > 0 } c && c != "none"
+                    ? AudioFormatInfo.PrettyCodec(c)
+                    : null;
             UrlBitrate = auto.SourceBitrateKbps is { } k ? $"{k:F0} kb/s" : null;
         }
+
+        IsFormatPickerOpen = false;
     }
 
     public bool CanStartRun =>
@@ -399,7 +401,7 @@ public partial class SeparateViewModel : PageViewModelBase
 
         var cts = new CancellationTokenSource();
         _urlCheckCts = cts;
-        _ = FetchUrlFormatAsync(normalized, cts.Token);
+        _ = FetchUrlFormatAsync(normalized, cts);
     }
 
     private DispatcherTimer? _spinnerTimer;
@@ -429,7 +431,7 @@ public partial class SeparateViewModel : PageViewModelBase
         var cts = new CancellationTokenSource();
         _urlCheckCts = cts;
         ClearUrlMetadata();
-        _ = FetchUrlFormatAsync(normalized, cts.Token, skipDelay: true);
+        _ = FetchUrlFormatAsync(normalized, cts, skipDelay: true);
     }
 
     private void NotifyCanRunChanged()
@@ -457,17 +459,27 @@ public partial class SeparateViewModel : PageViewModelBase
 
     private async Task FetchUrlFormatAsync(
         string normalizedUrl,
-        CancellationToken ct,
+        CancellationTokenSource cts,
         bool skipDelay = false
     )
     {
+        // True only while this fetch is still the active one. A user edit replaces _urlCheckCts
+        // with a newer source — any UI mutations after that point belong to the new fetch.
+        bool IsActive() => ReferenceEquals(_urlCheckCts, cts);
+
         IsCheckingUrl = true;
+        var ct = cts.Token;
         try
         {
             if (!skipDelay)
                 await Task.Delay(800, ct);
 
             var meta = await _ytAudio.GetAudioFormatInfoAsync(normalizedUrl, _settings, ct);
+
+            // If a newer fetch has taken over, drop this result on the floor.
+            if (!IsActive())
+                return;
+
             if (meta is null)
             {
                 if (!ct.IsCancellationRequested)
@@ -481,7 +493,7 @@ public partial class SeparateViewModel : PageViewModelBase
 
             UrlTitle = meta.DisplayTitle;
             if (meta.SourceCodec is { Length: > 0 } codec && codec != "none")
-                UrlCodec = codec;
+                UrlCodec = AudioFormatInfo.PrettyCodec(codec);
             if (meta.SourceBitrateKbps is { } kbps)
                 UrlBitrate = $"{kbps:F0} kb/s";
             if (meta.DurationSeconds is { } dur)
@@ -501,12 +513,13 @@ public partial class SeparateViewModel : PageViewModelBase
                         new FormatPickerItem
                         {
                             Format = f,
-                            Codec = f.Acodec ?? "",
+                            Codec = AudioFormatInfo.PrettyCodec(f.Acodec),
                             Bitrate = br is { } b ? $"{b:F0} kb/s" : "—",
                             SampleRate = f.Asr is { } hz ? $"{hz / 1000.0:F1} kHz" : "—",
                             FormatNote = f.FormatNote ?? "",
                             IsAutoRecommended = f.FormatId == meta.FormatId,
                             IsSelected = f.FormatId == meta.FormatId,
+                            IsYtPremium = AudioFormatInfo.IsYouTubePremium(f.FormatId, meta.Extractor),
                         }
                     );
                 }
@@ -518,7 +531,10 @@ public partial class SeparateViewModel : PageViewModelBase
         catch (OperationCanceledException) { }
         finally
         {
-            IsCheckingUrl = false;
+            // Only clear the spinner if we're still the active fetch — otherwise we'd
+            // clobber the newer fetch's IsCheckingUrl=true.
+            if (IsActive())
+                IsCheckingUrl = false;
         }
     }
 

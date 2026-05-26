@@ -1,5 +1,4 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using StemForge.Models;
 
 namespace StemForge.Services;
 
@@ -14,15 +13,15 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
     private readonly SetupDetector _detector = detector;
 
     [ObservableProperty]
-    public partial bool IsLoading { get; set; }
+    public partial bool IsLoading { get; private set; }
 
     [ObservableProperty]
-    public partial IReadOnlyList<ToolInfo> Tools { get; set; } = [];
+    public partial IReadOnlyList<ToolInfo> Tools { get; private set; } = [];
 
-    public bool IsUvAvailable => Find("uv")?.Found ?? false;
-    public bool IsAudioSeparatorAvailable => Find("audio-separator")?.Found ?? false;
-    public bool IsYtdlpAvailable => Find("yt-dlp")?.Found ?? false;
-    public bool IsFfmpegAvailable => Find("ffmpeg")?.Found ?? false;
+    public bool IsUvAvailable => IsAvailable("uv");
+    public bool IsAudioSeparatorAvailable => IsAvailable("audio-separator");
+    public bool IsYtdlpAvailable => IsAvailable("yt-dlp");
+    public bool IsFfmpegAvailable => IsAvailable("ffmpeg");
     public bool CanDownloadFromUrl => IsYtdlpAvailable && IsFfmpegAvailable;
 
     public async Task RefreshAsync()
@@ -47,5 +46,6 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
         OnPropertyChanged(nameof(CanDownloadFromUrl));
     }
 
-    private ToolInfo? Find(string name) => Tools.FirstOrDefault(t => t.Name == name);
+    private bool IsAvailable(string name) =>
+        Tools.FirstOrDefault(t => t.Name == name)?.Found ?? false;
 }

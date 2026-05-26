@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net.Http;
 using System.Text.Json;
 using StemForge.Models;
 
@@ -121,7 +120,8 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             FormatId: selected?.FormatId ?? info.FormatId,
             MediaUrl: mediaUrl,
             ThumbnailUrl: info.Thumbnail,
-            AudioFormats: audioFormats
+            AudioFormats: audioFormats,
+            Extractor: info.Extractor
         );
     }
 

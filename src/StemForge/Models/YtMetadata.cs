@@ -11,7 +11,8 @@ public sealed record YtMetadata(
     string? FormatId,
     string MediaUrl,
     string? ThumbnailUrl = null,
-    IReadOnlyList<YtDlpFormat>? AudioFormats = null
+    IReadOnlyList<YtDlpFormat>? AudioFormats = null,
+    string? Extractor = null
 )
 {
     /// <summary>"Artist - Title" when artist is available, plain Title otherwise.</summary>

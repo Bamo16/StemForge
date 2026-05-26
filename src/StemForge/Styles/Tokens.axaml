@@ -31,6 +31,7 @@
     <Color x:Key="CategoryInstrumentalsColor">#30d158</Color>
     <Color x:Key="CategoryOtherColor">#ffd60a</Color>
 
+
     <!-- ====== Brushes ====== -->
 
     <SolidColorBrush x:Key="Bg0Brush" Color="{StaticResource Bg0Color}" />
