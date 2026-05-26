@@ -1,0 +1,3 @@
+# ⓘ icon as the standard affordance for hover-help tooltips
+
+Avalonia `ToolTip.Tip` attached to bare text or controls is invisible until hover — users have no signal that extra info is available, so most tooltips go undiscovered. We standardise on a small ⓘ icon (`TextSecondaryBrush`, ~12px, baseline-aligned, ~6px right of its anchor) as the universal hover-help affordance: every place that wants to expose a tooltip attaches it to an ⓘ icon next to the labelled element, rather than to the element itself. Considered and rejected: bare tooltips on raw text (poor discoverability) and dotted-underline on text (works only for text anchors, easy to overlook). One visual idiom keeps the surface predictable and scales to any anchor type — labels, checkboxes, icons, headings.
