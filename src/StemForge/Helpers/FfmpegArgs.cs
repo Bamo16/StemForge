@@ -1,6 +1,6 @@
 using StemForge.Models;
 
-namespace StemForge.Services;
+namespace StemForge.Helpers;
 
 /// <summary>
 /// Builds ffmpeg argument lists with consistent baseline flags so we don't drift

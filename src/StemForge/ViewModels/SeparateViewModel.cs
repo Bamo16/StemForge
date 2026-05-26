@@ -6,6 +6,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StemForge.Extensions;
+using StemForge.Helpers;
 using StemForge.Models;
 using StemForge.Services;
 
