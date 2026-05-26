@@ -106,6 +106,9 @@ public partial class SetupWizardViewModel(
     public partial bool IsInstallingUv { get; set; }
 
     [ObservableProperty]
+    public partial bool UvInstallSuccess { get; set; }
+
+    [ObservableProperty]
     public partial string? UvInstallError { get; set; }
 
     [ObservableProperty]
@@ -161,6 +164,21 @@ public partial class SetupWizardViewModel(
 
     public bool IsAnyInstallInProgress =>
         IsInstallingUv || IsInstalling || IsInstallingYtdlp || IsInstallingFfmpeg;
+
+    public bool HasAnythingToInstall =>
+        WantInstallUv || WantInstallAudioSeparator || WantInstallYtdlp || WantInstallFfmpeg;
+
+    partial void OnWantInstallUvChanged(bool value) =>
+        OnPropertyChanged(nameof(HasAnythingToInstall));
+
+    partial void OnWantInstallAudioSeparatorChanged(bool value) =>
+        OnPropertyChanged(nameof(HasAnythingToInstall));
+
+    partial void OnWantInstallYtdlpChanged(bool value) =>
+        OnPropertyChanged(nameof(HasAnythingToInstall));
+
+    partial void OnWantInstallFfmpegChanged(bool value) =>
+        OnPropertyChanged(nameof(HasAnythingToInstall));
 
     // ── Partial hooks ─────────────────────────────────────────────────────────
 
@@ -243,6 +261,8 @@ public partial class SetupWizardViewModel(
             if (!UvFound)
                 UvInstallError =
                     "uv installed but could not be found on PATH. You may need to restart StemForge.";
+            else
+                UvInstallSuccess = true;
         }
         catch (Exception ex)
         {
