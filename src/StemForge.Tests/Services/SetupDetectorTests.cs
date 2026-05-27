@@ -31,10 +31,11 @@ public sealed class SetupDetectorTests
         fake.Setup(paths.AudioSeparator, "audio-separator 0.27.2");
         fake.Setup(paths.Ytdlp, "2024.12.13");
         fake.Setup(paths.Ffmpeg, "ffmpeg version 7.0");
+        fake.Setup(paths.Deno, "deno 2.8.0 (...)");
 
         var results = await detector.DetectAllAsync();
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(5, results.Count);
         Assert.All(results, r => Assert.True(r.Found));
     }
 
@@ -55,12 +56,14 @@ public sealed class SetupDetectorTests
     }
 
     [Fact]
-    public async Task DetectAllAsync_OptionalToolsMissing_AllSystemsGoStillPossible()
+    public async Task DetectAllAsync_OnlyYtdlpMissing_AllRequiredToolsPresent()
     {
         var (detector, fake, paths) = Build();
         fake.Setup(paths.Uv, "uv 0.4.0");
         fake.Setup(paths.AudioSeparator, "audio-separator 0.27.2");
-        // yt-dlp and ffmpeg not registered → throw → Found = false
+        fake.Setup(paths.Ffmpeg, "ffmpeg version 7.0");
+        // yt-dlp not registered → throw → Found = false. yt-dlp is the only
+        // optional tool now that ffmpeg is required by audio-separator.
 
         var results = await detector.DetectAllAsync();
 
@@ -69,8 +72,8 @@ public sealed class SetupDetectorTests
 
         Assert.False(ytdlp.Found);
         Assert.False(ytdlp.IsRequired);
-        Assert.False(ffmpeg.Found);
-        Assert.False(ffmpeg.IsRequired);
+        Assert.True(ffmpeg.Found);
+        Assert.True(ffmpeg.IsRequired);
         Assert.True(results.All(r => r.Found || !r.IsRequired));
     }
 

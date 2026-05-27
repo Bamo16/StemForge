@@ -19,6 +19,9 @@ public sealed record YtDlpVideoInfo
     /// <summary>URL of the highest-quality thumbnail. Null for local files.</summary>
     public string? Thumbnail { get; init; }
 
+    /// <summary>Lowercase extractor name from yt-dlp, e.g. "youtube".</summary>
+    public string? Extractor { get; init; }
+
     public List<YtDlpFormat>? Formats { get; init; }
 }
 

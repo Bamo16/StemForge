@@ -72,13 +72,27 @@ public partial class MainWindowViewModel : ViewModelBase
         IsSetupRequired = !appSettings.FirstRunComplete;
 
         separate.NavigateToQueueRequested += GoToQueue;
-        Wizard.SetupCompleted += () => IsSetupRequired = false;
-        Wizard.SetupDismissed += () => IsSetupRequired = false;
-        settings.ShowWizardRequested += () =>
+        Wizard.SetupCompleted += () =>
+        {
+            IsSetupRequired = false;
+            separate.HasCompletedSetup = true;
+        };
+        Wizard.SetupDismissed += () =>
+        {
+            IsSetupRequired = false;
+            // Dismiss leaves FirstRunComplete as-is; mirror that into SeparateViewModel so
+            // the inline blocked-input messages only show after the user has at least
+            // finished setup once.
+            separate.HasCompletedSetup = appSettings.FirstRunComplete;
+        };
+
+        void OpenWizard()
         {
             Wizard.Reset();
             IsSetupRequired = true;
-        };
+        }
+        settings.ShowWizardRequested += OpenWizard;
+        separate.ShowWizardRequested += OpenWizard;
     }
 
     private void GoToQueue()

@@ -35,6 +35,9 @@ public sealed class AppSettings
     /// <summary>Override path to the ffmpeg binary. Null to use PATH.</summary>
     public string? FfmpegPath { get; set; }
 
+    /// <summary>Override path to the deno binary. Null to prefer the bundled binary, then PATH.</summary>
+    public string? DenoPath { get; set; }
+
     // ── Directory overrides (null = use AppPaths default) ────────────────────
 
     /// <summary>Override directory for stem outputs. Null to use ~/Music/Stems.</summary>
@@ -47,9 +50,6 @@ public sealed class AppSettings
 
     /// <summary>Browser name for --cookies-from-browser (e.g. "firefox", "chrome", "edge"). Null = no cookies.</summary>
     public string? YtdlpCookiesFromBrowser { get; set; }
-
-    /// <summary>JS runtime for --js-runtime (e.g. "deno", "node"). Null = let yt-dlp auto-detect.</summary>
-    public string? YtdlpJsRuntime { get; set; }
 
     // ── Logging ───────────────────────────────────────────────────────────────
 

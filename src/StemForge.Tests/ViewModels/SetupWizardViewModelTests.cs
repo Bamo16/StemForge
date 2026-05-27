@@ -20,6 +20,8 @@ public sealed class SetupWizardViewModelTests
             setupDetector,
             new GpuDetector(runner),
             new ToolInstaller(runner, paths),
+            new FfmpegFetcher(paths),
+            new DenoFetcher(paths),
             new ToolStateService(setupDetector),
             paths
         );
@@ -77,15 +79,22 @@ public sealed class SetupWizardViewModelTests
     }
 
     [AvaloniaFact]
-    public void CanGoNext_OnInstallStep_RequiresAudioSeparatorFound()
+    public void CanGoNext_OnInstallStep_RequiresAllRequiredToolsFound()
     {
         var vm = Build();
         vm.CurrentStep = WizardStep.Install;
 
-        vm.AudioSeparatorFound = false;
+        // All required tools missing
         Assert.False(vm.CanGoNext);
 
+        // Only audio-separator (need uv and ffmpeg too)
         vm.AudioSeparatorFound = true;
+        Assert.False(vm.CanGoNext);
+
+        vm.UvFound = true;
+        Assert.False(vm.CanGoNext);
+
+        vm.FfmpegFound = true;
         Assert.True(vm.CanGoNext);
     }
 

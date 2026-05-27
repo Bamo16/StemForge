@@ -1,9 +1,10 @@
 using System.Globalization;
 using StemForge.Models;
+using StemForge.Services;
 using TagLib;
 using TFile = TagLib.File;
 
-namespace StemForge.Services;
+namespace StemForge.Helpers;
 
 /// <summary>
 /// Reads source-file metadata (tags + cover art) and writes them — along with separation

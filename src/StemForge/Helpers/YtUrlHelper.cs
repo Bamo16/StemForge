@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
-namespace StemForge.Services;
+namespace StemForge.Helpers;
 
 /// <summary>
 /// URL validation and normalisation for YouTube (and general http/https) sources.

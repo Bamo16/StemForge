@@ -7,6 +7,9 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <!-- Single source of truth for the version. The "package: win-x64" task in
+             .vscode/tasks.json reads this and names the release zip accordingly. -->
+        <Version>0.1.0</Version>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,6 +25,16 @@
     <ItemGroup>
         <InternalsVisibleTo Include="StemForge.Tests" />
     </ItemGroup>
+
+    <!-- SkiaSharp / HarfBuzz native NuGets drop their .pdb files into the publish output
+         (~100 MB of native debug symbols not useful to end users). Strip them after publish
+         so the publish folder contains only what we actually ship. -->
+    <Target Name="RemoveNativePdbsFromPublish" AfterTargets="Publish">
+        <ItemGroup>
+            <NativePdbsToRemove Include="$(PublishDir)*.pdb" />
+        </ItemGroup>
+        <Delete Files="@(NativePdbsToRemove)" />
+    </Target>
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.0.1" />

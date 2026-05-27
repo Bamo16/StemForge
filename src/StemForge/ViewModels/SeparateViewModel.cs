@@ -6,6 +6,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StemForge.Extensions;
+using StemForge.Helpers;
 using StemForge.Models;
 using StemForge.Services;
 
@@ -63,9 +64,83 @@ public partial class SeparateViewModel : PageViewModelBase
     private YtMetadata? _cachedUrlMeta;
 
     public event Action? NavigateToQueueRequested;
+    public event Action? ShowWizardRequested;
 
     [ObservableProperty]
     public partial bool IsUrlInputEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsLocalInputEnabled { get; set; }
+
+    /// <summary>
+    /// Tracks whether the user has gone through the setup wizard (successfully or by
+    /// dismissal). While false, the blocked-input red overlays on the drop zone and URL
+    /// field are suppressed — the user is already in the wizard flow, no need to nag
+    /// them about missing tools they're about to install.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool HasCompletedSetup { get; set; }
+
+    public bool ShowLocalBlockedMessage => HasCompletedSetup && !IsLocalInputEnabled;
+    public bool ShowUrlBlockedMessage => HasCompletedSetup && !IsUrlInputEnabled;
+
+    partial void OnHasCompletedSetupChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowLocalBlockedMessage));
+        OnPropertyChanged(nameof(ShowUrlBlockedMessage));
+    }
+
+    partial void OnIsLocalInputEnabledChanged(bool value) =>
+        OnPropertyChanged(nameof(ShowLocalBlockedMessage));
+
+    public string LocalInputBlockedMessage =>
+        BuildBlockedMessage(LocalRequiredTools, "local files");
+
+    public string UrlInputBlockedMessage => BuildBlockedMessage(UrlRequiredTools, "URL downloads");
+
+    private IReadOnlyList<string> LocalRequiredTools
+    {
+        get
+        {
+            var missing = new List<string>(2);
+            if (!_toolState.IsAudioSeparatorAvailable)
+                missing.Add("audio-separator");
+            if (!_toolState.IsFfmpegAvailable)
+                missing.Add("ffmpeg");
+            return missing;
+        }
+    }
+
+    private IReadOnlyList<string> UrlRequiredTools
+    {
+        get
+        {
+            var missing = new List<string>(3);
+            if (!_toolState.IsAudioSeparatorAvailable)
+                missing.Add("audio-separator");
+            if (!_toolState.IsFfmpegAvailable)
+                missing.Add("ffmpeg");
+            if (!_toolState.IsYtdlpAvailable)
+                missing.Add("yt-dlp");
+            return missing;
+        }
+    }
+
+    private static string BuildBlockedMessage(IReadOnlyList<string> missing, string featureLabel)
+    {
+        if (missing.Count == 0)
+            return string.Empty;
+        var list = missing.Count switch
+        {
+            1 => missing[0],
+            2 => $"{missing[0]} and {missing[1]}",
+            _ => $"{string.Join(", ", missing.Take(missing.Count - 1))}, and {missing[^1]}",
+        };
+        return $"Install {list} to enable {featureLabel}.";
+    }
+
+    [RelayCommand]
+    private void ShowWizard() => ShowWizardRequested?.Invoke();
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasUrlTitle))]
@@ -134,9 +209,7 @@ public partial class SeparateViewModel : PageViewModelBase
     public bool HasFormatPicker => FormatPickerItems.Count > 1;
     public bool ShowFormatPicker => IsFormatPickerOpen && HasFormatPicker;
     public string FormatPickerToggleLabel =>
-        IsFormatPickerOpen
-            ? "▴ Hide format options"
-            : $"▾ Show format options ({FormatPickerItems.Count} available)";
+        $"{(IsFormatPickerOpen ? "▴" : "▾")} Format options ({FormatPickerItems.Count} available)";
 
     public ObservableCollection<FormatPickerItem> FormatPickerItems { get; } = [];
 
@@ -156,7 +229,7 @@ public partial class SeparateViewModel : PageViewModelBase
         if (_selectedFormatOverride is { } ov)
         {
             if (ov.Acodec is { Length: > 0 } codec && codec != "none")
-                UrlCodec = codec;
+                UrlCodec = AudioFormatInfo.PrettyCodec(codec);
             var kbps = ov.Abr ?? ov.Tbr;
             if (kbps.HasValue)
                 UrlBitrate = $"{kbps.Value:F0} kb/s";
@@ -164,9 +237,13 @@ public partial class SeparateViewModel : PageViewModelBase
         else if (_cachedUrlMeta is { } auto)
         {
             UrlCodec =
-                auto.SourceCodec is { Length: > 0 } c && c != "none" ? auto.SourceCodec : null;
+                auto.SourceCodec is { Length: > 0 } c && c != "none"
+                    ? AudioFormatInfo.PrettyCodec(c)
+                    : null;
             UrlBitrate = auto.SourceBitrateKbps is { } k ? $"{k:F0} kb/s" : null;
         }
+
+        IsFormatPickerOpen = false;
     }
 
     public bool CanStartRun =>
@@ -201,10 +278,17 @@ public partial class SeparateViewModel : PageViewModelBase
         OutputPath = paths.OutputDirectory;
         StemOutputFormat = settings.DefaultAudioFormat;
         IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
-        _toolState.PropertyChanged += (_, e) =>
+        IsLocalInputEnabled = _toolState.IsAudioSeparatorAvailable && _toolState.IsFfmpegAvailable;
+        HasCompletedSetup = _settings.FirstRunComplete;
+        _toolState.PropertyChanged += (_, _) =>
         {
-            if (e.PropertyName == nameof(ToolStateService.CanDownloadFromUrl))
-                IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
+            IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
+            IsLocalInputEnabled =
+                _toolState.IsAudioSeparatorAvailable && _toolState.IsFfmpegAvailable;
+            // Computed message properties depend on the same backing state — re-raise so
+            // bindings re-evaluate the text and visibility flags.
+            OnPropertyChanged(nameof(LocalInputBlockedMessage));
+            OnPropertyChanged(nameof(UrlInputBlockedMessage));
         };
         Categories = new ObservableCollection<PresetCategoryGroup>(
             BuildGroups(PresetCatalog.BuiltIn)
@@ -399,7 +483,7 @@ public partial class SeparateViewModel : PageViewModelBase
 
         var cts = new CancellationTokenSource();
         _urlCheckCts = cts;
-        _ = FetchUrlFormatAsync(normalized, cts.Token);
+        _ = FetchUrlFormatAsync(normalized, cts);
     }
 
     private DispatcherTimer? _spinnerTimer;
@@ -429,7 +513,7 @@ public partial class SeparateViewModel : PageViewModelBase
         var cts = new CancellationTokenSource();
         _urlCheckCts = cts;
         ClearUrlMetadata();
-        _ = FetchUrlFormatAsync(normalized, cts.Token, skipDelay: true);
+        _ = FetchUrlFormatAsync(normalized, cts, skipDelay: true);
     }
 
     private void NotifyCanRunChanged()
@@ -457,17 +541,27 @@ public partial class SeparateViewModel : PageViewModelBase
 
     private async Task FetchUrlFormatAsync(
         string normalizedUrl,
-        CancellationToken ct,
+        CancellationTokenSource cts,
         bool skipDelay = false
     )
     {
+        // True only while this fetch is still the active one. A user edit replaces _urlCheckCts
+        // with a newer source — any UI mutations after that point belong to the new fetch.
+        bool IsActive() => ReferenceEquals(_urlCheckCts, cts);
+
         IsCheckingUrl = true;
+        var ct = cts.Token;
         try
         {
             if (!skipDelay)
                 await Task.Delay(800, ct);
 
             var meta = await _ytAudio.GetAudioFormatInfoAsync(normalizedUrl, _settings, ct);
+
+            // If a newer fetch has taken over, drop this result on the floor.
+            if (!IsActive())
+                return;
+
             if (meta is null)
             {
                 if (!ct.IsCancellationRequested)
@@ -481,7 +575,7 @@ public partial class SeparateViewModel : PageViewModelBase
 
             UrlTitle = meta.DisplayTitle;
             if (meta.SourceCodec is { Length: > 0 } codec && codec != "none")
-                UrlCodec = codec;
+                UrlCodec = AudioFormatInfo.PrettyCodec(codec);
             if (meta.SourceBitrateKbps is { } kbps)
                 UrlBitrate = $"{kbps:F0} kb/s";
             if (meta.DurationSeconds is { } dur)
@@ -501,12 +595,16 @@ public partial class SeparateViewModel : PageViewModelBase
                         new FormatPickerItem
                         {
                             Format = f,
-                            Codec = f.Acodec ?? "",
+                            Codec = AudioFormatInfo.PrettyCodec(f.Acodec),
                             Bitrate = br is { } b ? $"{b:F0} kb/s" : "—",
                             SampleRate = f.Asr is { } hz ? $"{hz / 1000.0:F1} kHz" : "—",
                             FormatNote = f.FormatNote ?? "",
                             IsAutoRecommended = f.FormatId == meta.FormatId,
                             IsSelected = f.FormatId == meta.FormatId,
+                            IsYtPremium = AudioFormatInfo.IsYouTubePremium(
+                                f.FormatId,
+                                meta.Extractor
+                            ),
                         }
                     );
                 }
@@ -518,13 +616,17 @@ public partial class SeparateViewModel : PageViewModelBase
         catch (OperationCanceledException) { }
         finally
         {
-            IsCheckingUrl = false;
+            // Only clear the spinner if we're still the active fetch — otherwise we'd
+            // clobber the newer fetch's IsCheckingUrl=true.
+            if (IsActive())
+                IsCheckingUrl = false;
         }
     }
 
     partial void OnIsUrlInputEnabledChanged(bool value)
     {
         OnPropertyChanged(nameof(ShowUrlFormatRow));
+        OnPropertyChanged(nameof(ShowUrlBlockedMessage));
         NotifyCanRunChanged();
     }
 

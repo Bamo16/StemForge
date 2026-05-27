@@ -160,6 +160,17 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
             startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
             startInfo.Environment["PYTHONUTF8"] = "1";
 
+            // Same PATH prepend ProcessRunner applies for every other child process. The
+            // driver doesn't go through ProcessRunner because it's a long-lived process with
+            // a JSON-over-stdio protocol, so we duplicate the injection inline. Without this,
+            // audio-separator's internal `subprocess.check_output(["ffmpeg", "-version"])`
+            // can't find the bundled binary.
+            var existingPath = startInfo.Environment.TryGetValue("PATH", out var p)
+                ? p
+                : Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+            startInfo.Environment["PATH"] =
+                _paths.BundledBinDir + Path.PathSeparator + existingPath;
+
             AppLogger.Debug(
                 "driver",
                 $"Spawning: {startInfo.FileName} {AppPaths.SeparationDriverScript}"

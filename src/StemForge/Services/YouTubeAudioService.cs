@@ -1,6 +1,6 @@
 using System.Globalization;
-using System.Net.Http;
 using System.Text.Json;
+using StemForge.Helpers;
 using StemForge.Models;
 
 namespace StemForge.Services;
@@ -41,6 +41,13 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             "--no-playlist",
             "--format",
             "bestaudio/best",
+            // YouTube now rotates JS-based "n challenges" that yt-dlp needs an external solver
+            // script for. Authorising the upstream EJS repo lets yt-dlp fetch the solver on
+            // demand; without this flag, format extraction silently returns only image
+            // thumbnails and we get "Requested format is not available". yt-dlp itself
+            // still needs a JS runtime on PATH (deno/node/bun) to execute the solver.
+            "--remote-components",
+            "ejs:github",
         };
 
         var cookies = settings.YtdlpCookiesFromBrowser;
@@ -55,10 +62,8 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             args.AddRange([flag, cookies]);
         }
 
-        var jsRuntime = settings.YtdlpJsRuntime;
-        if (!string.IsNullOrWhiteSpace(jsRuntime))
-            args.AddRange(["--js-runtime", jsRuntime]);
-
+        // No --js-runtime override: yt-dlp auto-discovers the bundled deno via PATH
+        // (ProcessRunner prepends BundledBinDir to every child env).
         args.Add(url);
 
         // Stderr streams live (yt-dlp info lines); stdout (the JSON blob) is captured silently.
@@ -121,7 +126,8 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             FormatId: selected?.FormatId ?? info.FormatId,
             MediaUrl: mediaUrl,
             ThumbnailUrl: info.Thumbnail,
-            AudioFormats: audioFormats
+            AudioFormats: audioFormats,
+            Extractor: info.Extractor
         );
     }
 
