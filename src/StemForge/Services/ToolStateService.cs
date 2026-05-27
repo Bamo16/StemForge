@@ -22,6 +22,7 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
     public bool IsAudioSeparatorAvailable => IsAvailable("audio-separator");
     public bool IsYtdlpAvailable => IsAvailable("yt-dlp");
     public bool IsFfmpegAvailable => IsAvailable("ffmpeg");
+    public bool IsDenoAvailable => IsAvailable("deno");
     public bool CanDownloadFromUrl => IsYtdlpAvailable && IsFfmpegAvailable;
 
     /// <summary>
@@ -56,6 +57,7 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
         OnPropertyChanged(nameof(IsAudioSeparatorAvailable));
         OnPropertyChanged(nameof(IsYtdlpAvailable));
         OnPropertyChanged(nameof(IsFfmpegAvailable));
+        OnPropertyChanged(nameof(IsDenoAvailable));
         OnPropertyChanged(nameof(CanDownloadFromUrl));
     }
 

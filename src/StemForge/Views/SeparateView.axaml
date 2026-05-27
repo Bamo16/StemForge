@@ -266,7 +266,7 @@
                     </Border>
                     <!-- Inline blocked message + wizard link -->
                     <StackPanel Orientation="Horizontal" Spacing="6"
-                                IsVisible="{Binding !IsLocalInputEnabled}">
+                                IsVisible="{Binding ShowLocalBlockedMessage}">
                         <TextBlock Text="{Binding LocalInputBlockedMessage}"
                                    FontSize="11"
                                    Foreground="{DynamicResource ErrorBrush}"
@@ -303,7 +303,7 @@
                     </Border>
                     <!-- Inline blocked message + wizard link (shown when URL prereqs missing) -->
                     <StackPanel Orientation="Horizontal" Spacing="6"
-                                IsVisible="{Binding !IsUrlInputEnabled}">
+                                IsVisible="{Binding ShowUrlBlockedMessage}">
                         <TextBlock Text="{Binding UrlInputBlockedMessage}"
                                    FontSize="11"
                                    Foreground="{DynamicResource ErrorBrush}"

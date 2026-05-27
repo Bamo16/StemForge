@@ -26,6 +26,9 @@ public static class ToolVersionExtractor
             // \S+ rather than a dotted-numeric pattern because rolling autobuilds use
             // identifiers like "N-124653-g0ac3b00a18-20260526" with no dotted version.
             "ffmpeg" => MatchOr(rawOutput, @"ffmpeg version\s+(\S+)", FirstLine(rawOutput)),
+            // deno --version emits three lines: "deno X.Y.Z (...)", "v8 ...", "typescript ...".
+            // We just want the deno version.
+            "deno" => MatchOr(rawOutput, @"^deno\s+(\S+)", FirstLine(rawOutput)),
             _ => FirstLine(rawOutput),
         };
 

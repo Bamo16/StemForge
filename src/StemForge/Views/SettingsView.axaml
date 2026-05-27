@@ -385,6 +385,12 @@
                                          Text="{Binding FfmpegPath, Mode=TwoWay}"
                                          PlaceholderText="Default: bundled binary in %LOCALAPPDATA%\StemForge\bin, falls back to 'ffmpeg' on PATH" />
                             </StackPanel>
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="settingLabel" Text="deno" />
+                                <TextBox Classes="settingInput"
+                                         Text="{Binding DenoPath, Mode=TwoWay}"
+                                         PlaceholderText="Default: bundled binary in %LOCALAPPDATA%\StemForge\bin, falls back to 'deno' on PATH" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -417,20 +423,6 @@
                                 <TextBlock FontSize="11" TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
                                            Text="FLAC: lossless. WAV: lossless 24-bit, larger files. MP3: lossy 320 kbps, smallest." />
-                            </StackPanel>
-                            <StackPanel Spacing="6">
-                                <TextBlock Classes="settingLabel"
-                                           Text="JS runtime (deno, node, bun, quickjs)" />
-                                <TextBox Classes="settingInput"
-                                         Text="{Binding YtdlpJsRuntime, Mode=TwoWay}"
-                                         PlaceholderText="Leave blank — yt-dlp auto-detects deno if installed" />
-                                <TextBlock FontSize="11" TextWrapping="Wrap"
-                                           Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="Required for YouTube authentication when using cookies. Deno is recommended (minimum v2.0.0). If deno is in your PATH, leave this blank — yt-dlp will find it automatically. Only set this if you need to pick a specific runtime or yt-dlp can't find it." />
-                                <HyperlinkButton Padding="0" FontSize="11"
-                                                 NavigateUri="https://github.com/yt-dlp/yt-dlp/wiki/EJS"
-                                                 Foreground="{DynamicResource AccentBrush}"
-                                                 Content="yt-dlp JS runtime documentation ↗" />
                             </StackPanel>
                         </StackPanel>
                     </Border>

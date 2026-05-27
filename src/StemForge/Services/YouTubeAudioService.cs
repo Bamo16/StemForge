@@ -62,10 +62,8 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             args.AddRange([flag, cookies]);
         }
 
-        var jsRuntime = settings.YtdlpJsRuntime;
-        if (!string.IsNullOrWhiteSpace(jsRuntime))
-            args.AddRange(["--js-runtime", jsRuntime]);
-
+        // No --js-runtime override: yt-dlp auto-discovers the bundled deno via PATH
+        // (ProcessRunner prepends BundledBinDir to every child env).
         args.Add(url);
 
         // Stderr streams live (yt-dlp info lines); stdout (the JSON blob) is captured silently.

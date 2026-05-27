@@ -109,10 +109,10 @@ public partial class SettingsViewModel : PageViewModelBase
     public partial string FfmpegPath { get; set; } = string.Empty;
 
     [ObservableProperty]
-    public partial string YtdlpCookiesFromBrowser { get; set; } = string.Empty;
+    public partial string DenoPath { get; set; } = string.Empty;
 
     [ObservableProperty]
-    public partial string YtdlpJsRuntime { get; set; } = string.Empty;
+    public partial string YtdlpCookiesFromBrowser { get; set; } = string.Empty;
 
     // ── Default audio format ───────────────────────────────────────────────────
 
@@ -170,11 +170,17 @@ public partial class SettingsViewModel : PageViewModelBase
 
     private async void SyncToolsFromState()
     {
+        // Snapshot first, then do the await, then mutate Tools in one synchronous block.
+        // Without this, async-void interleaving between concurrent invocations (each
+        // RefreshAsync raises Tools, which can fire this method again) lets multiple
+        // Clear() calls execute before any Add() lands, then all three foreach blocks
+        // run in sequence and stack 3× the entries into the ObservableCollection.
+        var snapshot = _toolState.Tools;
+        await TryFillInstalledVariantAsync(snapshot);
         Tools.Clear();
-        await TryFillInstalledVariantAsync(_toolState.Tools);
-        foreach (var t in _toolState.Tools)
+        foreach (var t in snapshot)
             Tools.Add(new ToolStatusViewModel(t, VariantTagFor(t.Name, t.Found)));
-        AllSystemsGo = _toolState.Tools.All(t => t.Found || !t.IsRequired);
+        AllSystemsGo = snapshot.All(t => t.Found || !t.IsRequired);
         ToolsLoading = _toolState.IsLoading;
     }
 
@@ -187,8 +193,8 @@ public partial class SettingsViewModel : PageViewModelBase
         AudioSeparatorPath = s.AudioSeparatorPath ?? string.Empty;
         YtdlpPath = s.YtdlpPath ?? string.Empty;
         FfmpegPath = s.FfmpegPath ?? string.Empty;
+        DenoPath = s.DenoPath ?? string.Empty;
         YtdlpCookiesFromBrowser = s.YtdlpCookiesFromBrowser ?? string.Empty;
-        YtdlpJsRuntime = s.YtdlpJsRuntime ?? string.Empty;
         DefaultAudioFormat = s.DefaultAudioFormat;
         DrumExtractionModel = s.DrumExtractionModel;
         DrumStemsWithOutputs = s.DrumStemLocation == DrumStemLocation.WithStems;
@@ -401,8 +407,8 @@ public partial class SettingsViewModel : PageViewModelBase
         _settings.AudioSeparatorPath = NullIfBlank(AudioSeparatorPath);
         _settings.YtdlpPath = NullIfBlank(YtdlpPath);
         _settings.FfmpegPath = NullIfBlank(FfmpegPath);
+        _settings.DenoPath = NullIfBlank(DenoPath);
         _settings.YtdlpCookiesFromBrowser = NullIfBlank(YtdlpCookiesFromBrowser);
-        _settings.YtdlpJsRuntime = NullIfBlank(YtdlpJsRuntime);
         _settings.DefaultAudioFormat = DefaultAudioFormat;
         _settings.DrumExtractionModel = string.IsNullOrWhiteSpace(DrumExtractionModel)
             ? "htdemucs_ft.yaml"

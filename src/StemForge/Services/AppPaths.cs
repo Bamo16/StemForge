@@ -63,6 +63,18 @@ public sealed class AppPaths(AppSettings settings)
     public string BundledFfmpeg =>
         Path.Combine(BundledBinDir, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg");
 
+    /// <summary>
+    /// Path or PATH-resolvable name of the deno binary. yt-dlp auto-discovers deno on PATH
+    /// to solve YouTube's n-challenges; we bundle it so users don't have to install a JS
+    /// runtime themselves.
+    /// </summary>
+    public string Deno =>
+        Override(_settings.DenoPath) ?? (File.Exists(BundledDeno) ? BundledDeno : "deno");
+
+    /// <summary>Path to the bundled deno binary inside <see cref="BundledBinDir"/>.</summary>
+    public string BundledDeno =>
+        Path.Combine(BundledBinDir, OperatingSystem.IsWindows() ? "deno.exe" : "deno");
+
     // ── Defaults (exposed so the Settings UI can show placeholder text) ──────
 
     public static string DefaultOutputDirectory =>

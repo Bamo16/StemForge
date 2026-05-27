@@ -72,6 +72,27 @@ public partial class SeparateViewModel : PageViewModelBase
     [ObservableProperty]
     public partial bool IsLocalInputEnabled { get; set; }
 
+    /// <summary>
+    /// Tracks whether the user has gone through the setup wizard (successfully or by
+    /// dismissal). While false, the blocked-input red overlays on the drop zone and URL
+    /// field are suppressed — the user is already in the wizard flow, no need to nag
+    /// them about missing tools they're about to install.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool HasCompletedSetup { get; set; }
+
+    public bool ShowLocalBlockedMessage => HasCompletedSetup && !IsLocalInputEnabled;
+    public bool ShowUrlBlockedMessage => HasCompletedSetup && !IsUrlInputEnabled;
+
+    partial void OnHasCompletedSetupChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowLocalBlockedMessage));
+        OnPropertyChanged(nameof(ShowUrlBlockedMessage));
+    }
+
+    partial void OnIsLocalInputEnabledChanged(bool value) =>
+        OnPropertyChanged(nameof(ShowLocalBlockedMessage));
+
     public string LocalInputBlockedMessage =>
         BuildBlockedMessage(LocalRequiredTools, "local files");
 
@@ -258,6 +279,7 @@ public partial class SeparateViewModel : PageViewModelBase
         StemOutputFormat = settings.DefaultAudioFormat;
         IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
         IsLocalInputEnabled = _toolState.IsAudioSeparatorAvailable && _toolState.IsFfmpegAvailable;
+        HasCompletedSetup = _settings.FirstRunComplete;
         _toolState.PropertyChanged += (_, _) =>
         {
             IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
@@ -604,6 +626,7 @@ public partial class SeparateViewModel : PageViewModelBase
     partial void OnIsUrlInputEnabledChanged(bool value)
     {
         OnPropertyChanged(nameof(ShowUrlFormatRow));
+        OnPropertyChanged(nameof(ShowUrlBlockedMessage));
         NotifyCanRunChanged();
     }
 

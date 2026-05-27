@@ -31,10 +31,11 @@ public sealed class SetupDetectorTests
         fake.Setup(paths.AudioSeparator, "audio-separator 0.27.2");
         fake.Setup(paths.Ytdlp, "2024.12.13");
         fake.Setup(paths.Ffmpeg, "ffmpeg version 7.0");
+        fake.Setup(paths.Deno, "deno 2.8.0 (...)");
 
         var results = await detector.DetectAllAsync();
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(5, results.Count);
         Assert.All(results, r => Assert.True(r.Found));
     }
 

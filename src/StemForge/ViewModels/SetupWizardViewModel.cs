@@ -22,6 +22,7 @@ public partial class SetupWizardViewModel(
     GpuDetector gpuDetector,
     ToolInstaller toolInstaller,
     FfmpegFetcher ffmpegFetcher,
+    DenoFetcher denoFetcher,
     ToolStateService toolState,
     AppPaths paths
 ) : ViewModelBase
@@ -31,6 +32,7 @@ public partial class SetupWizardViewModel(
     private readonly GpuDetector _gpuDetector = gpuDetector;
     private readonly ToolInstaller _toolInstaller = toolInstaller;
     private readonly FfmpegFetcher _ffmpegFetcher = ffmpegFetcher;
+    private readonly DenoFetcher _denoFetcher = denoFetcher;
     private readonly ToolStateService _toolState = toolState;
     private readonly AppPaths _paths = paths;
 
@@ -143,6 +145,18 @@ public partial class SetupWizardViewModel(
     [ObservableProperty]
     public partial string? FfmpegInstallError { get; set; }
 
+    [ObservableProperty]
+    public partial bool DenoFound { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsInstallingDeno { get; set; }
+
+    [ObservableProperty]
+    public partial bool DenoInstallSuccess { get; set; }
+
+    [ObservableProperty]
+    public partial string? DenoInstallError { get; set; }
+
     private readonly StringBuilder _installLog = new();
 
     [ObservableProperty]
@@ -164,11 +178,22 @@ public partial class SetupWizardViewModel(
     [ObservableProperty]
     public partial bool WantInstallFfmpeg { get; set; }
 
+    [ObservableProperty]
+    public partial bool WantInstallDeno { get; set; }
+
     public bool IsAnyInstallInProgress =>
-        IsInstallingUv || IsInstalling || IsInstallingYtdlp || IsInstallingFfmpeg;
+        IsInstallingUv
+        || IsInstalling
+        || IsInstallingYtdlp
+        || IsInstallingFfmpeg
+        || IsInstallingDeno;
 
     public bool HasAnythingToInstall =>
-        WantInstallUv || WantInstallAudioSeparator || WantInstallYtdlp || WantInstallFfmpeg;
+        (WantInstallUv && !UvFound)
+        || (WantInstallAudioSeparator && !AudioSeparatorFound)
+        || (WantInstallYtdlp && !YtdlpFound)
+        || (WantInstallFfmpeg && !FfmpegFound)
+        || (WantInstallDeno && !DenoFound);
 
     partial void OnWantInstallUvChanged(bool value) =>
         OnPropertyChanged(nameof(HasAnythingToInstall));
@@ -180,6 +205,9 @@ public partial class SetupWizardViewModel(
         OnPropertyChanged(nameof(HasAnythingToInstall));
 
     partial void OnWantInstallFfmpegChanged(bool value) =>
+        OnPropertyChanged(nameof(HasAnythingToInstall));
+
+    partial void OnWantInstallDenoChanged(bool value) =>
         OnPropertyChanged(nameof(HasAnythingToInstall));
 
     // ── Partial hooks ─────────────────────────────────────────────────────────
@@ -206,7 +234,11 @@ public partial class SetupWizardViewModel(
 
     partial void OnIsDetectingChanged(bool value) => OnPropertyChanged(nameof(CanGoNext));
 
-    partial void OnAudioSeparatorFoundChanged(bool value) => OnPropertyChanged(nameof(CanGoNext));
+    partial void OnAudioSeparatorFoundChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanGoNext));
+        OnPropertyChanged(nameof(HasAnythingToInstall));
+    }
 
     partial void OnGpuVariantChanged(GpuVariant value)
     {
@@ -215,9 +247,21 @@ public partial class SetupWizardViewModel(
         OnPropertyChanged(nameof(IsDirectML));
     }
 
-    partial void OnUvFoundChanged(bool value) => OnPropertyChanged(nameof(CanGoNext));
+    partial void OnUvFoundChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanGoNext));
+        OnPropertyChanged(nameof(HasAnythingToInstall));
+    }
 
-    partial void OnFfmpegFoundChanged(bool value) => OnPropertyChanged(nameof(CanGoNext));
+    partial void OnFfmpegFoundChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanGoNext));
+        OnPropertyChanged(nameof(HasAnythingToInstall));
+    }
+
+    partial void OnYtdlpFoundChanged(bool value) => OnPropertyChanged(nameof(HasAnythingToInstall));
+
+    partial void OnDenoFoundChanged(bool value) => OnPropertyChanged(nameof(HasAnythingToInstall));
 
     // ── Commands ──────────────────────────────────────────────────────────────
 
@@ -373,6 +417,49 @@ public partial class SetupWizardViewModel(
 
     private static string FormatMB(long bytes) => $"{bytes / 1_048_576.0:F1} MB";
 
+    [RelayCommand]
+    private async Task InstallDenoAsync()
+    {
+        IsInstallingDeno = true;
+        DenoInstallError = null;
+
+        try
+        {
+            var lineProgress = (IProgress<string>)NewLogProgress();
+            var fetchProgress = new Progress<DenoFetchProgress>(p =>
+            {
+                if (p.TotalBytes is { } total && total > 0)
+                {
+                    var pct = p.BytesDownloaded * 100.0 / total;
+                    lineProgress.Report(
+                        $"{p.Phase}: {FormatMB(p.BytesDownloaded)} / {FormatMB(total)} ({pct:F0}%)"
+                    );
+                }
+                else
+                {
+                    lineProgress.Report(p.Phase);
+                }
+            });
+
+            await _denoFetcher.FetchAsync(fetchProgress);
+            await _toolState.RefreshAsync("deno");
+            DenoFound = _toolState.IsDenoAvailable;
+            if (!DenoFound)
+                DenoInstallError =
+                    "deno downloaded but could not be invoked. Check the install log above.";
+            else
+                DenoInstallSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            DenoInstallError = ex.Message;
+        }
+        finally
+        {
+            IsInstallingDeno = false;
+        }
+    }
+
     private Progress<string> NewLogProgress()
     {
         _installLog.Clear();
@@ -489,12 +576,14 @@ public partial class SetupWizardViewModel(
         YtdlpFound = _toolState.IsYtdlpAvailable;
         FfmpegFound = _toolState.IsFfmpegAvailable;
         AudioSeparatorFound = _toolState.IsAudioSeparatorAvailable;
+        DenoFound = _toolState.IsDenoAvailable;
 
         // Pre-check anything missing so the user just clicks Install.
         WantInstallUv = !UvFound;
         WantInstallAudioSeparator = !AudioSeparatorFound;
         WantInstallYtdlp = !YtdlpFound;
         WantInstallFfmpeg = !FfmpegFound;
+        WantInstallDeno = !DenoFound;
     }
 
     [RelayCommand]
@@ -509,6 +598,8 @@ public partial class SetupWizardViewModel(
             await InstallYtdlpAsync();
         if (WantInstallFfmpeg && !FfmpegFound)
             await InstallFfmpegAsync();
+        if (WantInstallDeno && !DenoFound)
+            await InstallDenoAsync();
     }
 
     private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolInfo> tools)

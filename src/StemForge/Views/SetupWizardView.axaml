@@ -58,6 +58,44 @@
         <Style Selector="Ellipse.statusDot.fail">
             <Setter Property="Fill" Value="{DynamicResource ErrorBrush}" />
         </Style>
+
+        <!-- Install-row text styling -->
+        <Style Selector="TextBlock.toolName">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.toolName.satisfied">
+            <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
+        </Style>
+        <Style Selector="TextBlock.requiredTag">
+            <Setter Property="FontSize" Value="9" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LetterSpacing" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Text" Value="REQUIRED" />
+        </Style>
+        <Style Selector="TextBlock.optionalTag">
+            <Setter Property="FontSize" Value="9" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LetterSpacing" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Text" Value="OPTIONAL" />
+        </Style>
+        <Style Selector="TextBlock.toolDesc">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="MaxWidth" Value="280" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.installOutcome">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
     </UserControl.Styles>
 
     <!-- Full-screen dim overlay -->
@@ -258,19 +296,15 @@
 
                         <!-- uv -->
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <!-- Pending state: checkbox -->
                             <CheckBox IsChecked="{Binding WantInstallUv, Mode=TwoWay}"
                                       IsVisible="{Binding !UvFound}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock FontSize="12" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               Text="uv (required)" />
-                                    <TextBlock FontSize="11"
-                                               Foreground="{DynamicResource TextPlaceholderBrush}"
+                                    <TextBlock Classes="toolName" Text="uv" />
+                                    <TextBlock Classes="requiredTag" />
+                                    <TextBlock Classes="toolDesc"
                                                Text="— Python tool installer used to install audio-separator" />
                                 </StackPanel>
                             </CheckBox>
-                            <!-- Satisfied state: filled check + greyed label + outcome text -->
                             <StackPanel Orientation="Horizontal" Spacing="8"
                                         IsVisible="{Binding UvFound}">
                                 <Path Data="M0 6 L4 10 L12 1"
@@ -278,14 +312,13 @@
                                       StrokeLineCap="Round" StrokeJoin="Round"
                                       Stretch="None" Width="14" Height="14"
                                       VerticalAlignment="Center" />
-                                <TextBlock FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="uv (required)" />
-                                <TextBlock FontSize="11"
+                                <TextBlock Classes="toolName satisfied" Text="uv" />
+                                <TextBlock Classes="requiredTag" />
+                                <TextBlock Classes="installOutcome"
                                            Foreground="{DynamicResource SuccessBrush}"
                                            Text="✓ installed"
                                            IsVisible="{Binding UvInstallSuccess}" />
-                                <TextBlock FontSize="11"
+                                <TextBlock Classes="installOutcome"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
                                            Text="✓ already installed"
                                            IsVisible="{Binding !UvInstallSuccess}" />
@@ -298,11 +331,9 @@
                                 <CheckBox IsChecked="{Binding WantInstallAudioSeparator, Mode=TwoWay}"
                                           IsVisible="{Binding !AudioSeparatorFound}">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <TextBlock FontSize="12" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                                   Text="audio-separator (required)" />
-                                        <TextBlock FontSize="11"
-                                                   Foreground="{DynamicResource TextPlaceholderBrush}"
+                                        <TextBlock Classes="toolName" Text="audio-separator" />
+                                        <TextBlock Classes="requiredTag" />
+                                        <TextBlock Classes="toolDesc"
                                                    Text="— stem separation engine" />
                                     </StackPanel>
                                 </CheckBox>
@@ -313,14 +344,13 @@
                                           StrokeLineCap="Round" StrokeJoin="Round"
                                           Stretch="None" Width="14" Height="14"
                                           VerticalAlignment="Center" />
-                                    <TextBlock FontSize="12" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextPlaceholderBrush}"
-                                               Text="audio-separator (required)" />
-                                    <TextBlock FontSize="11"
+                                    <TextBlock Classes="toolName satisfied" Text="audio-separator" />
+                                    <TextBlock Classes="requiredTag" />
+                                    <TextBlock Classes="installOutcome"
                                                Foreground="{DynamicResource SuccessBrush}"
                                                Text="✓ installed"
                                                IsVisible="{Binding InstallSuccess}" />
-                                    <TextBlock FontSize="11"
+                                    <TextBlock Classes="installOutcome"
                                                Foreground="{DynamicResource TextPlaceholderBrush}"
                                                Text="✓ already installed"
                                                IsVisible="{Binding !InstallSuccess}" />
@@ -348,50 +378,14 @@
                                        IsVisible="{Binding GpuHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                         </StackPanel>
 
-                        <!-- yt-dlp -->
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <CheckBox IsChecked="{Binding WantInstallYtdlp, Mode=TwoWay}"
-                                      IsVisible="{Binding !YtdlpFound}">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock FontSize="12" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               Text="yt-dlp (optional)" />
-                                    <TextBlock FontSize="11"
-                                               Foreground="{DynamicResource TextPlaceholderBrush}"
-                                               Text="— enables downloading audio from YouTube URLs" />
-                                </StackPanel>
-                            </CheckBox>
-                            <StackPanel Orientation="Horizontal" Spacing="8"
-                                        IsVisible="{Binding YtdlpFound}">
-                                <Path Data="M0 6 L4 10 L12 1"
-                                      Stroke="{DynamicResource SuccessBrush}" StrokeThickness="2"
-                                      StrokeLineCap="Round" StrokeJoin="Round"
-                                      Stretch="None" Width="14" Height="14"
-                                      VerticalAlignment="Center" />
-                                <TextBlock FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="yt-dlp (optional)" />
-                                <TextBlock FontSize="11"
-                                           Foreground="{DynamicResource SuccessBrush}"
-                                           Text="✓ installed"
-                                           IsVisible="{Binding YtdlpInstallSuccess}" />
-                                <TextBlock FontSize="11"
-                                           Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="✓ already installed"
-                                           IsVisible="{Binding !YtdlpInstallSuccess}" />
-                            </StackPanel>
-                        </StackPanel>
-
-                        <!-- ffmpeg -->
+                        <!-- ffmpeg (required — placed before yt-dlp so all required tools group at top) -->
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <CheckBox IsChecked="{Binding WantInstallFfmpeg, Mode=TwoWay}"
                                       IsVisible="{Binding !FfmpegFound}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock FontSize="12" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               Text="ffmpeg (required)" />
-                                    <TextBlock FontSize="11"
-                                               Foreground="{DynamicResource TextPlaceholderBrush}"
+                                    <TextBlock Classes="toolName" Text="ffmpeg" />
+                                    <TextBlock Classes="requiredTag" />
+                                    <TextBlock Classes="toolDesc"
                                                Text="— required by audio-separator (~100 MB download)" />
                                 </StackPanel>
                             </CheckBox>
@@ -402,17 +396,78 @@
                                       StrokeLineCap="Round" StrokeJoin="Round"
                                       Stretch="None" Width="14" Height="14"
                                       VerticalAlignment="Center" />
-                                <TextBlock FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="ffmpeg (required)" />
-                                <TextBlock FontSize="11"
+                                <TextBlock Classes="toolName satisfied" Text="ffmpeg" />
+                                <TextBlock Classes="requiredTag" />
+                                <TextBlock Classes="installOutcome"
                                            Foreground="{DynamicResource SuccessBrush}"
                                            Text="✓ installed"
                                            IsVisible="{Binding FfmpegInstallSuccess}" />
-                                <TextBlock FontSize="11"
+                                <TextBlock Classes="installOutcome"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
                                            Text="✓ already installed"
                                            IsVisible="{Binding !FfmpegInstallSuccess}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- yt-dlp -->
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <CheckBox IsChecked="{Binding WantInstallYtdlp, Mode=TwoWay}"
+                                      IsVisible="{Binding !YtdlpFound}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Classes="toolName" Text="yt-dlp" />
+                                    <TextBlock Classes="optionalTag" />
+                                    <TextBlock Classes="toolDesc"
+                                               Text="— enables downloading audio from YouTube URLs" />
+                                </StackPanel>
+                            </CheckBox>
+                            <StackPanel Orientation="Horizontal" Spacing="8"
+                                        IsVisible="{Binding YtdlpFound}">
+                                <Path Data="M0 6 L4 10 L12 1"
+                                      Stroke="{DynamicResource SuccessBrush}" StrokeThickness="2"
+                                      StrokeLineCap="Round" StrokeJoin="Round"
+                                      Stretch="None" Width="14" Height="14"
+                                      VerticalAlignment="Center" />
+                                <TextBlock Classes="toolName satisfied" Text="yt-dlp" />
+                                <TextBlock Classes="optionalTag" />
+                                <TextBlock Classes="installOutcome"
+                                           Foreground="{DynamicResource SuccessBrush}"
+                                           Text="✓ installed"
+                                           IsVisible="{Binding YtdlpInstallSuccess}" />
+                                <TextBlock Classes="installOutcome"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="✓ already installed"
+                                           IsVisible="{Binding !YtdlpInstallSuccess}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- deno -->
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <CheckBox IsChecked="{Binding WantInstallDeno, Mode=TwoWay}"
+                                      IsVisible="{Binding !DenoFound}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Classes="toolName" Text="deno" />
+                                    <TextBlock Classes="optionalTag" />
+                                    <TextBlock Classes="toolDesc"
+                                               Text="— JS runtime yt-dlp uses to solve YouTube challenges (~42 MB download)" />
+                                </StackPanel>
+                            </CheckBox>
+                            <StackPanel Orientation="Horizontal" Spacing="8"
+                                        IsVisible="{Binding DenoFound}">
+                                <Path Data="M0 6 L4 10 L12 1"
+                                      Stroke="{DynamicResource SuccessBrush}" StrokeThickness="2"
+                                      StrokeLineCap="Round" StrokeJoin="Round"
+                                      Stretch="None" Width="14" Height="14"
+                                      VerticalAlignment="Center" />
+                                <TextBlock Classes="toolName satisfied" Text="deno" />
+                                <TextBlock Classes="optionalTag" />
+                                <TextBlock Classes="installOutcome"
+                                           Foreground="{DynamicResource SuccessBrush}"
+                                           Text="✓ installed"
+                                           IsVisible="{Binding DenoInstallSuccess}" />
+                                <TextBlock Classes="installOutcome"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="✓ already installed"
+                                           IsVisible="{Binding !DenoInstallSuccess}" />
                             </StackPanel>
                         </StackPanel>
 
@@ -437,6 +492,9 @@
                                        Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
                             <TextBlock IsVisible="{Binding FfmpegInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                        Text="{Binding FfmpegInstallError}" FontSize="11"
+                                       Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+                            <TextBlock IsVisible="{Binding DenoInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       Text="{Binding DenoInstallError}" FontSize="11"
                                        Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
                         </StackPanel>
 

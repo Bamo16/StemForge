@@ -76,11 +76,14 @@
          See docs/adr/0001-info-icon-tooltip-affordance.md. Attach ToolTip.Tip on the icon.
          Style does NOT set Text on a descendant TextBlock — call sites inline the "i"
          glyph so the style can't accidentally match (and override) the TextBlock that
-         ToolTip.Tip uses as its content. -->
+         ToolTip.Tip uses as its content.
+         Background MUST be Transparent (not null/unset) so the inner disc participates
+         in hit testing — otherwise only the 1px ring and the "i" glyph trigger hovers. -->
     <Style Selector="Border.infoIcon">
         <Setter Property="Width" Value="14" />
         <Setter Property="Height" Value="14" />
         <Setter Property="CornerRadius" Value="7" />
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="{DynamicResource TextSecondaryBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="VerticalAlignment" Value="Center" />

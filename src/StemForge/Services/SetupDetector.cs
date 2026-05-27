@@ -7,7 +7,16 @@ public sealed record ToolInfo(string Name, bool Found, string? Version, bool IsR
 
 public sealed class SetupDetector(IProcessRunner runner, AppPaths paths)
 {
-    private static readonly string[] AllToolNames = ["uv", "audio-separator", "yt-dlp", "ffmpeg"];
+    // Ordered required-first, then optional. The wizard install step renders rows in this
+    // sequence so required tools are visually grouped at the top.
+    private static readonly string[] AllToolNames =
+    [
+        "uv",
+        "audio-separator",
+        "ffmpeg",
+        "yt-dlp",
+        "deno",
+    ];
 
     private readonly IProcessRunner _runner = runner;
     private readonly AppPaths _paths = paths;
@@ -33,6 +42,7 @@ public sealed class SetupDetector(IProcessRunner runner, AppPaths paths)
             ),
             "yt-dlp" => DetectAsync("yt-dlp", _paths.Ytdlp, "--version", required: false),
             "ffmpeg" => DetectAsync("ffmpeg", _paths.Ffmpeg, "-version", required: true),
+            "deno" => DetectAsync("deno", _paths.Deno, "--version", required: false),
             _ => throw new ArgumentException($"Unknown tool: {name}", nameof(name)),
         };
 
