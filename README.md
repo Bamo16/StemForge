@@ -10,6 +10,20 @@
 
 ---
 
+## Hear it
+
+Vocal and instrumental stems pulled from [Karyuu &amp; Jaylenn - Another Life](https://music.youtube.com/watch?v=G52OPfQUiZ0) ([NCS](https://ncs.io), royalty-free), separated with StemForge.
+
+**Vocal (Full) preset**
+
+https://github.com/user-attachments/assets/0cca8ecc-d786-4aba-8998-6ebe9ccf793b
+
+**Instrumental (Full) preset**
+
+https://github.com/user-attachments/assets/660daf67-0953-405d-a6ef-1c71e59f6a7b
+
+---
+
 ## What it does
 
 Drop in an audio file (or paste a YouTube URL) and StemForge runs one of dozens of separation models, or an ensemble of them, to split the track into stems: vocals, instrumentals, drums, bass, and so on. Pick from the curated built-in presets, or browse the full model catalogue and roll your own.
