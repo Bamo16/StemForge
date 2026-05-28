@@ -12,10 +12,15 @@
 
 ## Hear it
 
-Vocal and instrumental stems pulled from [Karyuu &amp; Jaylenn - Another Life](https://music.youtube.com/watch?v=G52OPfQUiZ0) ([NCS](https://ncs.io), royalty-free), separated with StemForge on default settings:
+Vocal and instrumental stems pulled from [Karyuu &amp; Jaylenn - Another Life](https://music.youtube.com/watch?v=G52OPfQUiZ0) ([NCS](https://ncs.io), royalty-free), separated with StemForge on default settings.
 
-- [Vocal stem (MP3)](https://github.com/user-attachments/files/28361365/Karyuu.Jaylenn.-.Another.Life.Vocal.-.Full.mp3)
-- [Instrumental stem (MP3)](https://github.com/user-attachments/files/28361364/Karyuu.Jaylenn.-.Another.Life.Instrumental.-.Full.mp3)
+**Vocal stem**
+
+https://github.com/user-attachments/assets/0cca8ecc-d786-4aba-8998-6ebe9ccf793b
+
+**Instrumental stem**
+
+https://github.com/user-attachments/assets/660daf67-0953-405d-a6ef-1c71e59f6a7b
 
 ---
 
