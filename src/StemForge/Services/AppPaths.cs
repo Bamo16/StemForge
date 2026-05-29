@@ -28,10 +28,10 @@ public sealed class AppPaths(AppSettings settings)
         };
 
     /// <summary>Path or PATH-resolvable name of the uv binary.</summary>
-    public string Uv => Override(_settings.UvPath) ?? "uv";
+    public string Uv => OverrideFor(ToolKind.Uv) ?? "uv";
 
     /// <summary>Path or PATH-resolvable name of the yt-dlp binary.</summary>
-    public string Ytdlp => Override(_settings.YtdlpPath) ?? "yt-dlp";
+    public string Ytdlp => OverrideFor(ToolKind.Ytdlp) ?? "yt-dlp";
 
     /// <summary>
     /// Path or PATH-resolvable name of the ffmpeg binary. Prefers the user's explicit
@@ -39,7 +39,7 @@ public sealed class AppPaths(AppSettings settings)
     /// to bare 'ffmpeg' on PATH for users who already have a system install.
     /// </summary>
     public string Ffmpeg =>
-        Override(_settings.FfmpegPath) ?? (File.Exists(BundledFfmpeg) ? BundledFfmpeg : "ffmpeg");
+        OverrideFor(ToolKind.Ffmpeg) ?? (File.Exists(BundledFfmpeg) ? BundledFfmpeg : "ffmpeg");
 
     /// <summary>
     /// Path or PATH-resolvable name of the audio-separator binary. If no user
@@ -47,7 +47,7 @@ public sealed class AppPaths(AppSettings settings)
     /// back to the bare PATH name.
     /// </summary>
     public string AudioSeparator =>
-        Override(_settings.AudioSeparatorPath)
+        OverrideFor(ToolKind.AudioSeparator)
         ?? (File.Exists(UvAudioSeparatorShim) ? UvAudioSeparatorShim : "audio-separator");
 
     // ── Directories ───────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ public sealed class AppPaths(AppSettings settings)
     /// runtime themselves.
     /// </summary>
     public string Deno =>
-        Override(_settings.DenoPath) ?? (File.Exists(BundledDeno) ? BundledDeno : "deno");
+        OverrideFor(ToolKind.Deno) ?? (File.Exists(BundledDeno) ? BundledDeno : "deno");
 
     /// <summary>Path to the bundled deno binary inside <see cref="BundledBinDir"/>.</summary>
     public string BundledDeno =>
@@ -120,6 +120,8 @@ public sealed class AppPaths(AppSettings settings)
             "Scripts",
             "python.exe"
         );
+
+    private string? OverrideFor(ToolKind kind) => Override(_settings.GetToolPathOverride(kind));
 
     private static string? Override(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;

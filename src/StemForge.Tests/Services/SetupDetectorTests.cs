@@ -81,7 +81,8 @@ public sealed class SetupDetectorTests
     public async Task DetectAllAsync_CustomYtdlpPath_UsesProvidedPath()
     {
         var fake = new FakeProcessRunner();
-        var settings = new AppSettings { YtdlpPath = @"C:\Tools\yt-dlp.exe" };
+        var settings = new AppSettings();
+        settings.SetToolPathOverride(ToolKind.Ytdlp, @"C:\Tools\yt-dlp.exe");
         var paths = new AppPaths(settings);
         var detector = new SetupDetector(fake, paths);
 

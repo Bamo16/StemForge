@@ -189,11 +189,11 @@ public partial class SettingsViewModel : PageViewModelBase
         GpuVariant = s.GpuVariant;
         OutputDirectory = s.OutputDirectory ?? string.Empty;
         ModelsDirectory = s.ModelsDirectory ?? string.Empty;
-        UvPath = s.UvPath ?? string.Empty;
-        AudioSeparatorPath = s.AudioSeparatorPath ?? string.Empty;
-        YtdlpPath = s.YtdlpPath ?? string.Empty;
-        FfmpegPath = s.FfmpegPath ?? string.Empty;
-        DenoPath = s.DenoPath ?? string.Empty;
+        UvPath = s.GetToolPathOverride(ToolKind.Uv) ?? string.Empty;
+        AudioSeparatorPath = s.GetToolPathOverride(ToolKind.AudioSeparator) ?? string.Empty;
+        YtdlpPath = s.GetToolPathOverride(ToolKind.Ytdlp) ?? string.Empty;
+        FfmpegPath = s.GetToolPathOverride(ToolKind.Ffmpeg) ?? string.Empty;
+        DenoPath = s.GetToolPathOverride(ToolKind.Deno) ?? string.Empty;
         YtdlpCookiesFromBrowser = s.YtdlpCookiesFromBrowser ?? string.Empty;
         DefaultAudioFormat = s.DefaultAudioFormat;
         DrumExtractionModel = s.DrumExtractionModel;
@@ -403,11 +403,11 @@ public partial class SettingsViewModel : PageViewModelBase
         _settings.GpuVariant = GpuVariant;
         _settings.OutputDirectory = NullIfBlank(OutputDirectory);
         _settings.ModelsDirectory = NullIfBlank(ModelsDirectory);
-        _settings.UvPath = NullIfBlank(UvPath);
-        _settings.AudioSeparatorPath = NullIfBlank(AudioSeparatorPath);
-        _settings.YtdlpPath = NullIfBlank(YtdlpPath);
-        _settings.FfmpegPath = NullIfBlank(FfmpegPath);
-        _settings.DenoPath = NullIfBlank(DenoPath);
+        _settings.SetToolPathOverride(ToolKind.Uv, NullIfBlank(UvPath));
+        _settings.SetToolPathOverride(ToolKind.AudioSeparator, NullIfBlank(AudioSeparatorPath));
+        _settings.SetToolPathOverride(ToolKind.Ytdlp, NullIfBlank(YtdlpPath));
+        _settings.SetToolPathOverride(ToolKind.Ffmpeg, NullIfBlank(FfmpegPath));
+        _settings.SetToolPathOverride(ToolKind.Deno, NullIfBlank(DenoPath));
         _settings.YtdlpCookiesFromBrowser = NullIfBlank(YtdlpCookiesFromBrowser);
         _settings.DefaultAudioFormat = DefaultAudioFormat;
         _settings.DrumExtractionModel = string.IsNullOrWhiteSpace(DrumExtractionModel)
