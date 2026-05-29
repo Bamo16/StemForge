@@ -15,6 +15,18 @@ public sealed class AppPaths(AppSettings settings)
 
     // ── Tool executables ──────────────────────────────────────────────────────
 
+    /// <summary>Resolved path (or PATH-resolvable name) of a tool's binary, keyed by kind.</summary>
+    public string PathFor(ToolKind kind) =>
+        kind switch
+        {
+            ToolKind.Uv => Uv,
+            ToolKind.AudioSeparator => AudioSeparator,
+            ToolKind.Ytdlp => Ytdlp,
+            ToolKind.Ffmpeg => Ffmpeg,
+            ToolKind.Deno => Deno,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+        };
+
     /// <summary>Path or PATH-resolvable name of the uv binary.</summary>
     public string Uv => Override(_settings.UvPath) ?? "uv";
 
