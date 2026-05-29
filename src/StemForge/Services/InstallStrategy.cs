@@ -74,10 +74,13 @@ public sealed record VariantProbe(string ScriptRelativePath);
 /// <summary>A pinned downloadable asset for one platform.</summary>
 public sealed record BundledAsset(string Url, string Sha256, ExtractMode ExtractMode);
 
-/// <summary>How to pull the wanted binary out of a downloaded archive.</summary>
+/// <summary>How to turn a downloaded asset into the bundled binary.</summary>
 public enum ExtractMode
 {
-    /// <summary>Archive contains the target exe at its root (e.g. deno, yt-dlp).</summary>
+    /// <summary>The download is the binary itself, not an archive (e.g. yt-dlp.exe).</summary>
+    RawBinary,
+
+    /// <summary>Archive contains the target exe at its root (e.g. deno).</summary>
     SingleFileAtRoot,
 
     /// <summary>Flatten every file under any <c>/bin/</c> subpath into the bundle dir (e.g. ffmpeg shared build).</summary>

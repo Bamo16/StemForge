@@ -15,11 +15,13 @@ public sealed class SetupWizardViewModelTests
         var paths = new AppPaths(settings);
         var runner = (IProcessRunner)fake;
         var setupDetector = new SetupDetector(runner, paths);
+        var platform = PlatformInfo.Current;
+        var bundledFetcher = new BundledFetcher(paths, platform);
         return new SetupWizardViewModel(
             settings,
             setupDetector,
             new GpuDetector(runner),
-            new ToolInstaller(runner, paths),
+            new ToolInstaller(runner, paths, bundledFetcher, platform),
             new FfmpegFetcher(paths),
             new DenoFetcher(paths),
             new ToolStateService(setupDetector),
