@@ -26,8 +26,6 @@ public static class ServiceRegistration
         services.AddSingleton<GpuDetector>();
         services.AddSingleton<BundledFetcher>();
         services.AddSingleton<ToolInstaller>();
-        services.AddSingleton<FfmpegFetcher>();
-        services.AddSingleton<DenoFetcher>();
         services.AddSingleton<ModelCatalogService>();
         services.AddSingleton<ToolStateService>();
         services.AddSingleton<YouTubeAudioService>();

@@ -100,33 +100,6 @@ public sealed class ToolInstaller(
         );
     }
 
-    // ── Legacy per-tool entry points ─────────────────────────────────────────
-    // Thin adapters over InstallAsync so the existing view-models keep building. Removed once
-    // the wizard and settings view-models call InstallAsync directly (catalog migration B/C).
-
-    public Task InstallUvAsync(IProgress<string> progress, CancellationToken ct = default) =>
-        InstallAsync(ToolCatalog.Get(ToolKind.Uv), new(), AsInstallProgress(progress), ct);
-
-    public Task InstallYtdlpAsync(IProgress<string> progress, CancellationToken ct = default) =>
-        InstallAsync(ToolCatalog.Get(ToolKind.Ytdlp), new(), AsInstallProgress(progress), ct);
-
-    public Task InstallAudioSeparatorAsync(
-        GpuVariant variant,
-        IProgress<string> progress,
-        CancellationToken ct = default
-    ) =>
-        InstallAsync(
-            ToolCatalog.Get(ToolKind.AudioSeparator),
-            new(variant),
-            AsInstallProgress(progress),
-            ct
-        );
-
-    public Task UninstallAudioSeparatorAsync(
-        IProgress<string> progress,
-        CancellationToken ct = default
-    ) => UninstallAsync(ToolCatalog.Get(ToolKind.AudioSeparator), AsInstallProgress(progress), ct);
-
     /// <summary>
     /// Probe which <see cref="GpuVariant"/> is actually functional in the installed
     /// audio-separator environment, by running the catalog's variant probe script against the
@@ -175,15 +148,5 @@ public sealed class ToolInstaller(
     private sealed class LineProgress(IProgress<InstallProgress> inner) : IProgress<string>
     {
         public void Report(string value) => inner.Report(new InstallProgress(value));
-    }
-
-    // Adapts a legacy string-line sink to an InstallProgress sink, forwarding the message only
-    // (byte counts are dropped — the legacy callers render log lines, not progress bars).
-    private static IProgress<InstallProgress>? AsInstallProgress(IProgress<string>? progress) =>
-        progress is null ? null : new MessageProgress(progress);
-
-    private sealed class MessageProgress(IProgress<string> inner) : IProgress<InstallProgress>
-    {
-        public void Report(InstallProgress value) => inner.Report(value.Message);
     }
 }

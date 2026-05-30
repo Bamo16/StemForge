@@ -14,15 +14,6 @@ public sealed class SetupDetectorTests
         return (new SetupDetector(fake, paths), fake, paths);
     }
 
-    [Theory]
-    [InlineData(GpuVariant.Cuda, "gpu")]
-    [InlineData(GpuVariant.DirectML, "dml")]
-    [InlineData(GpuVariant.Cpu, "cpu")]
-    public void GetPipExtra_ReturnsCorrectExtra(GpuVariant variant, string expected)
-    {
-        Assert.Equal(expected, SetupDetector.GetPipExtra(variant));
-    }
-
     [Fact]
     public async Task DetectAllAsync_AllFound_ReturnsFoundResults()
     {

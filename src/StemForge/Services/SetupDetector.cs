@@ -54,13 +54,4 @@ public sealed class SetupDetector(IProcessRunner runner, AppPaths paths)
             );
         }
     }
-
-    /// <summary>Maps GpuVariant to the audio-separator pip extras name.</summary>
-    public static string GetPipExtra(GpuVariant variant) =>
-        variant switch
-        {
-            GpuVariant.Cuda => "gpu",
-            GpuVariant.DirectML => "dml",
-            _ => "cpu",
-        };
 }

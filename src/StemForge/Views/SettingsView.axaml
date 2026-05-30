@@ -126,62 +126,50 @@
                                          Background="Transparent" />
                         </StackPanel>
 
-                        <!-- Done state -->
+                        <!-- Done state: one row per tool, no all-caps banner. The per-tool
+                             status dot conveys success/failure on its own. -->
                         <StackPanel IsVisible="{Binding !ToolsLoading}"
-                                    Spacing="12" Margin="16,14">
-                            <!-- Header -->
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Ellipse Classes="statusDot" Classes.ok="{Binding AllSystemsGo}"
-                                         Classes.fail="{Binding !AllSystemsGo}" />
-                                <TextBlock FontSize="12" FontWeight="Bold" LetterSpacing="0.06"
-                                           Foreground="{DynamicResource SuccessBrush}"
-                                           Text="ALL SYSTEMS GO"
-                                           IsVisible="{Binding AllSystemsGo}" />
-                                <TextBlock FontSize="12" FontWeight="Bold" LetterSpacing="0.06"
-                                           Foreground="{DynamicResource ErrorBrush}"
-                                           Text="MISSING REQUIRED TOOLS"
-                                           IsVisible="{Binding !AllSystemsGo}" />
-                            </StackPanel>
-                            <!-- Tool rows -->
-                            <ItemsControl ItemsSource="{Binding Tools}">
+                                    Spacing="10" Margin="16,14">
+                            <ItemsControl ItemsSource="{Binding SettingsToolRows}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <StackPanel Spacing="10" />
+                                        <StackPanel Spacing="6" />
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="vm:ToolStatusViewModel">
-                                        <StackPanel Spacing="2">
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <Ellipse Classes="statusDot"
-                                                         Classes.ok="{Binding Found}"
-                                                         Classes.fail="{Binding !Found}"
-                                                         VerticalAlignment="Center" />
-                                                <TextBlock Text="{Binding Name}"
-                                                           FontSize="11" FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                                           VerticalAlignment="Center" />
-                                                <Border IsVisible="{Binding VariantTag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                                        Background="{DynamicResource AccentDimBgBrush}"
-                                                        CornerRadius="3" Padding="4,1"
-                                                        VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding VariantTag}"
-                                                               FontSize="9" FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource AccentBrush}" />
-                                                </Border>
-                                            </StackPanel>
+                                    <DataTemplate DataType="vm:SettingsToolRowViewModel">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Ellipse Classes="statusDot"
+                                                     Classes.ok="{Binding Found}"
+                                                     Classes.fail="{Binding !Found}"
+                                                     VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       VerticalAlignment="Center" />
                                             <TextBlock Classes="mono"
                                                        Text="{Binding StatusLine}"
                                                        FontSize="11"
                                                        Foreground="{DynamicResource TextSecondaryBrush}"
-                                                       Margin="13,0,0,0" />
+                                                       VerticalAlignment="Center" />
+                                            <Border IsVisible="{Binding VariantTag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                    Background="{DynamicResource AccentDimBgBrush}"
+                                                    CornerRadius="3" Padding="4,1"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding VariantTag}"
+                                                           FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource AccentBrush}" />
+                                            </Border>
                                         </StackPanel>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <StackPanel Orientation="Horizontal" Spacing="12">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button Classes="ghost"
-                                        Content="Refresh"
+                                        Content="↻"
+                                        FontSize="14"
+                                        Padding="8,4"
+                                        ToolTip.Tip="Re-detect tools"
                                         Command="{Binding RefreshToolsCommand}" />
                                 <Button Classes="ghost"
                                         Content="Re-run setup wizard"
@@ -196,18 +184,9 @@
                     <TextBlock Classes="settingSection" Text="audio-separator" />
                     <Border Classes="card">
                         <StackPanel Spacing="14">
-                            <!-- Installed status -->
+                            <!-- Installed: variant chip is shown in the status header above, so
+                                 this card only carries the variant explainer + lifecycle actions. -->
                             <StackPanel IsVisible="{Binding IsAudioSeparatorInstalled}" Spacing="6">
-                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                    <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
-                                               Text="Installed:" VerticalAlignment="Center" />
-                                    <Border Background="{DynamicResource AccentDimBgBrush}"
-                                            CornerRadius="3" Padding="6,1" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding InstalledVariantLabel}"
-                                                   FontSize="11" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource AccentBrush}" />
-                                    </Border>
-                                </StackPanel>
                                 <TextBlock FontSize="11"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
                                            Text="The variant determines whether audio-separator runs on CPU, NVIDIA CUDA, or Windows DirectML. Change it if you swap GPU hardware."
@@ -361,36 +340,23 @@
                             <TextBlock FontSize="11" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextPlaceholderBrush}"
                                        Text="Override which binary StemForge invokes for each tool. Leave blank to use StemForge's default discovery — described per-field below." />
-                            <StackPanel Spacing="6">
-                                <TextBlock Classes="settingLabel" Text="uv" />
-                                <TextBox Classes="settingInput"
-                                         Text="{Binding UvPath, Mode=TwoWay}"
-                                         PlaceholderText="Default: 'uv' on PATH" />
-                            </StackPanel>
-                            <StackPanel Spacing="6">
-                                <TextBlock Classes="settingLabel" Text="audio-separator" />
-                                <TextBox Classes="settingInput"
-                                         Text="{Binding AudioSeparatorPath, Mode=TwoWay}"
-                                         PlaceholderText="Default: uv-installed shim, falls back to 'audio-separator' on PATH" />
-                            </StackPanel>
-                            <StackPanel Spacing="6">
-                                <TextBlock Classes="settingLabel" Text="yt-dlp" />
-                                <TextBox Classes="settingInput"
-                                         Text="{Binding YtdlpPath, Mode=TwoWay}"
-                                         PlaceholderText="Default: 'yt-dlp' on PATH (typically uv-installed shim)" />
-                            </StackPanel>
-                            <StackPanel Spacing="6">
-                                <TextBlock Classes="settingLabel" Text="ffmpeg" />
-                                <TextBox Classes="settingInput"
-                                         Text="{Binding FfmpegPath, Mode=TwoWay}"
-                                         PlaceholderText="Default: bundled binary in %LOCALAPPDATA%\StemForge\bin, falls back to 'ffmpeg' on PATH" />
-                            </StackPanel>
-                            <StackPanel Spacing="6">
-                                <TextBlock Classes="settingLabel" Text="deno" />
-                                <TextBox Classes="settingInput"
-                                         Text="{Binding DenoPath, Mode=TwoWay}"
-                                         PlaceholderText="Default: bundled binary in %LOCALAPPDATA%\StemForge\bin, falls back to 'deno' on PATH" />
-                            </StackPanel>
+                            <ItemsControl ItemsSource="{Binding SettingsToolRows}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Spacing="14" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:SettingsToolRowViewModel">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Classes="settingLabel" Text="{Binding Name}" />
+                                            <TextBox Classes="settingInput"
+                                                     Text="{Binding PathOverride, Mode=TwoWay}"
+                                                     PlaceholderText="{Binding PathPlaceholder}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </Border>
                 </StackPanel>

@@ -15,7 +15,10 @@ public partial class SettingsView : UserControl
     protected override async void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
-        if (DataContext is SettingsViewModel vm && vm.Tools.Count == 0)
+        if (
+            DataContext is SettingsViewModel vm
+            && vm.SettingsToolRows.All(r => !r.Found && string.IsNullOrEmpty(r.Version))
+        )
             await vm.RefreshToolsCommand.ExecuteAsync(null);
     }
 

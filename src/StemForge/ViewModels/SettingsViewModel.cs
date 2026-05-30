@@ -16,7 +16,7 @@ public partial class SettingsViewModel : PageViewModelBase
 
     public override string Title => "Settings";
 
-    // ── Tool detection ─────────────────────────────────────────────────────────
+    // ── Tool rows (status header + tool paths share this collection) ──────────
 
     [ObservableProperty]
     public partial bool ToolsLoading { get; set; } = true;
@@ -26,7 +26,8 @@ public partial class SettingsViewModel : PageViewModelBase
 
     [ObservableProperty]
     public partial string GpuHint { get; set; } = string.Empty;
-    public ObservableCollection<ToolStatusViewModel> Tools { get; } = [];
+
+    public ObservableCollection<SettingsToolRowViewModel> SettingsToolRows { get; } = [];
 
     // ── GPU variant ────────────────────────────────────────────────────────────
 
@@ -39,7 +40,7 @@ public partial class SettingsViewModel : PageViewModelBase
 
     // ── audio-separator lifecycle ──────────────────────────────────────────────
 
-    public bool IsAudioSeparatorInstalled => _toolState.IsAudioSeparatorAvailable;
+    public bool IsAudioSeparatorInstalled => _toolState.IsAvailable(ToolKind.AudioSeparator);
 
     public string InstalledVariantLabel =>
         _settings.InstalledVariant switch
@@ -94,23 +95,6 @@ public partial class SettingsViewModel : PageViewModelBase
     [ObservableProperty]
     public partial string ModelsDirectory { get; set; } = string.Empty;
 
-    // ── Optional tool paths (blank = use AppPaths default) ─────────────────────
-
-    [ObservableProperty]
-    public partial string UvPath { get; set; } = string.Empty;
-
-    [ObservableProperty]
-    public partial string AudioSeparatorPath { get; set; } = string.Empty;
-
-    [ObservableProperty]
-    public partial string YtdlpPath { get; set; } = string.Empty;
-
-    [ObservableProperty]
-    public partial string FfmpegPath { get; set; } = string.Empty;
-
-    [ObservableProperty]
-    public partial string DenoPath { get; set; } = string.Empty;
-
     [ObservableProperty]
     public partial string YtdlpCookiesFromBrowser { get; set; } = string.Empty;
 
@@ -148,6 +132,10 @@ public partial class SettingsViewModel : PageViewModelBase
         _gpuDetector = gpuDetector;
         _toolInstaller = toolInstaller;
         _toolState = toolState;
+
+        foreach (var tool in ToolCatalog.All)
+            SettingsToolRows.Add(new SettingsToolRowViewModel(tool));
+
         LoadFromSettings(settings);
         _toolState.PropertyChanged += OnToolStatePropertyChanged;
         SyncToolsFromState();
@@ -170,16 +158,19 @@ public partial class SettingsViewModel : PageViewModelBase
 
     private async void SyncToolsFromState()
     {
-        // Snapshot first, then do the await, then mutate Tools in one synchronous block.
-        // Without this, async-void interleaving between concurrent invocations (each
-        // RefreshAsync raises Tools, which can fire this method again) lets multiple
-        // Clear() calls execute before any Add() lands, then all three foreach blocks
-        // run in sequence and stack 3× the entries into the ObservableCollection.
+        // Snapshot first, then await, then mutate the rows in one synchronous block, so
+        // concurrent ToolStateService updates don't double-apply variant probes.
         var snapshot = _toolState.Tools;
         await TryFillInstalledVariantAsync(snapshot);
-        Tools.Clear();
-        foreach (var t in snapshot)
-            Tools.Add(new ToolStatusViewModel(t, VariantTagFor(t.Name, t.Found)));
+
+        foreach (var row in SettingsToolRows)
+        {
+            var info = snapshot.FirstOrDefault(t => t.Kind == row.Kind);
+            row.Found = info?.Found ?? false;
+            row.Version = info?.Version ?? string.Empty;
+            row.VariantTag = VariantTagFor(row.Kind, row.Found);
+        }
+
         AllSystemsGo = snapshot.All(t => t.Found || !t.IsRequired);
         ToolsLoading = _toolState.IsLoading;
     }
@@ -189,11 +180,8 @@ public partial class SettingsViewModel : PageViewModelBase
         GpuVariant = s.GpuVariant;
         OutputDirectory = s.OutputDirectory ?? string.Empty;
         ModelsDirectory = s.ModelsDirectory ?? string.Empty;
-        UvPath = s.GetToolPathOverride(ToolKind.Uv) ?? string.Empty;
-        AudioSeparatorPath = s.GetToolPathOverride(ToolKind.AudioSeparator) ?? string.Empty;
-        YtdlpPath = s.GetToolPathOverride(ToolKind.Ytdlp) ?? string.Empty;
-        FfmpegPath = s.GetToolPathOverride(ToolKind.Ffmpeg) ?? string.Empty;
-        DenoPath = s.GetToolPathOverride(ToolKind.Deno) ?? string.Empty;
+        foreach (var row in SettingsToolRows)
+            row.PathOverride = s.GetToolPathOverride(row.Kind) ?? string.Empty;
         YtdlpCookiesFromBrowser = s.YtdlpCookiesFromBrowser ?? string.Empty;
         DefaultAudioFormat = s.DefaultAudioFormat;
         DrumExtractionModel = s.DrumExtractionModel;
@@ -266,7 +254,12 @@ public partial class SettingsViewModel : PageViewModelBase
         IsUninstallConfirmOpen = false;
         await RunManageActionAsync(
             "Uninstalling audio-separator…",
-            (progress, ct) => _toolInstaller.UninstallAudioSeparatorAsync(progress, ct),
+            (progress, ct) =>
+                _toolInstaller.UninstallAsync(
+                    ToolCatalog.Get(ToolKind.AudioSeparator),
+                    progress,
+                    ct
+                ),
             onSuccess: () =>
             {
                 _settings.InstalledVariant = null;
@@ -290,7 +283,13 @@ public partial class SettingsViewModel : PageViewModelBase
     {
         await RunManageActionAsync(
             status,
-            (progress, ct) => _toolInstaller.InstallAudioSeparatorAsync(variant, progress, ct),
+            (progress, ct) =>
+                _toolInstaller.InstallAsync(
+                    ToolCatalog.Get(ToolKind.AudioSeparator),
+                    new InstallOptions(variant),
+                    progress,
+                    ct
+                ),
             onSuccess: () =>
             {
                 _settings.InstalledVariant = variant;
@@ -301,7 +300,7 @@ public partial class SettingsViewModel : PageViewModelBase
 
     private async Task RunManageActionAsync(
         string status,
-        Func<IProgress<string>, CancellationToken, Task> action,
+        Func<IProgress<InstallProgress>, CancellationToken, Task> action,
         Action onSuccess
     )
     {
@@ -310,11 +309,11 @@ public partial class SettingsViewModel : PageViewModelBase
         ManageLog = string.Empty;
         ManageError = null;
         var sb = new System.Text.StringBuilder();
-        var progress = new Progress<string>(line =>
+        var progress = new Progress<InstallProgress>(p =>
         {
             if (sb.Length > 0)
                 sb.Append('\n');
-            sb.Append(line);
+            sb.Append(p.Message);
             ManageLog = sb.ToString();
         });
 
@@ -367,15 +366,15 @@ public partial class SettingsViewModel : PageViewModelBase
         if (_settings.InstalledVariant is not null)
             return;
 
-        if (!(tools.FirstOrDefault(t => t.Name == "audio-separator")?.Found ?? false))
+        if (!(tools.FirstOrDefault(t => t.Kind == ToolKind.AudioSeparator)?.Found ?? false))
             return;
 
         if (await _toolInstaller.DetectInstalledVariantAsync() is { } detected)
             _settings.InstalledVariant = detected;
     }
 
-    private string? VariantTagFor(string toolName, bool found) =>
-        toolName != "audio-separator" || !found
+    private string? VariantTagFor(ToolKind kind, bool found) =>
+        kind != ToolKind.AudioSeparator || !found
             ? null
             : _settings.InstalledVariant switch
             {
@@ -403,11 +402,8 @@ public partial class SettingsViewModel : PageViewModelBase
         _settings.GpuVariant = GpuVariant;
         _settings.OutputDirectory = NullIfBlank(OutputDirectory);
         _settings.ModelsDirectory = NullIfBlank(ModelsDirectory);
-        _settings.SetToolPathOverride(ToolKind.Uv, NullIfBlank(UvPath));
-        _settings.SetToolPathOverride(ToolKind.AudioSeparator, NullIfBlank(AudioSeparatorPath));
-        _settings.SetToolPathOverride(ToolKind.Ytdlp, NullIfBlank(YtdlpPath));
-        _settings.SetToolPathOverride(ToolKind.Ffmpeg, NullIfBlank(FfmpegPath));
-        _settings.SetToolPathOverride(ToolKind.Deno, NullIfBlank(DenoPath));
+        foreach (var row in SettingsToolRows)
+            _settings.SetToolPathOverride(row.Kind, NullIfBlank(row.PathOverride));
         _settings.YtdlpCookiesFromBrowser = NullIfBlank(YtdlpCookiesFromBrowser);
         _settings.DefaultAudioFormat = DefaultAudioFormat;
         _settings.DrumExtractionModel = string.IsNullOrWhiteSpace(DrumExtractionModel)
