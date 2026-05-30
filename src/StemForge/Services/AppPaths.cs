@@ -30,8 +30,14 @@ public sealed class AppPaths(AppSettings settings)
     /// <summary>Path or PATH-resolvable name of the uv binary.</summary>
     public string Uv => OverrideFor(ToolKind.Uv) ?? "uv";
 
-    /// <summary>Path or PATH-resolvable name of the yt-dlp binary.</summary>
-    public string Ytdlp => OverrideFor(ToolKind.Ytdlp) ?? "yt-dlp";
+    /// <summary>
+    /// Path or PATH-resolvable name of the yt-dlp binary. Prefers user override, then the
+    /// bundled binary downloaded on first run, and finally bare 'yt-dlp' on PATH. The bundled
+    /// fallback is required because Windows CreateProcess resolves bare FileName against the
+    /// parent's PATH; ProcessRunner's injected PATH only affects the child's environment.
+    /// </summary>
+    public string Ytdlp =>
+        OverrideFor(ToolKind.Ytdlp) ?? (File.Exists(BundledYtdlp) ? BundledYtdlp : "yt-dlp");
 
     /// <summary>
     /// Path or PATH-resolvable name of the ffmpeg binary. Prefers the user's explicit
@@ -86,6 +92,10 @@ public sealed class AppPaths(AppSettings settings)
     /// <summary>Path to the bundled deno binary inside <see cref="BundledBinDir"/>.</summary>
     public string BundledDeno =>
         Path.Combine(BundledBinDir, OperatingSystem.IsWindows() ? "deno.exe" : "deno");
+
+    /// <summary>Path to the bundled yt-dlp binary inside <see cref="BundledBinDir"/>.</summary>
+    public string BundledYtdlp =>
+        Path.Combine(BundledBinDir, OperatingSystem.IsWindows() ? "yt-dlp.exe" : "yt-dlp");
 
     // ── Defaults (exposed so the Settings UI can show placeholder text) ──────
 

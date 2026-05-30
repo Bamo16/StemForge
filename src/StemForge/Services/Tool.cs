@@ -12,6 +12,8 @@ namespace StemForge.Services;
 public sealed record Tool(
     ToolKind Kind,
     string CliName,
+    string Description,
+    string? DownloadSize,
     string VersionArg,
     Regex VersionPattern,
     bool IsRequired,

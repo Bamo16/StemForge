@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using StemForge.Models;
 
 namespace StemForge.Services;
 
@@ -17,6 +18,9 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
 
     [ObservableProperty]
     public partial IReadOnlyList<ToolInfo> Tools { get; private set; } = [];
+
+    public bool IsAvailable(ToolKind kind) =>
+        Tools.FirstOrDefault(t => t.Kind == kind)?.Found ?? false;
 
     public bool IsUvAvailable => IsAvailable("uv");
     public bool IsAudioSeparatorAvailable => IsAvailable("audio-separator");

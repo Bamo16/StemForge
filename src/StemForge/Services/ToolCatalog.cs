@@ -23,6 +23,8 @@ public static class ToolCatalog
         new(
             ToolKind.Uv,
             CliName: "uv",
+            Description: "Python tool installer used to install audio-separator",
+            DownloadSize: "~25 MB download",
             VersionArg: "--version",
             VersionPattern: Pattern(@"^uv\s+(\S+)"),
             IsRequired: true,
@@ -52,6 +54,8 @@ public static class ToolCatalog
         new(
             ToolKind.AudioSeparator,
             CliName: "audio-separator",
+            Description: "stem separation engine",
+            DownloadSize: "~250 MB to 2 GB (varies by GPU variant)",
             VersionArg: "--version",
             VersionPattern: Pattern(@"(\d+(?:\.\d+)+)"),
             IsRequired: true,
@@ -82,6 +86,8 @@ public static class ToolCatalog
         new(
             ToolKind.Ffmpeg,
             CliName: "ffmpeg",
+            Description: "required by audio-separator",
+            DownloadSize: "~100 MB download",
             VersionArg: "-version",
             VersionPattern: Pattern(@"ffmpeg version\s+(\S+)"),
             IsRequired: true,
@@ -98,23 +104,32 @@ public static class ToolCatalog
                 }
             )
         ),
-        // yt-dlp is UvToolInstall today; Layer 4 of the v0.1.1 refactor flips it to BundledFetch.
+        // Bundled rather than uv-tool-installed so it does not shadow a user's own yt-dlp on
+        // PATH. Self-updates in place via `yt-dlp.exe --update-to <channel>` between releases.
         new(
             ToolKind.Ytdlp,
             CliName: "yt-dlp",
+            Description: "enables downloading audio from YouTube URLs",
+            DownloadSize: "~17 MB download",
             VersionArg: "--version",
             VersionPattern: Pattern(@"^\s*(\d+(?:\.\d+)+)"),
             IsRequired: false,
-            new UvToolInstall(
-                Package: "yt-dlp",
-                PythonVersion: null,
-                Variants: new Dictionary<OSKind, IReadOnlyList<ToolVariant>>(),
-                VariantProbe: null
+            new BundledFetch(
+                new Dictionary<PlatformInfo, BundledAsset>
+                {
+                    [WinX64] = new(
+                        Url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp.exe",
+                        Sha256: "3db811b366b2da47337d2fcfdfe5bbd9a258dad3f350c54974f005df115a1545",
+                        ExtractMode: ExtractMode.RawBinary
+                    ),
+                }
             )
         ),
         new(
             ToolKind.Deno,
             CliName: "deno",
+            Description: "JS runtime yt-dlp uses to solve YouTube challenges",
+            DownloadSize: "~42 MB download",
             VersionArg: "--version",
             VersionPattern: Pattern(@"^deno\s+(\S+)"),
             IsRequired: false,

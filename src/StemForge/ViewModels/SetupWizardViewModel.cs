@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Text;
+using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StemForge.Models;
@@ -21,18 +23,16 @@ public partial class SetupWizardViewModel(
     SetupDetector setupDetector,
     GpuDetector gpuDetector,
     ToolInstaller toolInstaller,
-    FfmpegFetcher ffmpegFetcher,
-    DenoFetcher denoFetcher,
     ToolStateService toolState,
     AppPaths paths
-) : ViewModelBase
+) : ViewModelBase, IVariantPicker
 {
+    ICommand IVariantPicker.SetVariantCommand => SetGpuVariantCommand;
+
     private readonly AppSettings _settings = settings;
     private readonly SetupDetector _setupDetector = setupDetector;
     private readonly GpuDetector _gpuDetector = gpuDetector;
     private readonly ToolInstaller _toolInstaller = toolInstaller;
-    private readonly FfmpegFetcher _ffmpegFetcher = ffmpegFetcher;
-    private readonly DenoFetcher _denoFetcher = denoFetcher;
     private readonly ToolStateService _toolState = toolState;
     private readonly AppPaths _paths = paths;
 
@@ -65,9 +65,10 @@ public partial class SetupWizardViewModel(
         CurrentStep switch
         {
             WizardStep.Detect => !IsDetecting,
-            // All required tools (per ToolInfo.IsRequired) must be satisfied before the
-            // user can leave the Install step. yt-dlp is optional.
-            WizardStep.Install => UvFound && AudioSeparatorFound && FfmpegFound,
+            // All required tools must be present before leaving the Install step. Optional tools
+            // (yt-dlp, deno) never block.
+            WizardStep.Install => InstallRows.Count > 0
+                && InstallRows.Where(r => r.IsRequired).All(r => r.Found),
             _ => true,
         };
 
@@ -77,9 +78,6 @@ public partial class SetupWizardViewModel(
     public partial bool IsDetecting { get; set; }
 
     public ObservableCollection<ToolStatusViewModel> Tools { get; } = [];
-
-    [ObservableProperty]
-    public partial bool AudioSeparatorFound { get; set; }
 
     [ObservableProperty]
     public partial string GpuHint { get; set; } = string.Empty;
@@ -103,112 +101,17 @@ public partial class SetupWizardViewModel(
 
     // ── Install ───────────────────────────────────────────────────────────────
 
-    [ObservableProperty]
-    public partial bool UvFound { get; set; }
-
-    [ObservableProperty]
-    public partial bool IsInstallingUv { get; set; }
-
-    [ObservableProperty]
-    public partial bool UvInstallSuccess { get; set; }
-
-    [ObservableProperty]
-    public partial string? UvInstallError { get; set; }
+    public ObservableCollection<ToolRowViewModel> InstallRows { get; } = [];
 
     [ObservableProperty]
     public partial bool IsInstalling { get; set; }
-
-    [ObservableProperty]
-    public partial bool InstallSuccess { get; set; }
-
-    [ObservableProperty]
-    public partial bool YtdlpFound { get; set; }
-
-    [ObservableProperty]
-    public partial bool IsInstallingYtdlp { get; set; }
-
-    [ObservableProperty]
-    public partial bool YtdlpInstallSuccess { get; set; }
-
-    [ObservableProperty]
-    public partial string? YtdlpInstallError { get; set; }
-
-    [ObservableProperty]
-    public partial bool FfmpegFound { get; set; }
-
-    [ObservableProperty]
-    public partial bool IsInstallingFfmpeg { get; set; }
-
-    [ObservableProperty]
-    public partial bool FfmpegInstallSuccess { get; set; }
-
-    [ObservableProperty]
-    public partial string? FfmpegInstallError { get; set; }
-
-    [ObservableProperty]
-    public partial bool DenoFound { get; set; }
-
-    [ObservableProperty]
-    public partial bool IsInstallingDeno { get; set; }
-
-    [ObservableProperty]
-    public partial bool DenoInstallSuccess { get; set; }
-
-    [ObservableProperty]
-    public partial string? DenoInstallError { get; set; }
 
     private readonly StringBuilder _installLog = new();
 
     [ObservableProperty]
     public partial string InstallLog { get; set; } = string.Empty;
 
-    [ObservableProperty]
-    public partial string? InstallError { get; set; }
-
-    // Checkbox-style "what to install" — pre-checked for missing tools.
-    [ObservableProperty]
-    public partial bool WantInstallUv { get; set; }
-
-    [ObservableProperty]
-    public partial bool WantInstallAudioSeparator { get; set; }
-
-    [ObservableProperty]
-    public partial bool WantInstallYtdlp { get; set; }
-
-    [ObservableProperty]
-    public partial bool WantInstallFfmpeg { get; set; }
-
-    [ObservableProperty]
-    public partial bool WantInstallDeno { get; set; }
-
-    public bool IsAnyInstallInProgress =>
-        IsInstallingUv
-        || IsInstalling
-        || IsInstallingYtdlp
-        || IsInstallingFfmpeg
-        || IsInstallingDeno;
-
-    public bool HasAnythingToInstall =>
-        (WantInstallUv && !UvFound)
-        || (WantInstallAudioSeparator && !AudioSeparatorFound)
-        || (WantInstallYtdlp && !YtdlpFound)
-        || (WantInstallFfmpeg && !FfmpegFound)
-        || (WantInstallDeno && !DenoFound);
-
-    partial void OnWantInstallUvChanged(bool value) =>
-        OnPropertyChanged(nameof(HasAnythingToInstall));
-
-    partial void OnWantInstallAudioSeparatorChanged(bool value) =>
-        OnPropertyChanged(nameof(HasAnythingToInstall));
-
-    partial void OnWantInstallYtdlpChanged(bool value) =>
-        OnPropertyChanged(nameof(HasAnythingToInstall));
-
-    partial void OnWantInstallFfmpegChanged(bool value) =>
-        OnPropertyChanged(nameof(HasAnythingToInstall));
-
-    partial void OnWantInstallDenoChanged(bool value) =>
-        OnPropertyChanged(nameof(HasAnythingToInstall));
+    public bool HasAnythingToInstall => InstallRows.Any(r => r.WantInstall && !r.Found);
 
     // ── Partial hooks ─────────────────────────────────────────────────────────
 
@@ -229,16 +132,13 @@ public partial class SetupWizardViewModel(
         if (value == WizardStep.Detect)
             _ = RunDetectionAsync();
         else if (value == WizardStep.Install)
+        {
+            EnsureInstallRows();
             _ = RecheckToolsAsync();
+        }
     }
 
     partial void OnIsDetectingChanged(bool value) => OnPropertyChanged(nameof(CanGoNext));
-
-    partial void OnAudioSeparatorFoundChanged(bool value)
-    {
-        OnPropertyChanged(nameof(CanGoNext));
-        OnPropertyChanged(nameof(HasAnythingToInstall));
-    }
 
     partial void OnGpuVariantChanged(GpuVariant value)
     {
@@ -246,22 +146,6 @@ public partial class SetupWizardViewModel(
         OnPropertyChanged(nameof(IsCuda));
         OnPropertyChanged(nameof(IsDirectML));
     }
-
-    partial void OnUvFoundChanged(bool value)
-    {
-        OnPropertyChanged(nameof(CanGoNext));
-        OnPropertyChanged(nameof(HasAnythingToInstall));
-    }
-
-    partial void OnFfmpegFoundChanged(bool value)
-    {
-        OnPropertyChanged(nameof(CanGoNext));
-        OnPropertyChanged(nameof(HasAnythingToInstall));
-    }
-
-    partial void OnYtdlpFoundChanged(bool value) => OnPropertyChanged(nameof(HasAnythingToInstall));
-
-    partial void OnDenoFoundChanged(bool value) => OnPropertyChanged(nameof(HasAnythingToInstall));
 
     // ── Commands ──────────────────────────────────────────────────────────────
 
@@ -296,181 +180,23 @@ public partial class SetupWizardViewModel(
     private void SetGpuVariant(string variant) => GpuVariant = Enum.Parse<GpuVariant>(variant);
 
     [RelayCommand]
-    private async Task InstallUvAsync()
-    {
-        IsInstallingUv = true;
-        UvInstallError = null;
-
-        try
-        {
-            await _toolInstaller.InstallUvAsync(NewLogProgress());
-            await _toolState.RefreshAsync("uv");
-            UvFound = _toolState.IsUvAvailable;
-            if (!UvFound)
-                UvInstallError =
-                    "uv installed but could not be found on PATH. You may need to restart StemForge.";
-            else
-                UvInstallSuccess = true;
-        }
-        catch (Exception ex)
-        {
-            UvInstallError = ex.Message;
-        }
-        finally
-        {
-            IsInstallingUv = false;
-        }
-    }
-
-    [RelayCommand]
-    private async Task InstallAsync()
+    private async Task InstallSelectedAsync()
     {
         IsInstalling = true;
-        InstallError = null;
-
         try
         {
-            await _toolInstaller.InstallAudioSeparatorAsync(GpuVariant, NewLogProgress());
-            await _toolState.RefreshAsync("audio-separator");
-            AudioSeparatorFound = _toolState.IsAudioSeparatorAvailable;
-            InstallSuccess = AudioSeparatorFound;
-        }
-        catch (Exception ex)
-        {
-            InstallError = ex.Message;
+            // uv must be present before audio-separator (uv installs it). Required tools first.
+            await InstallRowAsync(ToolKind.Uv);
+            if (_toolState.IsAvailable(ToolKind.Uv))
+                await InstallRowAsync(ToolKind.AudioSeparator);
+            await InstallRowAsync(ToolKind.Ffmpeg);
+            await InstallRowAsync(ToolKind.Ytdlp);
+            await InstallRowAsync(ToolKind.Deno);
         }
         finally
         {
             IsInstalling = false;
         }
-    }
-
-    [RelayCommand]
-    private async Task InstallYtdlpAsync()
-    {
-        IsInstallingYtdlp = true;
-        YtdlpInstallError = null;
-
-        try
-        {
-            await _toolInstaller.InstallYtdlpAsync(NewLogProgress());
-            await _toolState.RefreshAsync("yt-dlp");
-            YtdlpFound = _toolState.IsYtdlpAvailable;
-            if (!YtdlpFound)
-                YtdlpInstallError =
-                    "yt-dlp installed but could not be found on PATH. You may need to restart StemForge.";
-            else
-                YtdlpInstallSuccess = true;
-        }
-        catch (Exception ex)
-        {
-            YtdlpInstallError = ex.Message;
-        }
-        finally
-        {
-            IsInstallingYtdlp = false;
-        }
-    }
-
-    [RelayCommand]
-    private async Task InstallFfmpegAsync()
-    {
-        IsInstallingFfmpeg = true;
-        FfmpegInstallError = null;
-
-        try
-        {
-            IProgress<string> lineProgress = NewLogProgress();
-            var fetchProgress = new Progress<FfmpegFetchProgress>(p =>
-            {
-                if (p.TotalBytes is { } total && total > 0)
-                {
-                    var pct = p.BytesDownloaded * 100.0 / total;
-                    lineProgress.Report(
-                        $"{p.Phase}: {FormatMB(p.BytesDownloaded)} / {FormatMB(total)} ({pct:F0}%)"
-                    );
-                }
-                else
-                {
-                    lineProgress.Report(p.Phase);
-                }
-            });
-
-            await _ffmpegFetcher.FetchAsync(fetchProgress);
-            await _toolState.RefreshAsync("ffmpeg");
-            FfmpegFound = _toolState.IsFfmpegAvailable;
-            if (!FfmpegFound)
-                FfmpegInstallError =
-                    "ffmpeg downloaded but could not be invoked. Check the install log above.";
-            else
-                FfmpegInstallSuccess = true;
-        }
-        catch (Exception ex)
-        {
-            FfmpegInstallError = ex.Message;
-        }
-        finally
-        {
-            IsInstallingFfmpeg = false;
-        }
-    }
-
-    private static string FormatMB(long bytes) => $"{bytes / 1_048_576.0:F1} MB";
-
-    [RelayCommand]
-    private async Task InstallDenoAsync()
-    {
-        IsInstallingDeno = true;
-        DenoInstallError = null;
-
-        try
-        {
-            var lineProgress = (IProgress<string>)NewLogProgress();
-            var fetchProgress = new Progress<DenoFetchProgress>(p =>
-            {
-                if (p.TotalBytes is { } total && total > 0)
-                {
-                    var pct = p.BytesDownloaded * 100.0 / total;
-                    lineProgress.Report(
-                        $"{p.Phase}: {FormatMB(p.BytesDownloaded)} / {FormatMB(total)} ({pct:F0}%)"
-                    );
-                }
-                else
-                {
-                    lineProgress.Report(p.Phase);
-                }
-            });
-
-            await _denoFetcher.FetchAsync(fetchProgress);
-            await _toolState.RefreshAsync("deno");
-            DenoFound = _toolState.IsDenoAvailable;
-            if (!DenoFound)
-                DenoInstallError =
-                    "deno downloaded but could not be invoked. Check the install log above.";
-            else
-                DenoInstallSuccess = true;
-        }
-        catch (Exception ex)
-        {
-            DenoInstallError = ex.Message;
-        }
-        finally
-        {
-            IsInstallingDeno = false;
-        }
-    }
-
-    private Progress<string> NewLogProgress()
-    {
-        _installLog.Clear();
-        InstallLog = string.Empty;
-        return new Progress<string>(line =>
-        {
-            if (_installLog.Length > 0)
-                _installLog.Append('\n');
-            _installLog.Append(line);
-            InstallLog = _installLog.ToString();
-        });
     }
 
     [RelayCommand]
@@ -480,8 +206,6 @@ public partial class SetupWizardViewModel(
         _settings.OutputDirectory = NullIfBlank(OutputDirectory);
         _settings.ModelsDirectory = NullIfBlank(ModelsDirectory);
         _settings.FirstRunComplete = true;
-        if (InstallSuccess)
-            _settings.InstalledVariant = GpuVariant;
         await _settings.SaveAsync();
         SetupCompleted?.Invoke();
     }
@@ -495,27 +219,16 @@ public partial class SetupWizardViewModel(
         OnPropertyChanged(nameof(CanDismiss));
         CurrentStep = WizardStep.Welcome;
         Tools.Clear();
+        InstallRows.Clear();
         GpuHint = string.Empty;
-        AudioSeparatorFound = false;
-        UvFound = false;
-        IsInstallingUv = false;
-        UvInstallError = null;
         IsInstalling = false;
-        InstallSuccess = false;
-        InstallError = null;
-        YtdlpFound = false;
-        IsInstallingYtdlp = false;
-        YtdlpInstallSuccess = false;
-        YtdlpInstallError = null;
-        FfmpegFound = false;
-        IsInstallingFfmpeg = false;
-        FfmpegInstallSuccess = false;
-        FfmpegInstallError = null;
         _installLog.Clear();
         InstallLog = string.Empty;
         OutputDirectory = _paths.OutputDirectory;
         ModelsDirectory = _paths.ModelsDirectory;
         GpuVariant = _settings.GpuVariant;
+        OnPropertyChanged(nameof(HasAnythingToInstall));
+        OnPropertyChanged(nameof(CanGoNext));
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -528,23 +241,20 @@ public partial class SetupWizardViewModel(
 
         try
         {
-            var toolsTask = _setupDetector.DetectAllAsync();
+            // Drive detection through ToolStateService so its Tools list is populated by the
+            // time the user advances to the Install step; otherwise EnsureInstallRows would
+            // briefly render every tool as "not installed" until the async recheck completes.
+            var refreshTask = _toolState.RefreshAsync();
             var gpuTask = _gpuDetector.DetectAsync();
-            await Task.WhenAll(toolsTask, gpuTask);
+            await Task.WhenAll(refreshTask, gpuTask);
 
-            var tools = await toolsTask;
+            var tools = _toolState.Tools;
             var gpus = await gpuTask;
 
             await TryFillInstalledVariantAsync(tools);
 
             foreach (var t in tools)
-                Tools.Add(new ToolStatusViewModel(t, VariantTagFor(t.Name, t.Found)));
-
-            UvFound = tools.FirstOrDefault(t => t.Name == "uv")?.Found ?? false;
-            AudioSeparatorFound =
-                tools.FirstOrDefault(t => t.Name == "audio-separator")?.Found ?? false;
-            YtdlpFound = tools.FirstOrDefault(t => t.Name == "yt-dlp")?.Found ?? false;
-            FfmpegFound = tools.FirstOrDefault(t => t.Name == "ffmpeg")?.Found ?? false;
+                Tools.Add(new ToolStatusViewModel(t, VariantTagFor(t.Kind, t.Found)));
 
             var best = gpus.OrderBy(g =>
                     g.Vendor switch
@@ -569,44 +279,109 @@ public partial class SetupWizardViewModel(
         }
     }
 
+    private void EnsureInstallRows()
+    {
+        if (InstallRows.Count > 0)
+            return;
+
+        foreach (var tool in ToolCatalog.All)
+        {
+            // Audio-separator's row gets the wizard as its variant picker so the inline
+            // CPU/CUDA/DirectML buttons can bind directly to a non-null path.
+            var picker = tool.Kind == ToolKind.AudioSeparator ? this : null;
+            var row = new ToolRowViewModel(tool, picker);
+            row.Found = _toolState.IsAvailable(tool.Kind);
+            row.WantInstall = !row.Found;
+            row.PropertyChanged += OnInstallRowChanged;
+            InstallRows.Add(row);
+        }
+
+        // The initial Found/WantInstall sets above happen before the row's PropertyChanged
+        // subscription is wired, and the subsequent RecheckToolsAsync re-set with the same
+        // values is suppressed by the observable-property change check — so neither path
+        // raises the wizard-level aggregates. Raise them here so the Install Selected button
+        // and Next gate reflect the freshly-built rows.
+        OnPropertyChanged(nameof(HasAnythingToInstall));
+        OnPropertyChanged(nameof(CanGoNext));
+    }
+
+    private void OnInstallRowChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (
+            e.PropertyName is nameof(ToolRowViewModel.WantInstall) or nameof(ToolRowViewModel.Found)
+        )
+        {
+            OnPropertyChanged(nameof(HasAnythingToInstall));
+            OnPropertyChanged(nameof(CanGoNext));
+        }
+    }
+
     private async Task RecheckToolsAsync()
     {
         await _toolState.RefreshAsync();
-        UvFound = _toolState.IsUvAvailable;
-        YtdlpFound = _toolState.IsYtdlpAvailable;
-        FfmpegFound = _toolState.IsFfmpegAvailable;
-        AudioSeparatorFound = _toolState.IsAudioSeparatorAvailable;
-        DenoFound = _toolState.IsDenoAvailable;
-
-        // Pre-check anything missing so the user just clicks Install.
-        WantInstallUv = !UvFound;
-        WantInstallAudioSeparator = !AudioSeparatorFound;
-        WantInstallYtdlp = !YtdlpFound;
-        WantInstallFfmpeg = !FfmpegFound;
-        WantInstallDeno = !DenoFound;
+        foreach (var row in InstallRows)
+        {
+            row.Found = _toolState.IsAvailable(row.Kind);
+            row.WantInstall = !row.Found; // pre-check anything missing so the user just clicks Install
+        }
     }
 
-    [RelayCommand]
-    private async Task InstallSelectedAsync()
+    private async Task InstallRowAsync(ToolKind kind)
     {
-        // Order matters: uv must be available before audio-separator/yt-dlp.
-        if (WantInstallUv && !UvFound)
-            await InstallUvAsync();
-        if (WantInstallAudioSeparator && UvFound && !AudioSeparatorFound)
-            await InstallAsync();
-        if (WantInstallYtdlp && UvFound && !YtdlpFound)
-            await InstallYtdlpAsync();
-        if (WantInstallFfmpeg && !FfmpegFound)
-            await InstallFfmpegAsync();
-        if (WantInstallDeno && !DenoFound)
-            await InstallDenoAsync();
+        var row = InstallRows.FirstOrDefault(r => r.Kind == kind);
+        if (row is null || !row.WantInstall || row.Found)
+            return;
+
+        row.InstallError = null;
+        var options = new InstallOptions(kind == ToolKind.AudioSeparator ? GpuVariant : null);
+
+        try
+        {
+            await _toolInstaller.InstallAsync(ToolCatalog.Get(kind), options, NewLogProgress());
+            await _toolState.RefreshAsync(row.Name);
+            row.Found = _toolState.IsAvailable(kind);
+
+            if (!row.Found)
+                row.InstallError =
+                    $"{row.Name} installed but could not be found. You may need to restart StemForge.";
+            else
+            {
+                row.InstallSucceeded = true;
+                if (kind == ToolKind.AudioSeparator)
+                    _settings.InstalledVariant = GpuVariant;
+            }
+        }
+        catch (Exception ex)
+        {
+            row.InstallError = ex.Message;
+        }
     }
+
+    private IProgress<InstallProgress> NewLogProgress()
+    {
+        _installLog.Clear();
+        InstallLog = string.Empty;
+        return new Progress<InstallProgress>(p =>
+        {
+            var line =
+                p is { BytesDownloaded: { } done, TotalBytes: { } total } && total > 0
+                    ? $"{p.Message}: {FormatMB(done)} / {FormatMB(total)} ({done * 100.0 / total:F0}%)"
+                    : p.Message;
+
+            if (_installLog.Length > 0)
+                _installLog.Append('\n');
+            _installLog.Append(line);
+            InstallLog = _installLog.ToString();
+        });
+    }
+
+    private static string FormatMB(long bytes) => $"{bytes / 1_048_576.0:F1} MB";
 
     private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolInfo> tools)
     {
         if (_settings.InstalledVariant is not null)
             return;
-        if (!(tools.FirstOrDefault(t => t.Name == "audio-separator")?.Found ?? false))
+        if (!(tools.FirstOrDefault(t => t.Kind == ToolKind.AudioSeparator)?.Found ?? false))
             return;
         var detected = await _toolInstaller.DetectInstalledVariantAsync();
         if (detected is not null)
@@ -616,9 +391,9 @@ public partial class SetupWizardViewModel(
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;
 
-    private string? VariantTagFor(string toolName, bool found)
+    private string? VariantTagFor(ToolKind kind, bool found)
     {
-        if (toolName != "audio-separator" || !found)
+        if (kind != ToolKind.AudioSeparator || !found)
             return null;
         return _settings.InstalledVariant switch
         {
