@@ -1,6 +1,6 @@
 using StemForge.Helpers;
 
-namespace StemForge.Tests.Services;
+namespace StemForge.Tests.Helpers;
 
 public sealed class YtUrlHelperTests
 {

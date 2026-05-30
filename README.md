@@ -74,13 +74,17 @@ Configure the output directory, default audio format, tool-path overrides, YouTu
    - `uv`: Python tool manager, ~15 MB, installed via [Astral's official installer](https://astral.sh/uv).
    - `audio-separator`: the separation engine, installed as a uv tool.
    - `ffmpeg`: ~100 MB, bundled binary from [`yt-dlp/FFmpeg-Builds`](https://github.com/yt-dlp/FFmpeg-Builds), dropped into `%LOCALAPPDATA%\StemForge\bin`.
-   - `yt-dlp` *(optional)*: only needed for URL downloads.
-   - `deno` *(optional, ~42 MB)*: JS runtime, needed for some YouTube URL workflows. See [YouTube authentication](#youtube-authentication-cookies-premium-formats) for when this matters.
+   - `yt-dlp` *(optional, ~17 MB)*: only needed for URL downloads. Bundled binary, not added to your system PATH so it never shadows a yt-dlp you already have installed elsewhere.
+   - `deno` *(optional, ~42 MB)*: JS runtime, needed for some YouTube URL workflows. Also bundled, not on PATH. See [YouTube authentication](#youtube-authentication-cookies-premium-formats) for when this matters.
 4. Pick your GPU variant: **CPU**, **CUDA** (NVIDIA), or **DirectML** (any modern Windows GPU). The wizard auto-detects what you have.
 
 > **Windows SmartScreen on first launch.** Because `StemForge.exe` isn't code-signed yet, Windows will probably show a *"Windows protected your PC"* prompt the first time you run it. Click **More info** and then **Run anyway** to proceed. This is the standard warning for any unsigned executable; nothing in StemForge needs admin rights or alters system settings.
 
 If you already have any of these tools on your PATH, the wizard detects them and skips re-installing.
+
+### What ends up on your PATH vs bundled
+
+`uv` and `audio-separator` install via the upstream installer and land on your PATH, so you can use them outside StemForge too. `ffmpeg`, `yt-dlp`, and `deno` are bundled into `%LOCALAPPDATA%\StemForge\bin` and **not** added to your system PATH. The rationale: a user is plausibly going to want their own `ffmpeg` or `yt-dlp` available system-wide, and StemForge dropping its bundled copies into PATH would silently shadow them. StemForge's own child processes still see the bundled binaries via an injected PATH; you can invoke them yourself with the full path.
 
 ### Where StemForge puts things
 
@@ -88,9 +92,19 @@ If you already have any of these tools on your PATH, the wizard detects them and
 |---|---|
 | Stem outputs | `~/Music/Stems` (configurable in Settings) |
 | Downloaded models | `%LOCALAPPDATA%\audio-separator\models` |
-| Bundled ffmpeg + deno | `%LOCALAPPDATA%\StemForge\bin` |
+| Bundled ffmpeg, yt-dlp, deno | `%LOCALAPPDATA%\StemForge\bin` |
 | App settings | `%APPDATA%\StemForge\settings.json` |
 | Drum-stem cache | `%LOCALAPPDATA%\StemForge\drum-cache` |
+
+### Updating yt-dlp between StemForge releases
+
+YouTube occasionally changes its extraction logic and yt-dlp moves fast to keep up. StemForge ships a pinned yt-dlp; if YouTube breaks downloads in between releases, you can self-update the bundled binary in place:
+
+```pwsh
+& "$env:LOCALAPPDATA\StemForge\bin\yt-dlp.exe" --update-to master
+```
+
+Switch back to a stable build with `--update-to stable`, or pick a specific version with `--update-to <tag>`. The next StemForge release will reset yt-dlp to whatever it pins.
 
 ---
 
@@ -115,7 +129,7 @@ Bundling deno via the setup wizard is the safe default. If you already have deno
 
 StemForge is pre-v0 and shared mostly with friends and early testers. **User presets work but aren't fully fleshed-out yet.** Expect rough edges in the editor and minimal validation. The built-in preset library is the recommended starting point.
 
-**Windows-only in practice.** The codebase is Avalonia and was written with cross-platform in mind, but only the Windows path is regularly tested. Building and running on macOS or Linux will likely surface bugs around path resolution, bundled-binary fetching (the ffmpeg and deno fetchers currently pin Windows assets), and shell-out invocations. Patches welcome.
+**Windows-only in practice.** The codebase is Avalonia and was written with cross-platform in mind, but only the Windows path is regularly tested. Building and running on macOS or Linux will likely surface bugs around path resolution, bundled-binary fetching (the catalog currently pins Windows assets for ffmpeg / yt-dlp / deno), and shell-out invocations. Patches welcome.
 
 Reports of any rough edge (wizard, separation results, UI papercuts) welcome on the [issues page](../../issues).
 
@@ -176,7 +190,7 @@ src/StemForge/
   ViewModels/              view models (CommunityToolkit.Mvvm)
   Models/                  domain models + serialisable settings
   Services/                stateful services: process runner, setup detection,
-                           job queue, model catalogue, ffmpeg/deno fetchers
+                           job queue, model catalogue, bundled-binary fetcher
   Helpers/                 pure static utilities (no DI, no state)
   Extensions/              extension methods on Avalonia / framework types
   tools/                   Python driver script for audio-separator
