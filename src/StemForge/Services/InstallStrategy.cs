@@ -37,8 +37,8 @@ public sealed record UvToolInstall(
 
 /// <summary>
 /// Downloads a pinned archive into <see cref="AppPaths.BundledBinDir"/> and verifies its
-/// SHA-256. Used by yt-dlp, ffmpeg, deno. The binary is not added to the user's system PATH;
-/// it is reachable from StemForge child processes only (ProcessRunner prepends BundledBinDir).
+/// SHA-256. Used by yt-dlp, ffmpeg, deno. The binary is passed to child processes via
+/// explicit tool args rather than PATH injection.
 /// </summary>
 public sealed record BundledFetch(IReadOnlyDictionary<PlatformInfo, BundledAsset> Assets)
     : InstallStrategy

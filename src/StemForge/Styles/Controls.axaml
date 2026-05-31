@@ -43,12 +43,14 @@
 
     <!-- Accent (amber) button: primary CTA -->
     <Style Selector="Button.accent">
-        <Setter Property="Background" Value="{DynamicResource AccentGradientBrush}" />
         <Setter Property="Foreground" Value="White" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusButton}" />
         <Setter Property="Padding" Value="14,8" />
         <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Button.accent /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
     </Style>
     <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource AccentBrightBrush}" />

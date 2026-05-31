@@ -10,6 +10,7 @@ namespace StemForge.ViewModels;
 public partial class SettingsViewModel : PageViewModelBase
 {
     private readonly AppSettings _settings;
+    private readonly AppPaths _paths;
     private readonly GpuDetector _gpuDetector;
     private readonly ToolInstaller _toolInstaller;
     private readonly ToolStateService _toolState;
@@ -20,6 +21,16 @@ public partial class SettingsViewModel : PageViewModelBase
 
     [ObservableProperty]
     public partial bool ToolsLoading { get; set; } = true;
+
+    /// <summary>
+    /// True when the "Tool paths" advanced section is expanded. Auto-set to true on load
+    /// if any override is already active so users are never surprised by a hidden override.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool IsToolPathsExpanded { get; set; }
+
+    [RelayCommand]
+    private void ToggleToolPaths() => IsToolPathsExpanded = !IsToolPathsExpanded;
 
     [ObservableProperty]
     public partial bool AllSystemsGo { get; set; }
@@ -122,6 +133,7 @@ public partial class SettingsViewModel : PageViewModelBase
 
     public SettingsViewModel(
         AppSettings settings,
+        AppPaths paths,
         SetupDetector setupDetector,
         GpuDetector gpuDetector,
         ToolInstaller toolInstaller,
@@ -129,6 +141,7 @@ public partial class SettingsViewModel : PageViewModelBase
     )
     {
         _settings = settings;
+        _paths = paths;
         _gpuDetector = gpuDetector;
         _toolInstaller = toolInstaller;
         _toolState = toolState;
@@ -137,6 +150,7 @@ public partial class SettingsViewModel : PageViewModelBase
             SettingsToolRows.Add(new SettingsToolRowViewModel(tool));
 
         LoadFromSettings(settings);
+        RefreshResolvedPaths();
         _toolState.PropertyChanged += OnToolStatePropertyChanged;
         SyncToolsFromState();
         _ = DetectGpuAsync();
@@ -186,6 +200,16 @@ public partial class SettingsViewModel : PageViewModelBase
         DefaultAudioFormat = s.DefaultAudioFormat;
         DrumExtractionModel = s.DrumExtractionModel;
         DrumStemsWithOutputs = s.DrumStemLocation == DrumStemLocation.WithStems;
+
+        // Auto-expand if any override is already active so users are never surprised.
+        if (SettingsToolRows.Any(r => !string.IsNullOrEmpty(r.PathOverride)))
+            IsToolPathsExpanded = true;
+    }
+
+    private void RefreshResolvedPaths()
+    {
+        foreach (var row in SettingsToolRows)
+            row.ResolvedPath = _paths.PathFor(row.Kind);
     }
 
     partial void OnGpuVariantChanged(GpuVariant value)
@@ -415,6 +439,7 @@ public partial class SettingsViewModel : PageViewModelBase
         _settings.FirstRunComplete = true;
 
         await _settings.SaveAsync();
+        RefreshResolvedPaths();
 
         SaveSuccess = true;
         await Task.Delay(2000);

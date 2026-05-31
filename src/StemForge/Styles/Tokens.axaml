@@ -20,6 +20,17 @@
     <Color x:Key="AccentDimBgColor">#1AD4703A</Color> <!-- ~10% alpha -->
     <Color x:Key="AccentMedBgColor">#4DD4703A</Color>  <!-- ~30% alpha -->
 
+    <!-- Override Avalonia FluentTheme's system accent so all themed controls
+         (CheckBox, TextBox focus ring, ComboBox highlight, etc.) use StemForge
+         orange automatically without per-control template selectors. -->
+    <Color x:Key="SystemAccentColor">#d4703a</Color>
+    <Color x:Key="SystemAccentColorLight1">#e88040</Color>
+    <Color x:Key="SystemAccentColorLight2">#f09060</Color>
+    <Color x:Key="SystemAccentColorLight3">#f8b090</Color>
+    <Color x:Key="SystemAccentColorDark1">#b85e2e</Color>
+    <Color x:Key="SystemAccentColorDark2">#9a4e24</Color>
+    <Color x:Key="SystemAccentColorDark3">#7d3e1b</Color>
+
     <!-- Status -->
     <Color x:Key="SuccessColor">#30d158</Color>
     <Color x:Key="SuccessDimBgColor">#1F30D158</Color> <!-- ~12% alpha -->
@@ -56,12 +67,6 @@
     <SolidColorBrush x:Key="CategoryVocalsBrush" Color="{StaticResource CategoryVocalsColor}" />
     <SolidColorBrush x:Key="CategoryInstrumentalsBrush" Color="{StaticResource CategoryInstrumentalsColor}" />
     <SolidColorBrush x:Key="CategoryOtherBrush" Color="{StaticResource CategoryOtherColor}" />
-
-    <!-- Button gradient (used on primary amber CTAs) -->
-    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0%,0%" EndPoint="100%,100%">
-        <GradientStop Color="{StaticResource AccentBrightColor}" Offset="0" />
-        <GradientStop Color="{StaticResource AccentColor}" Offset="1" />
-    </LinearGradientBrush>
 
     <!-- ====== Typography ====== -->
     <!-- TODO: bundle DM Sans + JetBrains Mono. For now fall back to system equivalents. -->

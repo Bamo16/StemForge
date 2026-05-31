@@ -35,4 +35,14 @@ public partial class SettingsView : UserControl
         if (await this.PickFolderAsync(Vm.ModelsDirectory) is { } folder)
             Vm.ModelsDirectory = folder;
     }
+
+    private async void OnBrowseToolPathClicked(object? sender, RoutedEventArgs e)
+    {
+        if (
+            (sender as Control)?.DataContext is not SettingsToolRowViewModel row
+            || await this.PickFilesAsync(suggestedStartPath: row.PathOverride) is not [{ } path, ..]
+        )
+            return;
+        row.PathOverride = path;
+    }
 }

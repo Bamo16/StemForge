@@ -30,12 +30,8 @@ public sealed class AppPaths(AppSettings settings)
     /// <summary>Path or PATH-resolvable name of the uv binary.</summary>
     public string Uv => OverrideFor(ToolKind.Uv) ?? "uv";
 
-    /// <summary>
-    /// Path or PATH-resolvable name of the yt-dlp binary. Prefers user override, then the
-    /// bundled binary downloaded on first run, and finally bare 'yt-dlp' on PATH. The bundled
-    /// fallback is required because Windows CreateProcess resolves bare FileName against the
-    /// parent's PATH; ProcessRunner's injected PATH only affects the child's environment.
-    /// </summary>
+    /// <summary>Path or PATH-resolvable name of the yt-dlp binary. Prefers user override, then the
+    /// bundled binary downloaded on first run, and finally bare 'yt-dlp' on PATH.</summary>
     public string Ytdlp =>
         OverrideFor(ToolKind.Ytdlp) ?? (File.Exists(BundledYtdlp) ? BundledYtdlp : "yt-dlp");
 
@@ -68,12 +64,7 @@ public sealed class AppPaths(AppSettings settings)
     public string DrumCacheDirectory =>
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "drum-cache");
 
-    /// <summary>
-    /// Directory holding bundled binaries that StemForge downloads on first run (currently:
-    /// ffmpeg). Prepended to PATH by <see cref="ProcessRunner"/> for every child process, so
-    /// tools that shell out to bare 'ffmpeg' find our binary without it ever being on the
-    /// system PATH.
-    /// </summary>
+    /// <summary>Directory holding bundled binaries that StemForge downloads on first run.</summary>
     public string BundledBinDir =>
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "bin");
 

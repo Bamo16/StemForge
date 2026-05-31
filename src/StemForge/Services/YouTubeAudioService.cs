@@ -62,8 +62,12 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             args.AddRange([flag, cookies]);
         }
 
-        // No --js-runtime override: yt-dlp auto-discovers the bundled deno via PATH
-        // (ProcessRunner prepends BundledBinDir to every child env).
+        // Pass bundled deno explicitly so yt-dlp finds it without deno on PATH.
+        // Wrap in double-quotes: yt-dlp's own value parser splits on spaces, so the
+        // quotes are embedded in the value string (not just OS-level arg quoting).
+        var denoPath = _paths.Deno;
+        if (Path.IsPathRooted(denoPath))
+            args.AddRange(["--js-runtimes", $"\"deno:{denoPath}\""]);
         args.Add(url);
 
         // Stderr streams live (yt-dlp info lines); stdout (the JSON blob) is captured silently.
@@ -86,13 +90,13 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         var asr = selected?.Asr ?? info.Asr;
 
         IReadOnlyList<YtDlpFormat>? audioFormats = null;
-        if (info is { Formats.Count: > 0 })
+        if (info is { Formats: { Count: > 0 } formats })
         {
             audioFormats =
             [
-                .. info.Formats.Where(IsAudioOnly).OrderByDescending(f => f.Abr ?? f.Tbr ?? 0),
+                .. formats.Where(IsAudioOnly).OrderByDescending(f => f.Abr ?? f.Tbr ?? 0),
             ];
-            LogAudioFormats(info.Formats, selected);
+            LogAudioFormats(formats, selected);
         }
 
         var summary =

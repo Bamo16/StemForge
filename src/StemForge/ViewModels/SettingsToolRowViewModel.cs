@@ -16,21 +16,12 @@ public sealed partial class SettingsToolRowViewModel(Tool tool) : ObservableObje
     public string Name => tool.CliName;
     public bool IsRequired => tool.IsRequired;
 
-    /// <summary>Placeholder text describing the default discovery when no override is set.</summary>
-    public string PathPlaceholder =>
-        Kind switch
-        {
-            ToolKind.Uv => "Default: 'uv' on PATH",
-            ToolKind.AudioSeparator =>
-                "Default: uv-installed shim, falls back to 'audio-separator' on PATH",
-            ToolKind.Ytdlp =>
-                "Default: bundled binary in %LOCALAPPDATA%\\StemForge\\bin, falls back to 'yt-dlp' on PATH",
-            ToolKind.Ffmpeg =>
-                "Default: bundled binary in %LOCALAPPDATA%\\StemForge\\bin, falls back to 'ffmpeg' on PATH",
-            ToolKind.Deno =>
-                "Default: bundled binary in %LOCALAPPDATA%\\StemForge\\bin, falls back to 'deno' on PATH",
-            _ => string.Empty,
-        };
+    /// <summary>
+    /// The path StemForge currently resolves for this tool (override if set, else default).
+    /// Set by the owner view-model after each detection pass or settings save.
+    /// </summary>
+    [ObservableProperty]
+    public partial string ResolvedPath { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial bool Found { get; set; }

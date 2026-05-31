@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using StemForge.Extensions;
 using StemForge.Models;
 
 namespace StemForge.Services;
@@ -137,16 +138,22 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 TaskCreationOptions.RunContinuationsAsynchronously
             );
 
-            var startInfo = new ProcessStartInfo(
-                _paths.SeparationDriverPython,
-                [
-                    AppPaths.SeparationDriverScript,
-                    "--model-dir",
-                    _paths.ModelsDirectory,
-                    "--log-level",
-                    "info",
-                ]
-            )
+            var driverArgs = new List<string>
+            {
+                AppPaths.SeparationDriverScript,
+                "--model-dir",
+                _paths.ModelsDirectory,
+                "--log-level",
+                "info",
+            };
+            var ffmpegPath = _paths.Ffmpeg;
+            if (Path.IsPathRooted(ffmpegPath))
+            {
+                driverArgs.Add("--ffmpeg-path");
+                driverArgs.Add(ffmpegPath);
+            }
+
+            var startInfo = new ProcessStartInfo(_paths.SeparationDriverPython, driverArgs)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -156,20 +163,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
                 StandardOutputEncoding = Encoding.UTF8,
                 StandardErrorEncoding = Encoding.UTF8,
-            };
-            startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
-            startInfo.Environment["PYTHONUTF8"] = "1";
-
-            // Same PATH prepend ProcessRunner applies for every other child process. The
-            // driver doesn't go through ProcessRunner because it's a long-lived process with
-            // a JSON-over-stdio protocol, so we duplicate the injection inline. Without this,
-            // audio-separator's internal `subprocess.check_output(["ffmpeg", "-version"])`
-            // can't find the bundled binary.
-            var existingPath = startInfo.Environment.TryGetValue("PATH", out var p)
-                ? p
-                : Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-            startInfo.Environment["PATH"] =
-                _paths.BundledBinDir + Path.PathSeparator + existingPath;
+            }.WithEnvironmentVariables(("PYTHONIOENCODING", "utf-8"), ("PYTHONUTF8", "1"));
 
             AppLogger.Debug(
                 "driver",

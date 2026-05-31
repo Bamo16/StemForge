@@ -107,28 +107,9 @@
                     </Border.BorderBrush>
 
                     <Panel>
-                        <!-- Loading state -->
-                        <StackPanel IsVisible="{Binding ToolsLoading}"
-                                    Spacing="10" Margin="16,14">
-                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <Ellipse Width="7" Height="7">
-                                    <Ellipse.Fill>
-                                        <SolidColorBrush Color="{DynamicResource SuccessColor}" Opacity="0.5" />
-                                    </Ellipse.Fill>
-                                </Ellipse>
-                                <TextBlock Text="Detecting tools…"
-                                           FontSize="12" FontWeight="Bold" LetterSpacing="0.06"
-                                           Foreground="{DynamicResource TextSecondaryBrush}" />
-                            </StackPanel>
-                            <ProgressBar IsIndeterminate="True"
-                                         Height="2"
-                                         Foreground="{DynamicResource SuccessBrush}"
-                                         Background="Transparent" />
-                        </StackPanel>
-
-                        <!-- Done state: one row per tool, no all-caps banner. The per-tool
-                             status dot conveys success/failure on its own. -->
-                        <StackPanel IsVisible="{Binding !ToolsLoading}"
+                        <!-- Done state: always in layout tree so the card height never
+                             collapses during a refresh. Non-interactive while loading. -->
+                        <StackPanel IsHitTestVisible="{Binding !ToolsLoading}"
                                     Spacing="10" Margin="16,14">
                             <ItemsControl ItemsSource="{Binding SettingsToolRows}">
                                 <ItemsControl.ItemsPanel>
@@ -176,6 +157,31 @@
                                         Command="{Binding ShowWizardCommand}" />
                             </StackPanel>
                         </StackPanel>
+
+                        <!-- Spinner overlay: stretches to the done-state height so the card
+                             never shrinks during a refresh. Sits on top in z-order.
+                             Background must be opaque to cover the tool rows beneath it;
+                             the outer card border still provides the green tint. -->
+                        <Border IsVisible="{Binding ToolsLoading}"
+                                Background="{DynamicResource Bg1Brush}"
+                                VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="10" Margin="16,14">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <Ellipse Width="7" Height="7">
+                                        <Ellipse.Fill>
+                                            <SolidColorBrush Color="{DynamicResource SuccessColor}" Opacity="0.5" />
+                                        </Ellipse.Fill>
+                                    </Ellipse>
+                                    <TextBlock Text="Detecting tools…"
+                                               FontSize="12" FontWeight="Bold" LetterSpacing="0.06"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                </StackPanel>
+                                <ProgressBar IsIndeterminate="True"
+                                             Height="2"
+                                             Foreground="{DynamicResource SuccessBrush}"
+                                             Background="Transparent" />
+                            </StackPanel>
+                        </Border>
                     </Panel>
                 </Border>
 
@@ -291,7 +297,6 @@
                                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                                    Text="{Binding ManageStatus}" />
                                         <ProgressBar IsIndeterminate="True" Height="2"
-                                                     Foreground="{DynamicResource AccentBrush}"
                                                      Background="Transparent" />
                                         <ScrollViewer MaxHeight="120"
                                                       HorizontalScrollBarVisibility="Disabled"
@@ -328,35 +333,6 @@
                                         Command="{Binding ShowWizardCommand}"
                                         HorizontalAlignment="Left" />
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-
-                <!-- ── Tool paths ── -->
-                <StackPanel Spacing="12">
-                    <TextBlock Classes="settingSection" Text="Tool paths" />
-                    <Border Classes="card">
-                        <StackPanel Spacing="14">
-                            <TextBlock FontSize="11" TextWrapping="Wrap"
-                                       Foreground="{DynamicResource TextPlaceholderBrush}"
-                                       Text="Override which binary StemForge invokes for each tool. Leave blank to use StemForge's default discovery — described per-field below." />
-                            <ItemsControl ItemsSource="{Binding SettingsToolRows}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Spacing="14" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="vm:SettingsToolRowViewModel">
-                                        <StackPanel Spacing="6">
-                                            <TextBlock Classes="settingLabel" Text="{Binding Name}" />
-                                            <TextBox Classes="settingInput"
-                                                     Text="{Binding PathOverride, Mode=TwoWay}"
-                                                     PlaceholderText="{Binding PathPlaceholder}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -447,6 +423,66 @@
                                        Text="When unchecked, the drum stem is cached internally and not shown in the output folder. Useful if drums are only needed for BPM detection (coming soon)." />
                         </StackPanel>
                     </Border>
+                </StackPanel>
+
+                <!-- ── Advanced (Tool paths) ── -->
+                <StackPanel Spacing="0">
+                    <Button Classes="ghost"
+                            Command="{Binding ToggleToolPathsCommand}"
+                            HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock FontSize="10"
+                                       VerticalAlignment="Center"
+                                       Text="▾"
+                                       IsVisible="{Binding IsToolPathsExpanded}" />
+                            <TextBlock FontSize="10"
+                                       VerticalAlignment="Center"
+                                       Text="▸"
+                                       IsVisible="{Binding !IsToolPathsExpanded}" />
+                            <TextBlock FontSize="11"
+                                       VerticalAlignment="Center"
+                                       Text="Advanced" />
+                        </StackPanel>
+                    </Button>
+                    <StackPanel IsVisible="{Binding IsToolPathsExpanded}" Spacing="12" Margin="0,12,0,0">
+                        <TextBlock Classes="settingSection" Text="Tool paths" />
+                        <Border Classes="card">
+                            <StackPanel Spacing="14">
+                                <TextBlock FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="Override the binary StemForge invokes for each tool. Leave blank to use the default. The resolved path shows what is currently in use." />
+                                <ItemsControl ItemsSource="{Binding SettingsToolRows}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Spacing="14" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="vm:SettingsToolRowViewModel">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Classes="settingLabel" Text="{Binding Name}" />
+                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                    <TextBox Grid.Column="0"
+                                                             Classes="settingInput"
+                                                             Text="{Binding PathOverride, Mode=TwoWay}"
+                                                             PlaceholderText="Leave blank for default" />
+                                                    <Button Grid.Column="1"
+                                                            Classes="ghost"
+                                                            Content="Browse"
+                                                            Click="OnBrowseToolPathClicked" />
+                                                </Grid>
+                                                <TextBlock Classes="mono"
+                                                           FontSize="10"
+                                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                           Text="{Binding ResolvedPath, StringFormat='→ {0}'}"
+                                                           IsVisible="{Binding ResolvedPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- ── Save footer ── -->
