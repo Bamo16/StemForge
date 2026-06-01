@@ -71,8 +71,8 @@ Configure the output directory, default audio format, tool-path overrides, YouTu
 1. Open the [Releases](../../releases) page and download the latest `StemForge-vX.Y.Z-win-x64.zip`.
 2. Extract anywhere. You'll get a `StemForge/` folder; double-click `StemForge.exe` inside it. No .NET install required.
 3. **First-run wizard** offers to install everything you need:
-   - `uv`: Python tool manager, ~15 MB, installed via [Astral's official installer](https://astral.sh/uv).
-   - `audio-separator`: the separation engine, installed as a uv tool.
+   - `uv`: Python tool manager, ~25 MB, installed via [Astral's official installer](https://astral.sh/uv).
+   - `audio-separator`: the separation engine, ~250 MB to 2 GB depending on GPU variant, installed as a uv tool.
    - `ffmpeg`: ~100 MB, bundled binary from [`yt-dlp/FFmpeg-Builds`](https://github.com/yt-dlp/FFmpeg-Builds), dropped into `%LOCALAPPDATA%\StemForge\bin`.
    - `yt-dlp` *(optional, ~17 MB)*: only needed for URL downloads. Bundled binary, not added to your system PATH so it never shadows a yt-dlp you already have installed elsewhere.
    - `deno` *(optional, ~42 MB)*: JS runtime, needed for some YouTube URL workflows. Also bundled, not on PATH. See [YouTube authentication](#youtube-authentication-cookies-premium-formats) for when this matters.
@@ -84,7 +84,7 @@ If you already have any of these tools on your PATH, the wizard detects them and
 
 ### What ends up on your PATH vs bundled
 
-`uv` and `audio-separator` install via the upstream installer and land on your PATH, so you can use them outside StemForge too. `ffmpeg`, `yt-dlp`, and `deno` are bundled into `%LOCALAPPDATA%\StemForge\bin` and **not** added to your system PATH. The rationale: a user is plausibly going to want their own `ffmpeg` or `yt-dlp` available system-wide, and StemForge dropping its bundled copies into PATH would silently shadow them. StemForge's own child processes still see the bundled binaries via an injected PATH; you can invoke them yourself with the full path.
+`uv` and `audio-separator` install via the upstream installer and land on your PATH, so you can use them outside StemForge too. `ffmpeg`, `yt-dlp`, and `deno` are bundled into `%LOCALAPPDATA%\StemForge\bin` and **not** added to your system PATH. The rationale: a user is plausibly going to want their own `ffmpeg` or `yt-dlp` available system-wide, and StemForge dropping its bundled copies into PATH would silently shadow them. StemForge's own child processes get the bundled binaries by explicit path (`yt-dlp` is told where `deno` lives, `audio-separator` where `ffmpeg` lives), so nothing relies on your system PATH. You can still run the bundled binaries yourself using their full path.
 
 ### Where StemForge puts things
 
@@ -127,7 +127,7 @@ Bundling deno via the setup wizard is the safe default. If you already have deno
 
 ## Status
 
-StemForge is pre-v0 and shared mostly with friends and early testers. **User presets work but aren't fully fleshed-out yet.** Expect rough edges in the editor and minimal validation. The built-in preset library is the recommended starting point.
+StemForge is at v0.1.1, an early release shared mostly with friends and testers. **User presets work but aren't fully fleshed-out yet.** Expect rough edges in the editor and minimal validation. The built-in preset library is the recommended starting point.
 
 **Windows-only in practice.** The codebase is Avalonia and was written with cross-platform in mind, but only the Windows path is regularly tested. Building and running on macOS or Linux will likely surface bugs around path resolution, bundled-binary fetching (the catalog currently pins Windows assets for ffmpeg / yt-dlp / deno), and shell-out invocations. Patches welcome.
 
@@ -162,7 +162,7 @@ Two VS Code tasks together produce the shippable zip:
 Bumping the release version is one edit in `src/StemForge/StemForge.csproj`:
 
 ```xml
-<Version>0.1.0</Version>
+<Version>0.1.1</Version>
 ```
 
 The next package run picks up the new version automatically.
@@ -171,10 +171,7 @@ Native debug symbols from Skia and HarfBuzz are removed by an `AfterTargets="Pub
 
 ### Cutting a release
 
-1. Bump `<Version>` in `src/StemForge/StemForge.csproj` and commit.
-2. Tag main with the same version: `git tag v0.1.0 && git push origin v0.1.0`.
-3. Run the **"package: win-x64"** task to build `publish/StemForge-v0.1.0-win-x64.zip`.
-4. Create a GitHub Release from the tag, attach the zip, write notes.
+Maintainer release steps (version bump, merge, tag, GitHub Release) live in [`docs/RELEASING.md`](docs/RELEASING.md).
 
 ### Project layout
 
@@ -193,6 +190,6 @@ src/StemForge/
                            job queue, model catalogue, bundled-binary fetcher
   Helpers/                 pure static utilities (no DI, no state)
   Extensions/              extension methods on Avalonia / framework types
-  tools/                   Python driver script for audio-separator
+  tools/                   Python scripts for audio-separator (driver + variant probe)
 src/StemForge.Tests/       xUnit test project
 ```

@@ -32,4 +32,4 @@ A GPU variant has two distinct states that can disagree:
 Divergence happens when an install silently falls back. Example: the user picks `Cuda` but the CUDA-build of torch fails to install (no matching wheel for the system's CUDA toolkit version), so audio-separator still installs but only the CPU provider is functional. The detected variant is the source of truth for what audio-separator can actually do; the chosen variant is the source of truth for what to attempt on reinstall.
 
 ### Bundled bin dir
-`%LOCALAPPDATA%\StemForge\bin` on Windows (analogous paths on other OSes). Holds the output of every [[Bundled fetch]]. `ProcessRunner` prepends this directory to every child process's PATH, so tools that shell out to bare `ffmpeg` or `deno` find StemForge's bundled copy without it ever being on the user's system PATH.
+`%LOCALAPPDATA%\StemForge\bin` on Windows (analogous paths on other OSes). Holds the output of every [[Bundled fetch]]. Not on the user's system PATH; reachable only from StemForge's own child processes, which are pointed at these binaries by explicit path argument (see ADR 0003 for how).
