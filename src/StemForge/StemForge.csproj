@@ -9,7 +9,8 @@
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <!-- Single source of truth for the version. The "package: win-x64" task in
              .vscode/tasks.json reads this and names the release zip accordingly. -->
-        <Version>0.1.0</Version>
+        <Version>0.1.1</Version>
+        <AssemblyVersion>$(Version)</AssemblyVersion>
     </PropertyGroup>
 
     <ItemGroup>

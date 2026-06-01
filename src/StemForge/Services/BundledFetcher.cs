@@ -68,10 +68,13 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform)
         CancellationToken ct
     )
     {
+        var appVersion =
+            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
+            ?? "dev";
         using var http = new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(15),
-            DefaultRequestHeaders = { UserAgent = { new("StemForge", "0.1") } },
+            DefaultRequestHeaders = { UserAgent = { new("StemForge", appVersion) } },
         };
 
         using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
