@@ -15,11 +15,26 @@ public sealed class AppPaths(AppSettings settings)
 
     // ── Tool executables ──────────────────────────────────────────────────────
 
-    /// <summary>Path or PATH-resolvable name of the uv binary.</summary>
-    public string Uv => Override(_settings.UvPath) ?? "uv";
+    /// <summary>Resolved path (or PATH-resolvable name) of a tool's binary, keyed by kind.</summary>
+    public string PathFor(ToolKind kind) =>
+        kind switch
+        {
+            ToolKind.Uv => Uv,
+            ToolKind.AudioSeparator => AudioSeparator,
+            ToolKind.Ytdlp => Ytdlp,
+            ToolKind.Ffmpeg => Ffmpeg,
+            ToolKind.Deno => Deno,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+        };
 
-    /// <summary>Path or PATH-resolvable name of the yt-dlp binary.</summary>
-    public string Ytdlp => Override(_settings.YtdlpPath) ?? "yt-dlp";
+    /// <summary>Path or PATH-resolvable name of the uv binary. Prefers the known install location
+    /// so callers work even when uv was just installed and its directory is not yet on PATH.</summary>
+    public string Uv => OverrideFor(ToolKind.Uv) ?? (File.Exists(KnownUvPath) ? KnownUvPath : "uv");
+
+    /// <summary>Path or PATH-resolvable name of the yt-dlp binary. Prefers user override, then the
+    /// bundled binary downloaded on first run, and finally bare 'yt-dlp' on PATH.</summary>
+    public string Ytdlp =>
+        OverrideFor(ToolKind.Ytdlp) ?? (File.Exists(BundledYtdlp) ? BundledYtdlp : "yt-dlp");
 
     /// <summary>
     /// Path or PATH-resolvable name of the ffmpeg binary. Prefers the user's explicit
@@ -27,7 +42,7 @@ public sealed class AppPaths(AppSettings settings)
     /// to bare 'ffmpeg' on PATH for users who already have a system install.
     /// </summary>
     public string Ffmpeg =>
-        Override(_settings.FfmpegPath) ?? (File.Exists(BundledFfmpeg) ? BundledFfmpeg : "ffmpeg");
+        OverrideFor(ToolKind.Ffmpeg) ?? (File.Exists(BundledFfmpeg) ? BundledFfmpeg : "ffmpeg");
 
     /// <summary>
     /// Path or PATH-resolvable name of the audio-separator binary. If no user
@@ -35,7 +50,7 @@ public sealed class AppPaths(AppSettings settings)
     /// back to the bare PATH name.
     /// </summary>
     public string AudioSeparator =>
-        Override(_settings.AudioSeparatorPath)
+        OverrideFor(ToolKind.AudioSeparator)
         ?? (File.Exists(UvAudioSeparatorShim) ? UvAudioSeparatorShim : "audio-separator");
 
     // ── Directories ───────────────────────────────────────────────────────────
@@ -50,12 +65,7 @@ public sealed class AppPaths(AppSettings settings)
     public string DrumCacheDirectory =>
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "drum-cache");
 
-    /// <summary>
-    /// Directory holding bundled binaries that StemForge downloads on first run (currently:
-    /// ffmpeg). Prepended to PATH by <see cref="ProcessRunner"/> for every child process, so
-    /// tools that shell out to bare 'ffmpeg' find our binary without it ever being on the
-    /// system PATH.
-    /// </summary>
+    /// <summary>Directory holding bundled binaries that StemForge downloads on first run.</summary>
     public string BundledBinDir =>
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "bin");
 
@@ -69,11 +79,15 @@ public sealed class AppPaths(AppSettings settings)
     /// runtime themselves.
     /// </summary>
     public string Deno =>
-        Override(_settings.DenoPath) ?? (File.Exists(BundledDeno) ? BundledDeno : "deno");
+        OverrideFor(ToolKind.Deno) ?? (File.Exists(BundledDeno) ? BundledDeno : "deno");
 
     /// <summary>Path to the bundled deno binary inside <see cref="BundledBinDir"/>.</summary>
     public string BundledDeno =>
         Path.Combine(BundledBinDir, OperatingSystem.IsWindows() ? "deno.exe" : "deno");
+
+    /// <summary>Path to the bundled yt-dlp binary inside <see cref="BundledBinDir"/>.</summary>
+    public string BundledYtdlp =>
+        Path.Combine(BundledBinDir, OperatingSystem.IsWindows() ? "yt-dlp.exe" : "yt-dlp");
 
     // ── Defaults (exposed so the Settings UI can show placeholder text) ──────
 
@@ -91,6 +105,13 @@ public sealed class AppPaths(AppSettings settings)
     public static string SeparationDriverScript =>
         Path.Combine(AppContext.BaseDirectory, "tools", "separator_driver.py");
 
+    // uv installs itself to %USERPROFILE%\.local\bin on Windows. Probing this lets callers
+    // use uv immediately after installation without requiring a PATH-refresh restart.
+    // TODO v0.2.0: add Linux/macOS path (~/.local/bin/uv, no .exe).
+    private static string KnownUvPath =>
+        Environment.SpecialFolder.UserProfile.GetFolderPath(".local", "bin", "uv.exe");
+
+    // TODO v0.2.0: Windows-only (Scripts\ + .exe). Linux/macOS uses bin/ with no extension.
     private static string UvAudioSeparatorShim =>
         Environment.SpecialFolder.ApplicationData.GetFolderPath(
             "uv",
@@ -100,6 +121,7 @@ public sealed class AppPaths(AppSettings settings)
             "audio-separator.exe"
         );
 
+    // TODO v0.2.0: Windows-only (Scripts\ + .exe). Linux/macOS uses bin/ with no extension.
     private static string UvAudioSeparatorPython =>
         Environment.SpecialFolder.ApplicationData.GetFolderPath(
             "uv",
@@ -108,6 +130,8 @@ public sealed class AppPaths(AppSettings settings)
             "Scripts",
             "python.exe"
         );
+
+    private string? OverrideFor(ToolKind kind) => Override(_settings.GetToolPathOverride(kind));
 
     private static string? Override(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;

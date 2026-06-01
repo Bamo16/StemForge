@@ -1,0 +1,7 @@
+# Normalize line endings: store LF in the repo, check out LF in working trees.
+# Matches .editorconfig (end_of_line = lf) and prevents autocrlf phantom diffs on Windows.
+* text=auto eol=lf
+
+# Binary assets: never normalize or diff as text.
+*.png binary
+*.ico binary

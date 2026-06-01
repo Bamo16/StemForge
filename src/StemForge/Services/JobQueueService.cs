@@ -545,7 +545,7 @@ public sealed class JobQueueService(
         string dlDir,
         IProgress<string> log,
         CancellationToken ct,
-        YtMetadata? preResolved = null
+        YtDlpMetadata? preResolved = null
     )
     {
         var meta =
@@ -561,7 +561,7 @@ public sealed class JobQueueService(
             dlDir,
             ct
         );
-        var sourceInfo = AudioTagger.FromYtMetadata(meta, thumbPath);
+        var sourceInfo = AudioTagger.FromYtDlpMetadata(meta, thumbPath);
         var audioPath = await _youTubeAudio.DownloadAsync(meta, AudioFormat.Flac, dlDir, log, ct);
         return (audioPath, sourceInfo);
     }

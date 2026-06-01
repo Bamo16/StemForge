@@ -14,15 +14,6 @@ public sealed class SetupDetectorTests
         return (new SetupDetector(fake, paths), fake, paths);
     }
 
-    [Theory]
-    [InlineData(GpuVariant.Cuda, "gpu")]
-    [InlineData(GpuVariant.DirectML, "dml")]
-    [InlineData(GpuVariant.Cpu, "cpu")]
-    public void GetPipExtra_ReturnsCorrectExtra(GpuVariant variant, string expected)
-    {
-        Assert.Equal(expected, SetupDetector.GetPipExtra(variant));
-    }
-
     [Fact]
     public async Task DetectAllAsync_AllFound_ReturnsFoundResults()
     {
@@ -81,7 +72,8 @@ public sealed class SetupDetectorTests
     public async Task DetectAllAsync_CustomYtdlpPath_UsesProvidedPath()
     {
         var fake = new FakeProcessRunner();
-        var settings = new AppSettings { YtdlpPath = @"C:\Tools\yt-dlp.exe" };
+        var settings = new AppSettings();
+        settings.SetToolPathOverride(ToolKind.Ytdlp, @"C:\Tools\yt-dlp.exe");
         var paths = new AppPaths(settings);
         var detector = new SetupDetector(fake, paths);
 

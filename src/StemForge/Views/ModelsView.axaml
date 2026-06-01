@@ -226,7 +226,6 @@
                 <StackPanel IsVisible="{Binding IsLoading}"
                             HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
                     <ProgressBar IsIndeterminate="True" Width="200" Height="2"
-                                 Foreground="{DynamicResource AccentBrush}"
                                  Background="Transparent" />
                     <TextBlock Text="Loading model catalog…"
                                FontSize="12"

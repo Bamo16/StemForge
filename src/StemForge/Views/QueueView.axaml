@@ -169,7 +169,6 @@
                                                              Maximum="100"
                                                              Height="4"
                                                              IsVisible="{Binding ShowProgress}"
-                                                             Foreground="{DynamicResource AccentBrush}"
                                                              Background="{DynamicResource Bg2Brush}"
                                                              BorderThickness="0"
                                                              VerticalAlignment="Center" />

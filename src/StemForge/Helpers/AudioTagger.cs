@@ -49,7 +49,7 @@ public static class AudioTagger
     /// Builds a <see cref="SourceTagInfo"/> from yt-dlp resolved metadata.
     /// Reads cover art bytes from the thumbnail file on disk (downloaded separately).
     /// </summary>
-    public static SourceTagInfo FromYtMetadata(YtMetadata meta, string? thumbPath)
+    public static SourceTagInfo FromYtDlpMetadata(YtDlpMetadata meta, string? thumbPath)
     {
         byte[]? artBytes = null;
         string mimeType = "image/jpeg";

@@ -89,8 +89,14 @@
             <Setter Property="FontSize" Value="11" />
             <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
             <Setter Property="TextWrapping" Value="Wrap" />
-            <Setter Property="MaxWidth" Value="280" />
+            <Setter Property="MaxWidth" Value="320" />
             <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.toolSize">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPlaceholderBrush}" />
+            <Setter Property="Opacity" Value="0.75" />
+            <Setter Property="FontStyle" Value="Italic" />
         </Style>
         <Style Selector="TextBlock.installOutcome">
             <Setter Property="FontSize" Value="11" />
@@ -177,74 +183,49 @@
                                          Background="Transparent" />
                         </StackPanel>
 
-                        <StackPanel IsVisible="{Binding !IsDetecting}" Spacing="14">
+                        <StackPanel IsVisible="{Binding !IsDetecting}" Spacing="10">
                             <ItemsControl ItemsSource="{Binding Tools}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <StackPanel Spacing="10" />
+                                        <StackPanel Spacing="6" />
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="vm:ToolStatusViewModel">
-                                        <StackPanel Spacing="2">
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <Ellipse Classes="statusDot"
-                                                         Classes.ok="{Binding Found}"
-                                                         Classes.fail="{Binding !Found}"
-                                                         VerticalAlignment="Center" />
-                                                <TextBlock Text="{Binding Name}"
-                                                           FontSize="12" FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                                           VerticalAlignment="Center" />
-                                                <Border IsVisible="{Binding VariantTag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                                        Background="{DynamicResource AccentDimBgBrush}"
-                                                        CornerRadius="3" Padding="5,2"
-                                                        VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding VariantTag}"
-                                                               FontSize="10" FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource AccentBrush}" />
-                                                </Border>
-                                            </StackPanel>
+                                        <!-- Single line: dot, name, version, variant chip — matches
+                                             the Settings status header so the two reads consistently. -->
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Ellipse Classes="statusDot"
+                                                     Classes.ok="{Binding Found}"
+                                                     Classes.fail="{Binding !Found}"
+                                                     VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       VerticalAlignment="Center" />
                                             <TextBlock Classes="mono"
                                                        Text="{Binding StatusLine}"
                                                        FontSize="11"
                                                        Foreground="{DynamicResource TextSecondaryBrush}"
-                                                       Margin="13,0,0,0" />
+                                                       VerticalAlignment="Center" />
+                                            <Border IsVisible="{Binding VariantTag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                    Background="{DynamicResource AccentDimBgBrush}"
+                                                    CornerRadius="3" Padding="4,1"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding VariantTag}"
+                                                           FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource AccentBrush}" />
+                                            </Border>
                                         </StackPanel>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <StackPanel Spacing="8" Margin="0,4,0,0">
-                                <TextBlock Text="GPU variant"
-                                           FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextSecondaryBrush}" />
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Button Classes="variantTab"
-                                            Classes.active="{Binding IsCpu}"
-                                            Command="{Binding SetGpuVariantCommand}"
-                                            CommandParameter="Cpu"
-                                            Content="CPU" />
-                                    <Button Classes="variantTab"
-                                            Classes.active="{Binding IsCuda}"
-                                            Command="{Binding SetGpuVariantCommand}"
-                                            CommandParameter="Cuda"
-                                            Content="CUDA" />
-                                    <Button Classes="variantTab"
-                                            Classes.active="{Binding IsDirectML}"
-                                            Command="{Binding SetGpuVariantCommand}"
-                                            CommandParameter="DirectML"
-                                            Content="DirectML" />
-                                </StackPanel>
-                                <TextBlock FontSize="11"
-                                           Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           TextWrapping="Wrap"
-                                           Text="CPU works everywhere. CUDA requires NVIDIA. DirectML works on most Windows GPUs." />
-                                <TextBlock FontSize="11" FontWeight="Medium"
-                                           Foreground="{DynamicResource AccentBrush}"
-                                           Text="{Binding GpuHint}"
-                                           IsVisible="{Binding GpuHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                            </StackPanel>
+                            <TextBlock FontSize="11" FontWeight="Medium"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       Margin="0,4,0,0"
+                                       Text="{Binding GpuHint}"
+                                       IsVisible="{Binding GpuHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                         </StackPanel>
                     </StackPanel>
 
@@ -294,209 +275,109 @@
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    Text="Choose what to install. Already-installed tools are checked off — uncheck anything you'd like to skip." />
 
-                        <!-- uv -->
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <CheckBox IsChecked="{Binding WantInstallUv, Mode=TwoWay}"
-                                      IsVisible="{Binding !UvFound}">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Classes="toolName" Text="uv" />
-                                    <TextBlock Classes="requiredTag" />
-                                    <TextBlock Classes="toolDesc"
-                                               Text="— Python tool installer used to install audio-separator" />
-                                </StackPanel>
-                            </CheckBox>
-                            <StackPanel Orientation="Horizontal" Spacing="8"
-                                        IsVisible="{Binding UvFound}">
-                                <Path Data="M0 6 L4 10 L12 1"
-                                      Stroke="{DynamicResource SuccessBrush}" StrokeThickness="2"
-                                      StrokeLineCap="Round" StrokeJoin="Round"
-                                      Stretch="None" Width="14" Height="14"
-                                      VerticalAlignment="Center" />
-                                <TextBlock Classes="toolName satisfied" Text="uv" />
-                                <TextBlock Classes="requiredTag" />
-                                <TextBlock Classes="installOutcome"
-                                           Foreground="{DynamicResource SuccessBrush}"
-                                           Text="✓ installed"
-                                           IsVisible="{Binding UvInstallSuccess}" />
-                                <TextBlock Classes="installOutcome"
-                                           Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="✓ already installed"
-                                           IsVisible="{Binding !UvInstallSuccess}" />
-                            </StackPanel>
-                        </StackPanel>
+                        <!-- One row per tool (catalog order: required first, then optional) -->
+                        <ItemsControl ItemsSource="{Binding InstallRows}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Spacing="12" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="vm:ToolRowViewModel">
+                                    <StackPanel Spacing="6">
+                                        <!-- Header row: indicator, name, REQUIRED/OPTIONAL, then either
+                                             the installed-outcome (when Found) or a 2-line sub-stack
+                                             with description + size estimate to the right (when not). -->
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <Panel Width="22" VerticalAlignment="Center">
+                                                <CheckBox IsChecked="{Binding WantInstall, Mode=TwoWay}"
+                                                          IsVisible="{Binding !Found}"
+                                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                          MinWidth="0" Padding="0" Margin="0" />
+                                                <Path Data="M0 6 L4 10 L12 1"
+                                                      Stroke="{DynamicResource SuccessBrush}" StrokeThickness="2"
+                                                      StrokeLineCap="Round" StrokeJoin="Round"
+                                                      Stretch="None" Width="14" Height="14"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                      IsVisible="{Binding Found}" />
+                                            </Panel>
+                                            <TextBlock Classes="toolName"
+                                                       Classes.satisfied="{Binding Found}"
+                                                       Text="{Binding Name}" />
+                                            <TextBlock Classes="requiredTag"
+                                                       IsVisible="{Binding IsRequired}" />
+                                            <TextBlock Classes="optionalTag"
+                                                       IsVisible="{Binding !IsRequired}" />
+                                            <TextBlock Classes="installOutcome"
+                                                       Foreground="{DynamicResource SuccessBrush}"
+                                                       Text="✓ installed"
+                                                       IsVisible="{Binding ShowInstalledNow}" />
+                                            <TextBlock Classes="installOutcome"
+                                                       Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                       Text="✓ already installed"
+                                                       IsVisible="{Binding ShowAlreadyInstalled}" />
+                                            <!-- Description + size sub-stack, inline to the right -->
+                                            <StackPanel Spacing="2" VerticalAlignment="Center">
+                                                <TextBlock Classes="toolDesc"
+                                                           Text="{Binding Description}"
+                                                           IsVisible="{Binding !Found}" />
+                                                <TextBlock Classes="toolSize"
+                                                           Text="{Binding DownloadSize}">
+                                                    <TextBlock.IsVisible>
+                                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                            <Binding Path="!Found" />
+                                                            <Binding Path="HasDownloadSize" />
+                                                        </MultiBinding>
+                                                    </TextBlock.IsVisible>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </StackPanel>
 
-                        <!-- audio-separator (with variant picker) -->
-                        <StackPanel Spacing="8">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <CheckBox IsChecked="{Binding WantInstallAudioSeparator, Mode=TwoWay}"
-                                          IsVisible="{Binding !AudioSeparatorFound}">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <TextBlock Classes="toolName" Text="audio-separator" />
-                                        <TextBlock Classes="requiredTag" />
-                                        <TextBlock Classes="toolDesc"
-                                                   Text="— stem separation engine" />
+                                        <!-- Inline variant picker (audio-separator only, when queued) -->
+                                        <StackPanel Spacing="8" Margin="28,0,0,0"
+                                                    IsVisible="{Binding ShowVariantPicker}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button Classes="variantTab"
+                                                        Classes.active="{Binding VariantPicker.IsCpu}"
+                                                        Command="{Binding VariantPicker.SetVariantCommand}"
+                                                        CommandParameter="Cpu" Content="CPU" />
+                                                <Button Classes="variantTab"
+                                                        Classes.active="{Binding VariantPicker.IsCuda}"
+                                                        Command="{Binding VariantPicker.SetVariantCommand}"
+                                                        CommandParameter="Cuda" Content="CUDA" />
+                                                <Button Classes="variantTab"
+                                                        Classes.active="{Binding VariantPicker.IsDirectML}"
+                                                        Command="{Binding VariantPicker.SetVariantCommand}"
+                                                        CommandParameter="DirectML" Content="DirectML" />
+                                            </StackPanel>
+                                            <TextBlock FontSize="11"
+                                                       Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                       TextWrapping="Wrap"
+                                                       Text="CPU works everywhere. CUDA requires NVIDIA. DirectML works on most Windows GPUs." />
+                                            <TextBlock FontSize="11" FontWeight="Medium"
+                                                       Foreground="{DynamicResource AccentBrush}"
+                                                       TextWrapping="Wrap"
+                                                       Text="{Binding VariantPicker.GpuHint}"
+                                                       IsVisible="{Binding VariantPicker.GpuHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                        </StackPanel>
+
+                                        <!-- Per-row install error -->
+                                        <TextBlock Margin="28,0,0,0" FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource ErrorBrush}"
+                                                   Text="{Binding InstallError}"
+                                                   IsVisible="{Binding InstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                     </StackPanel>
-                                </CheckBox>
-                                <StackPanel Orientation="Horizontal" Spacing="8"
-                                            IsVisible="{Binding AudioSeparatorFound}">
-                                    <Path Data="M0 6 L4 10 L12 1"
-                                          Stroke="{DynamicResource SuccessBrush}" StrokeThickness="2"
-                                          StrokeLineCap="Round" StrokeJoin="Round"
-                                          Stretch="None" Width="14" Height="14"
-                                          VerticalAlignment="Center" />
-                                    <TextBlock Classes="toolName satisfied" Text="audio-separator" />
-                                    <TextBlock Classes="requiredTag" />
-                                    <TextBlock Classes="installOutcome"
-                                               Foreground="{DynamicResource SuccessBrush}"
-                                               Text="✓ installed"
-                                               IsVisible="{Binding InstallSuccess}" />
-                                    <TextBlock Classes="installOutcome"
-                                               Foreground="{DynamicResource TextPlaceholderBrush}"
-                                               Text="✓ already installed"
-                                               IsVisible="{Binding !InstallSuccess}" />
-                                </StackPanel>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="28,0,0,0"
-                                        IsVisible="{Binding WantInstallAudioSeparator}">
-                                <Button Classes="variantTab"
-                                        Classes.active="{Binding IsCpu}"
-                                        Command="{Binding SetGpuVariantCommand}"
-                                        CommandParameter="Cpu" Content="CPU" />
-                                <Button Classes="variantTab"
-                                        Classes.active="{Binding IsCuda}"
-                                        Command="{Binding SetGpuVariantCommand}"
-                                        CommandParameter="Cuda" Content="CUDA" />
-                                <Button Classes="variantTab"
-                                        Classes.active="{Binding IsDirectML}"
-                                        Command="{Binding SetGpuVariantCommand}"
-                                        CommandParameter="DirectML" Content="DirectML" />
-                            </StackPanel>
-                            <TextBlock FontSize="11" Margin="28,0,0,0"
-                                       Foreground="{DynamicResource TextPlaceholderBrush}"
-                                       TextWrapping="Wrap"
-                                       Text="{Binding GpuHint}"
-                                       IsVisible="{Binding GpuHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                        </StackPanel>
-
-                        <!-- ffmpeg (required — placed before yt-dlp so all required tools group at top) -->
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <CheckBox IsChecked="{Binding WantInstallFfmpeg, Mode=TwoWay}"
-                                      IsVisible="{Binding !FfmpegFound}">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Classes="toolName" Text="ffmpeg" />
-                                    <TextBlock Classes="requiredTag" />
-                                    <TextBlock Classes="toolDesc"
-                                               Text="— required by audio-separator (~100 MB download)" />
-                                </StackPanel>
-                            </CheckBox>
-                            <StackPanel Orientation="Horizontal" Spacing="8"
-                                        IsVisible="{Binding FfmpegFound}">
-                                <Path Data="M0 6 L4 10 L12 1"
-                                      Stroke="{DynamicResource SuccessBrush}" StrokeThickness="2"
-                                      StrokeLineCap="Round" StrokeJoin="Round"
-                                      Stretch="None" Width="14" Height="14"
-                                      VerticalAlignment="Center" />
-                                <TextBlock Classes="toolName satisfied" Text="ffmpeg" />
-                                <TextBlock Classes="requiredTag" />
-                                <TextBlock Classes="installOutcome"
-                                           Foreground="{DynamicResource SuccessBrush}"
-                                           Text="✓ installed"
-                                           IsVisible="{Binding FfmpegInstallSuccess}" />
-                                <TextBlock Classes="installOutcome"
-                                           Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="✓ already installed"
-                                           IsVisible="{Binding !FfmpegInstallSuccess}" />
-                            </StackPanel>
-                        </StackPanel>
-
-                        <!-- yt-dlp -->
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <CheckBox IsChecked="{Binding WantInstallYtdlp, Mode=TwoWay}"
-                                      IsVisible="{Binding !YtdlpFound}">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Classes="toolName" Text="yt-dlp" />
-                                    <TextBlock Classes="optionalTag" />
-                                    <TextBlock Classes="toolDesc"
-                                               Text="— enables downloading audio from YouTube URLs" />
-                                </StackPanel>
-                            </CheckBox>
-                            <StackPanel Orientation="Horizontal" Spacing="8"
-                                        IsVisible="{Binding YtdlpFound}">
-                                <Path Data="M0 6 L4 10 L12 1"
-                                      Stroke="{DynamicResource SuccessBrush}" StrokeThickness="2"
-                                      StrokeLineCap="Round" StrokeJoin="Round"
-                                      Stretch="None" Width="14" Height="14"
-                                      VerticalAlignment="Center" />
-                                <TextBlock Classes="toolName satisfied" Text="yt-dlp" />
-                                <TextBlock Classes="optionalTag" />
-                                <TextBlock Classes="installOutcome"
-                                           Foreground="{DynamicResource SuccessBrush}"
-                                           Text="✓ installed"
-                                           IsVisible="{Binding YtdlpInstallSuccess}" />
-                                <TextBlock Classes="installOutcome"
-                                           Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="✓ already installed"
-                                           IsVisible="{Binding !YtdlpInstallSuccess}" />
-                            </StackPanel>
-                        </StackPanel>
-
-                        <!-- deno -->
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <CheckBox IsChecked="{Binding WantInstallDeno, Mode=TwoWay}"
-                                      IsVisible="{Binding !DenoFound}">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Classes="toolName" Text="deno" />
-                                    <TextBlock Classes="optionalTag" />
-                                    <TextBlock Classes="toolDesc"
-                                               Text="— JS runtime yt-dlp uses to solve YouTube challenges (~42 MB download)" />
-                                </StackPanel>
-                            </CheckBox>
-                            <StackPanel Orientation="Horizontal" Spacing="8"
-                                        IsVisible="{Binding DenoFound}">
-                                <Path Data="M0 6 L4 10 L12 1"
-                                      Stroke="{DynamicResource SuccessBrush}" StrokeThickness="2"
-                                      StrokeLineCap="Round" StrokeJoin="Round"
-                                      Stretch="None" Width="14" Height="14"
-                                      VerticalAlignment="Center" />
-                                <TextBlock Classes="toolName satisfied" Text="deno" />
-                                <TextBlock Classes="optionalTag" />
-                                <TextBlock Classes="installOutcome"
-                                           Foreground="{DynamicResource SuccessBrush}"
-                                           Text="✓ installed"
-                                           IsVisible="{Binding DenoInstallSuccess}" />
-                                <TextBlock Classes="installOutcome"
-                                           Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="✓ already installed"
-                                           IsVisible="{Binding !DenoInstallSuccess}" />
-                            </StackPanel>
-                        </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
                         <!-- Install button — hides entirely when nothing's selected for install -->
                         <Button Classes="accent"
                                 Content="Install selected"
                                 Command="{Binding InstallSelectedCommand}"
-                                IsEnabled="{Binding !IsAnyInstallInProgress}"
+                                IsEnabled="{Binding !IsInstalling}"
                                 IsVisible="{Binding HasAnythingToInstall}"
                                 HorizontalAlignment="Left" />
-
-                        <!-- Aggregated errors -->
-                        <StackPanel Spacing="4">
-                            <TextBlock IsVisible="{Binding UvInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                       Text="{Binding UvInstallError}" FontSize="11"
-                                       Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
-                            <TextBlock IsVisible="{Binding InstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                       Text="{Binding InstallError}" FontSize="11"
-                                       Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
-                            <TextBlock IsVisible="{Binding YtdlpInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                       Text="{Binding YtdlpInstallError}" FontSize="11"
-                                       Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
-                            <TextBlock IsVisible="{Binding FfmpegInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                       Text="{Binding FfmpegInstallError}" FontSize="11"
-                                       Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
-                            <TextBlock IsVisible="{Binding DenoInstallError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                       Text="{Binding DenoInstallError}" FontSize="11"
-                                       Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
-                        </StackPanel>
 
                         <!-- Shared install log -->
                         <ScrollViewer MaxHeight="120"

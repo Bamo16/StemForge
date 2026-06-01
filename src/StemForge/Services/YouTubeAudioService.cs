@@ -28,7 +28,7 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
 
     private static readonly HttpClient _http = new();
 
-    public async Task<YtMetadata> ResolveAsync(
+    public async Task<YtDlpMetadata> ResolveAsync(
         string url,
         AppSettings settings,
         IProgress<string>? log = null,
@@ -41,11 +41,13 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             "--no-playlist",
             "--format",
             "bestaudio/best",
-            // YouTube now rotates JS-based "n challenges" that yt-dlp needs an external solver
-            // script for. Authorising the upstream EJS repo lets yt-dlp fetch the solver on
-            // demand; without this flag, format extraction silently returns only image
-            // thumbnails and we get "Requested format is not available". yt-dlp itself
-            // still needs a JS runtime on PATH (deno/node/bun) to execute the solver.
+            // YouTube rotates JS-based "n-challenges" that require an up-to-date solver script.
+            // ejs:github fetches that script from the yt-dlp/yt-dlp-ejs repo (cached locally by
+            // yt-dlp; not a GitHub round-trip on every call). Without it, format extraction
+            // silently returns only image thumbnails ("Requested format is not available").
+            // This is intentionally unconditional: we cannot reliably determine at call-time
+            // whether a usable JS runtime is present (the user may have deno on PATH or a
+            // bare-name settings override rather than StemForge's bundled binary).
             "--remote-components",
             "ejs:github",
         };
@@ -62,8 +64,10 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             args.AddRange([flag, cookies]);
         }
 
-        // No --js-runtime override: yt-dlp auto-discovers the bundled deno via PATH
-        // (ProcessRunner prepends BundledBinDir to every child env).
+        // Pass bundled deno explicitly so yt-dlp finds it without deno on PATH.
+        // ArgumentList handles OS-level quoting automatically; no embedded quotes needed.
+        if (Path.IsPathRooted(_paths.Deno))
+            args.AddRange(["--js-runtimes", $"deno:{_paths.Deno}"]);
         args.Add(url);
 
         // Stderr streams live (yt-dlp info lines); stdout (the JSON blob) is captured silently.
@@ -73,67 +77,36 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
 
         // Pick the best audio format — prefer 44.1 kHz to avoid resampling loss (audio-separator
         // normalises everything to 44.1 kHz internally). Fall back to yt-dlp's top-level url.
-        var selected = SelectBestAudioFormat(info);
-        var mediaUrl =
-            selected?.Url
-            ?? info.Url
-            ?? throw new InvalidOperationException(
+        if (info.SelectBestAudioFormat() is not { Url: { } mediaUrl } selected)
+        {
+            throw new InvalidOperationException(
                 "yt-dlp metadata missing direct media URL; check format selector."
             );
-
-        var codec = selected?.Acodec ?? info.Acodec;
-        var bitrate = selected?.Abr ?? selected?.Tbr ?? info.Abr;
-        var asr = selected?.Asr ?? info.Asr;
-
-        IReadOnlyList<YtDlpFormat>? audioFormats = null;
-        if (info is { Formats.Count: > 0 })
-        {
-            audioFormats =
-            [
-                .. info.Formats.Where(IsAudioOnly).OrderByDescending(f => f.Abr ?? f.Tbr ?? 0),
-            ];
-            LogAudioFormats(info.Formats, selected);
         }
 
-        var summary =
-            $"resolved: {info.DisplayTitle()}"
-            + (codec is not null ? $" · {codec}" : string.Empty)
-            + (
-                bitrate is { } kbps
-                    ? $" @ {kbps.ToString("F0", CultureInfo.InvariantCulture)}k"
-                    : string.Empty
-            )
-            + (
-                asr is { } hz
-                    ? $" · {(hz / 1000.0).ToString("F1", CultureInfo.InvariantCulture)}kHz"
-                    : string.Empty
-            )
-            + (
-                info.Duration is { } dur
-                    ? $" · {dur.ToString("F0", CultureInfo.InvariantCulture)}s"
-                    : string.Empty
-            );
-        AppLogger.Info("yt-dlp", summary);
+        LogAudioFormats(info.AudioOnlyFormats, selected.FormatId);
 
-        return new YtMetadata(
+        return new YtDlpMetadata(
             SourceUrl: url,
             Title: info.Title,
             Artist: info.Artist,
             Uploader: info.Uploader,
-            SourceCodec: codec,
-            SourceBitrateKbps: bitrate,
+            SourceCodec: selected.AudioCodec,
+            SourceBitrateKbps: selected.AudioBitrate,
             DurationSeconds: info.Duration,
-            FormatId: selected?.FormatId ?? info.FormatId,
+            FormatId: selected.FormatId,
             MediaUrl: mediaUrl,
             ThumbnailUrl: info.Thumbnail,
-            AudioFormats: audioFormats,
+            AudioFormats: info.AudioOnlyFormats is { Count: > 0 }
+                ? info.AudioOnlyFormats
+                : [selected],
             Extractor: info.Extractor
         );
     }
 
     /// Resolves metadata for a URL and returns it, or null if the URL is invalid or yt-dlp fails.
     /// Used for format preview — never throws.
-    public async Task<YtMetadata?> GetAudioFormatInfoAsync(
+    public async Task<YtDlpMetadata?> GetAudioFormatInfoAsync(
         string url,
         AppSettings settings,
         CancellationToken ct = default
@@ -155,7 +128,7 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
     }
 
     public async Task<string> DownloadAsync(
-        YtMetadata meta,
+        YtDlpMetadata meta,
         AudioFormat format,
         string outDir,
         IProgress<string>? log,
@@ -212,73 +185,24 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         }
     }
 
-    // ── Format selection ──────────────────────────────────────────────────────
-
-    private static bool IsAudioOnly(YtDlpFormat f) =>
-        f.Url is not null
-        && !string.IsNullOrEmpty(f.Acodec)
-        && f.Acodec != "none"
-        && (string.IsNullOrEmpty(f.Vcodec) || f.Vcodec == "none");
-
-    /// <summary>
-    /// Selects the best audio-only format from the formats list.
-    /// Prefers 44.1 kHz unless the best 48 kHz option has more than 10% higher bitrate
-    /// (audio-separator always resamples to 44.1 kHz, so starting at 48 kHz just adds
-    /// a lossy resampling step with no quality benefit).
-    /// </summary>
-    internal static YtDlpFormat? SelectBestAudioFormat(YtDlpVideoInfo info)
-    {
-        var formats = info.Formats;
-        if (formats is null or { Count: 0 })
-            return null;
-
-        static double Bitrate(YtDlpFormat f) => f.Abr ?? f.Tbr ?? 0;
-
-        var audioOnly = formats.Where(IsAudioOnly).ToList();
-        if (audioOnly.Count == 0)
-            return null;
-
-        var best441 = audioOnly
-            .Where(f => f.Asr is >= 44099 and <= 44101)
-            .OrderByDescending(Bitrate)
-            .FirstOrDefault();
-
-        var best48 = audioOnly
-            .Where(f => f.Asr is >= 47999 and <= 48001)
-            .OrderByDescending(Bitrate)
-            .FirstOrDefault();
-
-        if (best441 is not null)
-        {
-            var br48 = best48 is not null ? Bitrate(best48) : 0;
-            // Prefer 44.1 kHz if it's within 10% of the best 48 kHz option.
-            if (br48 == 0 || Bitrate(best441) >= br48 * 0.90)
-                return best441;
-        }
-
-        return audioOnly.OrderByDescending(Bitrate).FirstOrDefault();
-    }
-
     // ── Logging ───────────────────────────────────────────────────────────────
 
-    private static void LogAudioFormats(List<YtDlpFormat> formats, YtDlpFormat? selected)
+    private static void LogAudioFormats(List<YtDlpFormat> formats, string? selectedFormatId)
     {
-        var rows = formats.Where(IsAudioOnly).OrderByDescending(f => f.Abr ?? f.Tbr ?? 0).ToList();
-
-        if (rows.Count == 0)
+        if (formats.OrderByDescending(f => f.AudioBitrate).ToList() is not { Count: > 0 } rows)
             return;
 
         AppLogger.Info("yt-dlp", $"  {"ID", -14} {"Codec", -8} {"kbps", 6} {"kHz", 6}  Note");
         foreach (var f in rows)
         {
-            var marker = f.FormatId == selected?.FormatId ? ">" : " ";
-            var kbps = (f.Abr ?? f.Tbr ?? 0).ToString("F0", CultureInfo.InvariantCulture);
-            var khz = f.Asr is { } hz
+            var marker = f.FormatId == selectedFormatId ? ">" : " ";
+            var kbps = f.AudioBitrate.ToString("F0", CultureInfo.InvariantCulture);
+            var khz = f.AudioSampleRate is { } hz
                 ? (hz / 1000.0).ToString("F1", CultureInfo.InvariantCulture)
                 : "?";
             AppLogger.Info(
                 "yt-dlp",
-                $"{marker} {f.FormatId, -14} {f.Acodec, -8} {kbps, 6} {khz, 6}  {f.FormatNote ?? ""}"
+                $"{marker} {f.FormatId, -14} {f.AudioCodec, -8} {kbps, 6} {khz, 6}  {f.FormatNote ?? ""}"
             );
         }
     }
@@ -304,10 +228,4 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
 
     private static string SanitizeFileName(string value) =>
         string.Concat(value.Where(c => !_invalidFileNameChars.Contains(c)));
-}
-
-file static class YtDlpVideoInfoExtensions
-{
-    internal static string DisplayTitle(this YtDlpVideoInfo info) =>
-        string.IsNullOrWhiteSpace(info.Artist) ? info.Title : $"{info.Artist} - {info.Title}";
 }

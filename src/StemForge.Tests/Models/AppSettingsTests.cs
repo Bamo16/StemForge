@@ -30,6 +30,32 @@ public sealed class AppSettingsTests
     }
 
     [Fact]
+    public void MigrateLegacyToolPaths_DrainsLegacyPropsIntoOverrides()
+    {
+        var s = new AppSettings { UvPath = @"C:\Tools\uv.exe", YtdlpPath = @"C:\Tools\yt-dlp.exe" };
+
+        s.MigrateLegacyToolPaths();
+
+        Assert.Equal(@"C:\Tools\uv.exe", s.GetToolPathOverride(ToolKind.Uv));
+        Assert.Equal(@"C:\Tools\yt-dlp.exe", s.GetToolPathOverride(ToolKind.Ytdlp));
+        Assert.Null(s.GetToolPathOverride(ToolKind.Ffmpeg));
+        // Legacy properties cleared so the next save writes only the new shape.
+        Assert.Null(s.UvPath);
+        Assert.Null(s.YtdlpPath);
+    }
+
+    [Fact]
+    public void MigrateLegacyToolPaths_DoesNotClobberExistingOverride()
+    {
+        var s = new AppSettings { UvPath = @"C:\old\uv.exe" };
+        s.SetToolPathOverride(ToolKind.Uv, @"C:\new\uv.exe");
+
+        s.MigrateLegacyToolPaths();
+
+        Assert.Equal(@"C:\new\uv.exe", s.GetToolPathOverride(ToolKind.Uv));
+    }
+
+    [Fact]
     public async Task SaveAsync_ThenLoad_RoundTrips()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"stemforge-test-{Guid.NewGuid():N}");

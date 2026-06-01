@@ -15,17 +15,20 @@ public sealed class SetupWizardViewModelTests
         var paths = new AppPaths(settings);
         var runner = (IProcessRunner)fake;
         var setupDetector = new SetupDetector(runner, paths);
+        var platform = PlatformInfo.Current;
+        var bundledFetcher = new BundledFetcher(paths, platform);
         return new SetupWizardViewModel(
             settings,
             setupDetector,
             new GpuDetector(runner),
-            new ToolInstaller(runner, paths),
-            new FfmpegFetcher(paths),
-            new DenoFetcher(paths),
+            new ToolInstaller(runner, paths, bundledFetcher, platform),
             new ToolStateService(setupDetector),
             paths
         );
     }
+
+    private static ToolRowViewModel Row(SetupWizardViewModel vm, ToolKind kind) =>
+        vm.InstallRows.Single(r => r.Kind == kind);
 
     [AvaloniaFact]
     public void InitialStep_IsWelcome()
@@ -73,7 +76,6 @@ public sealed class SetupWizardViewModelTests
     {
         var vm = Build();
         vm.CurrentStep = WizardStep.Install;
-        vm.AudioSeparatorFound = true;
         vm.NextCommand.Execute(null);
         Assert.Equal(WizardStep.Finish, vm.CurrentStep);
     }
@@ -82,19 +84,19 @@ public sealed class SetupWizardViewModelTests
     public void CanGoNext_OnInstallStep_RequiresAllRequiredToolsFound()
     {
         var vm = Build();
-        vm.CurrentStep = WizardStep.Install;
+        vm.CurrentStep = WizardStep.Install; // EnsureInstallRows populates rows synchronously
 
         // All required tools missing
         Assert.False(vm.CanGoNext);
 
         // Only audio-separator (need uv and ffmpeg too)
-        vm.AudioSeparatorFound = true;
+        Row(vm, ToolKind.AudioSeparator).Found = true;
         Assert.False(vm.CanGoNext);
 
-        vm.UvFound = true;
+        Row(vm, ToolKind.Uv).Found = true;
         Assert.False(vm.CanGoNext);
 
-        vm.FfmpegFound = true;
+        Row(vm, ToolKind.Ffmpeg).Found = true;
         Assert.True(vm.CanGoNext);
     }
 
@@ -156,13 +158,13 @@ public sealed class SetupWizardViewModelTests
     public void Reset_RestoresWelcomeStep()
     {
         var vm = Build();
-        vm.CurrentStep = WizardStep.Finish;
-        vm.AudioSeparatorFound = true;
+        vm.CurrentStep = WizardStep.Install;
+        Row(vm, ToolKind.AudioSeparator).Found = true;
 
         vm.Reset();
 
         Assert.Equal(WizardStep.Welcome, vm.CurrentStep);
-        Assert.False(vm.AudioSeparatorFound);
+        Assert.Empty(vm.InstallRows);
         Assert.True(vm.CanDismiss);
     }
 

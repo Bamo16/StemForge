@@ -147,7 +147,7 @@
         {
             "label": "package: win-x64",
             "detail": "Stage publish output under StemForge/ and produce StemForge-v{Version}-win-x64.zip in publish/. Reads <Version> from StemForge.csproj. Depends on the publish task.",
-            "type": "shell",
+            "type": "process",
             "command": "pwsh",
             "args": [
                 "-NoProfile",

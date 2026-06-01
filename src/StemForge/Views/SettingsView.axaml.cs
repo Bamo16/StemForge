@@ -15,7 +15,10 @@ public partial class SettingsView : UserControl
     protected override async void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
-        if (DataContext is SettingsViewModel vm && vm.Tools.Count == 0)
+        if (
+            DataContext is SettingsViewModel vm
+            && vm.SettingsToolRows.All(r => !r.Found && string.IsNullOrEmpty(r.Version))
+        )
             await vm.RefreshToolsCommand.ExecuteAsync(null);
     }
 
@@ -31,5 +34,15 @@ public partial class SettingsView : UserControl
     {
         if (await this.PickFolderAsync(Vm.ModelsDirectory) is { } folder)
             Vm.ModelsDirectory = folder;
+    }
+
+    private async void OnBrowseToolPathClicked(object? sender, RoutedEventArgs e)
+    {
+        if (
+            (sender as Control)?.DataContext is not SettingsToolRowViewModel row
+            || await this.PickFilesAsync(suggestedStartPath: row.PathOverride) is not [{ } path, ..]
+        )
+            return;
+        row.PathOverride = path;
     }
 }

@@ -979,7 +979,15 @@ def main():
                    help="Minimum log level to forward as `log` events (default: info).")
     p.add_argument("--debug", action="store_true",
                    help="Shortcut for --log-level=debug.")
+    p.add_argument("--ffmpeg-path", default=None,
+                   help="Absolute path to ffmpeg. Prepends its parent directory to PATH "
+                        "so audio-separator's subprocess calls find the right binary.")
     args = p.parse_args()
+
+    if args.ffmpeg_path:
+        ffmpeg_dir = os.path.dirname(os.path.abspath(args.ffmpeg_path))
+        if ffmpeg_dir:
+            os.environ["PATH"] = ffmpeg_dir + os.pathsep + os.environ.get("PATH", "")
 
     if args.debug:
         log_level = logging.DEBUG

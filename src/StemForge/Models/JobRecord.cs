@@ -10,7 +10,7 @@ public sealed record JobRecord(
     string ModelsDir,
     AudioFormat StemOutputFormat = AudioFormat.Flac,
     bool KeepSourceFile = false,
-    YtMetadata? PreResolvedMeta = null,
+    YtDlpMetadata? PreResolvedMeta = null,
     bool ExtractDrums = false
 )
 {
