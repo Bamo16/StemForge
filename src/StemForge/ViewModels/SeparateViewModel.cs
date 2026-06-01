@@ -61,7 +61,7 @@ public partial class SeparateViewModel : PageViewModelBase
     private readonly YouTubeAudioService _ytAudio;
     private readonly ISeparatorDriverService _driver;
     private CancellationTokenSource? _urlCheckCts;
-    private YtMetadata? _cachedUrlMeta;
+    private YtDlpMetadata? _cachedUrlMeta;
 
     public event Action? NavigateToQueueRequested;
     public event Action? ShowWizardRequested;
@@ -228,9 +228,9 @@ public partial class SeparateViewModel : PageViewModelBase
         // Update chips to reflect the active format
         if (_selectedFormatOverride is { } ov)
         {
-            if (ov.Acodec is { Length: > 0 } codec && codec != "none")
+            if (ov.AudioCodec is { Length: > 0 } codec && codec != "none")
                 UrlCodec = AudioFormatInfo.PrettyCodec(codec);
-            var kbps = ov.Abr ?? ov.Tbr;
+            var kbps = ov.AverageAudioBitrate ?? ov.AverageTotalBitrate;
             if (kbps.HasValue)
                 UrlBitrate = $"{kbps.Value:F0} kb/s";
         }
@@ -590,14 +590,16 @@ public partial class SeparateViewModel : PageViewModelBase
             {
                 foreach (var f in formats)
                 {
-                    var br = f.Abr ?? f.Tbr;
+                    var br = f.AverageAudioBitrate ?? f.AverageTotalBitrate;
                     FormatPickerItems.Add(
                         new FormatPickerItem
                         {
                             Format = f,
-                            Codec = AudioFormatInfo.PrettyCodec(f.Acodec),
+                            Codec = AudioFormatInfo.PrettyCodec(f.AudioCodec),
                             Bitrate = br is { } b ? $"{b:F0} kb/s" : "—",
-                            SampleRate = f.Asr is { } hz ? $"{hz / 1000.0:F1} kHz" : "—",
+                            SampleRate = f.AudioSampleRate is { } hz
+                                ? $"{hz / 1000.0:F1} kHz"
+                                : "—",
                             FormatNote = f.FormatNote ?? "",
                             IsAutoRecommended = f.FormatId == meta.FormatId,
                             IsSelected = f.FormatId == meta.FormatId,
@@ -697,8 +699,8 @@ public partial class SeparateViewModel : PageViewModelBase
                 {
                     MediaUrl = ov.Url!,
                     FormatId = ov.FormatId,
-                    SourceCodec = ov.Acodec,
-                    SourceBitrateKbps = ov.Abr ?? ov.Tbr,
+                    SourceCodec = ov.AudioCodec,
+                    SourceBitrateKbps = ov.AverageAudioBitrate ?? ov.AverageTotalBitrate,
                 };
 
             _queue.Enqueue(

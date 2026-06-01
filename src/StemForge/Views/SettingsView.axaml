@@ -79,7 +79,7 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="50,*">
+    <Grid RowDefinitions="50,*,Auto">
 
         <!-- ===== Toolbar ===== -->
         <Border Grid.Row="0"
@@ -485,21 +485,29 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- ── Save footer ── -->
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
-                    <TextBlock Grid.Column="1"
-                               Text="✓  Saved"
-                               FontSize="12"
-                               Foreground="{DynamicResource SuccessBrush}"
-                               VerticalAlignment="Center"
-                               IsVisible="{Binding SaveSuccess}" />
-                    <Button Grid.Column="2"
-                            Classes="accent"
-                            Content="Save changes"
-                            Command="{Binding SaveCommand}" />
-                </Grid>
 
             </StackPanel>
         </ScrollViewer>
+
+        <!-- ===== Save footer ===== -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource Bg0Brush}"
+                BorderBrush="{DynamicResource Bg3Brush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,0"
+                Height="56">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                <TextBlock Grid.Column="1"
+                           Text="✓  Saved"
+                           FontSize="12"
+                           Foreground="{DynamicResource SuccessBrush}"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding SaveSuccess}" />
+                <Button Grid.Column="2"
+                        Classes="accent"
+                        Content="Save changes"
+                        Command="{Binding SaveCommand}" />
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

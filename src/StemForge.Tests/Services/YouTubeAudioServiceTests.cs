@@ -22,7 +22,7 @@ public sealed class YouTubeAudioServiceTests
               "acodec": "opus",
               "vcodec": "none",
               "abr": 160.0,
-              "asr": 48000.0,
+              "asr": 48000,
               "url": "https://media.example.com/251"
             },
             {
@@ -30,7 +30,7 @@ public sealed class YouTubeAudioServiceTests
               "acodec": "mp4a.40.2",
               "vcodec": "none",
               "abr": 128.0,
-              "asr": 44100.0,
+              "asr": 44100,
               "url": "https://media.example.com/140"
             }
           ]
@@ -80,17 +80,10 @@ public sealed class YouTubeAudioServiceTests
     // ── SelectBestAudioFormat ────────────────────────────────────────────────
 
     [Fact]
-    public void SelectBestAudioFormat_NullFormats_ReturnsNull()
-    {
-        var info = new YtDlpVideoInfo { Formats = null };
-        Assert.Null(YouTubeAudioService.SelectBestAudioFormat(info));
-    }
-
-    [Fact]
-    public void SelectBestAudioFormat_EmptyFormats_ReturnsNull()
+    public void SelectBestAudioFormat_EmptyFormats_ReturnsFallbackWithNullUrl()
     {
         var info = new YtDlpVideoInfo { Formats = [] };
-        Assert.Null(YouTubeAudioService.SelectBestAudioFormat(info));
+        Assert.Null(info.SelectBestAudioFormat().Url);
     }
 
     [Fact]
@@ -100,12 +93,12 @@ public sealed class YouTubeAudioServiceTests
         {
             Formats =
             [
-                MakeAudioFormat("140", "mp4a.40.2", abr: 128.0, asr: 44100.0),
-                MakeAudioFormat("141", "mp4a.40.2", abr: 256.0, asr: 44100.0),
+                MakeAudioFormat("140", "mp4a.40.2", abr: 128.0, asr: 44100),
+                MakeAudioFormat("141", "mp4a.40.2", abr: 256.0, asr: 44100),
             ],
         };
 
-        var result = YouTubeAudioService.SelectBestAudioFormat(info);
+        var result = info.SelectBestAudioFormat();
 
         Assert.Equal("141", result?.FormatId);
     }
@@ -117,12 +110,12 @@ public sealed class YouTubeAudioServiceTests
         {
             Formats =
             [
-                MakeAudioFormat("250", "opus", abr: 70.0, asr: 48000.0),
-                MakeAudioFormat("251", "opus", abr: 160.0, asr: 48000.0),
+                MakeAudioFormat("250", "opus", abr: 70.0, asr: 48000),
+                MakeAudioFormat("251", "opus", abr: 160.0, asr: 48000),
             ],
         };
 
-        var result = YouTubeAudioService.SelectBestAudioFormat(info);
+        var result = info.SelectBestAudioFormat();
 
         Assert.Equal("251", result?.FormatId);
     }
@@ -135,12 +128,12 @@ public sealed class YouTubeAudioServiceTests
         {
             Formats =
             [
-                MakeAudioFormat("140", "mp4a.40.2", abr: 128.0, asr: 44100.0),
-                MakeAudioFormat("251", "opus", abr: 140.0, asr: 48000.0),
+                MakeAudioFormat("140", "mp4a.40.2", abr: 128.0, asr: 44100),
+                MakeAudioFormat("251", "opus", abr: 140.0, asr: 48000),
             ],
         };
 
-        var result = YouTubeAudioService.SelectBestAudioFormat(info);
+        var result = info.SelectBestAudioFormat();
 
         Assert.Equal("140", result?.FormatId);
     }
@@ -153,12 +146,12 @@ public sealed class YouTubeAudioServiceTests
         {
             Formats =
             [
-                MakeAudioFormat("140", "mp4a.40.2", abr: 128.0, asr: 44100.0),
-                MakeAudioFormat("251", "opus", abr: 200.0, asr: 48000.0),
+                MakeAudioFormat("140", "mp4a.40.2", abr: 128.0, asr: 44100),
+                MakeAudioFormat("251", "opus", abr: 200.0, asr: 48000),
             ],
         };
 
-        var result = YouTubeAudioService.SelectBestAudioFormat(info);
+        var result = info.SelectBestAudioFormat();
 
         Assert.Equal("251", result?.FormatId);
     }
@@ -173,16 +166,16 @@ public sealed class YouTubeAudioServiceTests
                 new YtDlpFormat
                 {
                     FormatId = "137",
-                    Acodec = "none",
-                    Vcodec = "avc1",
-                    Abr = 0,
+                    AudioCodec = "none",
+                    VideoCodec = "avc1",
+                    AverageAudioBitrate = 0,
                     Url = "https://media.example.com/137",
                 },
-                MakeAudioFormat("140", "mp4a.40.2", abr: 128.0, asr: 44100.0),
+                MakeAudioFormat("140", "mp4a.40.2", abr: 128.0, asr: 44100),
             ],
         };
 
-        var result = YouTubeAudioService.SelectBestAudioFormat(info);
+        var result = info.SelectBestAudioFormat();
 
         Assert.Equal("140", result?.FormatId);
     }
@@ -197,14 +190,14 @@ public sealed class YouTubeAudioServiceTests
                 new YtDlpFormat
                 {
                     FormatId = "139",
-                    Acodec = "none",
-                    Vcodec = "none",
+                    AudioCodec = "none",
+                    VideoCodec = "none",
                     Url = "https://media.example.com/139",
                 },
             ],
         };
 
-        Assert.Null(YouTubeAudioService.SelectBestAudioFormat(info));
+        Assert.Null(info.SelectBestAudioFormat().Url);
     }
 
     // ── ResolveAsync ─────────────────────────────────────────────────────────
@@ -298,7 +291,7 @@ public sealed class YouTubeAudioServiceTests
                   "acodec": "mp4a.40.2",
                   "vcodec": "none",
                   "abr": 128.0,
-                  "asr": 44100.0,
+                  "asr": 44100,
                   "url": "https://media.example.com/140-44khz"
                 }
               ]
@@ -329,14 +322,14 @@ public sealed class YouTubeAudioServiceTests
         return new YouTubeAudioService(fake, paths);
     }
 
-    private static YtDlpFormat MakeAudioFormat(string id, string acodec, double abr, double asr) =>
+    private static YtDlpFormat MakeAudioFormat(string id, string acodec, double abr, int asr) =>
         new()
         {
             FormatId = id,
-            Acodec = acodec,
-            Vcodec = "none",
-            Abr = abr,
-            Asr = asr,
+            AudioCodec = acodec,
+            VideoCodec = "none",
+            AverageAudioBitrate = abr,
+            AudioSampleRate = asr,
             Url = $"https://media.example.com/{id}",
         };
 }

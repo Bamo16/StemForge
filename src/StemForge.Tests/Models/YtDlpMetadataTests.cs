@@ -2,7 +2,7 @@ using StemForge.Models;
 
 namespace StemForge.Tests.Models;
 
-public sealed class YtMetadataTests
+public sealed class YtDlpMetadataTests
 {
     [Fact]
     public void DisplayTitle_ArtistNonEmpty_ReturnsCombinedTitle()
@@ -25,7 +25,7 @@ public sealed class YtMetadataTests
         Assert.Equal("Track", meta.DisplayTitle);
     }
 
-    private static YtMetadata Build(string title, string? artist) =>
+    private static YtDlpMetadata Build(string title, string? artist) =>
         new(
             SourceUrl: "https://example.com",
             Title: title,

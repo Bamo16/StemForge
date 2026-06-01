@@ -1,6 +1,6 @@
 namespace StemForge.Models;
 
-public sealed record YtMetadata(
+public sealed record YtDlpMetadata(
     string SourceUrl,
     string Title,
     string? Artist,
