@@ -27,8 +27,9 @@ public sealed class AppPaths(AppSettings settings)
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
-    /// <summary>Path or PATH-resolvable name of the uv binary.</summary>
-    public string Uv => OverrideFor(ToolKind.Uv) ?? "uv";
+    /// <summary>Path or PATH-resolvable name of the uv binary. Prefers the known install location
+    /// so callers work even when uv was just installed and its directory is not yet on PATH.</summary>
+    public string Uv => OverrideFor(ToolKind.Uv) ?? (File.Exists(KnownUvPath) ? KnownUvPath : "uv");
 
     /// <summary>Path or PATH-resolvable name of the yt-dlp binary. Prefers user override, then the
     /// bundled binary downloaded on first run, and finally bare 'yt-dlp' on PATH.</summary>
@@ -104,6 +105,13 @@ public sealed class AppPaths(AppSettings settings)
     public static string SeparationDriverScript =>
         Path.Combine(AppContext.BaseDirectory, "tools", "separator_driver.py");
 
+    // uv installs itself to %USERPROFILE%\.local\bin on Windows. Probing this lets callers
+    // use uv immediately after installation without requiring a PATH-refresh restart.
+    // TODO v0.2.0: add Linux/macOS path (~/.local/bin/uv, no .exe).
+    private static string KnownUvPath =>
+        Environment.SpecialFolder.UserProfile.GetFolderPath(".local", "bin", "uv.exe");
+
+    // TODO v0.2.0: Windows-only (Scripts\ + .exe). Linux/macOS uses bin/ with no extension.
     private static string UvAudioSeparatorShim =>
         Environment.SpecialFolder.ApplicationData.GetFolderPath(
             "uv",
@@ -113,6 +121,7 @@ public sealed class AppPaths(AppSettings settings)
             "audio-separator.exe"
         );
 
+    // TODO v0.2.0: Windows-only (Scripts\ + .exe). Linux/macOS uses bin/ with no extension.
     private static string UvAudioSeparatorPython =>
         Environment.SpecialFolder.ApplicationData.GetFolderPath(
             "uv",

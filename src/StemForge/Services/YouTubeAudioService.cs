@@ -41,11 +41,13 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             "--no-playlist",
             "--format",
             "bestaudio/best",
-            // YouTube now rotates JS-based "n challenges" that yt-dlp needs an external solver
-            // script for. Authorising the upstream EJS repo lets yt-dlp fetch the solver on
-            // demand; without this flag, format extraction silently returns only image
-            // thumbnails and we get "Requested format is not available". yt-dlp itself
-            // still needs a JS runtime on PATH (deno/node/bun) to execute the solver.
+            // YouTube rotates JS-based "n-challenges" that require an up-to-date solver script.
+            // ejs:github fetches that script from the yt-dlp/yt-dlp-ejs repo (cached locally by
+            // yt-dlp; not a GitHub round-trip on every call). Without it, format extraction
+            // silently returns only image thumbnails ("Requested format is not available").
+            // This is intentionally unconditional: we cannot reliably determine at call-time
+            // whether a usable JS runtime is present (the user may have deno on PATH or a
+            // bare-name settings override rather than StemForge's bundled binary).
             "--remote-components",
             "ejs:github",
         };
@@ -63,11 +65,9 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         }
 
         // Pass bundled deno explicitly so yt-dlp finds it without deno on PATH.
-        // Wrap in double-quotes: yt-dlp's own value parser splits on spaces, so the
-        // quotes are embedded in the value string (not just OS-level arg quoting).
-        var denoPath = _paths.Deno;
-        if (Path.IsPathRooted(denoPath))
-            args.AddRange(["--js-runtimes", $"\"deno:{denoPath}\""]);
+        // ArgumentList handles OS-level quoting automatically; no embedded quotes needed.
+        if (Path.IsPathRooted(_paths.Deno))
+            args.AddRange(["--js-runtimes", $"deno:{_paths.Deno}"]);
         args.Add(url);
 
         // Stderr streams live (yt-dlp info lines); stdout (the JSON blob) is captured silently.

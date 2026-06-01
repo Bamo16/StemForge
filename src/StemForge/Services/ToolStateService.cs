@@ -47,7 +47,7 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
             }
 
             var updated = await _detector.DetectAsync(toolNames);
-            Tools = [.. Tools.Select(t => updated.FirstOrDefault(u => u.Name == t.Name) ?? t)];
+            Tools = [.. Tools.Select(t => updated.FirstOrDefault(u => u.Kind == t.Kind) ?? t)];
         }
         finally
         {

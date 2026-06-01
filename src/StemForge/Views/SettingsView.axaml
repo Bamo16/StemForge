@@ -9,6 +9,11 @@
              x:DataType="vm:SettingsViewModel">
 
     <UserControl.Styles>
+        <!-- Hides an element from view while keeping it in the layout tree (card doesn't shrink) -->
+        <Style Selector=":is(Control).layoutHidden">
+            <Setter Property="Opacity" Value="0" />
+        </Style>
+
         <!-- Section heading -->
         <Style Selector="TextBlock.settingSection">
             <Setter Property="FontSize" Value="13" />
@@ -107,9 +112,10 @@
                     </Border.BorderBrush>
 
                     <Panel>
-                        <!-- Done state: always in layout tree so the card height never
-                             collapses during a refresh. Non-interactive while loading. -->
-                        <StackPanel IsHitTestVisible="{Binding !ToolsLoading}"
+                        <!-- Opacity=0 (not IsVisible=False) keeps tool rows in the layout tree
+                             so the card never shrinks during a refresh. -->
+                        <StackPanel Classes.layoutHidden="{Binding ToolsLoading}"
+                                    IsHitTestVisible="{Binding !ToolsLoading}"
                                     Spacing="10" Margin="16,14">
                             <ItemsControl ItemsSource="{Binding SettingsToolRows}">
                                 <ItemsControl.ItemsPanel>
@@ -158,12 +164,7 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <!-- Spinner overlay: stretches to the done-state height so the card
-                             never shrinks during a refresh. Sits on top in z-order.
-                             Background must be opaque to cover the tool rows beneath it;
-                             the outer card border still provides the green tint. -->
                         <Border IsVisible="{Binding ToolsLoading}"
-                                Background="{DynamicResource Bg1Brush}"
                                 VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                             <StackPanel Spacing="10" Margin="16,14">
                                 <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">

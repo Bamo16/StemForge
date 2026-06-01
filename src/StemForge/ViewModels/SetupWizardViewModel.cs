@@ -183,6 +183,8 @@ public partial class SetupWizardViewModel(
     private async Task InstallSelectedAsync()
     {
         IsInstalling = true;
+        _installLog.Clear();
+        InstallLog = string.Empty;
         try
         {
             // uv must be present before audio-separator (uv installs it). Required tools first.
@@ -219,6 +221,8 @@ public partial class SetupWizardViewModel(
         OnPropertyChanged(nameof(CanDismiss));
         CurrentStep = WizardStep.Welcome;
         Tools.Clear();
+        foreach (var row in InstallRows)
+            row.PropertyChanged -= OnInstallRowChanged;
         InstallRows.Clear();
         GpuHint = string.Empty;
         IsInstalling = false;
@@ -289,9 +293,12 @@ public partial class SetupWizardViewModel(
             // Audio-separator's row gets the wizard as its variant picker so the inline
             // CPU/CUDA/DirectML buttons can bind directly to a non-null path.
             var picker = tool.Kind == ToolKind.AudioSeparator ? this : null;
-            var row = new ToolRowViewModel(tool, picker);
-            row.Found = _toolState.IsAvailable(tool.Kind);
-            row.WantInstall = !row.Found;
+            var isAvailable = _toolState.IsAvailable(tool.Kind);
+            var row = new ToolRowViewModel(tool, picker)
+            {
+                Found = isAvailable,
+                WantInstall = !isAvailable,
+            };
             row.PropertyChanged += OnInstallRowChanged;
             InstallRows.Add(row);
         }
@@ -357,11 +364,8 @@ public partial class SetupWizardViewModel(
         }
     }
 
-    private IProgress<InstallProgress> NewLogProgress()
-    {
-        _installLog.Clear();
-        InstallLog = string.Empty;
-        return new Progress<InstallProgress>(p =>
+    private Progress<InstallProgress> NewLogProgress() =>
+        new(p =>
         {
             var line =
                 p is { BytesDownloaded: { } done, TotalBytes: { } total } && total > 0
@@ -373,7 +377,6 @@ public partial class SetupWizardViewModel(
             _installLog.Append(line);
             InstallLog = _installLog.ToString();
         });
-    }
 
     private static string FormatMB(long bytes) => $"{bytes / 1_048_576.0:F1} MB";
 
@@ -386,6 +389,8 @@ public partial class SetupWizardViewModel(
         var detected = await _toolInstaller.DetectInstalledVariantAsync();
         if (detected is not null)
             _settings.InstalledVariant = detected;
+        // If detection fails, InstalledVariant stays null. This only affects the variant tag
+        // shown in Settings — it has no effect on audio-separator's runtime behavior.
     }
 
     private static string? NullIfBlank(string? value) =>
