@@ -1,14 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using StemForge.Extensions;
 using StemForge.Models;
 
 namespace StemForge.Services;
 
-public sealed class UserPresetService
+public sealed partial class UserPresetService
 {
-    private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
-
     private const string FileName = "user_presets.json";
 
     // Current (Roaming) location, sharing the same root as settings.json so all user-authored
@@ -45,7 +44,10 @@ public sealed class UserPresetService
             if (File.Exists(roamingPath))
             {
                 var json = File.ReadAllText(roamingPath);
-                var dtos = JsonSerializer.Deserialize<List<PresetDto>>(json, JsonOpts);
+                var dtos = JsonSerializer.Deserialize(
+                    json,
+                    PresetJsonContext.Default.ListPresetDto
+                );
                 if (dtos is not null)
                     foreach (var dto in dtos)
                         svc.Presets.Add(dto.ToPreset());
@@ -110,7 +112,10 @@ public sealed class UserPresetService
             var dir = Path.GetDirectoryName(_filePath)!;
             Directory.CreateDirectory(dir);
             var dtos = Presets.Select(PresetDto.FromPreset).ToList();
-            File.WriteAllText(_filePath, JsonSerializer.Serialize(dtos, JsonOpts));
+            File.WriteAllText(
+                _filePath,
+                JsonSerializer.Serialize(dtos, PresetJsonContext.Default.ListPresetDto)
+            );
         }
         catch (Exception ex)
         {
@@ -169,4 +174,13 @@ public sealed class UserPresetService
                 EnsembleWeights = p.EnsembleWeights?.ToList(),
             };
     }
+
+    /// <summary>
+    /// Source-generated serializer context for the preset file. Carries the read/write contract
+    /// (case-insensitive property matching, indented output) co-located with <see cref="PresetDto"/>.
+    /// Nested so it can see the private DTO type.
+    /// </summary>
+    [JsonSourceGenerationOptions(WriteIndented = true, PropertyNameCaseInsensitive = true)]
+    [JsonSerializable(typeof(List<PresetDto>))]
+    private sealed partial class PresetJsonContext : JsonSerializerContext { }
 }

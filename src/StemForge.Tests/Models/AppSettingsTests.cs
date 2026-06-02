@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StemForge.Models;
 
 namespace StemForge.Tests.Models;
@@ -110,5 +111,46 @@ public sealed class AppSettingsTests
         {
             Directory.Delete(tempDir, recursive: true);
         }
+    }
+
+    [Fact]
+    public void SourceGenContext_SerializesEnumsAsStrings()
+    {
+        var original = new AppSettings
+        {
+            GpuVariant = GpuVariant.Cuda,
+            DrumStemLocation = DrumStemLocation.CacheOnly,
+            DefaultAudioFormat = AudioFormat.Flac,
+        };
+        original.SetToolPathOverride(ToolKind.Ytdlp, @"C:\Tools\yt-dlp.exe");
+
+        var json = JsonSerializer.Serialize(original, AppSettingsJsonContext.Default.AppSettings);
+
+        // Enums (including the dictionary key) serialize by name, not by numeric value, and the
+        // output is indented.
+        Assert.Contains("\"DrumStemLocation\": \"CacheOnly\"", json);
+        Assert.Contains("\"GpuVariant\": \"Cuda\"", json);
+        Assert.Contains("\"Ytdlp\":", json);
+        Assert.Contains("\n", json);
+    }
+
+    [Fact]
+    public void SourceGenContext_RoundTripsEnumsAndOverrides()
+    {
+        var original = new AppSettings
+        {
+            GpuVariant = GpuVariant.Cuda,
+            DrumStemLocation = DrumStemLocation.CacheOnly,
+            DefaultAudioFormat = AudioFormat.Flac,
+        };
+        original.SetToolPathOverride(ToolKind.Ytdlp, @"C:\Tools\yt-dlp.exe");
+
+        var json = JsonSerializer.Serialize(original, AppSettingsJsonContext.Default.AppSettings);
+        var loaded = JsonSerializer.Deserialize(json, AppSettingsJsonContext.Default.AppSettings)!;
+
+        Assert.Equal(GpuVariant.Cuda, loaded.GpuVariant);
+        Assert.Equal(DrumStemLocation.CacheOnly, loaded.DrumStemLocation);
+        Assert.Equal(AudioFormat.Flac, loaded.DefaultAudioFormat);
+        Assert.Equal(@"C:\Tools\yt-dlp.exe", loaded.GetToolPathOverride(ToolKind.Ytdlp));
     }
 }
