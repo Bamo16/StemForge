@@ -71,18 +71,47 @@ public sealed record ToolVariant(
 /// </summary>
 public sealed record VariantProbe(string ScriptRelativePath);
 
-/// <summary>A pinned downloadable asset for one platform.</summary>
-public sealed record BundledAsset(string Url, string Sha256, ExtractMode ExtractMode);
+/// <summary>
+/// A pinned downloadable asset for one platform. Extraction is described by two orthogonal axes:
+/// the <see cref="Format"/> of the download (how to decompress it) and the <see cref="Layout"/>
+/// (where the target binary lives inside it). This avoids combinatorial enum cases like a
+/// "tar.xz-flatten-from-bin" mode. See docs/adr/0005-bundle-ffmpeg-everywhere-via-tar-xz.md.
+/// </summary>
+public sealed record BundledAsset(
+    string Url,
+    string Sha256,
+    ArchiveFormat Format,
+    BundledLayout Layout
+);
 
-/// <summary>How to turn a downloaded asset into the bundled binary.</summary>
-public enum ExtractMode
+/// <summary>The container format of a downloaded <see cref="BundledAsset"/>.</summary>
+public enum ArchiveFormat
 {
-    /// <summary>The download is the binary itself, not an archive (e.g. yt-dlp.exe).</summary>
+    /// <summary>Not an archive: the download is the binary itself (e.g. yt-dlp.exe).</summary>
     RawBinary,
 
-    /// <summary>Archive contains the target exe at its root (e.g. deno).</summary>
+    /// <summary>A zip archive (e.g. deno, Windows ffmpeg).</summary>
+    Zip,
+
+    /// <summary>An xz-compressed tar archive (e.g. Linux ffmpeg). Decoded via SharpCompress.</summary>
+    TarXz,
+}
+
+/// <summary>Where the target binary lives inside a downloaded <see cref="BundledAsset"/>.</summary>
+public enum BundledLayout
+{
+    /// <summary>
+    /// The download itself is the binary; nothing to extract. Only valid with
+    /// <see cref="ArchiveFormat.RawBinary"/>.
+    /// </summary>
+    DownloadIsBinary,
+
+    /// <summary>The target binary sits at the archive root (e.g. deno).</summary>
     SingleFileAtRoot,
 
-    /// <summary>Flatten every file under any <c>/bin/</c> subpath into the bundle dir (e.g. ffmpeg shared build).</summary>
+    /// <summary>
+    /// Flatten every file under any <c>/bin/</c> subpath into the bundle dir (e.g. ffmpeg shared
+    /// builds, whose runtime DLLs/.so files live alongside the exe under <c>bin/</c>).
+    /// </summary>
     FlattenFromBinSubdir,
 }
