@@ -235,7 +235,11 @@ public partial class SetupWizardViewModel(
         CurrentStep = WizardStep.Welcome;
         Tools.Clear();
         foreach (var row in InstallRows)
+        {
             row.PropertyChanged -= OnInstallRowChanged;
+            row.IsInstalling = false;
+            row.InProgressMessage = string.Empty;
+        }
         InstallRows.Clear();
         GpuHint = string.Empty;
         IsInstalling = false;
@@ -353,6 +357,13 @@ public partial class SetupWizardViewModel(
             return;
 
         row.InstallError = null;
+        row.IsInstalling = true;
+        // audio-separator pulls torch/onnxruntime (250 MB to 2 GB), so warn it is slow. Other tools
+        // are quick; an empty message just shows the indeterminate bar with no extra line.
+        row.InProgressMessage =
+            kind == ToolKind.AudioSeparator
+                ? "Downloading and installing audio-separator. This can take several minutes."
+                : string.Empty;
         var options = new InstallOptions(kind == ToolKind.AudioSeparator ? GpuVariant : null);
 
         try
@@ -374,6 +385,11 @@ public partial class SetupWizardViewModel(
         catch (Exception ex)
         {
             row.InstallError = ex.Message;
+        }
+        finally
+        {
+            row.IsInstalling = false;
+            row.InProgressMessage = string.Empty;
         }
     }
 
