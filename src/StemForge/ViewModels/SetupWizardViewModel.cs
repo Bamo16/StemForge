@@ -358,7 +358,7 @@ public partial class SetupWizardViewModel(
         try
         {
             await _toolInstaller.InstallAsync(ToolCatalog.Get(kind), options, NewLogProgress());
-            await _toolState.RefreshAsync(row.Name);
+            await _toolState.RefreshAsync(kind);
             row.Found = _toolState.IsAvailable(kind);
 
             if (!row.Found)
@@ -393,7 +393,7 @@ public partial class SetupWizardViewModel(
 
     private static string FormatMB(long bytes) => $"{bytes / 1_048_576.0:F1} MB";
 
-    private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolInfo> tools)
+    private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolState> tools)
     {
         if (_settings.InstalledVariant is not null)
             return;

@@ -28,6 +28,10 @@ public sealed class SetupDetectorTests
 
         Assert.Equal(5, results.Count);
         Assert.All(results, r => Assert.True(r.Found));
+        // ToolState wraps the catalog Tool; Name/IsRequired are read off it, not copied.
+        Assert.All(results, r => Assert.Same(ToolCatalog.Get(r.Kind), r.Tool));
+        Assert.All(results, r => Assert.Equal(r.Tool.CliName, r.Name));
+        Assert.All(results, r => Assert.Equal(r.Tool.IsRequired, r.IsRequired));
     }
 
     [Fact]

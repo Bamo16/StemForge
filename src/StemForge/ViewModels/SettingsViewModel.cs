@@ -385,7 +385,7 @@ public partial class SettingsViewModel : PageViewModelBase
         }
     }
 
-    private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolInfo> tools)
+    private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolState> tools)
     {
         if (_settings.InstalledVariant is not null)
             return;

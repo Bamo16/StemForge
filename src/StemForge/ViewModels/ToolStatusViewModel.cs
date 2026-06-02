@@ -12,7 +12,7 @@ public sealed class ToolStatusViewModel
         Found ? Version : (IsRequired ? "Not found" : "Not found (optional)");
     public string? VariantTag { get; }
 
-    public ToolStatusViewModel(ToolInfo info, string? variantTag = null)
+    public ToolStatusViewModel(ToolState info, string? variantTag = null)
     {
         Name = info.Name;
         Found = info.Found;
