@@ -9,9 +9,10 @@ namespace StemForge.Services;
 /// and falls back to a sensible default — discovered shim path, bare exe name on PATH,
 /// or a user-profile directory — so callers don't need to repeat the coalesce logic.
 /// </summary>
-public sealed class AppPaths(AppSettings settings)
+public sealed class AppPaths(AppSettings settings, PlatformInfo? platform = null)
 {
     private readonly AppSettings _settings = settings;
+    private readonly PlatformInfo _platform = platform ?? PlatformInfo.Current;
 
     // ── Tool executables ──────────────────────────────────────────────────────
 
@@ -105,30 +106,34 @@ public sealed class AppPaths(AppSettings settings)
     public static string SeparationDriverScript =>
         Path.Combine(AppContext.BaseDirectory, "tools", "separator_driver.py");
 
-    // uv installs itself to %USERPROFILE%\.local\bin on Windows. Probing this lets callers
-    // use uv immediately after installation without requiring a PATH-refresh restart.
-    // TODO v0.2.0: add Linux/macOS path (~/.local/bin/uv, no .exe).
-    private static string KnownUvPath =>
-        Environment.SpecialFolder.UserProfile.GetFolderPath(".local", "bin", "uv.exe");
-
-    // TODO v0.2.0: Windows-only (Scripts\ + .exe). Linux/macOS uses bin/ with no extension.
-    private static string UvAudioSeparatorShim =>
-        Environment.SpecialFolder.ApplicationData.GetFolderPath(
-            "uv",
-            "tools",
-            "audio-separator",
-            "Scripts",
-            "audio-separator.exe"
+    // uv installs itself to ~/.local/bin (uv.exe on Windows, bare uv on Unix). Probing this lets
+    // callers use uv immediately after installation without requiring a PATH-refresh restart.
+    internal string KnownUvPath =>
+        Environment.SpecialFolder.UserProfile.GetFolderPath(
+            ".local",
+            "bin",
+            $"uv{_platform.ExecutableSuffix}"
         );
 
-    // TODO v0.2.0: Windows-only (Scripts\ + .exe). Linux/macOS uses bin/ with no extension.
-    private static string UvAudioSeparatorPython =>
+    // uv installs tool entry points under Scripts\ on Windows and bin/ on Unix.
+    private string UvToolBinDir => _platform.Os == OSKind.Windows ? "Scripts" : "bin";
+
+    internal string UvAudioSeparatorShim =>
         Environment.SpecialFolder.ApplicationData.GetFolderPath(
             "uv",
             "tools",
             "audio-separator",
-            "Scripts",
-            "python.exe"
+            UvToolBinDir,
+            $"audio-separator{_platform.ExecutableSuffix}"
+        );
+
+    internal string UvAudioSeparatorPython =>
+        Environment.SpecialFolder.ApplicationData.GetFolderPath(
+            "uv",
+            "tools",
+            "audio-separator",
+            UvToolBinDir,
+            $"python{_platform.ExecutableSuffix}"
         );
 
     private string? OverrideFor(ToolKind kind) => Override(_settings.GetToolPathOverride(kind));
