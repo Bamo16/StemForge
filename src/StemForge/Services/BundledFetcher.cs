@@ -18,6 +18,20 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppIn
     private readonly PlatformInfo _platform = platform;
     private readonly IAppInfo _appInfo = appInfo;
 
+    // One shared HttpClient reused across all downloads to avoid per-call socket churn. Built
+    // lazily so the user-agent can be sourced from the injected IAppInfo. BundledFetcher is a DI
+    // singleton, so this client lives for the app's lifetime.
+    private readonly Lazy<HttpClient> _http = new(() =>
+        new HttpClient
+        {
+            Timeout = TimeSpan.FromMinutes(15),
+            DefaultRequestHeaders =
+            {
+                UserAgent = { new(appInfo.ProductName, appInfo.ShortVersion) },
+            },
+        }
+    );
+
     /// <summary>True when the tool's bundled binary is already present.</summary>
     public bool IsBundled(Tool tool) =>
         File.Exists(Path.Combine(_paths.BundledBinDir, tool.BundledBinaryFileName(_platform)));
@@ -52,7 +66,7 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppIn
         );
         try
         {
-            await DownloadAsync(asset.Url, temp, _appInfo, progress, ct);
+            await DownloadAsync(asset.Url, temp, progress, ct);
             // SHA-256 is verified on the downloaded bytes before any extraction touches disk.
             VerifyChecksum(temp, asset.Sha256, progress);
             Install(asset, temp, tool, progress);
@@ -70,22 +84,19 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppIn
         }
     }
 
-    private static async Task DownloadAsync(
+    /// <summary>
+    /// Downloads <paramref name="url"/> to <paramref name="destination"/> using the shared
+    /// HttpClient, reporting progress. Internal so the shared-client download + progress path is
+    /// testable against a loopback server without driving a full <see cref="FetchAsync"/>.
+    /// </summary>
+    internal async Task DownloadAsync(
         string url,
         string destination,
-        IAppInfo appInfo,
         IProgress<InstallProgress>? progress,
         CancellationToken ct
     )
     {
-        using var http = new HttpClient
-        {
-            Timeout = TimeSpan.FromMinutes(15),
-            DefaultRequestHeaders =
-            {
-                UserAgent = { new(appInfo.ProductName, appInfo.ShortVersion) },
-            },
-        };
+        var http = _http.Value;
 
         using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
         response.EnsureSuccessStatusCode();
