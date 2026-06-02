@@ -67,17 +67,16 @@ public sealed record YtDlpVideoInfo
     /// matches yt-dlp's default pick even when the ranking would otherwise rank a higher-bitrate
     /// non-44.1 kHz format above it.
     /// </summary>
-    public List<YtDlpFormat> AudioFormatsByPreference(string? recommendedFormatId)
-    {
-        var ordered = AudioOnlyFormats
-            .OrderByDescending(f => f.FormatId == recommendedFormatId)
-            .ThenByDescending(f => f.AudioBitrate)
-            .ThenByDescending(f => f.AudioChannels ?? 0)
-            .ThenByDescending(f => f.CodecPreference)
-            .ThenByDescending(f => f.FileSize ?? f.FileSizeApprox ?? 0)
-            .ThenBy(f => f.FormatId, StringComparer.Ordinal);
-        return [.. ordered];
-    }
+    public List<YtDlpFormat> AudioFormatsByPreference(string? recommendedFormatId) =>
+        [
+            .. AudioOnlyFormats
+                .OrderByDescending(f => f.FormatId == recommendedFormatId)
+                .ThenByDescending(f => f.AudioBitrate)
+                .ThenByDescending(f => f.AudioChannels ?? 0)
+                .ThenByDescending(f => f.CodecPreference)
+                .ThenByDescending(f => f.FileSize ?? f.FileSizeApprox ?? 0)
+                .ThenBy(f => f.FormatId, StringComparer.Ordinal),
+        ];
 
     /// <summary>
     /// Selects the best audio-only format from the formats list.
@@ -176,7 +175,7 @@ public sealed record YtDlpFormat
     /// </summary>
     [JsonIgnore]
     public int CodecPreference =>
-        (AudioCodec ?? "") switch
+        (AudioCodec ?? string.Empty) switch
         {
             "flac" => 7,
             "alac" => 6,
