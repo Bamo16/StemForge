@@ -392,11 +392,11 @@
                                       HorizontalScrollBarVisibility="Disabled"
                                       ext:ScrollViewerExtensions.AutoScrollToEnd="True"
                                       IsVisible="{Binding InstallLog, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                            <TextBlock Classes="mono"
-                                       Text="{Binding InstallLog}"
-                                       FontSize="11"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       TextWrapping="Wrap" />
+                            <SelectableTextBlock Classes="mono"
+                                                 Text="{Binding InstallLog}"
+                                                 FontSize="11"
+                                                 Foreground="{DynamicResource TextSecondaryBrush}"
+                                                 TextWrapping="Wrap" />
                         </ScrollViewer>
                     </StackPanel>
 
