@@ -21,11 +21,6 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         .. Path.GetInvalidFileNameChars(),
     ];
 
-    private static readonly JsonSerializerOptions _jsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-    };
-
     private static readonly HttpClient _http = new();
 
     public async Task<YtDlpMetadata> ResolveAsync(
@@ -222,7 +217,10 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         if (start < 0 || end <= start)
             throw new InvalidOperationException("yt-dlp metadata was not valid JSON.");
 
-        return JsonSerializer.Deserialize<YtDlpVideoInfo>(raw[start..(end + 1)], _jsonOptions)
+        return JsonSerializer.Deserialize(
+                raw[start..(end + 1)],
+                YtDlpJsonContext.Default.YtDlpVideoInfo
+            )
             ?? throw new InvalidOperationException(
                 "yt-dlp metadata deserialization returned null."
             );

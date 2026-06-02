@@ -147,3 +147,11 @@ public sealed record YtDlpFormat
     [JsonIgnore]
     public double AudioBitrate => AverageAudioBitrate ?? AverageTotalBitrate ?? 0;
 }
+
+/// <summary>
+/// Source-generated serializer context for yt-dlp metadata. The snake_case naming policy lives
+/// here, co-located with the DTO it describes, rather than on a distant call site.
+/// </summary>
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
+[JsonSerializable(typeof(YtDlpVideoInfo))]
+internal sealed partial class YtDlpJsonContext : JsonSerializerContext { }
