@@ -12,10 +12,11 @@ namespace StemForge.Services;
 /// the catalog's <see cref="BundledAsset"/> (<see cref="ArchiveFormat"/> and
 /// <see cref="BundledLayout"/>) rather than separate classes.
 /// </summary>
-public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform)
+public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppInfo appInfo)
 {
     private readonly AppPaths _paths = paths;
     private readonly PlatformInfo _platform = platform;
+    private readonly IAppInfo _appInfo = appInfo;
 
     /// <summary>True when the tool's bundled binary is already present.</summary>
     public bool IsBundled(Tool tool) =>
@@ -51,7 +52,7 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform)
         );
         try
         {
-            await DownloadAsync(asset.Url, temp, progress, ct);
+            await DownloadAsync(asset.Url, temp, _appInfo, progress, ct);
             // SHA-256 is verified on the downloaded bytes before any extraction touches disk.
             VerifyChecksum(temp, asset.Sha256, progress);
             Install(asset, temp, tool, progress);
@@ -72,17 +73,18 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform)
     private static async Task DownloadAsync(
         string url,
         string destination,
+        IAppInfo appInfo,
         IProgress<InstallProgress>? progress,
         CancellationToken ct
     )
     {
-        var appVersion =
-            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
-            ?? "dev";
         using var http = new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(15),
-            DefaultRequestHeaders = { UserAgent = { new("StemForge", appVersion) } },
+            DefaultRequestHeaders =
+            {
+                UserAgent = { new(appInfo.ProductName, appInfo.ShortVersion) },
+            },
         };
 
         using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);

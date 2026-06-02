@@ -19,6 +19,7 @@ public static class ServiceRegistration
         services.AddSingleton(AppSettings.Load());
         services.AddSingleton(UserPresetService.Load());
         services.AddSingleton(PlatformInfo.Current);
+        services.AddSingleton<IAppInfo>(AppInfo.Current);
         services.AddSingleton<AppPaths>();
 
         // Domain services
