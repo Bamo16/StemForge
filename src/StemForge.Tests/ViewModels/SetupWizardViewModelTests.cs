@@ -16,7 +16,7 @@ public sealed class SetupWizardViewModelTests
         var runner = (IProcessRunner)fake;
         var setupDetector = new SetupDetector(runner, paths);
         var platform = PlatformInfo.Current;
-        var bundledFetcher = new BundledFetcher(paths, platform);
+        var bundledFetcher = new BundledFetcher(paths, platform, AppInfo.Current);
         return new SetupWizardViewModel(
             settings,
             setupDetector,

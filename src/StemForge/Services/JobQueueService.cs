@@ -15,7 +15,8 @@ public sealed class JobQueueService(
     AppSettings settings,
     IProcessRunner runner,
     YouTubeAudioService youTubeAudio,
-    AppPaths paths
+    AppPaths paths,
+    IAppInfo appInfo
 )
 {
     private readonly ISeparatorDriverService _driver = driver;
@@ -23,6 +24,7 @@ public sealed class JobQueueService(
     private readonly IProcessRunner _runner = runner;
     private readonly YouTubeAudioService _youTubeAudio = youTubeAudio;
     private readonly AppPaths _paths = paths;
+    private readonly IAppInfo _appInfo = appInfo;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     private CancellationTokenSource? _currentCts;
@@ -107,9 +109,7 @@ public sealed class JobQueueService(
             }
 
             // ── Separation step — one driver run per preset ────────────────────
-            var version =
-                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString()
-                ?? "dev";
+            var version = _appInfo.FullVersion;
             var modelDescriptor = string.Join(
                 ", ",
                 vm.Job.Presets.Select(p => $"{p.Mode}:{p.PrimaryModel ?? p.Id}")
