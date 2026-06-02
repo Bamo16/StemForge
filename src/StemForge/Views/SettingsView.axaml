@@ -498,6 +498,11 @@
                 Padding="20,0"
                 Height="56">
             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                <TextBlock Grid.Column="0"
+                           Text="{Binding VersionLabel}"
+                           FontSize="11"
+                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                           VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1"
                            Text="✓  Saved"
                            FontSize="12"

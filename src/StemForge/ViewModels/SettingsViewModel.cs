@@ -17,6 +17,9 @@ public partial class SettingsViewModel : PageViewModelBase
 
     public override string Title => "Settings";
 
+    /// <summary>Footer build stamp, e.g. "StemForge v0.2.0". Sourced from <see cref="IAppInfo"/>.</summary>
+    public string VersionLabel { get; }
+
     // ── Tool rows (status header + tool paths share this collection) ──────────
 
     [ObservableProperty]
@@ -137,7 +140,8 @@ public partial class SettingsViewModel : PageViewModelBase
         SetupDetector setupDetector,
         GpuDetector gpuDetector,
         ToolInstaller toolInstaller,
-        ToolStateService toolState
+        ToolStateService toolState,
+        IAppInfo appInfo
     )
     {
         _settings = settings;
@@ -145,6 +149,7 @@ public partial class SettingsViewModel : PageViewModelBase
         _gpuDetector = gpuDetector;
         _toolInstaller = toolInstaller;
         _toolState = toolState;
+        VersionLabel = $"{appInfo.ProductName} v{appInfo.ShortVersion}";
 
         foreach (var tool in ToolCatalog.All)
             SettingsToolRows.Add(new SettingsToolRowViewModel(tool));
