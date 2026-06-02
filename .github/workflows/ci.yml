@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main, v0.2.0]
+  pull_request:
+    branches: [main, v0.2.0]
+
+jobs:
+  linux-smoke:
+    name: Linux smoke test (linux-x64)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # The project targets net11.0, a preview SDK. There is no global.json pin, so install the
+      # exact preview build the repo is developed against and allow preview quality as a fallback
+      # in case the precise patch is unavailable on the runner.
+      - name: Setup .NET 11 preview SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "11.0.100-preview.4.26230.115"
+          dotnet-quality: preview
+
+      - name: Restore
+        run: dotnet restore StemForge.slnx
+
+      - name: Build
+        run: dotnet build StemForge.slnx --configuration Release --no-restore
+
+      # Offline suite: full test run including the catalog well-formedness checks. The live asset
+      # tests are skipped here because STEMFORGE_LIVE_ASSETS is not set. No uv / audio-separator
+      # install happens in this job.
+      - name: Test (offline suite)
+        run: dotnet test StemForge.slnx --configuration Release --no-build
+
+      # Network step: download + SHA-256 verify the three linux-x64 bundled binaries (yt-dlp,
+      # ffmpeg, deno) and exercise the ffmpeg tar.xz extraction path. Gated by the env var so the
+      # offline suite above stays fast and hermetic.
+      - name: Verify bundled assets (live download + SHA-256)
+        env:
+          STEMFORGE_LIVE_ASSETS: "1"
+        run: >-
+          dotnet test StemForge.slnx --configuration Release --no-build
+          -- --filter-class StemForge.Tests.Services.LiveBundledAssetTests
