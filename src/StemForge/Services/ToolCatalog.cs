@@ -14,6 +14,7 @@ namespace StemForge.Services;
 public static class ToolCatalog
 {
     private static readonly PlatformInfo WinX64 = new(OSKind.Windows, Architecture.X64);
+    private static readonly PlatformInfo LinuxX64 = new(OSKind.Linux, Architecture.X64);
 
     // Tools are inlined into this single initializer rather than referenced as named static
     // members: static initializers run in textual order, so a separate `All = [Uv, ...]` that
@@ -102,6 +103,17 @@ public static class ToolCatalog
                         Format: ArchiveFormat.Zip,
                         Layout: BundledLayout.FlattenFromBinSubdir
                     ),
+                    // Same BtbN build/version as Windows. Nightly autobuilds publish only a
+                    // static linux64-gpl tar.xz (no -shared variant), but its bin/ layout matches
+                    // so FlattenFromBinSubdir extracts ffmpeg/ffprobe/ffplay identically.
+                    [LinuxX64] = new(
+                        Url: "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/"
+                            + "autobuild-2026-05-26-17-26/"
+                            + "ffmpeg-N-124653-g0ac3b00a18-linux64-gpl.tar.xz",
+                        Sha256: "89e1f02736132c39bb98392d561362d7747934466ed480a20fe4481c2f71a9e7",
+                        Format: ArchiveFormat.TarXz,
+                        Layout: BundledLayout.FlattenFromBinSubdir
+                    ),
                 }
             )
         ),
@@ -124,6 +136,12 @@ public static class ToolCatalog
                         Format: ArchiveFormat.RawBinary,
                         Layout: BundledLayout.DownloadIsBinary
                     ),
+                    [LinuxX64] = new(
+                        Url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp_linux",
+                        Sha256: "c2b0189f581fe4a2ddd41954f1bcb7d327db04b07ed0dea97e4f1b3e09b5dd8e",
+                        Format: ArchiveFormat.RawBinary,
+                        Layout: BundledLayout.DownloadIsBinary
+                    ),
                 }
             )
         ),
@@ -142,6 +160,13 @@ public static class ToolCatalog
                         Url: "https://github.com/denoland/deno/releases/download/v2.8.0/"
                             + "deno-x86_64-pc-windows-msvc.zip",
                         Sha256: "9b98d1f456878c8ac5caa55779a04f2f1f91f8e942d6ef3f887681698f634adf",
+                        Format: ArchiveFormat.Zip,
+                        Layout: BundledLayout.SingleFileAtRoot
+                    ),
+                    [LinuxX64] = new(
+                        Url: "https://github.com/denoland/deno/releases/download/v2.8.0/"
+                            + "deno-x86_64-unknown-linux-gnu.zip",
+                        Sha256: "be2c8b53c8ca1d66be76feb9b1a524419da708b00d4ca074cf5c633c81c1627b",
                         Format: ArchiveFormat.Zip,
                         Layout: BundledLayout.SingleFileAtRoot
                     ),
