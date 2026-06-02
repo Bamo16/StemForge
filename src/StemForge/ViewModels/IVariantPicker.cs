@@ -14,6 +14,12 @@ public interface IVariantPicker : INotifyPropertyChanged
     bool IsCpu { get; }
     bool IsCuda { get; }
     bool IsDirectML { get; }
+
+    /// <summary>Whether each variant is offered on the running OS (drives button visibility).</summary>
+    bool HasCpuVariant { get; }
+    bool HasCudaVariant { get; }
+    bool HasDirectMLVariant { get; }
+
     string GpuHint { get; }
     ICommand SetVariantCommand { get; }
 }

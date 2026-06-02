@@ -24,7 +24,8 @@ public partial class SetupWizardViewModel(
     GpuDetector gpuDetector,
     ToolInstaller toolInstaller,
     ToolStateService toolState,
-    AppPaths paths
+    AppPaths paths,
+    PlatformInfo platform
 ) : ViewModelBase, IVariantPicker
 {
     ICommand IVariantPicker.SetVariantCommand => SetGpuVariantCommand;
@@ -35,6 +36,14 @@ public partial class SetupWizardViewModel(
     private readonly ToolInstaller _toolInstaller = toolInstaller;
     private readonly ToolStateService _toolState = toolState;
     private readonly AppPaths _paths = paths;
+
+    // GPU variants audio-separator offers on the running OS; drives which picker buttons show.
+    private readonly IReadOnlyList<GpuVariant> _availableVariants = ToolCatalog
+        .Get(ToolKind.AudioSeparator)
+        .InstallStrategy
+        is UvToolInstall uv
+        ? [.. uv.VariantsFor(platform.Os).Select(v => v.Variant)]
+        : [];
 
     public event Action? SetupCompleted;
     public event Action? SetupDismissed;
@@ -90,6 +99,10 @@ public partial class SetupWizardViewModel(
     public bool IsCpu => GpuVariant == GpuVariant.Cpu;
     public bool IsCuda => GpuVariant == GpuVariant.Cuda;
     public bool IsDirectML => GpuVariant == GpuVariant.DirectML;
+
+    public bool HasCpuVariant => _availableVariants.Contains(GpuVariant.Cpu);
+    public bool HasCudaVariant => _availableVariants.Contains(GpuVariant.Cuda);
+    public bool HasDirectMLVariant => _availableVariants.Contains(GpuVariant.DirectML);
 
     // ── Directories ───────────────────────────────────────────────────────────
 

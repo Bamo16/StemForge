@@ -16,6 +16,15 @@ public static class ToolCatalog
     private static readonly PlatformInfo WinX64 = new(OSKind.Windows, Architecture.X64);
     private static readonly PlatformInfo LinuxX64 = new(OSKind.Linux, Architecture.X64);
 
+    // PyTorch CUDA wheels are not on PyPI; cu121 requires CUDA 12.1+ drivers. Shared by Windows
+    // and Linux, which install the identical wheel index. CPU is the universal fallback.
+    private static readonly ToolVariant CudaVariant = new(
+        GpuVariant.Cuda,
+        PipExtra: "gpu",
+        ExtraArgs: ["--extra-index-url", "https://download.pytorch.org/whl/cu121"]
+    );
+    private static readonly ToolVariant CpuVariant = new(GpuVariant.Cpu, "cpu");
+
     // Tools are inlined into this single initializer rather than referenced as named static
     // members: static initializers run in textual order, so a separate `All = [Uv, ...]` that
     // referenced members declared below it would observe their backing fields while still null.
@@ -65,21 +74,12 @@ public static class ToolCatalog
                 PythonVersion: "3.10",
                 Variants: new Dictionary<OSKind, IReadOnlyList<ToolVariant>>
                 {
-                    [OSKind.Windows] =
-                    [
-                        // PyTorch CUDA wheels are not on PyPI; cu121 requires CUDA 12.1+ drivers.
-                        new(
-                            GpuVariant.Cuda,
-                            PipExtra: "gpu",
-                            ExtraArgs:
-                            [
-                                "--extra-index-url",
-                                "https://download.pytorch.org/whl/cu121",
-                            ]
-                        ),
-                        new(GpuVariant.DirectML, "dml"),
-                        new(GpuVariant.Cpu, "cpu"),
-                    ],
+                    // CUDA on Windows: NVIDIA GPU plus DirectML fallback for other vendors.
+                    [OSKind.Windows] = [CudaVariant, new(GpuVariant.DirectML, "dml"), CpuVariant],
+                    // CUDA on Linux mirrors Windows (same cu121 wheel index). No DirectML on Linux.
+                    [OSKind.Linux] = [CudaVariant, CpuVariant],
+                    // macOS: CPU only for now. CoreML/MPS acceleration is deferred.
+                    [OSKind.MacOS] = [CpuVariant],
                 },
                 VariantProbe: new VariantProbe("tools/detect_variant.py")
             )
