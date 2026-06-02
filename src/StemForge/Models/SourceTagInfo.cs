@@ -17,4 +17,18 @@ public sealed record SourceTagInfo
 
     /// <summary>MIME type of <see cref="CoverArtBytes"/>. Defaults to image/jpeg.</summary>
     public string CoverArtMimeType { get; init; } = "image/jpeg";
+
+    // ── Exact-source provenance (URL jobs only; null for local-file jobs) ──────
+
+    /// <summary>Literal source URL the audio was fetched from, e.g. the YouTube watch page.</summary>
+    public string? SourceUrl { get; init; }
+
+    /// <summary>Source audio codec reported by yt-dlp, e.g. "opus" or "mp4a.40.2".</summary>
+    public string? SourceCodec { get; init; }
+
+    /// <summary>Source audio bitrate in kbps reported by yt-dlp.</summary>
+    public double? SourceBitrateKbps { get; init; }
+
+    /// <summary>yt-dlp format-id of the exact format that was downloaded, e.g. "251".</summary>
+    public string? SourceFormatId { get; init; }
 }

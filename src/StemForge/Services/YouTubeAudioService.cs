@@ -87,7 +87,9 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         LogAudioFormats(info.AudioOnlyFormats, selected.FormatId);
 
         return new YtDlpMetadata(
-            SourceUrl: url,
+            // Prefer yt-dlp's canonical page URL so the provenance tag is stable and free of
+            // tracking params. Fall back to the originally requested URL if it is absent.
+            SourceUrl: info.WebpageUrl ?? info.OriginalUrl ?? url,
             Title: info.Title,
             Artist: info.Artist,
             Uploader: info.Uploader,

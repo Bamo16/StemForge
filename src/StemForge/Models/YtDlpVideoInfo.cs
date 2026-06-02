@@ -13,6 +13,14 @@ public sealed record YtDlpVideoInfo
     public string? FormatNote { get; init; }
     public string? Url { get; init; }
 
+    /// <summary>Canonical page URL for the source, e.g. the YouTube watch page.</summary>
+    [JsonPropertyName("webpage_url")]
+    public string? WebpageUrl { get; init; }
+
+    /// <summary>The URL originally requested, before any redirects/normalisation by yt-dlp.</summary>
+    [JsonPropertyName("original_url")]
+    public string? OriginalUrl { get; init; }
+
     [JsonPropertyName("ext")]
     public string? Extension { get; init; }
 
