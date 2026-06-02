@@ -23,7 +23,8 @@ public sealed class SetupWizardViewModelTests
             new GpuDetector(runner),
             new ToolInstaller(runner, paths, bundledFetcher, platform),
             new ToolStateService(setupDetector),
-            paths
+            paths,
+            platform
         );
     }
 
@@ -196,5 +197,18 @@ public sealed class SetupWizardViewModelTests
 
         vm.SetGpuVariantCommand.Execute("DirectML");
         Assert.True(vm.IsDirectML);
+    }
+
+    [AvaloniaFact]
+    public void VariantPicker_OffersOnlyCurrentOsVariants()
+    {
+        IVariantPicker vm = Build();
+
+        var install = (UvToolInstall)ToolCatalog.Get(ToolKind.AudioSeparator).InstallStrategy;
+        var expected = install.VariantsFor(PlatformInfo.Current.Os).Select(v => v.Variant).ToList();
+
+        Assert.Equal(expected.Contains(GpuVariant.Cpu), vm.HasCpuVariant);
+        Assert.Equal(expected.Contains(GpuVariant.Cuda), vm.HasCudaVariant);
+        Assert.Equal(expected.Contains(GpuVariant.DirectML), vm.HasDirectMLVariant);
     }
 }
