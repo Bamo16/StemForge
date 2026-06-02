@@ -200,6 +200,57 @@ public sealed class YouTubeAudioServiceTests
         Assert.Null(info.SelectBestAudioFormat().Url);
     }
 
+    // ── AudioFormatsByPreference ─────────────────────────────────────────────
+
+    [Fact]
+    public void AudioFormatsByPreference_OrdersBestFirstAndFloatsRecommended()
+    {
+        // Representative yt-dlp output: formats in ascending preference (best last), mixed
+        // sample rates, plus a video-only format that must be ignored. The recommended pick is
+        // the 44.1 kHz AAC (format 140) — yt-dlp's default would rank the 160 kbps 48 kHz Opus
+        // higher by bitrate, so floating the recommended one verifies the default/top selection.
+        var info = new YtDlpVideoInfo
+        {
+            Formats =
+            [
+                MakeAudioFormat("249", "opus", abr: 50.0, asr: 48000),
+                new YtDlpFormat
+                {
+                    FormatId = "137",
+                    AudioCodec = "none",
+                    VideoCodec = "avc1",
+                    Url = "https://media.example.com/137",
+                },
+                MakeAudioFormat("140", "mp4a.40.2", abr: 128.0, asr: 44100),
+                MakeAudioFormat("251", "opus", abr: 160.0, asr: 48000),
+            ],
+        };
+
+        var ordered = info.AudioFormatsByPreference(recommendedFormatId: "140");
+
+        // Video-only 137 dropped; recommended 140 floated to top; remainder best-first by bitrate.
+        Assert.Equal(["140", "251", "249"], ordered.Select(f => f.FormatId));
+    }
+
+    [Fact]
+    public void AudioFormatsByPreference_EqualBitrate_BreaksTieByCodecThenFormatId()
+    {
+        var info = new YtDlpVideoInfo
+        {
+            Formats =
+            [
+                MakeAudioFormat("a-mp3", "mp4a.40.34", abr: 128.0, asr: 44100),
+                MakeAudioFormat("b-opus", "opus", abr: 128.0, asr: 48000),
+                MakeAudioFormat("c-aac", "mp4a.40.2", abr: 128.0, asr: 44100),
+            ],
+        };
+
+        var ordered = info.AudioFormatsByPreference(recommendedFormatId: null);
+
+        // Same bitrate/channels → codec preference: opus > aac > mp3.
+        Assert.Equal(["b-opus", "c-aac", "a-mp3"], ordered.Select(f => f.FormatId));
+    }
+
     // ── ResolveAsync ─────────────────────────────────────────────────────────
 
     [Fact]

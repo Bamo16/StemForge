@@ -58,6 +58,28 @@ public sealed record YtDlpVideoInfo
     public List<YtDlpFormat> AudioOnlyFormats => [.. Formats.Where(f => f.IsAudioOnly)];
 
     /// <summary>
+    /// Audio-only formats ordered best-first to mirror yt-dlp's own format preference, so the
+    /// picker dropdown reads top-down from the highest-quality option. yt-dlp emits formats in
+    /// ascending preference (best last); this returns them best-first by applying the same audio
+    /// ranking yt-dlp uses by default (bitrate, then channels, then codec, then filesize) with a
+    /// deterministic format-id tiebreak. The format yt-dlp would pick by default (see
+    /// <see cref="SelectBestAudioFormat"/>) is floated to the top so the default/top selection
+    /// matches yt-dlp's default pick even when the ranking would otherwise rank a higher-bitrate
+    /// non-44.1 kHz format above it.
+    /// </summary>
+    public List<YtDlpFormat> AudioFormatsByPreference(string? recommendedFormatId)
+    {
+        var ordered = AudioOnlyFormats
+            .OrderByDescending(f => f.FormatId == recommendedFormatId)
+            .ThenByDescending(f => f.AudioBitrate)
+            .ThenByDescending(f => f.AudioChannels ?? 0)
+            .ThenByDescending(f => f.CodecPreference)
+            .ThenByDescending(f => f.FileSize ?? f.FileSizeApprox ?? 0)
+            .ThenBy(f => f.FormatId, StringComparer.Ordinal);
+        return [.. ordered];
+    }
+
+    /// <summary>
     /// Selects the best audio-only format from the formats list.
     /// Prefers 44.1 kHz unless the best non-44.1 kHz option has more than 10% higher bitrate
     /// (audio-separator always resamples to 44.1 kHz, so using a non-44.1 kHz format just adds
@@ -146,6 +168,25 @@ public sealed record YtDlpFormat
     /// </summary>
     [JsonIgnore]
     public double AudioBitrate => AverageAudioBitrate ?? AverageTotalBitrate ?? 0;
+
+    /// <summary>
+    /// Codec preference rank used as a tiebreak when bitrate and channels are equal. Higher is
+    /// better. Mirrors the relative ordering of yt-dlp's default acodec preference list
+    /// (lossless first, then opus/aac, down to mp3 and unknown codecs).
+    /// </summary>
+    [JsonIgnore]
+    public int CodecPreference =>
+        (AudioCodec ?? "") switch
+        {
+            "flac" => 7,
+            "alac" => 6,
+            "opus" => 5,
+            "mp4a.40.2" or "mp4a.40.5" or "mp4a.40.29" or "aac" => 4,
+            "vorbis" => 3,
+            "ac-3" or "a52" or "ec-3" => 2,
+            "mp4a.40.34" or "mp3" => 1,
+            _ => 0,
+        };
 }
 
 /// <summary>
