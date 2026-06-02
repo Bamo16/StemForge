@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
+using SharpCompress.Compressors.Xz;
 using StemForge.Models;
 
 namespace StemForge.Services;
@@ -7,8 +8,9 @@ namespace StemForge.Services;
 /// <summary>
 /// Downloads a tool's <see cref="BundledFetch"/> asset, verifies its SHA-256, and installs the
 /// binary into <see cref="AppPaths.BundledBinDir"/>. Consolidates the former per-tool
-/// FfmpegFetcher/DenoFetcher: the per-tool differences (raw exe vs archive layout) are expressed
-/// by <see cref="ExtractMode"/> in the catalog rather than separate classes.
+/// FfmpegFetcher/DenoFetcher: the per-tool differences are expressed as two orthogonal axes on
+/// the catalog's <see cref="BundledAsset"/> (<see cref="ArchiveFormat"/> and
+/// <see cref="BundledLayout"/>) rather than separate classes.
 /// </summary>
 public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform)
 {
@@ -36,8 +38,13 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform)
 
         Directory.CreateDirectory(_paths.BundledBinDir);
 
-        var suffix =
-            asset.ExtractMode == ExtractMode.RawBinary ? _platform.ExecutableSuffix : ".zip";
+        var suffix = asset.Format switch
+        {
+            ArchiveFormat.RawBinary => _platform.ExecutableSuffix,
+            ArchiveFormat.Zip => ".zip",
+            ArchiveFormat.TarXz => ".tar.xz",
+            _ => throw new ArgumentOutOfRangeException(nameof(asset)),
+        };
         var temp = Path.Combine(
             Path.GetTempPath(),
             $"stemforge-{tool.CliName}-{Guid.NewGuid():N}{suffix}"
@@ -45,8 +52,9 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform)
         try
         {
             await DownloadAsync(asset.Url, temp, progress, ct);
+            // SHA-256 is verified on the downloaded bytes before any extraction touches disk.
             VerifyChecksum(temp, asset.Sha256, progress);
-            Install(asset.ExtractMode, temp, tool, progress);
+            Install(asset, temp, tool, progress);
         }
         finally
         {
@@ -127,63 +135,165 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform)
     }
 
     private void Install(
-        ExtractMode mode,
+        BundledAsset asset,
         string downloaded,
         Tool tool,
         IProgress<InstallProgress>? progress
     )
     {
-        progress?.Report(
-            new InstallProgress(mode == ExtractMode.RawBinary ? "Installing" : "Extracting")
-        );
+        var isRaw = asset.Format == ArchiveFormat.RawBinary;
+        progress?.Report(new InstallProgress(isRaw ? "Installing" : "Extracting"));
 
         var binaryName = tool.BundledBinaryFileName(_platform);
-        switch (mode)
+        switch (asset.Layout)
         {
-            case ExtractMode.RawBinary:
+            case BundledLayout.DownloadIsBinary:
                 File.Copy(
                     downloaded,
                     Path.Combine(_paths.BundledBinDir, binaryName),
                     overwrite: true
                 );
                 break;
-            case ExtractMode.SingleFileAtRoot:
-                ExtractSingleFile(downloaded, binaryName);
+            case BundledLayout.SingleFileAtRoot:
+                ExtractToDirectory(asset, downloaded, binaryName, _paths.BundledBinDir);
                 break;
-            case ExtractMode.FlattenFromBinSubdir:
-                ExtractBinDir(downloaded);
+            case BundledLayout.FlattenFromBinSubdir:
+                ExtractToDirectory(asset, downloaded, binaryName, _paths.BundledBinDir);
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
+                throw new ArgumentOutOfRangeException(nameof(asset), asset.Layout, null);
         }
     }
 
-    private void ExtractSingleFile(string zipPath, string binaryName)
+    /// <summary>
+    /// Extracts the target binary (and, for <see cref="BundledLayout.FlattenFromBinSubdir"/>, its
+    /// sibling runtime files) from a zip or tar.xz archive into <paramref name="targetDir"/>.
+    /// Exposed internally so the extraction logic is testable against a temp directory without
+    /// hitting the real <see cref="AppPaths.BundledBinDir"/>.
+    /// </summary>
+    internal static void ExtractToDirectory(
+        BundledAsset asset,
+        string archivePath,
+        string binaryName,
+        string targetDir
+    )
     {
-        using var archive = ZipFile.OpenRead(zipPath);
-        var entry =
-            archive.Entries.FirstOrDefault(e =>
-                e.Name.Equals(binaryName, StringComparison.OrdinalIgnoreCase)
-            ) ?? throw new InvalidDataException($"{binaryName} not found in downloaded archive.");
-
-        entry.ExtractToFile(Path.Combine(_paths.BundledBinDir, binaryName), overwrite: true);
+        switch (asset.Layout)
+        {
+            case BundledLayout.SingleFileAtRoot:
+                ExtractSingleFile(asset.Format, archivePath, binaryName, targetDir);
+                break;
+            case BundledLayout.FlattenFromBinSubdir:
+                ExtractBinDir(asset.Format, archivePath, targetDir);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(asset), asset.Layout, null);
+        }
     }
 
-    private void ExtractBinDir(string zipPath)
+    private static void ExtractSingleFile(
+        ArchiveFormat format,
+        string archivePath,
+        string binaryName,
+        string targetDir
+    )
     {
-        using var archive = ZipFile.OpenRead(zipPath);
-        foreach (var entry in archive.Entries)
+        var found = false;
+        ForEachEntry(
+            format,
+            archivePath,
+            (name, copyTo) =>
+            {
+                var leaf = name[(name.LastIndexOf('/') + 1)..];
+                if (!found && leaf.Equals(binaryName, StringComparison.OrdinalIgnoreCase))
+                {
+                    using var dest = File.Create(Path.Combine(targetDir, binaryName));
+                    copyTo(dest);
+                    found = true;
+                }
+            }
+        );
+
+        if (!found)
+            throw new InvalidDataException($"{binaryName} not found in downloaded archive.");
+    }
+
+    private static void ExtractBinDir(ArchiveFormat format, string archivePath, string targetDir)
+    {
+        ForEachEntry(
+            format,
+            archivePath,
+            (name, copyTo) =>
+            {
+                // Match any entry under a 'bin/' subpath at any depth; flatten into targetDir.
+                var idx = name.IndexOf("/bin/", StringComparison.OrdinalIgnoreCase);
+                if (idx < 0)
+                    return;
+
+                var relativeName = name[(idx + "/bin/".Length)..];
+                if (relativeName.Length == 0 || relativeName.Contains('/'))
+                    return; // skip directory entries and nested subdirs under bin/ (none expected)
+
+                using var dest = File.Create(Path.Combine(targetDir, relativeName));
+                copyTo(dest);
+            }
+        );
+    }
+
+    /// <summary>
+    /// Iterates the file entries of a zip or tar.xz archive, invoking <paramref name="onEntry"/>
+    /// with the entry's full path (always forward-slash separated) and a callback that copies the
+    /// entry's bytes into a destination stream. Directory entries are skipped.
+    /// </summary>
+    private static void ForEachEntry(
+        ArchiveFormat format,
+        string archivePath,
+        Action<string, Action<Stream>> onEntry
+    )
+    {
+        switch (format)
         {
-            // Match any entry under a 'bin/' subdirectory at any depth. Flatten into BundledBinDir.
-            var idx = entry.FullName.IndexOf("/bin/", StringComparison.OrdinalIgnoreCase);
-            if (idx < 0 || entry.FullName.EndsWith('/'))
-                continue;
+            case ArchiveFormat.Zip:
+                using (var archive = ZipFile.OpenRead(archivePath))
+                {
+                    foreach (var entry in archive.Entries)
+                    {
+                        if (entry.FullName.EndsWith('/'))
+                            continue;
+                        onEntry(
+                            entry.FullName,
+                            dest =>
+                            {
+                                using var src = entry.Open();
+                                src.CopyTo(dest);
+                            }
+                        );
+                    }
+                }
+                break;
 
-            var relativeName = entry.FullName[(idx + "/bin/".Length)..];
-            if (relativeName.Length == 0 || relativeName.Contains('/'))
-                continue; // skip nested subdirs under bin/ (none expected in these archives)
+            case ArchiveFormat.TarXz:
+                // .NET 11 ships a tar reader (System.Formats.Tar) but no xz/LZMA decoder, so the
+                // xz layer is peeled by SharpCompress and the resulting tar stream is read by the
+                // BCL tar reader.
+                using (var file = File.OpenRead(archivePath))
+                using (var xz = new XZStream(file))
+                using (var tar = new System.Formats.Tar.TarReader(xz))
+                {
+                    while (tar.GetNextEntry() is { } entry)
+                    {
+                        if (entry.EntryType is not System.Formats.Tar.TarEntryType.RegularFile)
+                            continue;
+                        onEntry(
+                            entry.Name.Replace('\\', '/'),
+                            dest => entry.DataStream?.CopyTo(dest)
+                        );
+                    }
+                }
+                break;
 
-            entry.ExtractToFile(Path.Combine(_paths.BundledBinDir, relativeName), overwrite: true);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(format), format, null);
         }
     }
 }

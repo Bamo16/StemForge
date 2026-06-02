@@ -99,7 +99,8 @@ public static class ToolCatalog
                             + "autobuild-2026-05-26-17-26/"
                             + "ffmpeg-N-124653-g0ac3b00a18-win64-gpl-shared.zip",
                         Sha256: "5ea46ea816a48f48e0d4c2ccf5997b4201bc8bed0be8ef05ccd169dc91d11dee",
-                        ExtractMode: ExtractMode.FlattenFromBinSubdir
+                        Format: ArchiveFormat.Zip,
+                        Layout: BundledLayout.FlattenFromBinSubdir
                     ),
                 }
             )
@@ -120,7 +121,8 @@ public static class ToolCatalog
                     [WinX64] = new(
                         Url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp.exe",
                         Sha256: "3db811b366b2da47337d2fcfdfe5bbd9a258dad3f350c54974f005df115a1545",
-                        ExtractMode: ExtractMode.RawBinary
+                        Format: ArchiveFormat.RawBinary,
+                        Layout: BundledLayout.DownloadIsBinary
                     ),
                 }
             )
@@ -140,7 +142,8 @@ public static class ToolCatalog
                         Url: "https://github.com/denoland/deno/releases/download/v2.8.0/"
                             + "deno-x86_64-pc-windows-msvc.zip",
                         Sha256: "9b98d1f456878c8ac5caa55779a04f2f1f91f8e942d6ef3f887681698f634adf",
-                        ExtractMode: ExtractMode.SingleFileAtRoot
+                        Format: ArchiveFormat.Zip,
+                        Layout: BundledLayout.SingleFileAtRoot
                     ),
                 }
             )
