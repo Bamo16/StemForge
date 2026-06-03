@@ -200,6 +200,62 @@ public sealed class YouTubeAudioServiceTests
         Assert.Null(info.SelectBestAudioFormat().Url);
     }
 
+    // ── AudioFormatsByPreference ─────────────────────────────────────────────
+
+    [Fact]
+    public void AudioFormatsByPreference_OrdersByBitrate_DoesNotFloatRecommended()
+    {
+        // Mirrors a real YouTube Music result: a 48 kHz Opus (774) edges out the 44.1 kHz AAC
+        // (141) on raw bitrate, plus lower-bitrate options and a video-only format to ignore.
+        var info = new YtDlpVideoInfo
+        {
+            Formats =
+            [
+                MakeAudioFormat("249", "opus", abr: 49.0, asr: 48000),
+                new YtDlpFormat
+                {
+                    FormatId = "137",
+                    AudioCodec = "none",
+                    VideoCodec = "avc1",
+                    Url = "https://media.example.com/137",
+                },
+                MakeAudioFormat("251", "opus", abr: 129.0, asr: 48000),
+                MakeAudioFormat("140", "mp4a.40.2", abr: 130.0, asr: 44100),
+                MakeAudioFormat("141", "mp4a.40.2", abr: 258.0, asr: 44100),
+                MakeAudioFormat("774", "opus", abr: 259.0, asr: 48000),
+            ],
+        };
+
+        var ordered = info.AudioFormatsByPreference();
+
+        // Video-only 137 dropped; strict bitrate-descending order.
+        Assert.Equal(["774", "141", "140", "251", "249"], ordered.Select(f => f.FormatId));
+
+        // The AUTO pick is the 44.1 kHz 141 (avoids a 48->44.1 resample), and it is NOT floated
+        // to the top: it sits in its bitrate position, just below the marginally higher 774.
+        Assert.Equal("141", info.SelectBestAudioFormat().FormatId);
+        Assert.Equal(1, ordered.FindIndex(f => f.FormatId == "141"));
+    }
+
+    [Fact]
+    public void AudioFormatsByPreference_EqualBitrate_BreaksTieByCodecThenFormatId()
+    {
+        var info = new YtDlpVideoInfo
+        {
+            Formats =
+            [
+                MakeAudioFormat("a-mp3", "mp4a.40.34", abr: 128.0, asr: 44100),
+                MakeAudioFormat("b-opus", "opus", abr: 128.0, asr: 48000),
+                MakeAudioFormat("c-aac", "mp4a.40.2", abr: 128.0, asr: 44100),
+            ],
+        };
+
+        var ordered = info.AudioFormatsByPreference();
+
+        // Same bitrate/channels → codec preference: opus > aac > mp3.
+        Assert.Equal(["b-opus", "c-aac", "a-mp3"], ordered.Select(f => f.FormatId));
+    }
+
     // ── ResolveAsync ─────────────────────────────────────────────────────────
 
     [Fact]
