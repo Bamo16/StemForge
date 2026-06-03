@@ -29,14 +29,9 @@ public interface IAppInfo
 public sealed class AppInfo(string productName, Version? version) : IAppInfo
 {
     private const string Fallback = "dev";
-
-    private readonly Version? _version = version;
-
     public string ProductName { get; } = productName;
-
-    public string ShortVersion => _version?.ToString(3) ?? Fallback;
-
-    public string FullVersion => _version?.ToString() ?? Fallback;
+    public string ShortVersion => version?.ToString(3) ?? Fallback;
+    public string FullVersion => version?.ToString() ?? Fallback;
 
     /// <summary>Builds an <see cref="AppInfo"/> from the executing assembly's metadata.</summary>
     public static AppInfo Current { get; } =

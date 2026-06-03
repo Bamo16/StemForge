@@ -19,10 +19,10 @@ public sealed class AudioTaggerTests
     [Fact]
     public void BuildProvenance_UrlJob_IncludesAllSourceFields()
     {
-        var provenance = AudioTagger.BuildProvenance(UrlSource(), "vocals:model-x", "0.2.0");
+        var provenance = AudioTagger.BuildProvenance(UrlSource(), "Vocal - Full", "0.2.0");
 
         Assert.Contains("stemforge/0.2.0", provenance);
-        Assert.Contains("model: vocals:model-x", provenance);
+        Assert.Contains("preset: Vocal - Full", provenance);
         Assert.Contains("date: ", provenance);
         Assert.Contains("source: https://www.youtube.com/watch?v=abc123", provenance);
         Assert.Contains("codec: opus", provenance);
@@ -31,15 +31,25 @@ public sealed class AudioTaggerTests
     }
 
     [Fact]
+    public void BuildProvenance_DescriptorIsLabeledPresetNotModel()
+    {
+        // #24: the descriptor field is now per-output preset info, labeled "preset:" not "model:".
+        var provenance = AudioTagger.BuildProvenance(null, "Instrumental - Full", "0.2.0");
+
+        Assert.Contains("preset: Instrumental - Full", provenance);
+        Assert.DoesNotContain("model:", provenance);
+    }
+
+    [Fact]
     public void BuildProvenance_LocalFileJob_OmitsSourceFields()
     {
         // A local-file job has no URL/codec/bitrate/format-id — only title/artist + cover.
         var localSource = new SourceTagInfo { Title = "Track", Artist = "Artist" };
 
-        var provenance = AudioTagger.BuildProvenance(localSource, "vocals:model-x", "0.2.0");
+        var provenance = AudioTagger.BuildProvenance(localSource, "Vocal - Full", "0.2.0");
 
         Assert.Contains("stemforge/0.2.0", provenance);
-        Assert.Contains("model: vocals:model-x", provenance);
+        Assert.Contains("preset: Vocal - Full", provenance);
         Assert.DoesNotContain("source:", provenance);
         Assert.DoesNotContain("codec:", provenance);
         Assert.DoesNotContain("bitrate:", provenance);

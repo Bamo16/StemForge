@@ -64,18 +64,31 @@ public sealed partial class UserPresetService
     }
 
     /// <summary>
-    /// One-shot migration of the presets file from the legacy Local location to the current
-    /// Roaming location. Only acts when a legacy file exists and no Roaming file is present, so it
-    /// never clobbers presets already written under Roaming. Idempotent and a no-op once migrated
-    /// (or when no legacy file exists). Mirrors the migrate-on-load pattern in
+    /// Reconciles the presets file between the legacy Local location and the current Roaming
+    /// location so the two never coexist indefinitely. Roaming is the single source of truth:
+    /// <list type="bullet">
+    /// <item>No legacy file: nothing to do.</item>
+    /// <item>Legacy file but no Roaming file: move (migrate) the legacy file to Roaming.</item>
+    /// <item>Both present: Roaming wins, so the orphaned legacy file is deleted. No preset loss,
+    /// because Roaming already holds the authoritative copy.</item>
+    /// </list>
+    /// Idempotent and a no-op once reconciled. Mirrors the migrate-on-load pattern in
     /// <see cref="StemForge.Models.AppSettings.MigrateLegacyToolPaths"/>.
     /// </summary>
     internal static void MigrateLegacyLocation(string roamingPath, string legacyPath)
     {
         try
         {
-            if (File.Exists(roamingPath) || !File.Exists(legacyPath))
+            if (!File.Exists(legacyPath))
                 return;
+
+            if (File.Exists(roamingPath))
+            {
+                // Roaming is authoritative; drop the stale Local duplicate so the two do not
+                // coexist. Nothing is lost because Roaming already holds the presets.
+                File.Delete(legacyPath);
+                return;
+            }
 
             Directory.CreateDirectory(Path.GetDirectoryName(roamingPath)!);
             File.Move(legacyPath, roamingPath);
@@ -84,7 +97,7 @@ public sealed partial class UserPresetService
         {
             AppLogger.Warning(
                 nameof(UserPresetService),
-                $"Could not migrate user presets to Roaming: {ex.Message}"
+                $"Could not reconcile user presets between Local and Roaming: {ex.Message}"
             );
         }
     }

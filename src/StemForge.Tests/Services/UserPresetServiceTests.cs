@@ -158,10 +158,59 @@ public sealed class UserPresetServiceTests
 
             var svc = UserPresetService.Load(roaming, legacy);
 
-            // Roaming wins; legacy is left untouched (not migrated over the existing file).
+            // Roaming wins (never clobbered by the legacy copy) and remains the source of truth.
             Assert.Single(svc.Presets);
             Assert.Equal("roaming-id", svc.Presets[0].Id);
-            Assert.True(File.Exists(legacy));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Load_BothFilesExist_RemovesOrphanedLegacyAndKeepsRoamingIntact()
+    {
+        var (roaming, legacy, dir) = MakeTempPaths();
+        try
+        {
+            // Stale state from issue #26: a Roaming file (authoritative) and a leftover Local copy
+            // coexist. The Roaming content must survive untouched and the orphan must be gone.
+            var roamingJson = SerializeOne("roaming-id", "Roaming Preset");
+            File.WriteAllText(roaming, roamingJson);
+            File.WriteAllText(legacy, SerializeOne("legacy-id", "Legacy Preset"));
+
+            var svc = UserPresetService.Load(roaming, legacy);
+
+            // No preset loss: Roaming content is exactly what we seeded.
+            Assert.Single(svc.Presets);
+            Assert.Equal("roaming-id", svc.Presets[0].Id);
+            Assert.Equal(roamingJson, File.ReadAllText(roaming));
+            // The two no longer coexist: the orphaned Local file is removed.
+            Assert.True(File.Exists(roaming));
+            Assert.False(File.Exists(legacy));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Migrate_BothFilesExist_RemovesLegacyWithoutTouchingRoaming()
+    {
+        var (roaming, legacy, dir) = MakeTempPaths();
+        try
+        {
+            var roamingJson = SerializeOne("roaming-id", "Roaming Preset");
+            File.WriteAllText(roaming, roamingJson);
+            File.WriteAllText(legacy, SerializeOne("legacy-id", "Legacy Preset"));
+
+            UserPresetService.MigrateLegacyLocation(roaming, legacy);
+
+            // Reconciliation deletes the orphan and leaves the authoritative Roaming file as-is.
+            Assert.False(File.Exists(legacy));
+            Assert.Equal(roamingJson, File.ReadAllText(roaming));
         }
         finally
         {
