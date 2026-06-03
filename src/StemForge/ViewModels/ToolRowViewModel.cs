@@ -34,14 +34,26 @@ public sealed partial class ToolRowViewModel(Tool tool, IVariantPicker? variantP
     [ObservableProperty]
     public partial string? InstallError { get; set; }
 
+    /// <summary>True while this tool is actively installing; drives the indeterminate progress row.</summary>
+    [ObservableProperty]
+    public partial bool IsInstalling { get; set; }
+
+    /// <summary>
+    /// Message shown beside the indeterminate progress bar while installing (e.g. a heads-up that
+    /// audio-separator can take several minutes). Empty when there is nothing extra to say.
+    /// </summary>
+    [ObservableProperty]
+    public partial string InProgressMessage { get; set; } = string.Empty;
+
     /// <summary>Found and installed during this wizard run (vs already present at detect time).</summary>
     public bool ShowInstalledNow => Found && InstallSucceeded;
 
     /// <summary>Found but was already present when the wizard checked.</summary>
     public bool ShowAlreadyInstalled => Found && !InstallSucceeded;
 
-    /// <summary>Show the inline variant picker only while this tool is queued for install.</summary>
-    public bool ShowVariantPicker => VariantPicker is not null && WantInstall && !Found;
+    /// <summary>Show the inline variant picker only while this tool is queued for install and idle.</summary>
+    public bool ShowVariantPicker =>
+        VariantPicker is not null && WantInstall && !Found && !IsInstalling;
 
     partial void OnFoundChanged(bool value)
     {
@@ -52,6 +64,8 @@ public sealed partial class ToolRowViewModel(Tool tool, IVariantPicker? variantP
     partial void OnInstallSucceededChanged(bool value) => RaiseOutcome();
 
     partial void OnWantInstallChanged(bool value) => OnPropertyChanged(nameof(ShowVariantPicker));
+
+    partial void OnIsInstallingChanged(bool value) => OnPropertyChanged(nameof(ShowVariantPicker));
 
     private void RaiseOutcome()
     {

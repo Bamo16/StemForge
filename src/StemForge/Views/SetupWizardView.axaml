@@ -369,6 +369,19 @@
                                                        IsVisible="{Binding VariantPicker.GpuHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                         </StackPanel>
 
+                                        <!-- In-progress (indeterminate) state while this tool installs -->
+                                        <StackPanel Margin="28,0,0,0" Spacing="6"
+                                                    IsVisible="{Binding IsInstalling}">
+                                            <TextBlock FontSize="11" FontWeight="Medium"
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       Text="{Binding InProgressMessage}"
+                                                       IsVisible="{Binding InProgressMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                            <ProgressBar IsIndeterminate="True" Height="2"
+                                                         Foreground="{DynamicResource AccentBrush}"
+                                                         Background="Transparent" />
+                                        </StackPanel>
+
                                         <!-- Per-row install error -->
                                         <TextBlock Margin="28,0,0,0" FontSize="11" TextWrapping="Wrap"
                                                    Foreground="{DynamicResource ErrorBrush}"
