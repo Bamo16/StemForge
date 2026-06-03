@@ -55,4 +55,24 @@ public sealed record Preset(
             PresetCategory.Instrumentals => $"Instrumental - {Label}",
             _ => $"{Category} - {Label}",
         };
+
+    /// <summary>
+    /// The single-model preset used by the "Add drum stems to output" step. Drum extraction is a
+    /// configured single-model pass rather than a catalog ensemble, so it is modelled here as a
+    /// first-class <see cref="SeparationMode.SingleModel"/> preset in the Drums category. It carries
+    /// the model for per-model provenance and yields a "Drums - {model}" display name consistent
+    /// with how separation presets tag their outputs, replacing the descriptor that was previously
+    /// synthesized inline at the tagging call site.
+    /// </summary>
+    public static Preset DrumExtraction(string modelFilename) =>
+        new(
+            Id: "drums",
+            Label: $"Drums - {Path.GetFileNameWithoutExtension(modelFilename)}",
+            Category: PresetCategory.Drums,
+            Description: "Drum stem extraction",
+            ModelCount: 1,
+            Vram: "",
+            Mode: SeparationMode.SingleModel,
+            PrimaryModel: modelFilename
+        );
 }

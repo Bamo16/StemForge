@@ -80,6 +80,18 @@ public sealed class PresetTests
         Assert.Equal("My Ensemble", preset.DisplayName);
     }
 
+    [Fact]
+    public void DrumExtraction_BuildsSingleModelDrumPreset_WithDisplayName()
+    {
+        var preset = Preset.DrumExtraction("htdemucs_ft.yaml");
+
+        Assert.Equal(PresetCategory.Drums, preset.Category);
+        Assert.Equal(SeparationMode.SingleModel, preset.Mode);
+        Assert.Equal("htdemucs_ft.yaml", preset.PrimaryModel);
+        Assert.Equal(["htdemucs_ft.yaml"], preset.AllModels);
+        Assert.Equal("Drums - htdemucs_ft", preset.DisplayName);
+    }
+
     private static Preset BuiltinPreset(string id, string label, PresetCategory category) =>
         new(
             Id: id,

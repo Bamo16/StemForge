@@ -230,12 +230,16 @@ public sealed class JobQueueService(
                         )
                             File.Move(drumStem.Path, renamedPath, overwrite: true);
 
-                        // Best-effort descriptor for the drum-extraction step. There is no
-                        // first-class preset for it today (a single configured model), so label
-                        // it with that model. Promoting this to a real preset is a follow-up.
-                        var drumDescriptor =
-                            $"Drums - {Path.GetFileNameWithoutExtension(_settings.DrumExtractionModel)}";
-                        AudioTagger.ApplyToFile(renamedPath, sourceInfo, drumDescriptor, version);
+                        // Drum extraction is modelled as a first-class single-model preset so its
+                        // output is tagged with a proper display name and per-model provenance,
+                        // consistent with the separation presets above.
+                        var drumPreset = Preset.DrumExtraction(_settings.DrumExtractionModel);
+                        AudioTagger.ApplyToFile(
+                            renamedPath,
+                            sourceInfo,
+                            drumPreset.DisplayName,
+                            version
+                        );
                         if (_settings.DrumStemLocation == DrumStemLocation.WithStems)
                             outputFiles.Add(renamedPath);
                     }
