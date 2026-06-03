@@ -32,6 +32,11 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppIn
         }
     );
 
+    // Prepends the tool name to a log message (e.g. "ffmpeg: Downloading") so cumulative
+    // multi-tool install logs read unambiguously. A null/blank name leaves the message as-is.
+    private static string Prefix(string? toolName, string message) =>
+        string.IsNullOrWhiteSpace(toolName) ? message : $"{toolName}: {message}";
+
     /// <summary>True when the tool's bundled binary is already present.</summary>
     public bool IsBundled(Tool tool) =>
         File.Exists(Path.Combine(_paths.BundledBinDir, tool.BundledBinaryFileName(_platform)));
@@ -64,11 +69,13 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppIn
             Path.GetTempPath(),
             $"stemforge-{tool.CliName}-{Guid.NewGuid():N}{suffix}"
         );
+        // Every log line is prefixed with the tool name so the wizard's cumulative multi-tool
+        // log stays unambiguous about which tool a Downloading/Verifying/Extracting line belongs to.
         try
         {
-            await DownloadAsync(asset.Url, temp, progress, ct);
+            await DownloadAsync(asset.Url, temp, progress, ct, tool.CliName);
             // SHA-256 is verified on the downloaded bytes before any extraction touches disk.
-            VerifyChecksum(temp, asset.Sha256, progress);
+            VerifyChecksum(temp, asset.Sha256, progress, tool.CliName);
             Install(asset, temp, tool, progress);
         }
         finally
@@ -93,7 +100,8 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppIn
         string url,
         string destination,
         IProgress<InstallProgress>? progress,
-        CancellationToken ct
+        CancellationToken ct,
+        string? toolName = null
     )
     {
         var http = _http.Value;
@@ -117,7 +125,9 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppIn
             // Throttle progress reports to once per ~1 MiB to keep the log readable.
             if (totalRead - lastReported >= 1_048_576 || totalRead == totalBytes)
             {
-                progress?.Report(new InstallProgress("Downloading", totalRead, totalBytes));
+                progress?.Report(
+                    new InstallProgress(Prefix(toolName, "Downloading"), totalRead, totalBytes)
+                );
                 lastReported = totalRead;
             }
         }
@@ -126,16 +136,19 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppIn
     private static void VerifyChecksum(
         string path,
         string expectedSha256,
-        IProgress<InstallProgress>? progress
+        IProgress<InstallProgress>? progress,
+        string? toolName = null
     )
     {
         if (string.IsNullOrEmpty(expectedSha256))
         {
-            progress?.Report(new InstallProgress("Skipping checksum (no pinned hash)"));
+            progress?.Report(
+                new InstallProgress(Prefix(toolName, "Skipping checksum (no pinned hash)"))
+            );
             return;
         }
 
-        progress?.Report(new InstallProgress("Verifying checksum"));
+        progress?.Report(new InstallProgress(Prefix(toolName, "Verifying checksum")));
 
         using var sha = SHA256.Create();
         using var stream = File.OpenRead(path);
@@ -155,7 +168,9 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppIn
     )
     {
         var isRaw = asset.Format == ArchiveFormat.RawBinary;
-        progress?.Report(new InstallProgress(isRaw ? "Installing" : "Extracting"));
+        progress?.Report(
+            new InstallProgress(Prefix(tool.CliName, isRaw ? "Installing" : "Extracting"))
+        );
 
         var binaryName = tool.BundledBinaryFileName(_platform);
         switch (asset.Layout)
