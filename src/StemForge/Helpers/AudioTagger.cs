@@ -90,7 +90,7 @@ public static class AudioTagger
     public static void ApplyToFile(
         string filePath,
         SourceTagInfo? sourceInfo,
-        string? modelDescriptor,
+        string? presetDescriptor,
         string toolVersion
     )
     {
@@ -123,7 +123,7 @@ public static class AudioTagger
             // Provenance in the Comment field — human-readable, survives all formats.
             // Exact-source fields (URL/codec/bitrate/format-id) are appended for URL jobs;
             // local-file jobs carry none of them and degrade to the tool/model/date prefix.
-            f.Tag.Comment = BuildProvenance(sourceInfo, modelDescriptor, toolVersion);
+            f.Tag.Comment = BuildProvenance(sourceInfo, presetDescriptor, toolVersion);
 
             f.Save();
         }
@@ -140,19 +140,19 @@ public static class AudioTagger
 
     /// <summary>
     /// Builds the human-readable provenance string written to the Comment tag. Always carries
-    /// the tool/model/date prefix; appends exact-source fields (URL, codec, bitrate, format-id)
+    /// the tool/preset/date prefix; appends exact-source fields (URL, codec, bitrate, format-id)
     /// only when present, so local-file jobs degrade gracefully without empty trailers.
     /// </summary>
     internal static string BuildProvenance(
         SourceTagInfo? sourceInfo,
-        string? modelDescriptor,
+        string? presetDescriptor,
         string toolVersion
     )
     {
         var parts = new List<string> { $"stemforge/{toolVersion}" };
 
-        if (modelDescriptor is { Length: > 0 } model)
-            parts.Add($"model: {model}");
+        if (presetDescriptor is { Length: > 0 } preset)
+            parts.Add($"preset: {preset}");
 
         parts.Add(
             $"date: {DateTimeOffset.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}"
