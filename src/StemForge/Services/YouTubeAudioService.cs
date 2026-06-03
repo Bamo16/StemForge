@@ -94,9 +94,9 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             FormatId: selected.FormatId,
             MediaUrl: mediaUrl,
             ThumbnailUrl: info.Thumbnail,
-            // Ordered best-first to mirror yt-dlp's own preference, with the default pick floated
-            // to the top so the picker's top/default selection matches what yt-dlp would choose.
-            AudioFormats: info.AudioFormatsByPreference(selected.FormatId) is { Count: > 0 } ranked
+            // Ordered best-first by bitrate; the AUTO pick (selected) is tagged in place by the
+            // picker rather than floated to the top.
+            AudioFormats: info.AudioFormatsByPreference() is { Count: > 0 } ranked
                 ? ranked
                 : [selected],
             Extractor: info.Extractor
