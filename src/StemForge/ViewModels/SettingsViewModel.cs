@@ -17,8 +17,11 @@ public partial class SettingsViewModel : PageViewModelBase
 
     public override string Title => "Settings";
 
-    /// <summary>Footer build stamp, e.g. "StemForge v0.2.0". Sourced from <see cref="IAppInfo"/>.</summary>
-    public string VersionLabel { get; }
+    /// <summary>Product name shown in the footer build stamp. Sourced from <see cref="IAppInfo"/>.</summary>
+    public string ProductName { get; }
+
+    /// <summary>Footer version, e.g. "v0.2.0" (rendered monospaced). Sourced from <see cref="IAppInfo"/>.</summary>
+    public string VersionText { get; }
 
     // ── Tool rows (status header + tool paths share this collection) ──────────
 
@@ -149,7 +152,8 @@ public partial class SettingsViewModel : PageViewModelBase
         _gpuDetector = gpuDetector;
         _toolInstaller = toolInstaller;
         _toolState = toolState;
-        VersionLabel = $"{appInfo.ProductName} v{appInfo.ShortVersion}";
+        ProductName = appInfo.ProductName;
+        VersionText = $"v{appInfo.ShortVersion}";
 
         foreach (var tool in ToolCatalog.All)
             SettingsToolRows.Add(new SettingsToolRowViewModel(tool));
