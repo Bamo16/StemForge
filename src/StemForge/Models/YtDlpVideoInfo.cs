@@ -58,20 +58,17 @@ public sealed record YtDlpVideoInfo
     public List<YtDlpFormat> AudioOnlyFormats => [.. Formats.Where(f => f.IsAudioOnly)];
 
     /// <summary>
-    /// Audio-only formats ordered best-first to mirror yt-dlp's own format preference, so the
-    /// picker dropdown reads top-down from the highest-quality option. yt-dlp emits formats in
-    /// ascending preference (best last); this returns them best-first by applying the same audio
-    /// ranking yt-dlp uses by default (bitrate, then channels, then codec, then filesize) with a
-    /// deterministic format-id tiebreak. The format yt-dlp would pick by default (see
-    /// <see cref="SelectBestAudioFormat"/>) is floated to the top so the default/top selection
-    /// matches yt-dlp's default pick even when the ranking would otherwise rank a higher-bitrate
-    /// non-44.1 kHz format above it.
+    /// Audio-only formats ordered best-first by quality so the picker reads top-down from the
+    /// highest-quality option: descending bitrate, then channels, then a codec-preference
+    /// tiebreak, then filesize, with a deterministic format-id final tiebreak. The recommended
+    /// ("AUTO") pick (see <see cref="SelectBestAudioFormat"/>) is surfaced by the picker's AUTO
+    /// tag in place and is deliberately NOT reordered to the top: the 44.1 kHz pick can sit just
+    /// below a marginally higher-bitrate 48 kHz option, which is where the user expects to see it.
     /// </summary>
-    public List<YtDlpFormat> AudioFormatsByPreference(string? recommendedFormatId) =>
+    public List<YtDlpFormat> AudioFormatsByPreference() =>
         [
             .. AudioOnlyFormats
-                .OrderByDescending(f => f.FormatId == recommendedFormatId)
-                .ThenByDescending(f => f.AudioBitrate)
+                .OrderByDescending(f => f.AudioBitrate)
                 .ThenByDescending(f => f.AudioChannels ?? 0)
                 .ThenByDescending(f => f.CodecPreference)
                 .ThenByDescending(f => f.FileSize ?? f.FileSizeApprox ?? 0)
