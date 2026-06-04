@@ -1,6 +1,67 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <!-- Design-time style gallery: a representative sample of the app's controls and tokens, so
+         theme/font changes (Tokens.axaml) can be previewed live in the IDE panel without running
+         the app. Design-time only (stripped at runtime). Tokens are merged here so the brushes
+         and fonts resolve; the Window style above supplies the UI font + foreground. -->
+    <Design.PreviewWith>
+        <Border Padding="24" Background="{DynamicResource Bg0Brush}">
+            <Border.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceInclude Source="avares://StemForge/Styles/Tokens.axaml" />
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+            </Border.Resources>
+            <Border Width="420"
+                    Background="{DynamicResource Bg1Brush}"
+                    CornerRadius="8"
+                    Padding="24">
+                <StackPanel Spacing="16">
+
+                    <!-- Typography -->
+                    <TextBlock Classes="h1" Text="Heading" />
+                    <TextBlock Classes="sectionLabel" Text="SECTION LABEL" />
+                    <TextBlock Text="Body text in the UI font." />
+                    <TextBlock Classes="secondary" Text="Secondary text." />
+                    <TextBlock Classes="mono" Text="Mono v0.2.0  0123456789" />
+
+                    <!-- Buttons + info affordance -->
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <Button Classes="accent" Content="Primary" />
+                        <Button Classes="ghost" Content="Secondary" />
+                        <Border Classes="infoIcon" ToolTip.Tip="Tooltip affordance">
+                            <TextBlock Text="i"
+                                       FontSize="10"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Progress. Foreground is pinned to the accent so the preview matches the
+                         app: there, native Fluent controls are tinted amber via the SystemAccentColor
+                         override in Tokens.axaml (ADR 0004), which the IDE previewer doesn't apply,
+                         so the previewer's Fluent accent would otherwise show its default blue. -->
+                    <ProgressBar Value="60" Maximum="100" Foreground="{DynamicResource AccentBrush}" />
+                    <ProgressBar IsIndeterminate="True" Foreground="{DynamicResource AccentBrush}" />
+
+                    <!-- Accent / status / category swatches -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="44" Height="22" CornerRadius="4" Background="{DynamicResource AccentBrush}" />
+                        <Border Width="44" Height="22" CornerRadius="4" Background="{DynamicResource SuccessBrush}" />
+                        <Border Width="44" Height="22" CornerRadius="4" Background="{DynamicResource ErrorBrush}" />
+                        <Border Width="44" Height="22" CornerRadius="4" Background="{DynamicResource CategoryVocalsBrush}" />
+                        <Border Width="44" Height="22" CornerRadius="4" Background="{DynamicResource CategoryInstrumentalsBrush}" />
+                        <Border Width="44" Height="22" CornerRadius="4" Background="{DynamicResource CategoryOtherBrush}" />
+                    </StackPanel>
+
+                </StackPanel>
+            </Border>
+        </Border>
+    </Design.PreviewWith>
+
     <!-- Base window background -->
     <Style Selector="Window">
         <Setter Property="Background" Value="{DynamicResource Bg1Brush}" />
@@ -75,12 +136,12 @@
     </Style>
 
     <!-- Info icon: small "ⓘ" affordance signalling that an element has a hover tooltip.
-         See docs/adr/0001-info-icon-tooltip-affordance.md. Attach ToolTip.Tip on the icon.
-         Style does NOT set Text on a descendant TextBlock — call sites inline the "i"
-         glyph so the style can't accidentally match (and override) the TextBlock that
-         ToolTip.Tip uses as its content.
-         Background MUST be Transparent (not null/unset) so the inner disc participates
-         in hit testing — otherwise only the 1px ring and the "i" glyph trigger hovers. -->
+    See docs/adr/0001-info-icon-tooltip-affordance.md. Attach ToolTip.Tip on the icon.
+    Style does NOT set Text on a descendant TextBlock — call sites inline the "i"
+    glyph so the style can't accidentally match (and override) the TextBlock that
+    ToolTip.Tip uses as its content.
+    Background MUST be Transparent (not null/unset) so the inner disc participates
+    in hit testing — otherwise only the 1px ring and the "i" glyph trigger hovers. -->
     <Style Selector="Border.infoIcon">
         <Setter Property="Width" Value="14" />
         <Setter Property="Height" Value="14" />
