@@ -8,16 +8,17 @@ namespace StemForge.Tests.Services;
 public sealed class ToolInstallerTests
 {
     private static (ToolInstaller installer, FakeProcessRunner fake, AppPaths paths) Build(
-        OSKind os = OSKind.Windows
+        OSKind os = OSKind.Windows,
+        Architecture arch = Architecture.X64
     )
     {
         var fake = new FakeProcessRunner();
         var paths = new AppPaths(new AppSettings());
-        var platform = new PlatformInfo(os, Architecture.X64);
+        var platform = new PlatformInfo(os, arch);
         var installer = new ToolInstaller(
             fake,
             paths,
-            new BundledFetcher(paths, platform),
+            new BundledFetcher(paths, platform, AppInfo.Current),
             platform
         );
         return (installer, fake, paths);
@@ -98,8 +99,8 @@ public sealed class ToolInstallerTests
     [Fact]
     public async Task InstallAsync_BundledFetch_NoAssetForPlatform_Throws()
     {
-        // ffmpeg only has a Windows x64 asset; on Linux the fetch must fail before any download.
-        var (installer, _, _) = Build(OSKind.Linux);
+        // No tool ships a 32-bit x86 asset, so a BundledFetch must fail before any download.
+        var (installer, _, _) = Build(OSKind.Windows, Architecture.X86);
 
         await Assert.ThrowsAsync<PlatformNotSupportedException>(() =>
             installer.InstallAsync(

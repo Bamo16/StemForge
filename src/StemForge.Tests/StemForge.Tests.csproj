@@ -17,4 +17,8 @@
     <ItemGroup>
         <ProjectReference Include="..\StemForge\StemForge.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
 </Project>

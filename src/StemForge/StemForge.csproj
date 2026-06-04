@@ -9,7 +9,7 @@
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <!-- Single source of truth for the version. The "package: win-x64" task in
              .vscode/tasks.json reads this and names the release zip accordingly. -->
-        <Version>0.1.1</Version>
+        <Version>0.2.0</Version>
         <AssemblyVersion>$(Version)</AssemblyVersion>
     </PropertyGroup>
 
@@ -53,6 +53,7 @@
         </PackageReference>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
+        <PackageReference Include="SharpCompress" Version="0.49.1" />
         <PackageReference Include="TagLibSharp" Version="2.3.0" />
     </ItemGroup>
 </Project>

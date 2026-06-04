@@ -15,7 +15,8 @@ public sealed class JobQueueService(
     AppSettings settings,
     IProcessRunner runner,
     YouTubeAudioService youTubeAudio,
-    AppPaths paths
+    AppPaths paths,
+    IAppInfo appInfo
 )
 {
     private readonly ISeparatorDriverService _driver = driver;
@@ -23,6 +24,7 @@ public sealed class JobQueueService(
     private readonly IProcessRunner _runner = runner;
     private readonly YouTubeAudioService _youTubeAudio = youTubeAudio;
     private readonly AppPaths _paths = paths;
+    private readonly IAppInfo _appInfo = appInfo;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     private CancellationTokenSource? _currentCts;
@@ -107,13 +109,7 @@ public sealed class JobQueueService(
             }
 
             // ── Separation step — one driver run per preset ────────────────────
-            var version =
-                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString()
-                ?? "dev";
-            var modelDescriptor = string.Join(
-                ", ",
-                vm.Job.Presets.Select(p => $"{p.Mode}:{p.PrimaryModel ?? p.Id}")
-            );
+            var version = _appInfo.FullVersion;
             var presets = vm.Job.Presets;
             var format = FfmpegArgs.Extension(vm.Job.StemOutputFormat).ToUpperInvariant();
             var totalSteps = presets.Count + (vm.Job.ExtractDrums ? 1 : 0);
@@ -142,10 +138,12 @@ public sealed class JobQueueService(
                 if (!result.Succeeded)
                     throw new InvalidOperationException(result.ErrorMessage ?? "Separation failed");
 
+                // Each output is tagged with only the preset that produced it (display name).
+                var presetDescriptor = preset.DisplayName;
                 foreach (var o in result.Outputs)
                 {
                     outputFiles.Add(o.Path);
-                    AudioTagger.ApplyToFile(o.Path, sourceInfo, modelDescriptor, version);
+                    AudioTagger.ApplyToFile(o.Path, sourceInfo, presetDescriptor, version);
                 }
 
                 // Advance the bar to the end of this preset's segment.
@@ -232,7 +230,16 @@ public sealed class JobQueueService(
                         )
                             File.Move(drumStem.Path, renamedPath, overwrite: true);
 
-                        AudioTagger.ApplyToFile(renamedPath, sourceInfo, modelDescriptor, version);
+                        // Drum extraction is modelled as a first-class single-model preset so its
+                        // output is tagged with a proper display name and per-model provenance,
+                        // consistent with the separation presets above.
+                        var drumPreset = Preset.DrumExtraction(_settings.DrumExtractionModel);
+                        AudioTagger.ApplyToFile(
+                            renamedPath,
+                            sourceInfo,
+                            drumPreset.DisplayName,
+                            version
+                        );
                         if (_settings.DrumStemLocation == DrumStemLocation.WithStems)
                             outputFiles.Add(renamedPath);
                     }
@@ -257,7 +264,14 @@ public sealed class JobQueueService(
                 );
                 if (keptSource is not null)
                 {
-                    AudioTagger.ApplyToFile(keptSource, sourceInfo, modelDescriptor, version);
+                    // The kept source is the unprocessed original, not a separation output —
+                    // no preset produced it, so it carries no preset descriptor.
+                    AudioTagger.ApplyToFile(
+                        keptSource,
+                        sourceInfo,
+                        presetDescriptor: null,
+                        version
+                    );
                     outputFiles.Add(keptSource);
                 }
             }

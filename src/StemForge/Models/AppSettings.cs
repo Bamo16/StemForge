@@ -92,7 +92,9 @@ public sealed class AppSettings
             if (File.Exists(_settingsPath))
             {
                 var json = File.ReadAllText(_settingsPath);
-                var settings = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions) ?? new();
+                var settings =
+                    JsonSerializer.Deserialize(json, AppSettingsJsonContext.Default.AppSettings)
+                    ?? new();
                 settings.MigrateLegacyToolPaths();
                 return settings;
             }
@@ -128,17 +130,24 @@ public sealed class AppSettings
     public async Task SaveAsync()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
-        var json = JsonSerializer.Serialize(this, _jsonOptions);
+        var json = JsonSerializer.Serialize(this, AppSettingsJsonContext.Default.AppSettings);
         await File.WriteAllTextAsync(_settingsPath, json);
     }
 
     private static readonly string _settingsPath =
         Environment.SpecialFolder.ApplicationData.GetFolderPath("StemForge", "settings.json");
-
-    private static readonly JsonSerializerOptions _jsonOptions = new()
-    {
-        WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
 }
+
+/// <summary>
+/// Source-generated serializer context for <see cref="AppSettings"/>. Carries the settings.json
+/// serialization contract (indented output, enums as strings, nulls omitted) co-located with the
+/// type rather than at the distant call site. <c>UseStringEnumConverter</c> keeps enums such as
+/// <see cref="DrumStemLocation"/> and <see cref="GpuVariant"/> serializing by name.
+/// </summary>
+[JsonSourceGenerationOptions(
+    UseStringEnumConverter = true,
+    WriteIndented = true,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+)]
+[JsonSerializable(typeof(AppSettings))]
+internal sealed partial class AppSettingsJsonContext : JsonSerializerContext { }

@@ -82,6 +82,8 @@ Configure the output directory, default audio format, tool-path overrides, YouTu
 
 If you already have any of these tools on your PATH, the wizard detects them and skips re-installing.
 
+> **Linux and macOS.** There's no published Linux or macOS build yet. The app is cross-platform (see [Status](#status)) and you can build and run it from source today (see [For developers](#for-developers)); a packaged download for those platforms may follow.
+
 ### What ends up on your PATH vs bundled
 
 `uv` and `audio-separator` install via the upstream installer and land on your PATH, so you can use them outside StemForge too. `ffmpeg`, `yt-dlp`, and `deno` are bundled into `%LOCALAPPDATA%\StemForge\bin` and **not** added to your system PATH. The rationale: a user is plausibly going to want their own `ffmpeg` or `yt-dlp` available system-wide, and StemForge dropping its bundled copies into PATH would silently shadow them. StemForge's own child processes get the bundled binaries by explicit path (`yt-dlp` is told where `deno` lives, `audio-separator` where `ffmpeg` lives), so nothing relies on your system PATH. You can still run the bundled binaries yourself using their full path.
@@ -94,6 +96,7 @@ If you already have any of these tools on your PATH, the wizard detects them and
 | Downloaded models | `%LOCALAPPDATA%\audio-separator\models` |
 | Bundled ffmpeg, yt-dlp, deno | `%LOCALAPPDATA%\StemForge\bin` |
 | App settings | `%APPDATA%\StemForge\settings.json` |
+| User presets | `%APPDATA%\StemForge\user_presets.json` |
 | Drum-stem cache | `%LOCALAPPDATA%\StemForge\drum-cache` |
 
 ### Updating yt-dlp between StemForge releases
@@ -127,9 +130,9 @@ Bundling deno via the setup wizard is the safe default. If you already have deno
 
 ## Status
 
-StemForge is at v0.1.1, an early release shared mostly with friends and testers. **User presets work but aren't fully fleshed-out yet.** Expect rough edges in the editor and minimal validation. The built-in preset library is the recommended starting point.
+StemForge is at v0.2.0, an early release shared mostly with friends and testers. **User presets work but aren't fully fleshed-out yet.** Expect rough edges in the editor and minimal validation. The built-in preset library is the recommended starting point.
 
-**Windows-only in practice.** The codebase is Avalonia and was written with cross-platform in mind, but only the Windows path is regularly tested. Building and running on macOS or Linux will likely surface bugs around path resolution, bundled-binary fetching (the catalog currently pins Windows assets for ffmpeg / yt-dlp / deno), and shell-out invocations. Patches welcome.
+**Cross-platform, with Windows the most tested.** v0.2.0 made the codebase genuinely cross-platform: per-OS path resolution, bundled ffmpeg / yt-dlp / deno for Linux and macOS, and per-OS GPU variants. A Linux CI job builds the app, runs the test suite, and downloads and verifies the Linux bundled binaries on every push. That said, the published binary below is still Windows (win-x64), Windows is where the app runs day to day, and **it has not yet been run end to end on real Linux or macOS hardware**, so expect rough edges there. Linux and macOS users can build and run from source today (see [For developers](#for-developers)); native packaged builds may follow. Patches and reports welcome.
 
 Reports of any rough edge (wizard, separation results, UI papercuts) welcome on the [issues page](../../issues).
 

@@ -1,31 +1,53 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using StemForge.Extensions;
 using StemForge.Models;
 
 namespace StemForge.Services;
 
-public sealed class UserPresetService
+public sealed partial class UserPresetService
 {
-    private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
+    private const string FileName = "user_presets.json";
 
+    // Current (Roaming) location, sharing the same root as settings.json so all user-authored
+    // config lives together.
     private static string FilePath =>
-        Path.Combine(
-            Environment.SpecialFolder.LocalApplicationData.GetFolderPath(["StemForge"]),
-            "user_presets.json"
-        );
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("StemForge", FileName);
+
+    // Legacy (Local) location written by v0.1.x. Migrated to Roaming on load.
+    private static string LegacyFilePath =>
+        Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", FileName);
+
+    private readonly string _filePath;
 
     public ObservableCollection<Preset> Presets { get; } = [];
 
-    public static UserPresetService Load()
+    public UserPresetService()
+        : this(FilePath) { }
+
+    // Path-injecting constructor for tests that exercise Add/Remove/Save without touching the real
+    // Roaming location.
+    internal UserPresetService(string filePath) => _filePath = filePath;
+
+    public static UserPresetService Load() => Load(FilePath, LegacyFilePath);
+
+    // Path-injecting overload so the migrate-on-load path can be exercised without touching the
+    // real Roaming/Local folders.
+    internal static UserPresetService Load(string roamingPath, string legacyPath)
     {
-        var svc = new UserPresetService();
+        MigrateLegacyLocation(roamingPath, legacyPath);
+
+        var svc = new UserPresetService(roamingPath);
         try
         {
-            if (File.Exists(FilePath))
+            if (File.Exists(roamingPath))
             {
-                var json = File.ReadAllText(FilePath);
-                var dtos = JsonSerializer.Deserialize<List<PresetDto>>(json, JsonOpts);
+                var json = File.ReadAllText(roamingPath);
+                var dtos = JsonSerializer.Deserialize(
+                    json,
+                    PresetJsonContext.Default.ListPresetDto
+                );
                 if (dtos is not null)
                     foreach (var dto in dtos)
                         svc.Presets.Add(dto.ToPreset());
@@ -39,6 +61,45 @@ public sealed class UserPresetService
             );
         }
         return svc;
+    }
+
+    /// <summary>
+    /// Reconciles the presets file between the legacy Local location and the current Roaming
+    /// location so the two never coexist indefinitely. Roaming is the single source of truth:
+    /// <list type="bullet">
+    /// <item>No legacy file: nothing to do.</item>
+    /// <item>Legacy file but no Roaming file: move (migrate) the legacy file to Roaming.</item>
+    /// <item>Both present: Roaming wins, so the orphaned legacy file is deleted. No preset loss,
+    /// because Roaming already holds the authoritative copy.</item>
+    /// </list>
+    /// Idempotent and a no-op once reconciled. Mirrors the migrate-on-load pattern in
+    /// <see cref="StemForge.Models.AppSettings.MigrateLegacyToolPaths"/>.
+    /// </summary>
+    internal static void MigrateLegacyLocation(string roamingPath, string legacyPath)
+    {
+        try
+        {
+            if (!File.Exists(legacyPath))
+                return;
+
+            if (File.Exists(roamingPath))
+            {
+                // Roaming is authoritative; drop the stale Local duplicate so the two do not
+                // coexist. Nothing is lost because Roaming already holds the presets.
+                File.Delete(legacyPath);
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(roamingPath)!);
+            File.Move(legacyPath, roamingPath);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning(
+                nameof(UserPresetService),
+                $"Could not reconcile user presets between Local and Roaming: {ex.Message}"
+            );
+        }
     }
 
     public void Add(Preset preset)
@@ -61,10 +122,13 @@ public sealed class UserPresetService
     {
         try
         {
-            var dir = Path.GetDirectoryName(FilePath)!;
+            var dir = Path.GetDirectoryName(_filePath)!;
             Directory.CreateDirectory(dir);
             var dtos = Presets.Select(PresetDto.FromPreset).ToList();
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(dtos, JsonOpts));
+            File.WriteAllText(
+                _filePath,
+                JsonSerializer.Serialize(dtos, PresetJsonContext.Default.ListPresetDto)
+            );
         }
         catch (Exception ex)
         {
@@ -123,4 +187,13 @@ public sealed class UserPresetService
                 EnsembleWeights = p.EnsembleWeights?.ToList(),
             };
     }
+
+    /// <summary>
+    /// Source-generated serializer context for the preset file. Carries the read/write contract
+    /// (case-insensitive property matching, indented output) co-located with <see cref="PresetDto"/>.
+    /// Nested so it can see the private DTO type.
+    /// </summary>
+    [JsonSourceGenerationOptions(WriteIndented = true, PropertyNameCaseInsensitive = true)]
+    [JsonSerializable(typeof(List<PresetDto>))]
+    private sealed partial class PresetJsonContext : JsonSerializerContext { }
 }

@@ -8,22 +8,25 @@ namespace StemForge.Tests.ViewModels;
 
 public sealed class SetupWizardViewModelTests
 {
-    private static SetupWizardViewModel Build(FakeProcessRunner? fake = null)
+    private static SetupWizardViewModel Build(FakeProcessRunner? fake = null) => Build(out _, fake);
+
+    private static SetupWizardViewModel Build(out AppPaths paths, FakeProcessRunner? fake = null)
     {
         fake ??= new FakeProcessRunner();
         var settings = new AppSettings();
-        var paths = new AppPaths(settings);
+        paths = new AppPaths(settings);
         var runner = (IProcessRunner)fake;
         var setupDetector = new SetupDetector(runner, paths);
         var platform = PlatformInfo.Current;
-        var bundledFetcher = new BundledFetcher(paths, platform);
+        var bundledFetcher = new BundledFetcher(paths, platform, AppInfo.Current);
         return new SetupWizardViewModel(
             settings,
             setupDetector,
             new GpuDetector(runner),
             new ToolInstaller(runner, paths, bundledFetcher, platform),
             new ToolStateService(setupDetector),
-            paths
+            paths,
+            platform
         );
     }
 
@@ -196,5 +199,73 @@ public sealed class SetupWizardViewModelTests
 
         vm.SetGpuVariantCommand.Execute("DirectML");
         Assert.True(vm.IsDirectML);
+    }
+
+    [AvaloniaFact]
+    public async Task InstallSelected_SetsIndeterminateProgressDuringAudioSeparatorInstall()
+    {
+        // Resolve the actual exe paths the wizard will probe/install with (uv resolves to a known
+        // absolute path when present on the host, not the bare "uv"), and key the fake off those.
+        var fake = new FakeProcessRunner();
+        var vm = Build(out var paths, fake);
+        // uv must install and detect so the audio-separator gate (_toolState.IsAvailable(uv)) passes.
+        // The uv ScriptInstall runs powershell on Windows / sh on Unix; set up both so this stays
+        // deterministic regardless of host or the wizard's fire-and-forget recheck. The
+        // audio-separator uv-tool install then runs but its post-install detection finds nothing,
+        // so the row ends in an error -- exercising the failure-clear path (state must clear).
+        fake.Setup(paths.Uv, "uv 0.4.0");
+        fake.Setup("powershell", "");
+        fake.Setup("sh", "");
+
+        vm.CurrentStep = WizardStep.Install; // EnsureInstallRows populates rows synchronously
+
+        var uvRow = Row(vm, ToolKind.Uv);
+        uvRow.WantInstall = true;
+        uvRow.Found = false;
+
+        var asRow = Row(vm, ToolKind.AudioSeparator);
+        asRow.WantInstall = true;
+        asRow.Found = false;
+
+        // Capture the in-progress state at the moment InProgressMessage is set.
+        string? messageWhileInstalling = null;
+        var wasInstalling = false;
+        asRow.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ToolRowViewModel.IsInstalling) && asRow.IsInstalling)
+                wasInstalling = true;
+            if (
+                e.PropertyName == nameof(ToolRowViewModel.InProgressMessage)
+                && asRow.InProgressMessage.Length > 0
+            )
+                messageWhileInstalling = asRow.InProgressMessage;
+        };
+
+        await vm.InstallSelectedCommand.ExecuteAsync(null);
+
+        Assert.True(
+            wasInstalling,
+            $"IsInstalling never set. calls=[{string.Join(",", fake.Calls.Select(c => c.Exe))}] found={asRow.Found} want={asRow.WantInstall} err={asRow.InstallError}"
+        );
+        Assert.NotNull(messageWhileInstalling);
+        Assert.Contains("several minutes", messageWhileInstalling);
+
+        // State must clear after the install completes (here, on failure).
+        Assert.False(asRow.IsInstalling);
+        Assert.Equal(string.Empty, asRow.InProgressMessage);
+        Assert.False(vm.IsInstalling);
+    }
+
+    [AvaloniaFact]
+    public void VariantPicker_OffersOnlyCurrentOsVariants()
+    {
+        IVariantPicker vm = Build();
+
+        var install = (UvToolInstall)ToolCatalog.Get(ToolKind.AudioSeparator).InstallStrategy;
+        var expected = install.VariantsFor(PlatformInfo.Current.Os).Select(v => v.Variant).ToList();
+
+        Assert.Equal(expected.Contains(GpuVariant.Cpu), vm.HasCpuVariant);
+        Assert.Equal(expected.Contains(GpuVariant.Cuda), vm.HasCudaVariant);
+        Assert.Equal(expected.Contains(GpuVariant.DirectML), vm.HasDirectMLVariant);
     }
 }

@@ -21,11 +21,6 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         .. Path.GetInvalidFileNameChars(),
     ];
 
-    private static readonly JsonSerializerOptions _jsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-    };
-
     private static readonly HttpClient _http = new();
 
     public async Task<YtDlpMetadata> ResolveAsync(
@@ -87,7 +82,9 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         LogAudioFormats(info.AudioOnlyFormats, selected.FormatId);
 
         return new YtDlpMetadata(
-            SourceUrl: url,
+            // Prefer yt-dlp's canonical page URL so the provenance tag is stable and free of
+            // tracking params. Fall back to the originally requested URL if it is absent.
+            SourceUrl: info.WebpageUrl ?? info.OriginalUrl ?? url,
             Title: info.Title,
             Artist: info.Artist,
             Uploader: info.Uploader,
@@ -97,8 +94,10 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             FormatId: selected.FormatId,
             MediaUrl: mediaUrl,
             ThumbnailUrl: info.Thumbnail,
-            AudioFormats: info.AudioOnlyFormats is { Count: > 0 }
-                ? info.AudioOnlyFormats
+            // Ordered best-first by bitrate; the AUTO pick (selected) is tagged in place by the
+            // picker rather than floated to the top.
+            AudioFormats: info.AudioFormatsByPreference() is { Count: > 0 } ranked
+                ? ranked
                 : [selected],
             Extractor: info.Extractor
         );
@@ -220,7 +219,10 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         if (start < 0 || end <= start)
             throw new InvalidOperationException("yt-dlp metadata was not valid JSON.");
 
-        return JsonSerializer.Deserialize<YtDlpVideoInfo>(raw[start..(end + 1)], _jsonOptions)
+        return JsonSerializer.Deserialize(
+                raw[start..(end + 1)],
+                YtDlpJsonContext.Default.YtDlpVideoInfo
+            )
             ?? throw new InvalidOperationException(
                 "yt-dlp metadata deserialization returned null."
             );

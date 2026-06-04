@@ -69,9 +69,13 @@
     <SolidColorBrush x:Key="CategoryOtherBrush" Color="{StaticResource CategoryOtherColor}" />
 
     <!-- ====== Typography ====== -->
-    <!-- TODO: bundle DM Sans + JetBrains Mono. For now fall back to system equivalents. -->
-    <FontFamily x:Key="UiFont">Inter, Segoe UI, San Francisco, Arial</FontFamily>
-    <FontFamily x:Key="MonoFont">JetBrains Mono, Cascadia Mono, Consolas, Menlo, monospace</FontFamily>
+    <!-- DM Sans + JetBrains Mono are bundled under Assets/Fonts (SIL OFL) so
+         typography is identical on Windows/Linux/macOS without a system install.
+         The avares folder URI + #FamilyName form lets Avalonia pick the right
+         weight (Regular/Medium/SemiBold/Bold) from the static faces in that folder.
+         System families are kept after the comma purely as a last-resort fallback. -->
+    <FontFamily x:Key="UiFont">avares://StemForge/Assets/Fonts/#DM Sans, Segoe UI, San Francisco, Arial</FontFamily>
+    <FontFamily x:Key="MonoFont">avares://StemForge/Assets/Fonts/#JetBrains Mono, Cascadia Mono, Consolas, Menlo, monospace</FontFamily>
 
     <!-- ====== Shape / sizing ====== -->
     <CornerRadius x:Key="RadiusCard">8</CornerRadius>

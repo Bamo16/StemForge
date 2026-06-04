@@ -24,7 +24,8 @@ public partial class SetupWizardViewModel(
     GpuDetector gpuDetector,
     ToolInstaller toolInstaller,
     ToolStateService toolState,
-    AppPaths paths
+    AppPaths paths,
+    PlatformInfo platform
 ) : ViewModelBase, IVariantPicker
 {
     ICommand IVariantPicker.SetVariantCommand => SetGpuVariantCommand;
@@ -35,6 +36,14 @@ public partial class SetupWizardViewModel(
     private readonly ToolInstaller _toolInstaller = toolInstaller;
     private readonly ToolStateService _toolState = toolState;
     private readonly AppPaths _paths = paths;
+
+    // GPU variants audio-separator offers on the running OS; drives which picker buttons show.
+    private readonly IReadOnlyList<GpuVariant> _availableVariants = ToolCatalog
+        .Get(ToolKind.AudioSeparator)
+        .InstallStrategy
+        is UvToolInstall uv
+        ? [.. uv.VariantsFor(platform.Os).Select(v => v.Variant)]
+        : [];
 
     public event Action? SetupCompleted;
     public event Action? SetupDismissed;
@@ -90,6 +99,10 @@ public partial class SetupWizardViewModel(
     public bool IsCpu => GpuVariant == GpuVariant.Cpu;
     public bool IsCuda => GpuVariant == GpuVariant.Cuda;
     public bool IsDirectML => GpuVariant == GpuVariant.DirectML;
+
+    public bool HasCpuVariant => _availableVariants.Contains(GpuVariant.Cpu);
+    public bool HasCudaVariant => _availableVariants.Contains(GpuVariant.Cuda);
+    public bool HasDirectMLVariant => _availableVariants.Contains(GpuVariant.DirectML);
 
     // ── Directories ───────────────────────────────────────────────────────────
 
@@ -222,7 +235,11 @@ public partial class SetupWizardViewModel(
         CurrentStep = WizardStep.Welcome;
         Tools.Clear();
         foreach (var row in InstallRows)
+        {
             row.PropertyChanged -= OnInstallRowChanged;
+            row.IsInstalling = false;
+            row.InProgressMessage = string.Empty;
+        }
         InstallRows.Clear();
         GpuHint = string.Empty;
         IsInstalling = false;
@@ -340,12 +357,19 @@ public partial class SetupWizardViewModel(
             return;
 
         row.InstallError = null;
+        row.IsInstalling = true;
+        // audio-separator pulls torch/onnxruntime (250 MB to 2 GB), so warn it is slow. Other tools
+        // are quick; an empty message just shows the indeterminate bar with no extra line.
+        row.InProgressMessage =
+            kind == ToolKind.AudioSeparator
+                ? "Downloading and installing audio-separator. This can take several minutes."
+                : string.Empty;
         var options = new InstallOptions(kind == ToolKind.AudioSeparator ? GpuVariant : null);
 
         try
         {
             await _toolInstaller.InstallAsync(ToolCatalog.Get(kind), options, NewLogProgress());
-            await _toolState.RefreshAsync(row.Name);
+            await _toolState.RefreshAsync(kind);
             row.Found = _toolState.IsAvailable(kind);
 
             if (!row.Found)
@@ -361,6 +385,11 @@ public partial class SetupWizardViewModel(
         catch (Exception ex)
         {
             row.InstallError = ex.Message;
+        }
+        finally
+        {
+            row.IsInstalling = false;
+            row.InProgressMessage = string.Empty;
         }
     }
 
@@ -380,7 +409,7 @@ public partial class SetupWizardViewModel(
 
     private static string FormatMB(long bytes) => $"{bytes / 1_048_576.0:F1} MB";
 
-    private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolInfo> tools)
+    private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolState> tools)
     {
         if (_settings.InstalledVariant is not null)
             return;

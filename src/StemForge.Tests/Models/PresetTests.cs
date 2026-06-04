@@ -36,6 +36,73 @@ public sealed class PresetTests
         Assert.Empty(preset.AllModels);
     }
 
+    [Fact]
+    public void DisplayName_VocalsBuiltinPreset_QualifiesWithVocal()
+    {
+        var preset = BuiltinPreset("acapella", "Full", PresetCategory.Vocals);
+        Assert.Equal("Vocal - Full", preset.DisplayName);
+    }
+
+    [Fact]
+    public void DisplayName_InstrumentalsBuiltinPreset_QualifiesWithInstrumental()
+    {
+        var preset = BuiltinPreset("instrumental_full", "Full", PresetCategory.Instrumentals);
+        Assert.Equal("Instrumental - Full", preset.DisplayName);
+    }
+
+    [Fact]
+    public void DisplayName_Karaoke_IsKaraoke()
+    {
+        var preset = BuiltinPreset("karaoke", "Karaoke Mix", PresetCategory.Vocals);
+        Assert.Equal("Karaoke", preset.DisplayName);
+    }
+
+    [Fact]
+    public void DisplayName_OtherCategory_QualifiesWithCategoryName()
+    {
+        var preset = BuiltinPreset("bass_iso", "Isolated", PresetCategory.Bass);
+        Assert.Equal("Bass - Isolated", preset.DisplayName);
+    }
+
+    [Fact]
+    public void DisplayName_CustomMode_UsesLabelAsIs()
+    {
+        var preset = new Preset(
+            Id: "custom-1",
+            Label: "My Ensemble",
+            Category: PresetCategory.Vocals,
+            Description: "A custom preset",
+            ModelCount: 1,
+            Vram: "4 GB",
+            Mode: SeparationMode.SingleModel,
+            PrimaryModel: "model.onnx"
+        );
+        Assert.Equal("My Ensemble", preset.DisplayName);
+    }
+
+    [Fact]
+    public void DrumExtraction_BuildsSingleModelDrumPreset_WithDisplayName()
+    {
+        var preset = Preset.DrumExtraction("htdemucs_ft.yaml");
+
+        Assert.Equal(PresetCategory.Drums, preset.Category);
+        Assert.Equal(SeparationMode.SingleModel, preset.Mode);
+        Assert.Equal("htdemucs_ft.yaml", preset.PrimaryModel);
+        Assert.Equal(["htdemucs_ft.yaml"], preset.AllModels);
+        Assert.Equal("Drums - htdemucs_ft", preset.DisplayName);
+    }
+
+    private static Preset BuiltinPreset(string id, string label, PresetCategory category) =>
+        new(
+            Id: id,
+            Label: label,
+            Category: category,
+            Description: "A test preset",
+            ModelCount: 1,
+            Vram: "4 GB",
+            Models: ["model.onnx"]
+        );
+
     private static Preset Build(
         IReadOnlyList<string>? models = null,
         string? primaryModel = null,

@@ -17,6 +17,12 @@ public partial class SettingsViewModel : PageViewModelBase
 
     public override string Title => "Settings";
 
+    /// <summary>Product name shown in the footer build stamp. Sourced from <see cref="IAppInfo"/>.</summary>
+    public string ProductName { get; }
+
+    /// <summary>Footer version, e.g. "v0.2.0" (rendered monospaced). Sourced from <see cref="IAppInfo"/>.</summary>
+    public string VersionText { get; }
+
     // ── Tool rows (status header + tool paths share this collection) ──────────
 
     [ObservableProperty]
@@ -137,7 +143,8 @@ public partial class SettingsViewModel : PageViewModelBase
         SetupDetector setupDetector,
         GpuDetector gpuDetector,
         ToolInstaller toolInstaller,
-        ToolStateService toolState
+        ToolStateService toolState,
+        IAppInfo appInfo
     )
     {
         _settings = settings;
@@ -145,6 +152,8 @@ public partial class SettingsViewModel : PageViewModelBase
         _gpuDetector = gpuDetector;
         _toolInstaller = toolInstaller;
         _toolState = toolState;
+        ProductName = appInfo.ProductName;
+        VersionText = $"v{appInfo.ShortVersion}";
 
         foreach (var tool in ToolCatalog.All)
             SettingsToolRows.Add(new SettingsToolRowViewModel(tool));
@@ -385,7 +394,7 @@ public partial class SettingsViewModel : PageViewModelBase
         }
     }
 
-    private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolInfo> tools)
+    private async Task TryFillInstalledVariantAsync(IReadOnlyList<ToolState> tools)
     {
         if (_settings.InstalledVariant is not null)
             return;

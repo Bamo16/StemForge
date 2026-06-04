@@ -13,6 +13,14 @@ public sealed record YtDlpVideoInfo
     public string? FormatNote { get; init; }
     public string? Url { get; init; }
 
+    /// <summary>Canonical page URL for the source, e.g. the YouTube watch page.</summary>
+    [JsonPropertyName("webpage_url")]
+    public string? WebpageUrl { get; init; }
+
+    /// <summary>The URL originally requested, before any redirects/normalisation by yt-dlp.</summary>
+    [JsonPropertyName("original_url")]
+    public string? OriginalUrl { get; init; }
+
     [JsonPropertyName("ext")]
     public string? Extension { get; init; }
 
@@ -48,6 +56,24 @@ public sealed record YtDlpVideoInfo
 
     [JsonIgnore]
     public List<YtDlpFormat> AudioOnlyFormats => [.. Formats.Where(f => f.IsAudioOnly)];
+
+    /// <summary>
+    /// Audio-only formats ordered best-first by quality so the picker reads top-down from the
+    /// highest-quality option: descending bitrate, then channels, then a codec-preference
+    /// tiebreak, then filesize, with a deterministic format-id final tiebreak. The recommended
+    /// ("AUTO") pick (see <see cref="SelectBestAudioFormat"/>) is surfaced by the picker's AUTO
+    /// tag in place and is deliberately NOT reordered to the top: the 44.1 kHz pick can sit just
+    /// below a marginally higher-bitrate 48 kHz option, which is where the user expects to see it.
+    /// </summary>
+    public List<YtDlpFormat> AudioFormatsByPreference() =>
+        [
+            .. AudioOnlyFormats
+                .OrderByDescending(f => f.AudioBitrate)
+                .ThenByDescending(f => f.AudioChannels ?? 0)
+                .ThenByDescending(f => f.CodecPreference)
+                .ThenByDescending(f => f.FileSize ?? f.FileSizeApprox ?? 0)
+                .ThenBy(f => f.FormatId, StringComparer.Ordinal),
+        ];
 
     /// <summary>
     /// Selects the best audio-only format from the formats list.
@@ -138,4 +164,31 @@ public sealed record YtDlpFormat
     /// </summary>
     [JsonIgnore]
     public double AudioBitrate => AverageAudioBitrate ?? AverageTotalBitrate ?? 0;
+
+    /// <summary>
+    /// Codec preference rank used as a tiebreak when bitrate and channels are equal. Higher is
+    /// better. Mirrors the relative ordering of yt-dlp's default acodec preference list
+    /// (lossless first, then opus/aac, down to mp3 and unknown codecs).
+    /// </summary>
+    [JsonIgnore]
+    public int CodecPreference =>
+        (AudioCodec ?? string.Empty) switch
+        {
+            "flac" => 7,
+            "alac" => 6,
+            "opus" => 5,
+            "mp4a.40.2" or "mp4a.40.5" or "mp4a.40.29" or "aac" => 4,
+            "vorbis" => 3,
+            "ac-3" or "a52" or "ec-3" => 2,
+            "mp4a.40.34" or "mp3" => 1,
+            _ => 0,
+        };
 }
+
+/// <summary>
+/// Source-generated serializer context for yt-dlp metadata. The snake_case naming policy lives
+/// here, co-located with the DTO it describes, rather than on a distant call site.
+/// </summary>
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
+[JsonSerializable(typeof(YtDlpVideoInfo))]
+internal sealed partial class YtDlpJsonContext : JsonSerializerContext { }

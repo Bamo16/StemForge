@@ -338,14 +338,17 @@
                                                     IsVisible="{Binding ShowVariantPicker}">
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <Button Classes="variantTab"
+                                                        IsVisible="{Binding VariantPicker.HasCpuVariant}"
                                                         Classes.active="{Binding VariantPicker.IsCpu}"
                                                         Command="{Binding VariantPicker.SetVariantCommand}"
                                                         CommandParameter="Cpu" Content="CPU" />
                                                 <Button Classes="variantTab"
+                                                        IsVisible="{Binding VariantPicker.HasCudaVariant}"
                                                         Classes.active="{Binding VariantPicker.IsCuda}"
                                                         Command="{Binding VariantPicker.SetVariantCommand}"
                                                         CommandParameter="Cuda" Content="CUDA" />
                                                 <Button Classes="variantTab"
+                                                        IsVisible="{Binding VariantPicker.HasDirectMLVariant}"
                                                         Classes.active="{Binding VariantPicker.IsDirectML}"
                                                         Command="{Binding VariantPicker.SetVariantCommand}"
                                                         CommandParameter="DirectML" Content="DirectML" />
@@ -353,12 +356,30 @@
                                             <TextBlock FontSize="11"
                                                        Foreground="{DynamicResource TextPlaceholderBrush}"
                                                        TextWrapping="Wrap"
-                                                       Text="CPU works everywhere. CUDA requires NVIDIA. DirectML works on most Windows GPUs." />
+                                                       Text="CPU works everywhere. CUDA requires NVIDIA." />
+                                            <TextBlock FontSize="11"
+                                                       IsVisible="{Binding VariantPicker.HasDirectMLVariant}"
+                                                       Foreground="{DynamicResource TextPlaceholderBrush}"
+                                                       TextWrapping="Wrap"
+                                                       Text="DirectML works on most Windows GPUs." />
                                             <TextBlock FontSize="11" FontWeight="Medium"
                                                        Foreground="{DynamicResource AccentBrush}"
                                                        TextWrapping="Wrap"
                                                        Text="{Binding VariantPicker.GpuHint}"
                                                        IsVisible="{Binding VariantPicker.GpuHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                        </StackPanel>
+
+                                        <!-- In-progress (indeterminate) state while this tool installs -->
+                                        <StackPanel Margin="28,0,0,0" Spacing="6"
+                                                    IsVisible="{Binding IsInstalling}">
+                                            <TextBlock FontSize="11" FontWeight="Medium"
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       Text="{Binding InProgressMessage}"
+                                                       IsVisible="{Binding InProgressMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                            <ProgressBar IsIndeterminate="True" Height="2"
+                                                         Foreground="{DynamicResource AccentBrush}"
+                                                         Background="Transparent" />
                                         </StackPanel>
 
                                         <!-- Per-row install error -->
@@ -384,11 +405,11 @@
                                       HorizontalScrollBarVisibility="Disabled"
                                       ext:ScrollViewerExtensions.AutoScrollToEnd="True"
                                       IsVisible="{Binding InstallLog, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                            <TextBlock Classes="mono"
-                                       Text="{Binding InstallLog}"
-                                       FontSize="11"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       TextWrapping="Wrap" />
+                            <SelectableTextBlock Classes="mono"
+                                                 Text="{Binding InstallLog}"
+                                                 FontSize="11"
+                                                 Foreground="{DynamicResource TextSecondaryBrush}"
+                                                 TextWrapping="Wrap" />
                         </ScrollViewer>
                     </StackPanel>
 
