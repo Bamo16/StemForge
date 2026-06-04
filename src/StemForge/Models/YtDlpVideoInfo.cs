@@ -54,6 +54,13 @@ public sealed record YtDlpVideoInfo
 
     public List<YtDlpFormat> Formats { get; init; } = [];
 
+    /// <summary>
+    /// Full thumbnails array from yt-dlp. Entries may omit width/height (e.g. for auto-generated
+    /// YouTube thumbnails); those entries are treated as dimension-unknown and skipped when
+    /// selecting by aspect ratio.
+    /// </summary>
+    public List<YtDlpThumbnail> Thumbnails { get; init; } = [];
+
     [JsonIgnore]
     public List<YtDlpFormat> AudioOnlyFormats => [.. Formats.Where(f => f.IsAudioOnly)];
 
@@ -100,6 +107,80 @@ public sealed record YtDlpVideoInfo
             FileSize = FileSize,
             FileSizeApprox = FileSizeApprox,
         };
+
+    // Thresholds for SelectBestThumbnail.
+    private const double SquareRatioMin = 0.95;
+    private const double SquareRatioMax = 1.05;
+    private const int SquareSizeCap = 1200;
+    private const int TinySquareThreshold = 300;
+    private const double DramaticallyLargerFactor = 3.0;
+
+    /// <summary>
+    /// Picks the best thumbnail URL from the <see cref="Thumbnails"/> array, preferring a square
+    /// (aspect ratio within 0.95 to 1.05).
+    ///
+    /// Selection policy:
+    ///   - Among thumbnails with known dimensions, identify square candidates (ratio 0.95 to 1.05).
+    ///   - Prefer the largest square whose longest side is at or below <see cref="SquareSizeCap"/>
+    ///     (1200 px). If all squares exceed the cap, take the smallest square instead.
+    ///   - When the best square is tiny (longest side below <see cref="TinySquareThreshold"/>, 300 px)
+    ///     AND the largest non-square thumbnail with known dimensions is at least
+    ///     <see cref="DramaticallyLargerFactor"/> (3x) bigger on its longest side, the larger
+    ///     non-square wins.
+    ///   - When no square with known dimensions exists, or when the list is empty, fall back to
+    ///     <see cref="Thumbnail"/> (today's single-best thumbnail from yt-dlp).
+    ///
+    /// Mirrors the "prefer X unless the alternative is materially better" idiom used in
+    /// <see cref="SelectBestAudioFormat"/>.
+    /// </summary>
+    public string? SelectBestThumbnail()
+    {
+        // Thumbnails with known dimensions only.
+        var sized = Thumbnails.Where(t => t.Width.HasValue && t.Height.HasValue).ToList();
+        if (sized.Count == 0)
+            return Thumbnail;
+
+        var squares = sized
+            .Where(t =>
+            {
+                var ratio = (double)t.Width!.Value / t.Height!.Value;
+                return ratio >= SquareRatioMin && ratio <= SquareRatioMax;
+            })
+            .ToList();
+
+        if (squares.Count == 0)
+            return Thumbnail;
+
+        // Best square: largest at or below cap, else smallest available.
+        var underCap = squares
+            .Where(t => Math.Max(t.Width!.Value, t.Height!.Value) <= SquareSizeCap)
+            .ToList();
+
+        var bestSquare =
+            underCap.Count > 0
+                ? underCap.MaxBy(t => Math.Max(t.Width!.Value, t.Height!.Value))!
+                : squares.MinBy(t => Math.Max(t.Width!.Value, t.Height!.Value))!;
+
+        // Yield to a dramatically larger non-square when the chosen square is tiny.
+        var squareLongest = Math.Max(bestSquare.Width!.Value, bestSquare.Height!.Value);
+        if (squareLongest < TinySquareThreshold)
+        {
+            var bestNonSquare = sized
+                .Except(squares)
+                .MaxBy(t => Math.Max(t.Width!.Value, t.Height!.Value));
+            if (bestNonSquare is not null)
+            {
+                var nonSquareLongest = Math.Max(
+                    bestNonSquare.Width!.Value,
+                    bestNonSquare.Height!.Value
+                );
+                if (nonSquareLongest >= squareLongest * DramaticallyLargerFactor)
+                    return bestNonSquare.Url;
+            }
+        }
+
+        return bestSquare.Url;
+    }
 }
 
 public sealed record YtDlpFormat
@@ -186,9 +267,24 @@ public sealed record YtDlpFormat
 }
 
 /// <summary>
+/// One entry from the yt-dlp <c>thumbnails</c> array. Width, height, and resolution are
+/// optional because many auto-generated thumbnails (e.g. YouTube's hqdefault) omit them.
+/// </summary>
+public sealed record YtDlpThumbnail
+{
+    public string? Id { get; init; }
+    public string Url { get; init; } = string.Empty;
+    public int? Preference { get; init; }
+    public int? Width { get; init; }
+    public int? Height { get; init; }
+    public string? Resolution { get; init; }
+}
+
+/// <summary>
 /// Source-generated serializer context for yt-dlp metadata. The snake_case naming policy lives
 /// here, co-located with the DTO it describes, rather than on a distant call site.
 /// </summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
 [JsonSerializable(typeof(YtDlpVideoInfo))]
+[JsonSerializable(typeof(YtDlpThumbnail))]
 internal sealed partial class YtDlpJsonContext : JsonSerializerContext { }
