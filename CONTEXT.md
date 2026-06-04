@@ -33,3 +33,26 @@ Divergence happens when an install silently falls back. Example: the user picks 
 
 ### Bundled bin dir
 `%LOCALAPPDATA%\StemForge\bin` on Windows (analogous paths on other OSes). Holds the output of every [[Bundled fetch]]. Not on the user's system PATH; reachable only from StemForge's own child processes, which are pointed at these binaries by explicit path argument (see ADR 0003 for how).
+
+## Separation
+
+### Model
+A single audio-separation neural network, identified by its weight file (`.ckpt`, `.onnx`, etc.), e.g. `bs_roformer_vocals_resurrection_unwa.ckpt`. A model takes one audio input and emits two or more [[Stem]]s: a target and its complement at minimum (e.g. a vocals stem and a no-vocals stem), and more for models that split into several parts. (Not every model declares its stem names in the catalog metadata.) Models are the atomic unit; a [[Preset]] names one or more of them.
+
+### Stem
+An isolated audio component produced by separation — vocals, instrumental, drums, bass, etc. A separation run writes one file per stem.
+
+### Preset
+A named separation recipe selectable in the UI. Carries a category, a human label, and a [[Separation mode]] that determines how its [[Model]]s are run. User-defined presets (custom ensembles and single-model presets) are surfaced in the UI as "User presets".
+
+### Separation mode
+How a [[Preset]] is specified to the separator. The modes are not different processes so much as different ways of expressing the same separation: most presets are a set of [[Model]]s run together and combined with an [[Ensemble algorithm]]. Three modes:
+- **Built-in preset** — an [[Ensemble]] curated in audio-separator's own catalog, invoked by naming the preset rather than enumerating its models and algorithm. StemForge mirrors the catalog's model list and algorithm for display, but the separator owns the definition. The canonical source is the separator driver's live `list_presets` response; a built-in fallback catalog mirrors it for use before that response arrives.
+- **Custom ensemble** — an [[Ensemble]] whose [[Model]]s and [[Ensemble algorithm]] StemForge specifies explicitly to the separator. Defined the same way as a built-in preset; only the point of definition differs. Shown in the UI as a "User preset".
+- **Single model** — one [[Model]] run on its own. Exists so a single model can be run without being part of an ensemble, which the other two modes cannot express. Also shown in the UI as a "User preset" (one that uses a single model).
+
+### Ensemble
+A [[Preset]] that runs two or more [[Model]]s and combines their per-[[Stem]] outputs into one result. Single-model presets are not ensembles.
+
+### Ensemble algorithm
+The method by which an [[Ensemble]] combines its models' outputs. Operates either in the waveform domain (`avg_wave`, `median_wave`, `min_wave`, `max_wave`) or the spectral/FFT-magnitude domain (`avg_fft`/`mean_fft`, `median_fft`, `min_fft`, `max_fft`, and `*_mag` variants). Each algorithm trades off loudness/detail recovery against noise suppression. Built-in presets carry their algorithm in the driver's catalog; custom ensembles let the user pick one. Applies only to ensembles (2+ models).
