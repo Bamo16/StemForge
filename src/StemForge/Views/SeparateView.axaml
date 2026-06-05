@@ -264,6 +264,22 @@
                             </StackPanel>
                         </Panel>
                     </Border>
+                    <!-- Local file chips row -->
+                    <StackPanel Orientation="Horizontal" Spacing="6"
+                                IsVisible="{Binding ShowLocalChips}">
+                        <Border Classes="tag" IsVisible="{Binding HasLocalCodec}">
+                            <TextBlock Text="{Binding LocalCodec}" />
+                        </Border>
+                        <Border Classes="tag" IsVisible="{Binding HasLocalBitrate}">
+                            <TextBlock Text="{Binding LocalBitrate}" />
+                        </Border>
+                        <Border Classes="tag" IsVisible="{Binding HasLocalSampleRate}">
+                            <TextBlock Text="{Binding LocalSampleRate}" />
+                        </Border>
+                        <Border Classes="tag" IsVisible="{Binding HasLocalDuration}">
+                            <TextBlock Text="{Binding LocalDuration}" />
+                        </Border>
+                    </StackPanel>
                     <!-- Inline blocked message + wizard link -->
                     <StackPanel Orientation="Horizontal" Spacing="6"
                                 IsVisible="{Binding ShowLocalBlockedMessage}">
@@ -371,6 +387,9 @@
                             <Border Classes="tag" IsVisible="{Binding HasUrlBitrate}">
                                 <TextBlock Text="{Binding UrlBitrate}" />
                             </Border>
+                            <Border Classes="tag" IsVisible="{Binding HasUrlSampleRate}">
+                                <TextBlock Text="{Binding UrlSampleRate}" />
+                            </Border>
                             <Border Classes="tag" IsVisible="{Binding HasUrlDuration}">
                                 <TextBlock Text="{Binding UrlDuration}" />
                             </Border>
@@ -476,6 +495,7 @@
                                                VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="3"
                                                Text="{Binding SampleRate}"
+                                               Classes="mono"
                                                FontSize="11"
                                                Foreground="{DynamicResource TextSecondaryBrush}"
                                                VerticalAlignment="Center" />
