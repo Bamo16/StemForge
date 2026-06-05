@@ -71,27 +71,19 @@ public sealed class GitHubReleaseFetcher : IReleaseFetcher
     private static readonly string ApiUrl =
         $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/latest";
 
-    private readonly HttpClient _http;
+    private readonly IHttpClientFactory _factory;
 
-    public GitHubReleaseFetcher(IAppInfo appInfo)
+    public GitHubReleaseFetcher(IHttpClientFactory factory)
     {
-        _http = new HttpClient();
-        // GitHub API requires a User-Agent header; use the app name and version.
-        _http.DefaultRequestHeaders.UserAgent.ParseAdd(
-            $"{appInfo.ProductName}/{appInfo.ShortVersion}"
-        );
-        // Accept header for the GitHub REST API v3.
-        _http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
-        // Short timeout: this is a best-effort background check on startup.
-        _http.Timeout = TimeSpan.FromSeconds(10);
+        _factory = factory;
     }
 
     public async Task<string?> FetchLatestTagAsync(CancellationToken ct = default)
     {
         try
         {
-            var response = await _http
-                .GetFromJsonAsync<GitHubReleaseResponse>(ApiUrl, ct)
+            var http = _factory.CreateClient("github");
+            var response = await http.GetFromJsonAsync<GitHubReleaseResponse>(ApiUrl, ct)
                 .ConfigureAwait(false);
             return response?.TagName;
         }

@@ -570,11 +570,7 @@ public sealed class JobQueueService(
                 log,
                 ct
             );
-        var thumbPath = await YouTubeAudioService.DownloadThumbnailAsync(
-            meta.ThumbnailUrl,
-            dlDir,
-            ct
-        );
+        var thumbPath = await _youTubeAudio.DownloadThumbnailAsync(meta.ThumbnailUrl, dlDir, ct);
         var sourceInfo = AudioTagger.FromYtDlpMetadata(meta, thumbPath);
         var audioPath = await _youTubeAudio.DownloadAsync(meta, AudioFormat.Flac, dlDir, log, ct);
         return (audioPath, sourceInfo);

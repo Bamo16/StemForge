@@ -18,7 +18,7 @@ public sealed class ToolInstallerTests
         var installer = new ToolInstaller(
             fake,
             paths,
-            new BundledFetcher(paths, platform, AppInfo.Current),
+            new BundledFetcher(paths, platform, NullHttpClientFactory.Instance),
             platform
         );
         return (installer, fake, paths);

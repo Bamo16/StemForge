@@ -11,17 +11,20 @@ namespace StemForge.Services;
 ///   2. ffmpeg streams that URL to disk in the chosen format with provenance tags
 /// No temp file, no double-encoding, full visibility into yt-dlp and ffmpeg progress.
 /// </summary>
-public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
+public sealed class YouTubeAudioService(
+    IProcessRunner runner,
+    AppPaths paths,
+    IHttpClientFactory httpFactory
+)
 {
     private readonly IProcessRunner _runner = runner;
     private readonly AppPaths _paths = paths;
+    private readonly IHttpClientFactory _httpFactory = httpFactory;
 
     private static readonly HashSet<char> _invalidFileNameChars =
     [
         .. Path.GetInvalidFileNameChars(),
     ];
-
-    private static readonly HttpClient _http = new();
 
     public async Task<YtDlpMetadata> ResolveAsync(
         string url,
@@ -156,7 +159,7 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
     /// Downloads the thumbnail image at <paramref name="url"/> into <paramref name="outDir"/>
     /// and returns the local path. Returns null on failure (non-fatal).
     /// </summary>
-    public static async Task<string?> DownloadThumbnailAsync(
+    public async Task<string?> DownloadThumbnailAsync(
         string? url,
         string outDir,
         CancellationToken ct
@@ -173,7 +176,8 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
                 ext = ".jpg";
 
             var dest = Path.Combine(outDir, $"thumbnail{ext}");
-            var bytes = await _http.GetByteArrayAsync(url, ct);
+            var http = _httpFactory.CreateClient("thumbnail");
+            var bytes = await http.GetByteArrayAsync(url, ct);
             await File.WriteAllBytesAsync(dest, bytes, ct);
             return dest;
         }
