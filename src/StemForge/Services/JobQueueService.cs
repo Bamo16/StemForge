@@ -305,6 +305,7 @@ public sealed class JobQueueService(
                 vm.StatusText = "Failed";
                 vm.Status = JobStatus.Failed;
                 vm.IsExpanded = true;
+                vm.FlushRawLogToOutput();
                 OnPropertyChanged();
             });
         }
@@ -324,7 +325,7 @@ public sealed class JobQueueService(
 
     // ── Progress mapping ──────────────────────────────────────────────────────
 
-    private static void HandleProgress(
+    internal static void HandleProgress(
         JobItemViewModel vm,
         JobProgress p,
         int presetIndex,
@@ -332,30 +333,47 @@ public sealed class JobQueueService(
         string presetLabel
     )
     {
-        var prefix = presetLabel;
+        var prefix = totalSteps > 1 ? $"[{presetLabel}]" : presetLabel;
 
         switch (p.Phase)
         {
             case "downloading_model":
                 if (p.Cached == false)
+                {
                     vm.StatusText =
                         p.ModelCount > 1
-                            ? $"{prefix} — Downloading model {p.ModelIndex}/{p.ModelCount}…"
-                            : $"{prefix} — Downloading model…";
+                            ? $"{presetLabel} — Downloading model {p.ModelIndex}/{p.ModelCount}…"
+                            : $"{presetLabel} — Downloading model…";
+                    var logLine =
+                        p.ModelCount > 1
+                            ? $"{prefix} Downloading model {p.ModelIndex}/{p.ModelCount}…"
+                            : $"{prefix} Downloading model…";
+                    vm.AppendLog(logLine);
+                }
                 break;
 
             case "loading_model":
                 vm.StatusText =
                     p.ModelCount > 1
-                        ? $"{prefix} — Loading model {p.ModelIndex}/{p.ModelCount}…"
-                        : $"{prefix} — Loading model…";
+                        ? $"{presetLabel} — Loading model {p.ModelIndex}/{p.ModelCount}…"
+                        : $"{presetLabel} — Loading model…";
+                var loadLine =
+                    p.ModelCount > 1
+                        ? $"{prefix} Loading model {p.ModelIndex}/{p.ModelCount}…"
+                        : $"{prefix} Loading model…";
+                vm.AppendLog(loadLine);
                 break;
 
             case "separating":
                 vm.StatusText =
                     p.ModelCount > 1
-                        ? $"{prefix} — Separating ({p.ModelCount} models)…"
-                        : $"{prefix} — Separating…";
+                        ? $"{presetLabel} — Separating ({p.ModelCount} models)…"
+                        : $"{presetLabel} — Separating…";
+                var sepLine =
+                    p.ModelCount > 1
+                        ? $"{prefix} Separating ({p.ModelCount} models)…"
+                        : $"{prefix} Separating…";
+                vm.AppendLog(sepLine);
                 break;
 
             case "progress":
@@ -369,14 +387,18 @@ public sealed class JobQueueService(
                         !vm.StatusText.Contains("Separating")
                         && !vm.StatusText.Contains("Combining")
                     )
-                        vm.StatusText = $"{prefix} — Separating…";
+                        vm.StatusText = $"{presetLabel} — Separating…";
                 }
                 break;
 
             case "ensembling":
                 vm.StatusText = p.Stem is { } stem
-                    ? $"{prefix} — Combining {stem}…"
-                    : $"{prefix} — Combining stems…";
+                    ? $"{presetLabel} — Combining {stem}…"
+                    : $"{presetLabel} — Combining stems…";
+                var ensLine = p.Stem is { } s
+                    ? $"{prefix} Combining {s}…"
+                    : $"{prefix} Combining stems…";
+                vm.AppendLog(ensLine);
                 break;
 
             case "stem_written":
@@ -386,7 +408,13 @@ public sealed class JobQueueService(
 
             case "log":
                 if (p.LogMessage is { Length: > 0 } msg)
-                    vm.AppendLog(msg);
+                {
+                    // Always accumulate into the raw buffer for failure diagnostics.
+                    vm.AccumulateRawLog(msg);
+                    // Only surface warnings and errors in the live feed.
+                    if (p.LogLevel is "warning" or "error")
+                        vm.AppendLog(msg);
+                }
                 break;
         }
     }
