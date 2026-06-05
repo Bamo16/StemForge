@@ -93,7 +93,7 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             DurationSeconds: info.Duration,
             FormatId: selected.FormatId,
             MediaUrl: mediaUrl,
-            ThumbnailUrl: info.Thumbnail,
+            ThumbnailUrl: info.SelectBestThumbnail(),
             // Ordered best-first by bitrate; the AUTO pick (selected) is tagged in place by the
             // picker rather than floated to the top.
             AudioFormats: info.AudioFormatsByPreference() is { Count: > 0 } ranked
