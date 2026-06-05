@@ -108,9 +108,8 @@ public sealed record YtDlpVideoInfo
             FileSizeApprox = FileSizeApprox,
         };
 
-    // Thresholds for SelectBestThumbnail.
-    private const double SquareRatioMin = 0.95;
-    private const double SquareRatioMax = 1.05;
+    // Selection-policy thresholds for SelectBestThumbnail. The square-shape definition itself lives
+    // on YtDlpThumbnail.IsSquare.
     private const int SquareSizeCap = 1200;
     private const int TinySquareThreshold = 300;
     private const double DramaticallyLargerFactor = 3.0;
@@ -135,48 +134,25 @@ public sealed record YtDlpVideoInfo
     /// </summary>
     public string? SelectBestThumbnail()
     {
-        // Thumbnails with known dimensions only.
-        var sized = Thumbnails.Where(t => t.Width.HasValue && t.Height.HasValue).ToList();
-        if (sized.Count == 0)
-            return Thumbnail;
-
-        var squares = sized
-            .Where(t =>
-            {
-                var ratio = (double)t.Width!.Value / t.Height!.Value;
-                return ratio >= SquareRatioMin && ratio <= SquareRatioMax;
-            })
-            .ToList();
-
+        var sized = Thumbnails.Where(t => t.IsSized).ToList();
+        var squares = sized.Where(t => t.IsSquare).ToList();
         if (squares.Count == 0)
             return Thumbnail;
 
-        // Best square: largest at or below cap, else smallest available.
-        var underCap = squares
-            .Where(t => Math.Max(t.Width!.Value, t.Height!.Value) <= SquareSizeCap)
-            .ToList();
-
+        // Largest square at or below the cap; if every square exceeds it, the smallest square.
         var bestSquare =
-            underCap.Count > 0
-                ? underCap.MaxBy(t => Math.Max(t.Width!.Value, t.Height!.Value))!
-                : squares.MinBy(t => Math.Max(t.Width!.Value, t.Height!.Value))!;
+            squares.Where(t => t.LongestSide <= SquareSizeCap).MaxBy(t => t.LongestSide)
+            ?? squares.MinBy(t => t.LongestSide)!;
 
-        // Yield to a dramatically larger non-square when the chosen square is tiny.
-        var squareLongest = Math.Max(bestSquare.Width!.Value, bestSquare.Height!.Value);
-        if (squareLongest < TinySquareThreshold)
+        // A tiny square yields to a dramatically larger non-square.
+        if (bestSquare.LongestSide < TinySquareThreshold)
         {
-            var bestNonSquare = sized
-                .Except(squares)
-                .MaxBy(t => Math.Max(t.Width!.Value, t.Height!.Value));
-            if (bestNonSquare is not null)
-            {
-                var nonSquareLongest = Math.Max(
-                    bestNonSquare.Width!.Value,
-                    bestNonSquare.Height!.Value
-                );
-                if (nonSquareLongest >= squareLongest * DramaticallyLargerFactor)
-                    return bestNonSquare.Url;
-            }
+            var bestNonSquare = sized.Where(t => !t.IsSquare).MaxBy(t => t.LongestSide);
+            if (
+                bestNonSquare is { } nonSquare
+                && nonSquare.LongestSide >= bestSquare.LongestSide * DramaticallyLargerFactor
+            )
+                return nonSquare.Url;
         }
 
         return bestSquare.Url;
@@ -272,12 +248,28 @@ public sealed record YtDlpFormat
 /// </summary>
 public sealed record YtDlpThumbnail
 {
+    private const double SquareRatioMin = 0.95;
+    private const double SquareRatioMax = 1.05;
+
     public string? Id { get; init; }
     public string Url { get; init; } = string.Empty;
     public int? Preference { get; init; }
     public int? Width { get; init; }
     public int? Height { get; init; }
     public string? Resolution { get; init; }
+
+    /// <summary>True when both <see cref="Width"/> and <see cref="Height"/> are known.</summary>
+    [JsonIgnore]
+    public bool IsSized => Width.HasValue && Height.HasValue;
+
+    /// <summary>Longest side in pixels, or 0 when dimensions are unknown.</summary>
+    [JsonIgnore]
+    public int LongestSide => Math.Max(Width ?? 0, Height ?? 0);
+
+    /// <summary>True when the thumbnail is sized and roughly square (aspect 0.95 to 1.05).</summary>
+    [JsonIgnore]
+    public bool IsSquare =>
+        IsSized && (double)Width!.Value / Height!.Value is >= SquareRatioMin and <= SquareRatioMax;
 }
 
 /// <summary>
