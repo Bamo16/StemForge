@@ -33,7 +33,7 @@ public sealed class SetupWizardViewModelTests
     private static ToolRowViewModel Row(SetupWizardViewModel vm, ToolKind kind) =>
         vm.InstallRows.Single(r => r.Kind == kind);
 
-    [AvaloniaFact]
+    [Fact]
     public void InitialStep_IsWelcome()
     {
         var vm = Build();
@@ -41,7 +41,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.IsWelcomeStep);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void Start_MovesToDetect()
     {
         var fake = new FakeProcessRunner();
@@ -56,7 +56,7 @@ public sealed class SetupWizardViewModelTests
         Assert.False(vm.IsWelcomeStep);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void Back_FromDetect_GoesToWelcome()
     {
         var vm = Build();
@@ -65,7 +65,7 @@ public sealed class SetupWizardViewModelTests
         Assert.Equal(WizardStep.Welcome, vm.CurrentStep);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void Next_FromDirectories_GoesToInstall()
     {
         var vm = Build();
@@ -74,7 +74,7 @@ public sealed class SetupWizardViewModelTests
         Assert.Equal(WizardStep.Install, vm.CurrentStep);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void Next_FromInstall_GoesToFinish()
     {
         var vm = Build();
@@ -83,7 +83,7 @@ public sealed class SetupWizardViewModelTests
         Assert.Equal(WizardStep.Finish, vm.CurrentStep);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void CanGoNext_OnInstallStep_RequiresAllRequiredToolsFound()
     {
         var vm = Build();
@@ -103,7 +103,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.CanGoNext);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void CanGoNext_OnWelcomeStep_AlwaysTrue()
     {
         var vm = Build();
@@ -111,7 +111,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.CanGoNext);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void IsBackVisible_OnlyForMiddleSteps()
     {
         var vm = Build();
@@ -132,7 +132,7 @@ public sealed class SetupWizardViewModelTests
         Assert.False(vm.IsBackVisible);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void StepIndicators_ActivateProgressively()
     {
         var vm = Build();
@@ -157,7 +157,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.IsStep4Active);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void Reset_RestoresWelcomeStep()
     {
         var vm = Build();
@@ -171,7 +171,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.CanDismiss);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void SetupDismissed_FiredByDismissCommand()
     {
         var vm = Build();
@@ -183,7 +183,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(fired);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void GpuVariantHelpers_ReflectCurrentVariant()
     {
         var vm = Build();
@@ -201,6 +201,8 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.IsDirectML);
     }
 
+    // Kept as [AvaloniaFact]: awaits InstallSelectedCommand.ExecuteAsync which posts work onto
+    // the Avalonia UI thread dispatcher; a plain [Fact] would deadlock waiting for that dispatch.
     [AvaloniaFact]
     public async Task InstallSelected_SetsIndeterminateProgressDuringAudioSeparatorInstall()
     {
@@ -256,7 +258,7 @@ public sealed class SetupWizardViewModelTests
         Assert.False(vm.IsInstalling);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void VariantPicker_OffersOnlyCurrentOsVariants()
     {
         IVariantPicker vm = Build();
