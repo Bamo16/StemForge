@@ -22,6 +22,32 @@ public static class ServiceRegistration
         services.AddSingleton<IAppInfo>(AppInfo.Current);
         services.AddSingleton<AppPaths>();
 
+        // Named HTTP clients
+        services.AddHttpClient(
+            "github",
+            (sp, client) =>
+            {
+                var appInfo = sp.GetRequiredService<IAppInfo>();
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(
+                    $"{appInfo.ProductName}/{appInfo.ShortVersion}"
+                );
+                client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+                client.Timeout = TimeSpan.FromSeconds(10);
+            }
+        );
+        services.AddHttpClient("thumbnail");
+        services.AddHttpClient(
+            "bundled",
+            (sp, client) =>
+            {
+                var appInfo = sp.GetRequiredService<IAppInfo>();
+                client.DefaultRequestHeaders.UserAgent.Add(
+                    new(appInfo.ProductName, appInfo.ShortVersion)
+                );
+                client.Timeout = TimeSpan.FromMinutes(15);
+            }
+        );
+
         // Update check
         services.AddSingleton<IReleaseFetcher, GitHubReleaseFetcher>();
         services.AddSingleton<UpdateCheckService>();

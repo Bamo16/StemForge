@@ -96,7 +96,27 @@ public sealed class BundledFetcherTests
     {
         var paths = new AppPaths(new AppSettings());
         var platform = new PlatformInfo(OSKind.Windows, Architecture.X64);
-        return new BundledFetcher(paths, platform, appInfo);
+        var factory = new BundledHttpClientFactory(appInfo);
+        return new BundledFetcher(paths, platform, factory);
+    }
+
+    /// <summary>
+    /// Minimal <see cref="IHttpClientFactory"/> that returns a single shared
+    /// <see cref="HttpClient"/> configured identically to the "bundled" named client
+    /// registered in production, so tests exercise the same User-Agent and timeout.
+    /// </summary>
+    private sealed class BundledHttpClientFactory(IAppInfo appInfo) : IHttpClientFactory
+    {
+        private readonly HttpClient _client = new()
+        {
+            Timeout = TimeSpan.FromMinutes(15),
+            DefaultRequestHeaders =
+            {
+                UserAgent = { new(appInfo.ProductName, appInfo.ShortVersion) },
+            },
+        };
+
+        public HttpClient CreateClient(string name) => _client;
     }
 
     private static string CreateTempDir()

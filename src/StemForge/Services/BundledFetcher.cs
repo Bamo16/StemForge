@@ -12,25 +12,15 @@ namespace StemForge.Services;
 /// the catalog's <see cref="BundledAsset"/> (<see cref="ArchiveFormat"/> and
 /// <see cref="BundledLayout"/>) rather than separate classes.
 /// </summary>
-public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppInfo appInfo)
+public sealed class BundledFetcher(
+    AppPaths paths,
+    PlatformInfo platform,
+    IHttpClientFactory httpFactory
+)
 {
     private readonly AppPaths _paths = paths;
     private readonly PlatformInfo _platform = platform;
-    private readonly IAppInfo _appInfo = appInfo;
-
-    // One shared HttpClient reused across all downloads to avoid per-call socket churn. Built
-    // lazily so the user-agent can be sourced from the injected IAppInfo. BundledFetcher is a DI
-    // singleton, so this client lives for the app's lifetime.
-    private readonly Lazy<HttpClient> _http = new(() =>
-        new HttpClient
-        {
-            Timeout = TimeSpan.FromMinutes(15),
-            DefaultRequestHeaders =
-            {
-                UserAgent = { new(appInfo.ProductName, appInfo.ShortVersion) },
-            },
-        }
-    );
+    private readonly IHttpClientFactory _httpFactory = httpFactory;
 
     // Prepends the tool name to a log message (e.g. "ffmpeg: Downloading") so cumulative
     // multi-tool install logs read unambiguously. A null/blank name leaves the message as-is.
@@ -104,7 +94,7 @@ public sealed class BundledFetcher(AppPaths paths, PlatformInfo platform, IAppIn
         string? toolName = null
     )
     {
-        var http = _http.Value;
+        var http = _httpFactory.CreateClient("bundled");
 
         using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
         response.EnsureSuccessStatusCode();
