@@ -94,37 +94,72 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <!-- Logs button pinned to sidebar bottom -->
-                <Button Grid.Row="1"
-                        Width="44" Height="44"
-                        HorizontalAlignment="Center"
-                        Margin="0,0,0,10"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Padding="0"
-                        CornerRadius="6"
-                        ToolTip.Tip="Open logs"
-                        Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowLogsCommand}">
-                    <Button.Styles>
-                        <Style Selector="Button:pointerover /template/ ContentPresenter">
-                            <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
-                        </Style>
-                    </Button.Styles>
-                    <StackPanel Orientation="Vertical" Spacing="2"
-                                VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Path Data="M3 5 H5 M3 9 H5 M3 13 H5 M7 5 H15 M7 9 H15 M7 13 H13"
-                              Width="18" Height="18"
-                              Stretch="None"
-                              StrokeThickness="1.5"
-                              StrokeLineCap="Round"
-                              StrokeJoin="Round"
-                              Stroke="{DynamicResource TextSecondaryBrush}" />
-                        <TextBlock Text="Logs"
-                                   FontSize="9"
-                                   HorizontalAlignment="Center"
-                                   Foreground="{DynamicResource TextSecondaryBrush}" />
-                    </StackPanel>
-                </Button>
+                <!-- Bottom sidebar cluster: update nudge (conditional) + logs button -->
+                <StackPanel Grid.Row="1" Orientation="Vertical" Spacing="0" Margin="0,0,0,6">
+
+                    <!-- Update-available nudge: only visible when a newer release is available -->
+                    <Button IsVisible="{Binding UpdateAvailableVersion, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            Width="44" Height="44"
+                            HorizontalAlignment="Center"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="0"
+                            CornerRadius="6"
+                            ToolTip.Tip="{Binding UpdateAvailableVersion, StringFormat='v{0} available. Click to open Releases.'}"
+                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenUrlCommand}"
+                            CommandParameter="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ReleasesUrl}">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+                            </Style>
+                        </Button.Styles>
+                        <StackPanel Orientation="Vertical" Spacing="2"
+                                    VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <Path Data="M9 2 L9 10 M5 6 L9 2 L13 6 M4 14 H14"
+                                  Width="18" Height="18"
+                                  Stretch="None"
+                                  StrokeThickness="1.5"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round"
+                                  Stroke="{DynamicResource AccentBrush}" />
+                            <TextBlock Text="Update"
+                                       FontSize="9"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource AccentBrush}" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Logs button -->
+                    <Button Width="44" Height="44"
+                            HorizontalAlignment="Center"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="0"
+                            CornerRadius="6"
+                            ToolTip.Tip="Open logs"
+                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowLogsCommand}">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+                            </Style>
+                        </Button.Styles>
+                        <StackPanel Orientation="Vertical" Spacing="2"
+                                    VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <Path Data="M3 5 H5 M3 9 H5 M3 13 H5 M7 5 H15 M7 9 H15 M7 13 H13"
+                                  Width="18" Height="18"
+                                  Stretch="None"
+                                  StrokeThickness="1.5"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round"
+                                  Stroke="{DynamicResource TextSecondaryBrush}" />
+                            <TextBlock Text="Logs"
+                                       FontSize="9"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                        </StackPanel>
+                    </Button>
+
+                </StackPanel>
                 </Grid>
             </Border>
 

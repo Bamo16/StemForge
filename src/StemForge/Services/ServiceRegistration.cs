@@ -22,6 +22,10 @@ public static class ServiceRegistration
         services.AddSingleton<IAppInfo>(AppInfo.Current);
         services.AddSingleton<AppPaths>();
 
+        // Update check
+        services.AddSingleton<IReleaseFetcher, GitHubReleaseFetcher>();
+        services.AddSingleton<UpdateCheckService>();
+
         // Domain services
         services.AddSingleton<SetupDetector>();
         services.AddSingleton<GpuDetector>();
