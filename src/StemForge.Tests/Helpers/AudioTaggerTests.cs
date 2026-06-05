@@ -65,6 +65,30 @@ public sealed class AudioTaggerTests
     }
 
     [Fact]
+    public void ReadAudioProperties_NonexistentPath_ReturnsAllNulls()
+    {
+        var (codec, bitrate, sampleRate, duration) = AudioTagger.ReadAudioProperties(
+            "/nonexistent/path/file.flac"
+        );
+
+        Assert.Null(codec);
+        Assert.Null(bitrate);
+        Assert.Null(sampleRate);
+        Assert.Null(duration);
+    }
+
+    [Fact]
+    public void ReadAudioProperties_EmptyPath_ReturnsAllNulls()
+    {
+        var (codec, bitrate, sampleRate, duration) = AudioTagger.ReadAudioProperties(string.Empty);
+
+        Assert.Null(codec);
+        Assert.Null(bitrate);
+        Assert.Null(sampleRate);
+        Assert.Null(duration);
+    }
+
+    [Fact]
     public void FromYtDlpMetadata_UrlJob_PopulatesSourceProvenanceFields()
     {
         var meta = new YtDlpMetadata(

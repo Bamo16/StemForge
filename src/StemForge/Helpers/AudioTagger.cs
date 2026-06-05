@@ -16,6 +16,62 @@ public static class AudioTagger
     // ── Reading ───────────────────────────────────────────────────────────────
 
     /// <summary>
+    /// Reads audio stream properties (codec, bitrate, sample rate, duration) from a local
+    /// audio file using TagLibSharp. Returns all nulls if the file is unreadable or the
+    /// format is unsupported.
+    /// </summary>
+    public static (
+        string? Codec,
+        string? Bitrate,
+        string? SampleRate,
+        string? Duration
+    ) ReadAudioProperties(string path)
+    {
+        try
+        {
+            using var f = TFile.Create(path);
+            var props = f.Properties;
+
+            var codec = CodecFromMimeType(f.MimeType);
+            var bitrate = props.AudioBitrate > 0 ? $"{props.AudioBitrate} kb/s" : null;
+            var sampleRate =
+                props.AudioSampleRate > 0 ? $"{props.AudioSampleRate / 1000.0:F1} kHz" : null;
+            var duration =
+                props.Duration > TimeSpan.Zero
+                    ? (
+                        props.Duration.TotalHours >= 1
+                            ? props.Duration.ToString(@"h\:mm\:ss")
+                            : props.Duration.ToString(@"m\:ss")
+                    )
+                    : null;
+
+            return (codec, bitrate, sampleRate, duration);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Debug(
+                "tagger",
+                $"Could not read audio properties from {Path.GetFileName(path)}: {ex.Message}"
+            );
+            return (null, null, null, null);
+        }
+    }
+
+    private static string? CodecFromMimeType(string? mimeType) =>
+        mimeType?.ToLowerInvariant() switch
+        {
+            "taglib/flac" => "FLAC",
+            "taglib/mp3" => "MP3",
+            "taglib/mp4" or "taglib/m4a" or "taglib/aac" => "AAC",
+            "taglib/ogg" or "taglib/opus" => "Opus",
+            "taglib/wav" => "WAV",
+            "taglib/aiff" or "taglib/aif" => "AIFF",
+            "taglib/wma" => "WMA",
+            _ when mimeType is { Length: > 8 } => mimeType["taglib/".Length..].ToUpperInvariant(),
+            _ => null,
+        };
+
+    /// <summary>
     /// Reads standard tags and embedded cover art from a local audio file.
     /// Returns null if the file format is unsupported or the file is unreadable.
     /// </summary>
