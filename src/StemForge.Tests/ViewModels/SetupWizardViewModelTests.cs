@@ -201,9 +201,13 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.IsDirectML);
     }
 
-    // Kept as [AvaloniaFact]: awaits InstallSelectedCommand.ExecuteAsync which posts work onto
-    // the Avalonia UI thread dispatcher; a plain [Fact] would deadlock waiting for that dispatch.
-    [AvaloniaFact]
+    // Plain [Fact]: FakeProcessRunner returns Task.FromResult everywhere, so every await in
+    // InstallSelectedAsync completes inline (no SynchronizationContext → no dispatcher queue).
+    // [AvaloniaFact] was actively harmful here: the Avalonia SynchronizationContext causes
+    // await-on-completed-task to *post* continuations rather than run them inline, which lets
+    // the fire-and-forget RecheckToolsAsync continuation race against the test's WantInstall
+    // assignments and produce non-deterministic results.
+    [Fact]
     public async Task InstallSelected_SetsIndeterminateProgressDuringAudioSeparatorInstall()
     {
         // Resolve the actual exe paths the wizard will probe/install with (uv resolves to a known
