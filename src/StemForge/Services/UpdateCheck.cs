@@ -33,50 +33,46 @@ public sealed class UpdateCheckService(IAppInfo appInfo, IReleaseFetcher fetcher
     /// </summary>
     public async Task<UpdateCheckResult> CheckAsync(CancellationToken ct = default)
     {
+        if (!Version.TryParse(appInfo.ShortVersion, out var runningVersion))
+            return new UpdateCheckResult(false, null);
+
+        string? tag;
         try
         {
-            var tag = await fetcher.FetchLatestTagAsync(ct).ConfigureAwait(false);
-            if (tag is null)
-                return new UpdateCheckResult(false, null);
-
-            // Strip a leading "v" that is conventional in GitHub release tags (e.g. "v0.2.0").
-            var normalized = tag.TrimStart('v', 'V');
-
-            if (!Version.TryParse(normalized, out var latestVersion))
-                return new UpdateCheckResult(false, null);
-
-            if (!Version.TryParse(appInfo.ShortVersion, out var runningVersion))
-                return new UpdateCheckResult(false, null);
-
-            var updateAvailable = latestVersion > runningVersion;
-            return new UpdateCheckResult(updateAvailable, normalized);
+            tag = await fetcher.FetchLatestTagAsync(ct).ConfigureAwait(false);
         }
         catch
         {
             return new UpdateCheckResult(false, null);
         }
+
+        if (tag is null)
+            return new UpdateCheckResult(false, null);
+
+        // Strip a leading "v" that is conventional in GitHub release tags (e.g. "v0.2.0").
+        var normalized = tag.TrimStart('v', 'V');
+
+        if (!Version.TryParse(normalized, out var latestVersion))
+            return new UpdateCheckResult(false, null);
+
+        var updateAvailable = latestVersion > runningVersion;
+        return new UpdateCheckResult(updateAvailable, normalized);
     }
 }
 
 /// <summary>
 /// Fetches the latest release tag from the GitHub Releases API for a given owner/repo.
 /// </summary>
-public sealed class GitHubReleaseFetcher : IReleaseFetcher
+public sealed class GitHubReleaseFetcher(IHttpClientFactory factory) : IReleaseFetcher
 {
     // Repository coordinates. A single constant here is acceptable: this is the app's own identity
     // and does not vary at runtime.
     internal const string RepoOwner = "Bamo16";
     internal const string RepoName = "StemForge";
-
-    private static readonly string ApiUrl =
+    private const string ApiUrl =
         $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/latest";
 
-    private readonly IHttpClientFactory _factory;
-
-    public GitHubReleaseFetcher(IHttpClientFactory factory)
-    {
-        _factory = factory;
-    }
+    private readonly IHttpClientFactory _factory = factory;
 
     public async Task<string?> FetchLatestTagAsync(CancellationToken ct = default)
     {

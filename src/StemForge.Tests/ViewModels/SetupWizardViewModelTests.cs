@@ -1,4 +1,3 @@
-using Avalonia.Headless.XUnit;
 using StemForge.Models;
 using StemForge.Services;
 using StemForge.Tests.Fakes;
@@ -18,7 +17,7 @@ public sealed class SetupWizardViewModelTests
         var runner = (IProcessRunner)fake;
         var setupDetector = new SetupDetector(runner, paths);
         var platform = PlatformInfo.Current;
-        var bundledFetcher = new BundledFetcher(paths, platform, NullHttpClientFactory.Instance);
+        var bundledFetcher = new BundledFetcher(paths, platform, NullFileDownloader.Instance);
         return new SetupWizardViewModel(
             settings,
             setupDetector,

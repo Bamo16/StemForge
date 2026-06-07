@@ -11,15 +11,10 @@ namespace StemForge.Services;
 ///   2. ffmpeg streams that URL to disk in the chosen format with provenance tags
 /// No temp file, no double-encoding, full visibility into yt-dlp and ffmpeg progress.
 /// </summary>
-public sealed class YouTubeAudioService(
-    IProcessRunner runner,
-    AppPaths paths,
-    IHttpClientFactory httpFactory
-)
+public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
 {
     private readonly IProcessRunner _runner = runner;
     private readonly AppPaths _paths = paths;
-    private readonly IHttpClientFactory _httpFactory = httpFactory;
 
     private static readonly HashSet<char> _invalidFileNameChars =
     [
@@ -153,39 +148,6 @@ public sealed class YouTubeAudioService(
         await _runner.RunStreamingAsync(_paths.Ffmpeg, args, log, ct);
 
         return outputPath;
-    }
-
-    /// <summary>
-    /// Downloads the thumbnail image at <paramref name="url"/> into <paramref name="outDir"/>
-    /// and returns the local path. Returns null on failure (non-fatal).
-    /// </summary>
-    public async Task<string?> DownloadThumbnailAsync(
-        string? url,
-        string outDir,
-        CancellationToken ct
-    )
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            return null;
-        try
-        {
-            // Derive extension from URL path; default to .jpg which ffmpeg handles universally.
-            var uriPath = new Uri(url).LocalPath;
-            var ext = Path.GetExtension(uriPath);
-            if (string.IsNullOrEmpty(ext))
-                ext = ".jpg";
-
-            var dest = Path.Combine(outDir, $"thumbnail{ext}");
-            var http = _httpFactory.CreateClient("thumbnail");
-            var bytes = await http.GetByteArrayAsync(url, ct);
-            await File.WriteAllBytesAsync(dest, bytes, ct);
-            return dest;
-        }
-        catch (Exception ex)
-        {
-            AppLogger.Debug("yt-dlp", $"Thumbnail download failed: {ex.Message}");
-            return null;
-        }
     }
 
     // ── Logging ───────────────────────────────────────────────────────────────

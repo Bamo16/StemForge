@@ -5,6 +5,20 @@ using StemForge.Models;
 
 namespace StemForge.Services;
 
+public interface IFileDownloader
+{
+    /// <summary>
+    /// Downloads <paramref name="url"/> to <paramref name="destination"/>, reporting progress.
+    /// </summary>
+    Task DownloadAsync(
+        string url,
+        string destination,
+        IProgress<InstallProgress>? progress,
+        CancellationToken ct,
+        string? toolName = null
+    );
+}
+
 /// <summary>
 /// Downloads a tool's <see cref="BundledFetch"/> asset, verifies its SHA-256, and installs the
 /// binary into <see cref="AppPaths.BundledBinDir"/>. Consolidates the former per-tool
@@ -15,17 +29,12 @@ namespace StemForge.Services;
 public sealed class BundledFetcher(
     AppPaths paths,
     PlatformInfo platform,
-    IHttpClientFactory httpFactory
+    IFileDownloader fileDownloader
 )
 {
     private readonly AppPaths _paths = paths;
     private readonly PlatformInfo _platform = platform;
-    private readonly IHttpClientFactory _httpFactory = httpFactory;
-
-    // Prepends the tool name to a log message (e.g. "ffmpeg: Downloading") so cumulative
-    // multi-tool install logs read unambiguously. A null/blank name leaves the message as-is.
-    private static string Prefix(string? toolName, string message) =>
-        string.IsNullOrWhiteSpace(toolName) ? message : $"{toolName}: {message}";
+    private readonly IFileDownloader _fileDownloader = fileDownloader;
 
     /// <summary>True when the tool's bundled binary is already present.</summary>
     public bool IsBundled(Tool tool) =>
@@ -63,7 +72,7 @@ public sealed class BundledFetcher(
         // log stays unambiguous about which tool a Downloading/Verifying/Extracting line belongs to.
         try
         {
-            await DownloadAsync(asset.Url, temp, progress, ct, tool.CliName);
+            await _fileDownloader.DownloadAsync(asset.Url, temp, progress, ct, tool.CliName);
             // SHA-256 is verified on the downloaded bytes before any extraction touches disk.
             VerifyChecksum(temp, asset.Sha256, progress, tool.CliName);
             Install(asset, temp, tool, progress);
@@ -81,48 +90,6 @@ public sealed class BundledFetcher(
         }
     }
 
-    /// <summary>
-    /// Downloads <paramref name="url"/> to <paramref name="destination"/> using the shared
-    /// HttpClient, reporting progress. Internal so the shared-client download + progress path is
-    /// testable against a loopback server without driving a full <see cref="FetchAsync"/>.
-    /// </summary>
-    internal async Task DownloadAsync(
-        string url,
-        string destination,
-        IProgress<InstallProgress>? progress,
-        CancellationToken ct,
-        string? toolName = null
-    )
-    {
-        var http = _httpFactory.CreateClient("bundled");
-
-        using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-        response.EnsureSuccessStatusCode();
-
-        var totalBytes = response.Content.Headers.ContentLength;
-        using var stream = await response.Content.ReadAsStreamAsync(ct);
-        using var file = File.Create(destination);
-
-        var buffer = new byte[81920];
-        long totalRead = 0;
-        long lastReported = 0;
-        int read;
-        while ((read = await stream.ReadAsync(buffer, ct)) > 0)
-        {
-            await file.WriteAsync(buffer.AsMemory(0, read), ct);
-            totalRead += read;
-
-            // Throttle progress reports to once per ~1 MiB to keep the log readable.
-            if (totalRead - lastReported >= 1_048_576 || totalRead == totalBytes)
-            {
-                progress?.Report(
-                    new InstallProgress(Prefix(toolName, "Downloading"), totalRead, totalBytes)
-                );
-                lastReported = totalRead;
-            }
-        }
-    }
-
     private static void VerifyChecksum(
         string path,
         string expectedSha256,
@@ -133,12 +100,16 @@ public sealed class BundledFetcher(
         if (string.IsNullOrEmpty(expectedSha256))
         {
             progress?.Report(
-                new InstallProgress(Prefix(toolName, "Skipping checksum (no pinned hash)"))
+                new InstallProgress(
+                    InstallProgress.Prefix(toolName, "Skipping checksum (no pinned hash)")
+                )
             );
             return;
         }
 
-        progress?.Report(new InstallProgress(Prefix(toolName, "Verifying checksum")));
+        progress?.Report(
+            new InstallProgress(InstallProgress.Prefix(toolName, "Verifying checksum"))
+        );
 
         using var sha = SHA256.Create();
         using var stream = File.OpenRead(path);
@@ -159,7 +130,9 @@ public sealed class BundledFetcher(
     {
         var isRaw = asset.Format == ArchiveFormat.RawBinary;
         progress?.Report(
-            new InstallProgress(Prefix(tool.CliName, isRaw ? "Installing" : "Extracting"))
+            new InstallProgress(
+                InstallProgress.Prefix(tool.CliName, isRaw ? "Installing" : "Extracting")
+            )
         );
 
         var binaryName = tool.BundledBinaryFileName(_platform);
@@ -236,8 +209,7 @@ public sealed class BundledFetcher(
             throw new InvalidDataException($"{binaryName} not found in downloaded archive.");
     }
 
-    private static void ExtractBinDir(ArchiveFormat format, string archivePath, string targetDir)
-    {
+    private static void ExtractBinDir(ArchiveFormat format, string archivePath, string targetDir) =>
         ForEachEntry(
             format,
             archivePath,
@@ -256,7 +228,6 @@ public sealed class BundledFetcher(
                 copyTo(dest);
             }
         );
-    }
 
     /// <summary>
     /// Iterates the file entries of a zip or tar.xz archive, invoking <paramref name="onEntry"/>
@@ -312,6 +283,50 @@ public sealed class BundledFetcher(
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(format), format, null);
+        }
+    }
+}
+
+public sealed class FileDownloader(IHttpClientFactory factory) : IFileDownloader
+{
+    private readonly IHttpClientFactory _factory = factory;
+
+    public async Task DownloadAsync(
+        string url,
+        string destination,
+        IProgress<InstallProgress>? progress,
+        CancellationToken ct,
+        string? toolName = null
+    )
+    {
+        var http = _factory.CreateClient("bundled");
+        using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+        response.EnsureSuccessStatusCode();
+
+        var totalBytes = response.Content.Headers.ContentLength;
+        using var stream = await response.Content.ReadAsStreamAsync(ct);
+        using var file = File.Create(destination);
+
+        var buffer = new byte[81920];
+        long totalRead = 0;
+        long lastReported = 0;
+        while (await stream.ReadAsync(buffer, ct) is > 0 and var read)
+        {
+            await file.WriteAsync(buffer.AsMemory(0, read), ct);
+            totalRead += read;
+
+            // Throttle progress reports to once per ~1 MiB to keep the log readable.
+            if (totalRead - lastReported >= 1_048_576 || totalRead == totalBytes)
+            {
+                progress?.Report(
+                    new InstallProgress(
+                        InstallProgress.Prefix(toolName, "Downloading"),
+                        totalRead,
+                        totalBytes
+                    )
+                );
+                lastReported = totalRead;
+            }
         }
     }
 }

@@ -278,5 +278,4 @@ public sealed record YtDlpThumbnail
 /// </summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
 [JsonSerializable(typeof(YtDlpVideoInfo))]
-[JsonSerializable(typeof(YtDlpThumbnail))]
 internal sealed partial class YtDlpJsonContext : JsonSerializerContext { }

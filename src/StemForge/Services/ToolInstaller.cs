@@ -7,7 +7,13 @@ public sealed record InstallProgress(
     string Message,
     long? BytesDownloaded = null,
     long? TotalBytes = null
-);
+)
+{
+    // Prepends the tool name to a log message (e.g. "ffmpeg: Downloading") so cumulative
+    // multi-tool install logs read unambiguously. A null/blank name leaves the message as-is.
+    internal static string Prefix(string? toolName, string message) =>
+        string.IsNullOrWhiteSpace(toolName) ? message : $"{toolName}: {message}";
+};
 
 /// <summary>Per-install choices. Variant is honoured only by tools that have variants.</summary>
 public sealed record InstallOptions(GpuVariant? Variant = null);

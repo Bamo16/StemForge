@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using StemForge.Extensions;
 using StemForge.Models;
 using StemForge.ViewModels;
 
@@ -22,34 +23,20 @@ public static class ServiceRegistration
         services.AddSingleton<IAppInfo>(AppInfo.Current);
         services.AddSingleton<AppPaths>();
 
-        // Named HTTP clients
-        services.AddHttpClient(
-            "github",
-            (sp, client) =>
-            {
-                var appInfo = sp.GetRequiredService<IAppInfo>();
-                client.DefaultRequestHeaders.UserAgent.ParseAdd(
-                    $"{appInfo.ProductName}/{appInfo.ShortVersion}"
-                );
-                client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
-                client.Timeout = TimeSpan.FromSeconds(10);
-            }
+        // HTTP clients
+        services.ConfigureHttpClientDefaults(builder =>
+            builder.WithUserAgent().WithTimeout(TimeSpan.FromSeconds(10))
         );
+        services
+            .AddHttpClient("github")
+            .WithHeaders(new() { ["Accept"] = "application/vnd.github+json" });
+        services.AddSingleton<IReleaseFetcher, GitHubReleaseFetcher>();
         services.AddHttpClient("thumbnail");
-        services.AddHttpClient(
-            "bundled",
-            (sp, client) =>
-            {
-                var appInfo = sp.GetRequiredService<IAppInfo>();
-                client.DefaultRequestHeaders.UserAgent.Add(
-                    new(appInfo.ProductName, appInfo.ShortVersion)
-                );
-                client.Timeout = TimeSpan.FromMinutes(15);
-            }
-        );
+        services.AddSingleton<IThumbnailFetcher, ThumbnailFetcher>();
+        services.AddHttpClient("bundled").WithTimeout(TimeSpan.FromMinutes(15));
+        services.AddSingleton<IFileDownloader, FileDownloader>();
 
         // Update check
-        services.AddSingleton<IReleaseFetcher, GitHubReleaseFetcher>();
         services.AddSingleton<UpdateCheckService>();
 
         // Domain services
