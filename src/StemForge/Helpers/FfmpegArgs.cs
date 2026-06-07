@@ -15,7 +15,15 @@ public static class FfmpegArgs
     public static IEnumerable<string> Codec(AudioFormat format) =>
         format switch
         {
-            AudioFormat.Flac => ["-codec:a", "flac", "-compression_level", "8"],
+            AudioFormat.Flac =>
+            [
+                "-codec:a",
+                "flac",
+                "-compression_level",
+                "8",
+                "-bits_per_raw_sample",
+                "24",
+            ],
             AudioFormat.Wav => ["-codec:a", "pcm_s24le"],
             AudioFormat.Mp3 => ["-codec:a", "libmp3lame", "-b:a", "320k"],
             _ => throw new ArgumentOutOfRangeException(nameof(format), format, null),

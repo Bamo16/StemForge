@@ -48,6 +48,15 @@ public partial class JobItemViewModel : ObservableObject
     // Exposed as LogOutput on failure so the user can see the full subprocess output.
     private readonly Queue<string> _rawLogLines = new();
 
+    // Set by HandleProgress on loading_model; consumed (once) by the first progress tick
+    // to emit a "Running model X/Y" entry after the model has actually started inference.
+    internal string? PendingRunLogLine { get; set; }
+
+    // Tracks which model within the current preset is running so the progress bar
+    // advances proportionally across all models rather than pegging at 100% after model 1.
+    internal int CurrentModelIndex { get; set; } = 1;
+    internal int CurrentModelCount { get; set; } = 1;
+
     [ObservableProperty]
     public partial string LogOutput { get; set; } = string.Empty;
 

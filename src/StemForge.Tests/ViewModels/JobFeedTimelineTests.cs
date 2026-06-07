@@ -262,7 +262,7 @@ public sealed class JobFeedTimelineTests
         Assert.Contains("Loading model", vm.LogOutput);
     }
 
-    // ── progress ticks do not produce feed entries ───────────────────────────
+    // ── progress ticks do not produce feed entries (absent pending run line) ──
 
     [Fact]
     public void Progress_Tick_DoesNotAppendToFeed()
@@ -280,5 +280,281 @@ public sealed class JobFeedTimelineTests
         );
 
         Assert.True(string.IsNullOrEmpty(vm.LogOutput));
+    }
+
+    // ── "Running model" deferred log line ────────────────────────────────────
+
+    [Fact]
+    public void LoadingModel_WithModelName_ShowsNameAndIndex()
+    {
+        var vm = MakeVm();
+
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "loading_model",
+                Model = "bs_roformer_vocals.ckpt",
+                ModelIndex = 1,
+                ModelCount = 2,
+            }
+        );
+
+        Assert.Contains("Loading bs_roformer_vocals (model 1/2)", vm.LogOutput);
+    }
+
+    [Fact]
+    public void LoadingModel_SingleModelWithName_ShowsNameOnly()
+    {
+        var vm = MakeVm();
+
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "loading_model",
+                Model = "bs_roformer_vocals.ckpt",
+                ModelIndex = 1,
+                ModelCount = 1,
+            }
+        );
+
+        Assert.Contains("Loading bs_roformer_vocals", vm.LogOutput);
+        Assert.DoesNotContain("model 1/1", vm.LogOutput);
+    }
+
+    [Fact]
+    public void LoadingModel_NoModelName_FallsBackToIndex()
+    {
+        var vm = MakeVm();
+
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "loading_model",
+                ModelIndex = 2,
+                ModelCount = 3,
+            }
+        );
+
+        Assert.Contains("Loading model 2/3", vm.LogOutput);
+    }
+
+    [Fact]
+    public void LoadingModel_ArmsRunLine_ButDoesNotEmitImmediately()
+    {
+        var vm = MakeVm();
+
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "loading_model",
+                ModelIndex = 1,
+                ModelCount = 1,
+            }
+        );
+
+        // Loading entry is visible immediately…
+        Assert.Contains("Loading", vm.LogOutput);
+        // …but the run line is only armed, not emitted yet.
+        Assert.DoesNotContain("Running", vm.LogOutput);
+        Assert.NotNull(vm.PendingRunLogLine);
+    }
+
+    [Fact]
+    public void Progress_AfterLoadingModel_EmitsRunLine()
+    {
+        var vm = MakeVm();
+
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "loading_model",
+                ModelIndex = 1,
+                ModelCount = 1,
+            }
+        );
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "progress",
+                Current = 10,
+                Total = 100,
+            }
+        );
+
+        Assert.Contains("Running", vm.LogOutput);
+        Assert.Null(vm.PendingRunLogLine);
+    }
+
+    [Fact]
+    public void Progress_SecondTick_DoesNotEmitRunLineAgain()
+    {
+        var vm = MakeVm();
+
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "loading_model",
+                ModelIndex = 1,
+                ModelCount = 1,
+            }
+        );
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "progress",
+                Current = 10,
+                Total = 100,
+            }
+        );
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "progress",
+                Current = 20,
+                Total = 100,
+            }
+        );
+
+        // Count occurrences of "Running" — should appear exactly once.
+        var count = 0;
+        var idx = 0;
+        while ((idx = vm.LogOutput.IndexOf("Running", idx, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            idx++;
+        }
+        Assert.Equal(1, count);
+    }
+
+    // ── progress bar model-aware calculation ─────────────────────────────────
+
+    [Fact]
+    public void Progress_MultiModelPreset_Model1DoesNotReach100()
+    {
+        var vm = MakeVm();
+
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "loading_model",
+                ModelIndex = 1,
+                ModelCount = 2,
+            }
+        );
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "progress",
+                Current = 100,
+                Total = 100,
+            }
+        );
+
+        // Model 1 of 2 fully complete = 50%, not 100%.
+        Assert.Equal(50, vm.Progress);
+    }
+
+    [Fact]
+    public void Progress_MultiModelPreset_Model2ReachesFullBar()
+    {
+        var vm = MakeVm();
+
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "loading_model",
+                ModelIndex = 1,
+                ModelCount = 2,
+            }
+        );
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "progress",
+                Current = 100,
+                Total = 100,
+            }
+        );
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "loading_model",
+                ModelIndex = 2,
+                ModelCount = 2,
+            }
+        );
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "progress",
+                Current = 100,
+                Total = 100,
+            }
+        );
+
+        Assert.Equal(100, vm.Progress);
+    }
+
+    [Fact]
+    public void Progress_MultiModelPreset_Model2ProgressNotBlockedByModel1()
+    {
+        var vm = MakeVm();
+
+        // Model 1 runs to completion (sets bar to 50%).
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "loading_model",
+                ModelIndex = 1,
+                ModelCount = 2,
+            }
+        );
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "progress",
+                Current = 100,
+                Total = 100,
+            }
+        );
+
+        // Model 2 starts at 0 — progress must still advance from 50%.
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "loading_model",
+                ModelIndex = 2,
+                ModelCount = 2,
+            }
+        );
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Phase = "progress",
+                Current = 10,
+                Total = 100,
+            }
+        );
+
+        Assert.True(vm.Progress > 50);
     }
 }

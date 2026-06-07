@@ -6,6 +6,15 @@ using StemForge.ViewModels;
 
 namespace StemForge.Services;
 
+public interface IThumbnailFetcher
+{
+    /// <summary>
+    /// Downloads the thumbnail image at <paramref name="url"/> into <paramref name="outDir"/>
+    /// and returns the local path. Returns null on failure (non-fatal).
+    /// </summary>
+    Task<string?> DownloadAsync(string? url, string outDir, CancellationToken ct = default);
+}
+
 /// <summary>
 /// Runs separation jobs sequentially. One user-submitted job at a time; all others
 /// wait in FIFO order. Thread-safe enqueue; all observable mutations happen on the UI thread.
@@ -15,6 +24,7 @@ public sealed class JobQueueService(
     AppSettings settings,
     IProcessRunner runner,
     YouTubeAudioService youTubeAudio,
+    IThumbnailFetcher thumbnailFetcher,
     AppPaths paths,
     IAppInfo appInfo
 )
@@ -23,6 +33,7 @@ public sealed class JobQueueService(
     private readonly AppSettings _settings = settings;
     private readonly IProcessRunner _runner = runner;
     private readonly YouTubeAudioService _youTubeAudio = youTubeAudio;
+    private readonly IThumbnailFetcher _thumbnailFetcher = thumbnailFetcher;
     private readonly AppPaths _paths = paths;
     private readonly IAppInfo _appInfo = appInfo;
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -44,6 +55,8 @@ public sealed class JobQueueService(
 
         Dispatcher.UIThread.Post(() => Jobs.Add(vm));
 
+        // Task.Run escapes the Avalonia SynchronizationContext so continuations after
+        // _gate.WaitAsync() run on the thread pool, not through the UI dispatcher.
         _ = Task.Run(() => RunWhenReadyAsync(vm));
     }
 
@@ -353,15 +366,25 @@ public sealed class JobQueueService(
                 break;
 
             case "loading_model":
+                vm.CurrentModelIndex = p.ModelIndex ?? 1;
+                vm.CurrentModelCount = p.ModelCount ?? 1;
                 vm.StatusText =
                     p.ModelCount > 1
                         ? $"{presetLabel} — Loading model {p.ModelIndex}/{p.ModelCount}…"
                         : $"{presetLabel} — Loading model…";
-                var loadLine =
-                    p.ModelCount > 1
-                        ? $"{prefix} Loading model {p.ModelIndex}/{p.ModelCount}…"
-                        : $"{prefix} Loading model…";
+                var modelName = p.Model is { Length: > 0 } m
+                    ? Path.GetFileNameWithoutExtension(m)
+                    : null;
+                var loadLine = (modelName, p.ModelCount > 1) switch
+                {
+                    ({ } name, true) =>
+                        $"{prefix} Loading {name} (model {p.ModelIndex}/{p.ModelCount})…",
+                    ({ } name, false) => $"{prefix} Loading {name}…",
+                    (null, true) => $"{prefix} Loading model {p.ModelIndex}/{p.ModelCount}…",
+                    (null, false) => $"{prefix} Loading model…",
+                };
                 vm.AppendLog(loadLine);
+                vm.PendingRunLogLine = $"{prefix} Running…";
                 break;
 
             case "separating":
@@ -377,17 +400,27 @@ public sealed class JobQueueService(
                 break;
 
             case "progress":
+                if (vm.PendingRunLogLine is { } runLine)
+                {
+                    vm.AppendLog(runLine);
+                    vm.PendingRunLogLine = null;
+                }
                 if (p.Total is > 0 && p.Current is { } cur)
                 {
-                    var withinPreset = Math.Min(100, cur * 100 / p.Total.Value);
+                    var withinModel = Math.Min(100, cur * 100 / p.Total.Value);
+                    // Distribute the model's 0-100 across its slice of the preset.
+                    // Model 1 of 2 maps to 0-50%; model 2 of 2 maps to 50-100%.
+                    var withinPreset =
+                        ((vm.CurrentModelIndex - 1) * 100 + withinModel) / vm.CurrentModelCount;
                     var overall = (int)
                         Math.Round((presetIndex * 100.0 + withinPreset) / totalSteps);
                     vm.Progress = Math.Max(vm.Progress, overall);
-                    if (
-                        !vm.StatusText.Contains("Separating")
-                        && !vm.StatusText.Contains("Combining")
-                    )
-                        vm.StatusText = $"{presetLabel} — Separating…";
+                    var runningStatus =
+                        vm.CurrentModelCount > 1
+                            ? $"{presetLabel} — Running model {vm.CurrentModelIndex}/{vm.CurrentModelCount}…"
+                            : $"{presetLabel} — Running…";
+                    if (!vm.StatusText.Contains("Combining"))
+                        vm.StatusText = runningStatus;
                 }
                 break;
 
@@ -411,8 +444,11 @@ public sealed class JobQueueService(
                 {
                     // Always accumulate into the raw buffer for failure diagnostics.
                     vm.AccumulateRawLog(msg);
-                    // Only surface warnings and errors in the live feed.
-                    if (p.LogLevel is "warning" or "error")
+                    // Only surface warnings and errors in the live feed, excluding the
+                    // non-actionable ffmpeg FLAC bit-depth encoder notice from audio-separator's
+                    // internal ffmpeg. 24-bit FLAC is the max stable value and is exactly what
+                    // we want; the warning just means the source had higher precision.
+                    if (p.LogLevel is "warning" or "error" && !msg.Contains("bits-per-sample"))
                         vm.AppendLog(msg);
                 }
                 break;
@@ -598,9 +634,44 @@ public sealed class JobQueueService(
                 log,
                 ct
             );
-        var thumbPath = await _youTubeAudio.DownloadThumbnailAsync(meta.ThumbnailUrl, dlDir, ct);
+        var thumbPath = await _thumbnailFetcher.DownloadAsync(meta.ThumbnailUrl, dlDir, ct);
         var sourceInfo = AudioTagger.FromYtDlpMetadata(meta, thumbPath);
         var audioPath = await _youTubeAudio.DownloadAsync(meta, AudioFormat.Flac, dlDir, log, ct);
         return (audioPath, sourceInfo);
+    }
+}
+
+public sealed class ThumbnailFetcher(IHttpClientFactory factory) : IThumbnailFetcher
+{
+    private readonly IHttpClientFactory _factory = factory;
+
+    public async Task<string?> DownloadAsync(
+        string? url,
+        string outDir,
+        CancellationToken ct = default
+    )
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return null;
+
+        try
+        {
+            // Derive extension from URL path; default to .jpg which ffmpeg handles universally.
+            var uriPath = new Uri(url).LocalPath;
+            var ext = Path.GetExtension(uriPath);
+            if (string.IsNullOrEmpty(ext))
+                ext = ".jpg";
+
+            var dest = Path.Combine(outDir, $"thumbnail{ext}");
+            var http = _factory.CreateClient("thumbnail");
+            var bytes = await http.GetByteArrayAsync(url, ct);
+            await File.WriteAllBytesAsync(dest, bytes, ct);
+            return dest;
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Debug("yt-dlp", $"Thumbnail download failed: {ex.Message}");
+            return null;
+        }
     }
 }
