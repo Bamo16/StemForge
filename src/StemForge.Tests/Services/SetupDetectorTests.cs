@@ -15,7 +15,7 @@ public sealed class SetupDetectorTests
     }
 
     [Fact]
-    public async Task DetectAllAsync_AllFound_ReturnsFoundResults()
+    public async Task DetectAsync_AllFound_ReturnsFoundResults()
     {
         var (detector, fake, paths) = Build();
         fake.Setup(paths.Uv, "uv 0.4.0");
@@ -24,7 +24,7 @@ public sealed class SetupDetectorTests
         fake.Setup(paths.Ffmpeg, "ffmpeg version 7.0");
         fake.Setup(paths.Deno, "deno 2.8.0 (...)");
 
-        var results = await detector.DetectAllAsync();
+        var results = await detector.DetectAsync();
 
         Assert.Equal(5, results.Count);
         Assert.All(results, r => Assert.True(r.Found));
@@ -35,7 +35,7 @@ public sealed class SetupDetectorTests
     }
 
     [Fact]
-    public async Task DetectAllAsync_UvMissing_MarksUvNotFound()
+    public async Task DetectAsync_UvMissing_MarksUvNotFound()
     {
         var (detector, fake, paths) = Build();
         fake.Setup(paths.AudioSeparator, "audio-separator 0.27.2");
@@ -43,7 +43,7 @@ public sealed class SetupDetectorTests
         fake.Setup(paths.Ffmpeg, "ffmpeg version 7.0");
         // uv not registered → throws → Found = false
 
-        var results = await detector.DetectAllAsync();
+        var results = await detector.DetectAsync();
 
         var uv = results.Single(r => r.Name == "uv");
         Assert.False(uv.Found);
@@ -51,7 +51,7 @@ public sealed class SetupDetectorTests
     }
 
     [Fact]
-    public async Task DetectAllAsync_OnlyYtdlpMissing_AllRequiredToolsPresent()
+    public async Task DetectAsync_OnlyYtdlpMissing_AllRequiredToolsPresent()
     {
         var (detector, fake, paths) = Build();
         fake.Setup(paths.Uv, "uv 0.4.0");
@@ -60,7 +60,7 @@ public sealed class SetupDetectorTests
         // yt-dlp not registered → throw → Found = false. yt-dlp is the only
         // optional tool now that ffmpeg is required by audio-separator.
 
-        var results = await detector.DetectAllAsync();
+        var results = await detector.DetectAsync();
 
         var ytdlp = results.Single(r => r.Name == "yt-dlp");
         var ffmpeg = results.Single(r => r.Name == "ffmpeg");
@@ -73,7 +73,7 @@ public sealed class SetupDetectorTests
     }
 
     [Fact]
-    public async Task DetectAllAsync_CustomYtdlpPath_UsesProvidedPath()
+    public async Task DetectAsync_CustomYtdlpPath_UsesProvidedPath()
     {
         var fake = new FakeProcessRunner();
         var settings = new AppSettings();
@@ -86,7 +86,7 @@ public sealed class SetupDetectorTests
         fake.Setup(@"C:\Tools\yt-dlp.exe", "2024.12.13");
         fake.Setup(paths.Ffmpeg, "ffmpeg version 7.0");
 
-        var results = await detector.DetectAllAsync();
+        var results = await detector.DetectAsync();
 
         var ytdlp = results.Single(r => r.Name == "yt-dlp");
         Assert.True(ytdlp.Found);

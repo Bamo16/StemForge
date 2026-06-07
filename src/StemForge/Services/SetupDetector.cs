@@ -20,20 +20,18 @@ public sealed class SetupDetector(IProcessRunner runner, AppPaths paths)
     private readonly IProcessRunner _runner = runner;
     private readonly AppPaths _paths = paths;
 
-    public Task<IReadOnlyList<ToolState>> DetectAllAsync() => Detect(ToolCatalog.All);
-
     /// <summary>
-    /// Detect a subset of tools by <see cref="ToolKind"/>. Kinds not in the catalog are ignored.
+    /// Detect tool availability. Pass no arguments to detect all catalog tools; pass one or more
+    /// <see cref="ToolKind"/>s to detect only that subset. Kinds not in the catalog are ignored.
     /// </summary>
-    public Task<IReadOnlyList<ToolState>> DetectAsync(params ToolKind[] kinds) =>
-        Detect([.. ToolCatalog.All.Where(t => kinds.Contains(t.Kind))]);
-
-    private Task<IReadOnlyList<ToolState>> Detect(IReadOnlyList<Tool> tools) =>
-        Task.Run(async () =>
-        {
-            var results = await Task.WhenAll(tools.Select(DetectOneAsync));
-            return (IReadOnlyList<ToolState>)results;
-        });
+    public async Task<IReadOnlyList<ToolState>> DetectAsync(params ToolKind[] kinds) =>
+        await Task.WhenAll(
+            (
+                kinds is { Length: > 0 }
+                    ? ToolCatalog.All.Where(t => kinds.Contains(t.Kind))
+                    : ToolCatalog.All
+            ).Select(DetectOneAsync)
+        );
 
     private async Task<ToolState> DetectOneAsync(Tool tool)
     {

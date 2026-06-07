@@ -46,7 +46,7 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
         {
             if (kinds.Length == 0 || _byKind.Count == 0)
             {
-                Apply(await _detector.DetectAllAsync());
+                Apply(await _detector.DetectAsync());
                 return;
             }
 

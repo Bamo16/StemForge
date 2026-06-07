@@ -175,6 +175,9 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
 
             _stdin = _process.StandardInput;
 
+            // Task.Run gives each read loop a thread-pool thread with no SynchronizationContext.
+            // Without it, ReadLineAsync continuations would post back to the Avalonia dispatcher,
+            // serializing all driver output through the UI queue.
             _stderrTask = Task.Run(
                 async () =>
                 {
@@ -532,6 +535,8 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
         _idleCts?.Dispose();
         var cts = new CancellationTokenSource();
         _idleCts = cts;
+        // Task.Run ensures TeardownAsync runs on the thread pool after the delay, not on
+        // whichever SynchronizationContext was current at the call site.
         _ = Task.Run(
             async () =>
             {
