@@ -1,5 +1,5 @@
-using StemForge.Helpers;
-using StemForge.Models;
+using StemForge.Core.Helpers;
+using StemForge.Core.Models;
 
 namespace StemForge.Tests.Services;
 

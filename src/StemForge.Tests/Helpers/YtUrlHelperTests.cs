@@ -1,4 +1,4 @@
-using StemForge.Helpers;
+using StemForge.Core.Helpers;
 
 namespace StemForge.Tests.Helpers;
 

@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
-using StemForge.Extensions;
-using StemForge.Models;
-using StemForge.Services;
+using StemForge.Core.Extensions;
+using StemForge.Core.Models;
+using StemForge.Core.Services;
 
 namespace StemForge.Tests.Services;
 

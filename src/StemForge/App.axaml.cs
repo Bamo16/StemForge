@@ -2,7 +2,8 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
-using StemForge.Models;
+using StemForge.Core.Models;
+using StemForge.Core.Services;
 using StemForge.Services;
 using StemForge.ViewModels;
 using StemForge.Views;
@@ -20,6 +21,8 @@ public partial class App : Application
     {
         var provider = ServiceRegistration.BuildProvider();
 
+        // Resolve the sink before Initialize so it is registered before the file opens.
+        provider.GetRequiredService<AppLoggerSink>();
         AppLogger.Initialize(provider.GetRequiredService<AppSettings>().MaxLogEntries);
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

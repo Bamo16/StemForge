@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using StemForge.Models;
-using StemForge.Services;
+using StemForge.Core.Models;
+using StemForge.Core.Services;
 
 namespace StemForge.Tests.Services;
 

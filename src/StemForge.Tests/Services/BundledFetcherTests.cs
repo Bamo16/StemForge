@@ -1,5 +1,5 @@
 using System.Net;
-using StemForge.Services;
+using StemForge.Core.Services;
 
 namespace StemForge.Tests.Services;
 

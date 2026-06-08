@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="StemForge.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content
+            Include="..\..\tools\separator_driver.py"
+            CopyToOutputDirectory="PreserveNewest"
+            Link="tools\separator_driver.py"
+        />
+        <Content
+            Include="..\..\tools\detect_variant.py"
+            CopyToOutputDirectory="PreserveNewest"
+            Link="tools\detect_variant.py"
+        />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+        <PackageReference Include="SharpCompress" Version="0.49.1" />
+        <PackageReference Include="TagLibSharp" Version="2.3.0" />
+    </ItemGroup>
+</Project>

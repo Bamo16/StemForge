@@ -1,4 +1,4 @@
-using StemForge.Models;
+using StemForge.Core.Models;
 
 namespace StemForge.Tests.Models;
 
@@ -311,7 +311,7 @@ public sealed class YtDlpThumbnailSelectionTests
             }
             """;
 
-        var info = StemForge.Services.YouTubeAudioService.DeserializeVideoInfo(json);
+        var info = StemForge.Core.Services.YouTubeAudioService.DeserializeVideoInfo(json);
 
         Assert.Equal(4, info.Thumbnails.Count);
 
@@ -341,7 +341,7 @@ public sealed class YtDlpThumbnailSelectionTests
             }
             """;
 
-        var info = StemForge.Services.YouTubeAudioService.DeserializeVideoInfo(json);
+        var info = StemForge.Core.Services.YouTubeAudioService.DeserializeVideoInfo(json);
 
         Assert.Empty(info.Thumbnails);
         // SelectBestThumbnail falls back to Thumbnail field.
@@ -377,10 +377,10 @@ public sealed class YtDlpThumbnailSelectionTests
 
         var fake = new StemForge.Tests.Fakes.FakeProcessRunner();
         fake.Setup("yt-dlp", json);
-        var settings = new StemForge.Models.AppSettings();
-        settings.SetToolPathOverride(StemForge.Models.ToolKind.Ytdlp, "yt-dlp");
-        var paths = new StemForge.Services.AppPaths(settings);
-        var svc = new StemForge.Services.YouTubeAudioService(fake, paths);
+        var settings = new StemForge.Core.Models.AppSettings();
+        settings.SetToolPathOverride(StemForge.Core.Models.ToolKind.Ytdlp, "yt-dlp");
+        var paths = new StemForge.Core.Services.AppPaths(settings);
+        var svc = new StemForge.Core.Services.YouTubeAudioService(fake, paths);
 
         var meta = await svc.ResolveAsync(
             "https://youtu.be/test",
@@ -417,10 +417,10 @@ public sealed class YtDlpThumbnailSelectionTests
 
         var fake = new StemForge.Tests.Fakes.FakeProcessRunner();
         fake.Setup("yt-dlp", json);
-        var settings = new StemForge.Models.AppSettings();
-        settings.SetToolPathOverride(StemForge.Models.ToolKind.Ytdlp, "yt-dlp");
-        var paths = new StemForge.Services.AppPaths(settings);
-        var svc = new StemForge.Services.YouTubeAudioService(fake, paths);
+        var settings = new StemForge.Core.Models.AppSettings();
+        settings.SetToolPathOverride(StemForge.Core.Models.ToolKind.Ytdlp, "yt-dlp");
+        var paths = new StemForge.Core.Services.AppPaths(settings);
+        var svc = new StemForge.Core.Services.YouTubeAudioService(fake, paths);
 
         var meta = await svc.ResolveAsync(
             "https://youtu.be/test",

@@ -3,12 +3,15 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using StemForge.Core.Services;
 using StemForge.Services;
 
 namespace StemForge.ViewModels;
 
 public partial class LogsViewModel : PageViewModelBase
 {
+    private readonly AppLoggerSink _sink;
+
     public override string Title => "Logs";
 
     public ObservableCollection<LogEntry> Displayed { get; } = [];
@@ -25,10 +28,11 @@ public partial class LogsViewModel : PageViewModelBase
     [ObservableProperty]
     public partial bool ShowError { get; set; } = true;
 
-    public LogsViewModel()
+    public LogsViewModel(AppLoggerSink sink)
     {
+        _sink = sink;
         Rebuild();
-        AppLogger.Entries.CollectionChanged += OnSourceChanged;
+        _sink.Entries.CollectionChanged += OnSourceChanged;
     }
 
     partial void OnShowDebugChanged(bool value) => Rebuild();
@@ -52,7 +56,7 @@ public partial class LogsViewModel : PageViewModelBase
     private void ToggleError() => ShowError = !ShowError;
 
     [RelayCommand]
-    private void Clear() => AppLogger.Entries.Clear();
+    private void Clear() => _sink.Entries.Clear();
 
     [RelayCommand]
     private void OpenLogsFolder()
@@ -92,7 +96,7 @@ public partial class LogsViewModel : PageViewModelBase
     private void Rebuild()
     {
         Displayed.Clear();
-        foreach (var entry in AppLogger.Entries.Where(Passes))
+        foreach (var entry in _sink.Entries.Where(Passes))
             Displayed.Add(entry);
         NotifyDisplayedText();
     }

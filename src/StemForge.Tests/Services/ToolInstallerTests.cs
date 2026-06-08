@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
-using StemForge.Models;
-using StemForge.Services;
+using StemForge.Core.Models;
+using StemForge.Core.Services;
 using StemForge.Tests.Fakes;
 
 namespace StemForge.Tests.Services;

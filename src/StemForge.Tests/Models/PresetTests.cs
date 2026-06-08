@@ -1,4 +1,4 @@
-using StemForge.Models;
+using StemForge.Core.Models;
 
 namespace StemForge.Tests.Models;
 

@@ -1,19 +1,11 @@
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
-using StemForge.Helpers;
-using StemForge.Models;
+using StemForge.Core.Helpers;
+using StemForge.Core.Models;
+using StemForge.Core.Services;
 using StemForge.ViewModels;
 
 namespace StemForge.Services;
-
-public interface IThumbnailFetcher
-{
-    /// <summary>
-    /// Downloads the thumbnail image at <paramref name="url"/> into <paramref name="outDir"/>
-    /// and returns the local path. Returns null on failure (non-fatal).
-    /// </summary>
-    Task<string?> DownloadAsync(string? url, string outDir, CancellationToken ct = default);
-}
 
 /// <summary>
 /// Runs separation jobs sequentially. One user-submitted job at a time; all others
@@ -638,40 +630,5 @@ public sealed class JobQueueService(
         var sourceInfo = AudioTagger.FromYtDlpMetadata(meta, thumbPath);
         var audioPath = await _youTubeAudio.DownloadAsync(meta, AudioFormat.Flac, dlDir, log, ct);
         return (audioPath, sourceInfo);
-    }
-}
-
-public sealed class ThumbnailFetcher(IHttpClientFactory factory) : IThumbnailFetcher
-{
-    private readonly IHttpClientFactory _factory = factory;
-
-    public async Task<string?> DownloadAsync(
-        string? url,
-        string outDir,
-        CancellationToken ct = default
-    )
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            return null;
-
-        try
-        {
-            // Derive extension from URL path; default to .jpg which ffmpeg handles universally.
-            var uriPath = new Uri(url).LocalPath;
-            var ext = Path.GetExtension(uriPath);
-            if (string.IsNullOrEmpty(ext))
-                ext = ".jpg";
-
-            var dest = Path.Combine(outDir, $"thumbnail{ext}");
-            var http = _factory.CreateClient("thumbnail");
-            var bytes = await http.GetByteArrayAsync(url, ct);
-            await File.WriteAllBytesAsync(dest, bytes, ct);
-            return dest;
-        }
-        catch (Exception ex)
-        {
-            AppLogger.Debug("yt-dlp", $"Thumbnail download failed: {ex.Message}");
-            return null;
-        }
     }
 }
