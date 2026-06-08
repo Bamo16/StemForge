@@ -106,6 +106,10 @@ public sealed class AppPaths(AppSettings settings, PlatformInfo? platform = null
     public static string SeparationDriverScript =>
         Path.Combine(AppContext.BaseDirectory, "tools", "separator_driver.py");
 
+    /// <summary>Path to the preset listing script, co-located with the app binary.</summary>
+    public static string ListPresetsScript =>
+        Path.Combine(AppContext.BaseDirectory, "tools", "list_presets.py");
+
     // uv installs itself to ~/.local/bin (uv.exe on Windows, bare uv on Unix). Probing this lets
     // callers use uv immediately after installation without requiring a PATH-refresh restart.
     internal string KnownUvPath =>

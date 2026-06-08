@@ -38,6 +38,7 @@ public static class CoreServiceExtensions
         services.AddSingleton<BundledFetcher>();
         services.AddSingleton<ToolInstaller>();
         services.AddSingleton<ModelCatalogService>();
+        services.AddSingleton<PresetCatalogService>();
         services.AddSingleton<ToolStateService>();
         services.AddSingleton<YouTubeAudioService>();
         services.AddSingleton<ISeparatorDriverService, SeparatorDriverService>();

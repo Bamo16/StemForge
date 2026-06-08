@@ -1,0 +1,24 @@
+using Spectre.Console.Cli;
+using StemForge.Cli.Commands;
+using StemForge.Core.Services;
+
+AppLogger.Initialize();
+AppLogger.RegisterSink(entry =>
+{
+    if (
+        entry.Level
+        is StemForge.Core.Services.LogLevel.Warning
+            or StemForge.Core.Services.LogLevel.Error
+    )
+        Console.Error.WriteLine($"[{entry.LevelTag}] {entry.Source}: {entry.Message}");
+});
+
+var app = new CommandApp();
+app.Configure(config =>
+{
+    config
+        .AddCommand<PresetsCommand>("presets")
+        .WithDescription("List built-in separation presets from the audio-separator toolchain.");
+});
+
+return await app.RunAsync(args);

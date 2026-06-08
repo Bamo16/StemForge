@@ -20,6 +20,11 @@
             CopyToOutputDirectory="PreserveNewest"
             Link="tools\detect_variant.py"
         />
+        <Content
+            Include="..\..\tools\list_presets.py"
+            CopyToOutputDirectory="PreserveNewest"
+            Link="tools\list_presets.py"
+        />
     </ItemGroup>
 
     <ItemGroup>
