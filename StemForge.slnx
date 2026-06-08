@@ -3,5 +3,6 @@
         <Project Path="src/StemForge.Core/StemForge.Core.csproj" />
         <Project Path="src/StemForge/StemForge.csproj" />
         <Project Path="src/StemForge.Tests/StemForge.Tests.csproj" />
+        <Project Path="src/StemForge.Cli/StemForge.Cli.csproj" />
     </Folder>
 </Solution>
