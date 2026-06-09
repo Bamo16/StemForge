@@ -395,6 +395,103 @@ public sealed class SeparationPipeline(
         return allOutputFiles;
     }
 
+    /// <summary>
+    /// Downloads the audio for a URL-sourced <paramref name="job"/> into its output directory
+    /// in the requested format, applies metadata, provenance, and thumbnail tags, and returns
+    /// the written file path. No separation is performed.
+    ///
+    /// Cancellation propagates as <see cref="OperationCanceledException"/>; download failures
+    /// propagate as <see cref="InvalidOperationException"/> (or the underlying toolchain exception).
+    /// </summary>
+    public async Task<string> DownloadOnlyAsync(
+        JobRecord job,
+        IProgress<JobUpdate>? progress,
+        CancellationToken ct
+    )
+    {
+        var url = job.SourceUrl is { Length: > 0 } u
+            ? u
+            : throw new InvalidOperationException(
+                "DownloadOnlyAsync requires a job with a source URL."
+            );
+
+        var version = _appInfo.FullVersion;
+
+        progress?.Report(
+            new JobUpdate
+            {
+                Phase = "downloading",
+                OverallPercent = 0,
+                RunIndex = 0,
+                RunCount = 0,
+            }
+        );
+
+        var log = new Progress<string>(_ => { }); // log lines go to AppLogger inside YouTubeAudioService
+
+        // Resolve metadata + thumbnail, then stream directly to the output directory in the
+        // requested format. Unlike the separation pipeline, there is no intermediate FLAC: the
+        // download IS the deliverable, so it is written once in its final format.
+        var meta =
+            job.PreResolvedMeta
+            ?? await _youTubeAudio.ResolveAsync(
+                YtUrlHelper.TryNormalize(url, out var normalized) ? normalized : url,
+                _settings,
+                log,
+                ct
+            );
+
+        // The thumbnail is fetched to a temp directory and embedded as cover art; the standalone
+        // image file is not part of the deliverable, so it is removed after tagging rather than
+        // left beside the audio in the output directory.
+        var thumbTempDir = Path.Combine(Path.GetTempPath(), $"stemforge-dl-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(thumbTempDir);
+
+        string audioPath;
+        SourceTagInfo sourceInfo;
+        try
+        {
+            var thumbPath = await _thumbnailFetcher.DownloadAsync(
+                meta.ThumbnailUrl,
+                thumbTempDir,
+                ct
+            );
+            sourceInfo = AudioTagger.FromYtDlpMetadata(meta, thumbPath);
+
+            audioPath = await _youTubeAudio.DownloadAsync(
+                meta,
+                job.StemOutputFormat,
+                job.OutputDir,
+                log,
+                ct
+            );
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(thumbTempDir, recursive: true);
+            }
+            catch { }
+        }
+
+        // No preset descriptor: this is a verbatim source download, not a separation output.
+        AudioTagger.ApplyToFile(audioPath, sourceInfo, presetDescriptor: null, version);
+
+        progress?.Report(
+            new JobUpdate
+            {
+                Phase = "run_complete",
+                OverallPercent = 100,
+                RunIndex = 0,
+                RunCount = 0,
+                WrittenPaths = [audioPath],
+            }
+        );
+
+        return audioPath;
+    }
+
     // ── Request builder ───────────────────────────────────────────────────────
 
     internal static JobRequest BuildRequest(

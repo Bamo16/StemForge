@@ -22,6 +22,9 @@ app.Configure(config =>
     config
         .AddCommand<SeparateCommand>("separate")
         .WithDescription("Separate a local audio file into stems using a built-in preset.");
+    config
+        .AddCommand<DownloadCommand>("download")
+        .WithDescription("Download audio from one or more URLs without separating.");
 });
 
 return await app.RunAsync(args);
