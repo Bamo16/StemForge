@@ -118,7 +118,8 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "publish: win-x64 (self-contained)",
+            "label": "publish: win-x64 GUI",
+            "detail": "Publish the GUI as a self-contained single-file executable to publish/win-x64/.",
             "type": "process",
             "command": "dotnet",
             "args": [
@@ -133,8 +134,8 @@
                 "--output",
                 "${workspaceFolder}/publish/win-x64",
                 "-p:PublishSingleFile=true",
-                "-p:PublishReadyToRun=true",
                 "-p:IncludeNativeLibrariesForSelfExtract=true",
+                "-p:PublishReadyToRun=true",
                 "-p:DebugType=embedded"
             ],
             "presentation": {
@@ -145,8 +146,37 @@
             "problemMatcher": "$msCompile"
         },
         {
+            "label": "publish: win-x64 CLI",
+            "detail": "Publish the CLI as a self-contained single-file executable into publish/win-x64/.",
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "publish",
+                "${workspaceFolder}/src/StemForge.Cli/StemForge.Cli.csproj",
+                "--runtime",
+                "win-x64",
+                "--self-contained",
+                "true",
+                "--configuration",
+                "Release",
+                "--output",
+                "${workspaceFolder}/publish/win-x64",
+                "-p:PublishSingleFile=true",
+                "-p:IncludeNativeLibrariesForSelfExtract=true",
+                "-p:PublishReadyToRun=true",
+                "-p:DebugType=embedded"
+            ],
+            "dependsOn": "publish: win-x64 GUI",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
             "label": "package: win-x64",
-            "detail": "Stage publish output under StemForge/ and produce StemForge-v{Version}-win-x64.zip in publish/. Reads <Version> from StemForge.csproj. Depends on the publish task.",
+            "detail": "Stage the full publish/win-x64/ folder under StemForge/ and produce StemForge-v{Version}-win-x64.zip in publish/. Reads <Version> from StemForge.csproj.",
             "type": "process",
             "command": "pwsh",
             "args": [
@@ -154,9 +184,9 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-Command",
-                "$ErrorActionPreference='Stop'; $root='${workspaceFolder}'; $publish=\"$root/publish/win-x64\"; $stage=\"$root/publish/stage\"; $version=(Select-Xml -Path \"$root/src/StemForge/StemForge.csproj\" -XPath '//Version').Node.InnerText; $zip=\"$root/publish/StemForge-v$version-win-x64.zip\"; if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }; New-Item -ItemType Directory -Path \"$stage/StemForge\" -Force | Out-Null; Copy-Item \"$publish/StemForge.exe\" \"$stage/StemForge/\"; Copy-Item \"$publish/tools\" \"$stage/StemForge/\" -Recurse; if (Test-Path $zip) { Remove-Item $zip }; Compress-Archive -Path \"$stage/StemForge\" -DestinationPath $zip -CompressionLevel Optimal; \"Created: $zip ($([math]::Round((Get-Item $zip).Length / 1MB, 1)) MB)\""
+                "$ErrorActionPreference='Stop'; $root='${workspaceFolder}'; $publish=\"$root/publish/win-x64\"; $stage=\"$root/publish/stage\"; $version=(Select-Xml -Path \"$root/src/StemForge/StemForge.csproj\" -XPath '//Version').Node.InnerText; $zip=\"$root/publish/StemForge-v$version-win-x64.zip\"; if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }; New-Item -ItemType Directory -Path \"$stage/StemForge\" -Force | Out-Null; Copy-Item \"$publish/*\" \"$stage/StemForge/\" -Recurse; if (Test-Path $zip) { Remove-Item $zip }; Compress-Archive -Path \"$stage/StemForge\" -DestinationPath $zip -CompressionLevel Optimal; \"Created: $zip ($([math]::Round((Get-Item $zip).Length / 1MB, 1)) MB)\""
             ],
-            "dependsOn": "publish: win-x64 (self-contained)",
+            "dependsOn": "publish: win-x64 CLI",
             "presentation": {
                 "reveal": "always",
                 "panel": "shared",
