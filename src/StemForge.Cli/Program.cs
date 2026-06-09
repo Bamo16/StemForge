@@ -19,6 +19,9 @@ app.Configure(config =>
     config
         .AddCommand<PresetsCommand>("presets")
         .WithDescription("List built-in separation presets from the audio-separator toolchain.");
+    config
+        .AddCommand<SeparateCommand>("separate")
+        .WithDescription("Separate a local audio file into stems using a built-in preset.");
 });
 
 return await app.RunAsync(args);
