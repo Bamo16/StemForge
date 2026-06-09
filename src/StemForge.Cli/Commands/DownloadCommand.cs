@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using Spectre.Console;
 using Spectre.Console.Cli;
+using StemForge.Cli.Progress;
 using StemForge.Core.Helpers;
 using StemForge.Core.Models;
 using StemForge.Core.Services;
@@ -27,6 +29,9 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
 
         [CommandOption("--cookies-from-browser")]
         public string? CookiesFromBrowser { get; set; }
+
+        [CommandOption("--verbose")]
+        public bool Verbose { get; set; }
     }
 
     protected override async Task<int> ExecuteAsync(
@@ -37,11 +42,10 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        Console.CancelKeyPress += (_, e) =>
-        {
-            e.Cancel = true;
-            cts.Cancel();
-        };
+        using var cancellation = TwoStageCancellation.Install(
+            cts,
+            message => AppLogger.Warning("cancel", message)
+        );
 
         var services = new ServiceCollection();
         services.AddStemForgeCore();
@@ -83,53 +87,61 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
         int totalFilesWritten = 0;
         bool cancelled = false;
 
-        for (int i = 0; i < settings.Urls.Length; i++)
-        {
-            var input = settings.Urls[i];
-            int jobNum = i + 1;
+        var display = BatchProgressFactory.Create(AnsiConsole.Console, settings.Verbose);
+        using var logScope = ProgressLogBridge.Activate(display);
 
-            // Download only accepts URLs; a local file path has nothing to download.
-            if (!YtUrlHelper.TryNormalize(input, out var normalizedUrl))
+        await display.RunAsync(
+            total,
+            async () =>
             {
-                Console.Error.WriteLine($"[{jobNum}/{total}] Error: not a recognized URL: {input}");
-                continue;
+                for (int i = 0; i < settings.Urls.Length; i++)
+                {
+                    var input = settings.Urls[i];
+
+                    // Download only accepts URLs; a local file path has nothing to download.
+                    if (!YtUrlHelper.TryNormalize(input, out var normalizedUrl))
+                    {
+                        using var invalid = display.BeginInput(i, total, input);
+                        invalid.Complete(InputOutcome.Failed, $"not a recognized URL: {input}");
+                        continue;
+                    }
+
+                    var job = new JobRecord(
+                        Id: Guid.NewGuid(),
+                        InputFilePath: null,
+                        SourceUrl: normalizedUrl,
+                        Presets: [],
+                        OutputDir: resolvedOutputDir,
+                        ModelsDir: appPaths.ModelsDirectory,
+                        StemOutputFormat: resolvedFormat
+                    );
+
+                    using var inputProgress = display.BeginInput(i, total, normalizedUrl);
+
+                    var progress = new Progress<JobUpdate>(update =>
+                        inputProgress.Report(update.OverallPercent, PhaseActivity.Describe(update))
+                    );
+
+                    try
+                    {
+                        var path = await pipeline.DownloadOnlyAsync(job, progress, cts.Token);
+                        succeeded++;
+                        totalFilesWritten++;
+                        inputProgress.Complete(InputOutcome.Succeeded, Path.GetFileName(path));
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        inputProgress.Complete(InputOutcome.Cancelled, null);
+                        cancelled = true;
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        inputProgress.Complete(InputOutcome.Failed, ex.Message);
+                    }
+                }
             }
-
-            var job = new JobRecord(
-                Id: Guid.NewGuid(),
-                InputFilePath: null,
-                SourceUrl: normalizedUrl,
-                Presets: [],
-                OutputDir: resolvedOutputDir,
-                ModelsDir: appPaths.ModelsDirectory,
-                StemOutputFormat: resolvedFormat
-            );
-
-            Console.WriteLine($"[{jobNum}/{total}] Downloading '{normalizedUrl}' ...");
-
-            var progress = new Progress<JobUpdate>(update =>
-            {
-                if (update.Phase == "run_complete" && update.WrittenPaths is { Count: > 0 } written)
-                    Console.WriteLine($"[{jobNum}/{total}] Wrote {Path.GetFileName(written[0])}");
-            });
-
-            try
-            {
-                await pipeline.DownloadOnlyAsync(job, progress, cts.Token);
-                succeeded++;
-                totalFilesWritten++;
-            }
-            catch (OperationCanceledException)
-            {
-                Console.Error.WriteLine("Download cancelled.");
-                cancelled = true;
-                break;
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[{jobNum}/{total}] Error: {ex.Message}");
-            }
-        }
+        );
 
         // Print end-of-run summary.
         if (cancelled)

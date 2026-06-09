@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using Spectre.Console;
 using Spectre.Console.Cli;
+using StemForge.Cli.Progress;
 using StemForge.Core.Helpers;
 using StemForge.Core.Models;
 using StemForge.Core.Services;
@@ -24,6 +26,9 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
 
         [CommandOption("--cookies-from-browser")]
         public string? CookiesFromBrowser { get; set; }
+
+        [CommandOption("--verbose")]
+        public bool Verbose { get; set; }
     }
 
     protected override async Task<int> ExecuteAsync(
@@ -34,11 +39,10 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        Console.CancelKeyPress += (_, e) =>
-        {
-            e.Cancel = true;
-            cts.Cancel();
-        };
+        using var cancellation = TwoStageCancellation.Install(
+            cts,
+            message => AppLogger.Warning("cancel", message)
+        );
 
         var services = new ServiceCollection();
         services.AddStemForgeCore();
@@ -97,86 +101,95 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
         int totalFilesWritten = 0;
         bool cancelled = false;
 
-        for (int i = 0; i < settings.Inputs.Length; i++)
-        {
-            var input = settings.Inputs[i];
-            int jobNum = i + 1;
+        var display = BatchProgressFactory.Create(AnsiConsole.Console, settings.Verbose);
+        using var logScope = ProgressLogBridge.Activate(display);
 
-            // Build a display label and create the JobRecord.
-            JobRecord job;
-            string displayLabel;
-
-            if (YtUrlHelper.TryNormalize(input, out var normalizedUrl))
+        await display.RunAsync(
+            total,
+            async () =>
             {
-                // URL input.
-                displayLabel = normalizedUrl;
-                job = new JobRecord(
-                    Id: Guid.NewGuid(),
-                    InputFilePath: null,
-                    SourceUrl: normalizedUrl,
-                    Presets: resolvedPresets,
-                    OutputDir: resolvedOutputDir,
-                    ModelsDir: appPaths.ModelsDirectory,
-                    StemOutputFormat: resolvedFormat
-                );
-            }
-            else
-            {
-                // Local file input — validate existence before this specific job.
-                var resolvedPath = Path.GetFullPath(input);
-                if (!File.Exists(resolvedPath))
+                for (int i = 0; i < settings.Inputs.Length; i++)
                 {
-                    Console.Error.WriteLine(
-                        $"[{jobNum}/{total}] Error: Input file not found: {resolvedPath}"
+                    var input = settings.Inputs[i];
+                    int jobNum = i + 1;
+
+                    // Build a display label and create the JobRecord.
+                    JobRecord job;
+                    string displayLabel;
+
+                    if (YtUrlHelper.TryNormalize(input, out var normalizedUrl))
+                    {
+                        // URL input.
+                        displayLabel = normalizedUrl;
+                        job = new JobRecord(
+                            Id: Guid.NewGuid(),
+                            InputFilePath: null,
+                            SourceUrl: normalizedUrl,
+                            Presets: resolvedPresets,
+                            OutputDir: resolvedOutputDir,
+                            ModelsDir: appPaths.ModelsDirectory,
+                            StemOutputFormat: resolvedFormat
+                        );
+                    }
+                    else
+                    {
+                        // Local file input — validate existence before this specific job.
+                        var resolvedPath = Path.GetFullPath(input);
+                        if (!File.Exists(resolvedPath))
+                        {
+                            using var missing = display.BeginInput(
+                                i,
+                                total,
+                                Path.GetFileName(resolvedPath)
+                            );
+                            missing.Complete(
+                                InputOutcome.Failed,
+                                $"Input file not found: {resolvedPath}"
+                            );
+                            continue;
+                        }
+
+                        displayLabel = Path.GetFileName(resolvedPath);
+                        job = new JobRecord(
+                            Id: Guid.NewGuid(),
+                            InputFilePath: resolvedPath,
+                            SourceUrl: null,
+                            Presets: resolvedPresets,
+                            OutputDir: resolvedOutputDir,
+                            ModelsDir: appPaths.ModelsDirectory,
+                            StemOutputFormat: resolvedFormat
+                        );
+                    }
+
+                    using var inputProgress = display.BeginInput(i, total, displayLabel);
+
+                    var progress = new Progress<JobUpdate>(update =>
+                        inputProgress.Report(update.OverallPercent, PhaseActivity.Describe(update))
                     );
-                    continue;
+
+                    try
+                    {
+                        var outputFiles = await pipeline.RunAsync(job, progress, cts.Token);
+                        succeeded++;
+                        totalFilesWritten += outputFiles.Count;
+                        inputProgress.Complete(
+                            InputOutcome.Succeeded,
+                            $"{outputFiles.Count} file(s)"
+                        );
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        inputProgress.Complete(InputOutcome.Cancelled, null);
+                        cancelled = true;
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        inputProgress.Complete(InputOutcome.Failed, ex.Message);
+                    }
                 }
-
-                displayLabel = Path.GetFileName(resolvedPath);
-                job = new JobRecord(
-                    Id: Guid.NewGuid(),
-                    InputFilePath: resolvedPath,
-                    SourceUrl: null,
-                    Presets: resolvedPresets,
-                    OutputDir: resolvedOutputDir,
-                    ModelsDir: appPaths.ModelsDirectory,
-                    StemOutputFormat: resolvedFormat
-                );
             }
-
-            var presetNames = string.Join(", ", resolvedPresets.Select(p => p.DisplayName));
-            Console.WriteLine(
-                $"[{jobNum}/{total}] Separating '{displayLabel}' using {presetNames} ..."
-            );
-
-            var progress = new Progress<JobUpdate>(update =>
-            {
-                if (update.Phase == "progress" && update.RunLabel is not null)
-                {
-                    Console.WriteLine(
-                        $"[{jobNum}/{total}][{update.RunIndex + 1}/{update.RunCount}] {update.RunLabel}: {update.OverallPercent}%"
-                    );
-                }
-            });
-
-            IReadOnlyList<string> outputFiles;
-            try
-            {
-                outputFiles = await pipeline.RunAsync(job, progress, cts.Token);
-                succeeded++;
-                totalFilesWritten += outputFiles.Count;
-            }
-            catch (OperationCanceledException)
-            {
-                Console.Error.WriteLine("Separation cancelled.");
-                cancelled = true;
-                break;
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[{jobNum}/{total}] Error: {ex.Message}");
-            }
-        }
+        );
 
         // Print end-of-run summary.
         if (cancelled)
