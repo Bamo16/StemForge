@@ -44,3 +44,14 @@ jobs:
         run: >-
           dotnet test StemForge.slnx --configuration Release --no-build
           -- --filter-class StemForge.Tests.Services.LiveBundledAssetTests
+
+      # Networked download integration test: fetches a small license-safe audio clip over the
+      # network and verifies the file plus its metadata. Gated by STEMFORGE_INTEGRATION so the
+      # offline suite stays hermetic. Allowed to fail (remote host availability) without blocking.
+      - name: Download integration test (networked)
+        continue-on-error: true
+        env:
+          STEMFORGE_INTEGRATION: "1"
+        run: >-
+          dotnet test StemForge.slnx --configuration Release --no-build
+          -- --filter-class StemForge.Tests.Integration.NetworkedDownloadIntegrationTests
