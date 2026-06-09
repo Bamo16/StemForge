@@ -237,15 +237,16 @@ public sealed class SeparationPipelineTests : IDisposable
             ]
         );
 
-        var updates = new List<JobUpdate>();
-        // Collect updates synchronously on the calling thread (no SynchronizationContext).
+        var updates = new System.Collections.Concurrent.ConcurrentBag<JobUpdate>();
         var progressCollector = new Progress<JobUpdate>(updates.Add);
 
         await _pipeline.RunAsync(job, progressCollector, ct: TestContext.Current.CancellationToken);
 
-        // Progress<T> with no SynchronizationContext invokes the callback synchronously in .NET 9+;
-        // allow a brief yield in case it is deferred.
-        await Task.Delay(30, TestContext.Current.CancellationToken);
+        // Progress<T> posts callbacks to the captured SynchronizationContext (xUnit sets one),
+        // so callbacks arrive asynchronously via the ThreadPool. Poll until the expected update
+        // appears rather than sleeping a fixed amount.
+        for (var i = 0; i < 100 && !updates.Any(u => u is { Phase: "progress", RunIndex: 1 }); i++)
+            await Task.Delay(10, TestContext.Current.CancellationToken);
 
         var progressUpdate = updates.LastOrDefault(u => u is { Phase: "progress", RunIndex: 1 });
 
@@ -296,13 +297,15 @@ public sealed class SeparationPipelineTests : IDisposable
             ]
         );
 
-        var updates = new List<JobUpdate>();
+        var updates = new System.Collections.Concurrent.ConcurrentBag<JobUpdate>();
         await _pipeline.RunAsync(
             job,
             new Progress<JobUpdate>(updates.Add),
             ct: TestContext.Current.CancellationToken
         );
-        await Task.Delay(30, TestContext.Current.CancellationToken);
+
+        for (var i = 0; i < 100 && !updates.Any(u => u is { Phase: "progress", RunIndex: 1 }); i++)
+            await Task.Delay(10, TestContext.Current.CancellationToken);
 
         var runAComplete = updates.LastOrDefault(u => u is { Phase: "run_complete", RunIndex: 0 });
         var runBProgress = updates.LastOrDefault(u => u is { Phase: "progress", RunIndex: 1 });
