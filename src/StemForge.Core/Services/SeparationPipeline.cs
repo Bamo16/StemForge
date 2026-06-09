@@ -99,29 +99,40 @@ public sealed class SeparationPipeline(
         var format = FfmpegArgs.Extension(job.StemOutputFormat).ToUpperInvariant();
         var totalSteps = presets.Count + (job.ExtractDrums ? 1 : 0);
 
+        // Weight each run by its model count so multi-model presets occupy proportionally
+        // more of the progress bar. Guard against a degenerate zero-weight total.
+        var totalModelWeight = Math.Max(
+            1,
+            presets.Sum(p => p.ModelCount) + (job.ExtractDrums ? 1 : 0)
+        );
+        int cumulativeModelWeight = 0;
+
         for (int i = 0; i < presets.Count; i++)
         {
             var preset = presets[i];
             var runLabel = EffectiveLabel(preset);
 
+            // Capture loop-local values for use inside the lambda.
+            int runIndex = i;
+            int runStartWeight = cumulativeModelWeight;
+
             progress?.Report(
                 new JobUpdate
                 {
                     Phase = "starting",
-                    RunIndex = i,
+                    RunIndex = runIndex,
                     RunCount = totalSteps,
                     RunLabel = runLabel,
-                    OverallPercent = (int)Math.Round(i * 100.0 / totalSteps),
+                    OverallPercent = (int)Math.Round(runStartWeight * 100.0 / totalModelWeight),
                 }
             );
 
-            // Per-run model tracking for percentage math.
+            // Per-run model tracking for within-preset percentage math.
             int currentModelIndex = 1;
             int currentModelCount = 1;
 
             var driverProgress = new Progress<JobProgress>(p =>
             {
-                // Update local model tracking on loading_model.
                 if (p.Phase == "loading_model")
                 {
                     currentModelIndex = p.ModelIndex ?? 1;
@@ -129,23 +140,34 @@ public sealed class SeparationPipeline(
                 }
 
                 int overallPercent;
-                if (p.Phase == "progress" && p.Total is > 0 && p.Current is { } cur)
+                if (p is { Phase: "progress", Total: > 0 and var total, Current: { } cur })
                 {
-                    var withinModel = Math.Min(100, cur * 100 / p.Total.Value);
+                    var withinModel = Math.Min(100, cur * 100 / total);
                     var withinPreset =
                         ((currentModelIndex - 1) * 100 + withinModel) / currentModelCount;
-                    overallPercent = (int)Math.Round((i * 100.0 + withinPreset) / totalSteps);
+                    // Cap at 99: some models (e.g. Demucs BagOfModels) reset the progress bar
+                    // multiple times internally, so a 100% event does not mean the run is done.
+                    // The pipeline snaps to 100% via run_complete once the driver call returns.
+                    overallPercent = Math.Min(
+                        99,
+                        (int)
+                            Math.Round(
+                                (runStartWeight + withinPreset * preset.ModelCount / 100.0)
+                                    * 100.0
+                                    / totalModelWeight
+                            )
+                    );
                 }
                 else
                 {
-                    overallPercent = (int)Math.Round(i * 100.0 / totalSteps);
+                    overallPercent = (int)Math.Round(runStartWeight * 100.0 / totalModelWeight);
                 }
 
                 progress?.Report(
                     new JobUpdate
                     {
                         Phase = p.Phase,
-                        RunIndex = i,
+                        RunIndex = runIndex,
                         RunCount = totalSteps,
                         RunLabel = runLabel,
                         Model = p.Model,
@@ -178,15 +200,18 @@ public sealed class SeparationPipeline(
                 AudioTagger.ApplyToFile(o.Path, sourceInfo, preset.DisplayName, version);
             }
 
+            cumulativeModelWeight += preset.ModelCount;
+
             progress?.Report(
                 new JobUpdate
                 {
                     Phase = "run_complete",
-                    RunIndex = i,
+                    RunIndex = runIndex,
                     RunCount = totalSteps,
                     RunLabel = runLabel,
                     WrittenPaths = runPaths,
-                    OverallPercent = (int)Math.Round((i + 1) * 100.0 / totalSteps),
+                    OverallPercent = (int)
+                        Math.Round(cumulativeModelWeight * 100.0 / totalModelWeight),
                 }
             );
         }
@@ -196,6 +221,8 @@ public sealed class SeparationPipeline(
         {
             int drumIndex = presets.Count;
             const string drumLabel = "Drums";
+            // cumulativeModelWeight now equals the sum of all preset model counts.
+            int drumStartWeight = cumulativeModelWeight;
 
             progress?.Report(
                 new JobUpdate
@@ -204,7 +231,7 @@ public sealed class SeparationPipeline(
                     RunIndex = drumIndex,
                     RunCount = totalSteps,
                     RunLabel = drumLabel,
-                    OverallPercent = (int)Math.Round(drumIndex * 100.0 / totalSteps),
+                    OverallPercent = (int)Math.Round(drumStartWeight * 100.0 / totalModelWeight),
                 }
             );
 
@@ -231,12 +258,18 @@ public sealed class SeparationPipeline(
                 {
                     var withinModel = Math.Min(100, cur * 100 / p.Total.Value);
                     var withinPreset = ((drumModelIndex - 1) * 100 + withinModel) / drumModelCount;
-                    overallPercent = (int)
-                        Math.Round((drumIndex * 100.0 + withinPreset) / totalSteps);
+                    // Cap at 99 for the same reason as the preset loop (Demucs BagOfModels).
+                    overallPercent = Math.Min(
+                        99,
+                        (int)
+                            Math.Round(
+                                (drumStartWeight + withinPreset / 100.0) * 100.0 / totalModelWeight
+                            )
+                    );
                 }
                 else
                 {
-                    overallPercent = (int)Math.Round(drumIndex * 100.0 / totalSteps);
+                    overallPercent = (int)Math.Round(drumStartWeight * 100.0 / totalModelWeight);
                 }
 
                 progress?.Report(

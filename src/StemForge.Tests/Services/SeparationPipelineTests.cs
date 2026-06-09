@@ -6,12 +6,12 @@ namespace StemForge.Tests.Services;
 
 /// <summary>
 /// Unit tests for <see cref="SeparationPipeline"/>. Uses a temporary directory for
-/// real file I/O (tagging) and <see cref="MockSeparatorDriverService"/> for driver calls.
+/// real file I/O (tagging) and <see cref="SpySeparatorDriverService"/> for driver calls.
 /// </summary>
 public sealed class SeparationPipelineTests : IDisposable
 {
     private readonly string _tempDir;
-    private readonly MockSeparatorDriverService _driver;
+    private readonly SpySeparatorDriverService _driver;
     private readonly AppSettings _settings;
     private readonly SeparationPipeline _pipeline;
 
@@ -30,40 +30,7 @@ public sealed class SeparationPipelineTests : IDisposable
         0x00,
         0x22,
         // STREAMINFO payload (34 bytes, all zero = "unknown")
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
+        .. new byte[34],
     ];
 
     public SeparationPipelineTests()
@@ -71,7 +38,7 @@ public sealed class SeparationPipelineTests : IDisposable
         _tempDir = Path.Combine(Path.GetTempPath(), $"sftest-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
 
-        _driver = new MockSeparatorDriverService();
+        _driver = new SpySeparatorDriverService();
         _settings = new AppSettings();
         var paths = new AppPaths(_settings);
 
@@ -111,7 +78,7 @@ public sealed class SeparationPipelineTests : IDisposable
         IReadOnlyList<Preset> presets,
         bool extractDrums = false
     ) =>
-        new JobRecord(
+        new(
             Guid.NewGuid(),
             InputFilePath: inputFile,
             SourceUrl: null,
@@ -123,7 +90,7 @@ public sealed class SeparationPipelineTests : IDisposable
         );
 
     private static Preset MakeSingleModelPreset(string id, string label) =>
-        new Preset(
+        new(
             Id: id,
             Label: label,
             Category: PresetCategory.Vocals,
@@ -135,9 +102,9 @@ public sealed class SeparationPipelineTests : IDisposable
         );
 
     private static JobResult SuccessResult(params string[] outputPaths) =>
-        new JobResult(
+        new(
             Succeeded: true,
-            Outputs: outputPaths.Select(p => new JobOutput(Stem: "Vocals", Path: p)).ToList(),
+            Outputs: [.. outputPaths.Select(p => new JobOutput(Stem: "Vocals", Path: p))],
             Discarded: [],
             DurationSeconds: 1.0,
             ErrorMessage: null,
@@ -145,7 +112,7 @@ public sealed class SeparationPipelineTests : IDisposable
         );
 
     private static JobResult FailureResult(string errorMessage = "Separation failed") =>
-        new JobResult(
+        new(
             Succeeded: false,
             Outputs: [],
             Discarded: [],
@@ -170,7 +137,11 @@ public sealed class SeparationPipelineTests : IDisposable
         _driver.EnqueueRun(SuccessResult(out1));
         _driver.EnqueueRun(SuccessResult(out2));
 
-        var outputs = await _pipeline.RunAsync(job, progress: null, ct: default);
+        var outputs = await _pipeline.RunAsync(
+            job,
+            progress: null,
+            ct: TestContext.Current.CancellationToken
+        );
 
         Assert.Equal(2, _driver.CallCount);
         Assert.Equal(2, outputs.Count);
@@ -192,7 +163,7 @@ public sealed class SeparationPipelineTests : IDisposable
         _driver.EnqueueRun(SuccessResult(out1));
         _driver.EnqueueRun(SuccessResult(out2));
 
-        await _pipeline.RunAsync(job, progress: null, ct: default);
+        await _pipeline.RunAsync(job, progress: null, ct: TestContext.Current.CancellationToken);
 
         Assert.Equal(input, _driver.ReceivedRequests[0].AudioPath);
         Assert.Equal(input, _driver.ReceivedRequests[1].AudioPath);
@@ -210,14 +181,14 @@ public sealed class SeparationPipelineTests : IDisposable
         var beforeWrite = new FileInfo(outputPath).LastWriteTimeUtc;
 
         // Brief pause so any subsequent write has a different timestamp.
-        await Task.Delay(10);
+        await Task.Delay(10, TestContext.Current.CancellationToken);
 
         var preset = MakeSingleModelPreset("p1", "Vocal Clean");
         var job = MakeJob(input, [preset]);
 
         _driver.EnqueueRun(SuccessResult(outputPath));
 
-        await _pipeline.RunAsync(job, progress: null, ct: default);
+        await _pipeline.RunAsync(job, progress: null, ct: TestContext.Current.CancellationToken);
 
         var afterWrite = new FileInfo(outputPath).LastWriteTimeUtc;
         Assert.True(
@@ -231,10 +202,11 @@ public sealed class SeparationPipelineTests : IDisposable
     [Fact]
     public async Task RunAsync_ProgressOnSecondRun_OverallPercentIs75()
     {
-        // 2 preset runs. Second run (runIndex=1) emits progress at 50/100 with 1 model.
+        // Equal-weight case: 2 presets each with ModelCount=1, totalModelWeight=2.
+        // Second run (runIndex=1, runStartWeight=1) emits progress at 50/100 with 1 model.
         // withinModel = min(100, 50*100/100) = 50
         // withinPreset = ((1-1)*100 + 50) / 1 = 50
-        // overall = round((1*100 + 50) / 2) = round(75) = 75
+        // overall = min(99, round((1 + 50*1/100) * 100 / 2)) = min(99, round(75)) = 75
         var input = CreateFlacFile("input.flac");
         var out1 = CreateFlacFile("run1.flac");
         var out2 = CreateFlacFile("run2.flac");
@@ -269,16 +241,77 @@ public sealed class SeparationPipelineTests : IDisposable
         // Collect updates synchronously on the calling thread (no SynchronizationContext).
         var progressCollector = new Progress<JobUpdate>(updates.Add);
 
-        await _pipeline.RunAsync(job, progressCollector, ct: default);
+        await _pipeline.RunAsync(job, progressCollector, ct: TestContext.Current.CancellationToken);
 
         // Progress<T> with no SynchronizationContext invokes the callback synchronously in .NET 9+;
         // allow a brief yield in case it is deferred.
-        await Task.Delay(30);
+        await Task.Delay(30, TestContext.Current.CancellationToken);
 
-        var progressUpdate = updates.LastOrDefault(u => u.Phase == "progress" && u.RunIndex == 1);
+        var progressUpdate = updates.LastOrDefault(u => u is { Phase: "progress", RunIndex: 1 });
 
         Assert.NotNull(progressUpdate);
         Assert.Equal(75, progressUpdate!.OverallPercent);
+    }
+
+    [Fact]
+    public async Task RunAsync_ModelCountWeighting_ProgressReflectsWeight()
+    {
+        // Preset A has ModelCount=3, Preset B has ModelCount=1. totalModelWeight=4.
+        // Preset A completes (run_complete): runStartWeight=0, weight=3 → 3*100/4 = 75%.
+        // Preset B at progress 50/100: runStartWeight=3, weight=1.
+        // withinPreset=50, overall = min(99, round((3 + 50*1/100)*100/4)) = min(99, round(87.5)) = 88.
+        var input = CreateFlacFile("input.flac");
+        var outA = CreateFlacFile("stemA.flac");
+        var outB = CreateFlacFile("stemB.flac");
+
+        var presetA = new Preset(
+            Id: "pA",
+            Label: "Heavy",
+            Category: PresetCategory.Vocals,
+            Description: "3-model preset",
+            ModelCount: 3,
+            Vram: "",
+            Mode: SeparationMode.SingleModel,
+            PrimaryModel: "model_a.ckpt"
+        );
+        var presetB = MakeSingleModelPreset("pB", "Light");
+        var job = MakeJob(input, [presetA, presetB]);
+
+        _driver.EnqueueRun(SuccessResult(outA));
+        _driver.EnqueueRun(
+            SuccessResult(outB),
+            [
+                new JobProgress
+                {
+                    Phase = "loading_model",
+                    ModelIndex = 1,
+                    ModelCount = 1,
+                },
+                new JobProgress
+                {
+                    Phase = "progress",
+                    Current = 50,
+                    Total = 100,
+                },
+            ]
+        );
+
+        var updates = new List<JobUpdate>();
+        await _pipeline.RunAsync(
+            job,
+            new Progress<JobUpdate>(updates.Add),
+            ct: TestContext.Current.CancellationToken
+        );
+        await Task.Delay(30, TestContext.Current.CancellationToken);
+
+        var runAComplete = updates.LastOrDefault(u => u is { Phase: "run_complete", RunIndex: 0 });
+        var runBProgress = updates.LastOrDefault(u => u is { Phase: "progress", RunIndex: 1 });
+
+        Assert.NotNull(runAComplete);
+        Assert.Equal(75, runAComplete!.OverallPercent);
+
+        Assert.NotNull(runBProgress);
+        Assert.Equal(88, runBProgress!.OverallPercent);
     }
 
     // ── Test 4: First-preset failure stops pipeline ───────────────────────────
@@ -295,7 +328,7 @@ public sealed class SeparationPipelineTests : IDisposable
         // Do NOT enqueue a second result: if the pipeline wrongly calls driver twice it throws.
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _pipeline.RunAsync(job, progress: null, ct: default)
+            _pipeline.RunAsync(job, progress: null, ct: TestContext.Current.CancellationToken)
         );
     }
 
@@ -311,7 +344,11 @@ public sealed class SeparationPipelineTests : IDisposable
 
         try
         {
-            await _pipeline.RunAsync(job, progress: null, ct: default);
+            await _pipeline.RunAsync(
+                job,
+                progress: null,
+                ct: TestContext.Current.CancellationToken
+            );
         }
         catch (InvalidOperationException) { }
 

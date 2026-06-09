@@ -4,10 +4,10 @@ using StemForge.Core.Services;
 namespace StemForge.Tests.Fakes;
 
 /// <summary>
-/// Configurable hand-written test double for <see cref="ISeparatorDriverService"/>.
-/// Each configured run carries its own result and optional progress sequence.
+/// Configurable test spy for <see cref="ISeparatorDriverService"/>. Records all received
+/// requests and returns pre-configured results with optional progress sequences.
 /// </summary>
-public sealed class MockSeparatorDriverService : ISeparatorDriverService
+public sealed class SpySeparatorDriverService : ISeparatorDriverService
 {
     public sealed record RunConfig(
         JobResult Result,
@@ -41,7 +41,7 @@ public sealed class MockSeparatorDriverService : ISeparatorDriverService
 
         if (_runs.Count == 0)
             throw new InvalidOperationException(
-                "MockSeparatorDriverService: no more runs configured."
+                "SpySeparatorDriverService: no more runs configured."
             );
 
         var run = _runs.Dequeue();
