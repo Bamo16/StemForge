@@ -23,13 +23,63 @@ public sealed class JobFeedTimelineTests
             )
         );
 
+    /// <summary>
+    /// Converts a <see cref="JobProgress"/> into a <see cref="JobUpdate"/> and invokes
+    /// <see cref="JobQueueService.ApplyUpdate"/> — mirrors the translation the pipeline
+    /// adapter does at runtime.
+    /// </summary>
     private static void Invoke(
         JobItemViewModel vm,
         JobProgress p,
         int presetIndex = 0,
         int totalSteps = 1,
-        string presetLabel = "Vocals Clean"
-    ) => JobQueueService.HandleProgress(vm, p, presetIndex, totalSteps, presetLabel);
+        string presetLabel = "Vocals Clean",
+        JobQueueService.RunProgressState? state = null
+    )
+    {
+        state ??= new JobQueueService.RunProgressState();
+
+        // Mirror the model-tracking update that SeparationPipeline does before reporting.
+        if (p.Phase == "loading_model")
+        {
+            state.ModelIndex = p.ModelIndex ?? 1;
+            state.ModelCount = p.ModelCount ?? 1;
+        }
+
+        int overallPercent;
+        if (p.Phase == "progress" && p.Total is > 0 && p.Current is { } cur)
+        {
+            var withinModel = Math.Min(100, cur * 100 / p.Total.Value);
+            var withinPreset = ((state.ModelIndex - 1) * 100 + withinModel) / state.ModelCount;
+            overallPercent = (int)Math.Round((presetIndex * 100.0 + withinPreset) / totalSteps);
+        }
+        else
+        {
+            overallPercent = (int)Math.Round(presetIndex * 100.0 / totalSteps);
+        }
+
+        var update = new JobUpdate
+        {
+            Phase = p.Phase,
+            RunIndex = presetIndex,
+            RunCount = totalSteps,
+            RunLabel = presetLabel,
+            Model = p.Model,
+            ModelIndex = p.ModelIndex,
+            ModelCount = p.ModelCount,
+            Cached = p.Cached,
+            Stem = p.Stem,
+            ProgressCurrent = p.Current,
+            ProgressTotal = p.Total,
+            ProgressFinal = p.Final,
+            OutputPath = p.OutputPath,
+            LogMessage = p.LogMessage,
+            LogLevel = p.LogLevel,
+            OverallPercent = overallPercent,
+        };
+
+        JobQueueService.ApplyUpdate(vm, update, state);
+    }
 
     // ── loading_model emits a feed entry ────────────────────────────────────
 
@@ -346,6 +396,7 @@ public sealed class JobFeedTimelineTests
     public void LoadingModel_ArmsRunLine_ButDoesNotEmitImmediately()
     {
         var vm = MakeVm();
+        var state = new JobQueueService.RunProgressState();
 
         Invoke(
             vm,
@@ -354,20 +405,22 @@ public sealed class JobFeedTimelineTests
                 Phase = "loading_model",
                 ModelIndex = 1,
                 ModelCount = 1,
-            }
+            },
+            state: state
         );
 
         // Loading entry is visible immediately…
         Assert.Contains("Loading", vm.LogOutput);
         // …but the run line is only armed, not emitted yet.
         Assert.DoesNotContain("Running", vm.LogOutput);
-        Assert.NotNull(vm.PendingRunLogLine);
+        Assert.NotNull(state.PendingRunLogLine);
     }
 
     [Fact]
     public void Progress_AfterLoadingModel_EmitsRunLine()
     {
         var vm = MakeVm();
+        var state = new JobQueueService.RunProgressState();
 
         Invoke(
             vm,
@@ -376,7 +429,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "loading_model",
                 ModelIndex = 1,
                 ModelCount = 1,
-            }
+            },
+            state: state
         );
         Invoke(
             vm,
@@ -385,17 +439,19 @@ public sealed class JobFeedTimelineTests
                 Phase = "progress",
                 Current = 10,
                 Total = 100,
-            }
+            },
+            state: state
         );
 
         Assert.Contains("Running", vm.LogOutput);
-        Assert.Null(vm.PendingRunLogLine);
+        Assert.Null(state.PendingRunLogLine);
     }
 
     [Fact]
     public void Progress_SecondTick_DoesNotEmitRunLineAgain()
     {
         var vm = MakeVm();
+        var state = new JobQueueService.RunProgressState();
 
         Invoke(
             vm,
@@ -404,7 +460,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "loading_model",
                 ModelIndex = 1,
                 ModelCount = 1,
-            }
+            },
+            state: state
         );
         Invoke(
             vm,
@@ -413,7 +470,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "progress",
                 Current = 10,
                 Total = 100,
-            }
+            },
+            state: state
         );
         Invoke(
             vm,
@@ -422,7 +480,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "progress",
                 Current = 20,
                 Total = 100,
-            }
+            },
+            state: state
         );
 
         // Count occurrences of "Running" — should appear exactly once.
@@ -442,6 +501,7 @@ public sealed class JobFeedTimelineTests
     public void Progress_MultiModelPreset_Model1DoesNotReach100()
     {
         var vm = MakeVm();
+        var state = new JobQueueService.RunProgressState();
 
         Invoke(
             vm,
@@ -450,7 +510,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "loading_model",
                 ModelIndex = 1,
                 ModelCount = 2,
-            }
+            },
+            state: state
         );
         Invoke(
             vm,
@@ -459,7 +520,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "progress",
                 Current = 100,
                 Total = 100,
-            }
+            },
+            state: state
         );
 
         // Model 1 of 2 fully complete = 50%, not 100%.
@@ -470,6 +532,7 @@ public sealed class JobFeedTimelineTests
     public void Progress_MultiModelPreset_Model2ReachesFullBar()
     {
         var vm = MakeVm();
+        var state = new JobQueueService.RunProgressState();
 
         Invoke(
             vm,
@@ -478,7 +541,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "loading_model",
                 ModelIndex = 1,
                 ModelCount = 2,
-            }
+            },
+            state: state
         );
         Invoke(
             vm,
@@ -487,7 +551,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "progress",
                 Current = 100,
                 Total = 100,
-            }
+            },
+            state: state
         );
         Invoke(
             vm,
@@ -496,7 +561,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "loading_model",
                 ModelIndex = 2,
                 ModelCount = 2,
-            }
+            },
+            state: state
         );
         Invoke(
             vm,
@@ -505,7 +571,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "progress",
                 Current = 100,
                 Total = 100,
-            }
+            },
+            state: state
         );
 
         Assert.Equal(100, vm.Progress);
@@ -515,6 +582,7 @@ public sealed class JobFeedTimelineTests
     public void Progress_MultiModelPreset_Model2ProgressNotBlockedByModel1()
     {
         var vm = MakeVm();
+        var state = new JobQueueService.RunProgressState();
 
         // Model 1 runs to completion (sets bar to 50%).
         Invoke(
@@ -524,7 +592,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "loading_model",
                 ModelIndex = 1,
                 ModelCount = 2,
-            }
+            },
+            state: state
         );
         Invoke(
             vm,
@@ -533,7 +602,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "progress",
                 Current = 100,
                 Total = 100,
-            }
+            },
+            state: state
         );
 
         // Model 2 starts at 0 — progress must still advance from 50%.
@@ -544,7 +614,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "loading_model",
                 ModelIndex = 2,
                 ModelCount = 2,
-            }
+            },
+            state: state
         );
         Invoke(
             vm,
@@ -553,7 +624,8 @@ public sealed class JobFeedTimelineTests
                 Phase = "progress",
                 Current = 10,
                 Total = 100,
-            }
+            },
+            state: state
         );
 
         Assert.True(vm.Progress > 50);
