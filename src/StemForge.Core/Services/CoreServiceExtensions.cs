@@ -42,6 +42,7 @@ public static class CoreServiceExtensions
         services.AddSingleton<ToolStateService>();
         services.AddSingleton<YouTubeAudioService>();
         services.AddSingleton<ISeparatorDriverService, SeparatorDriverService>();
+        services.AddSingleton<SeparationPipeline>();
 
         return services;
     }
