@@ -391,7 +391,7 @@
                               FontSize="12">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="vm:EnsembleOption">
-                                <TextBlock Text="{Binding Key}"
+                                <TextBlock Text="{Binding Label}"
                                            ToolTip.Tip="{Binding Tip}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>

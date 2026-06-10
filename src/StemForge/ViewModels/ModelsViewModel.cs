@@ -7,9 +7,9 @@ using StemForge.Core.Services;
 
 namespace StemForge.ViewModels;
 
-public sealed record EnsembleOption(string Key, string Tip)
+public sealed record EnsembleOption(string Key, string Label, string Tip)
 {
-    public override string ToString() => Key;
+    public override string ToString() => Label;
 }
 
 public partial class ModelsViewModel : PageViewModelBase
@@ -149,7 +149,7 @@ public partial class ModelsViewModel : PageViewModelBase
 
     public IReadOnlyList<EnsembleOption> EnsembleAlgorithmOptions { get; } =
         EnsembleAlgorithmCatalog
-            .Known.Select(a => new EnsembleOption(a.Key, a.Description))
+            .Known.Select(a => new EnsembleOption(a.Key, a.Label, a.Description))
             .ToList();
 
     private bool CanSavePreset => HasChecked && !string.IsNullOrWhiteSpace(NewPresetName);
