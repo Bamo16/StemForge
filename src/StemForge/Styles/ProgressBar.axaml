@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:converters="using:Avalonia.Controls.Converters">
+                    xmlns:converters="using:Avalonia.Controls.Converters"
+                    xmlns:conv="using:StemForge.Converters">
 
     <!-- Custom ProgressBar ControlTheme with an animated shimmer overlay.
 
@@ -23,6 +24,7 @@
          fill and its width/sizing (driven by Value/Maximum) are untouched. -->
 
     <converters:StringFormatConverter x:Key="StringFormatConverter" />
+    <conv:RampOpacityConverter x:Key="RampOpacityConverter" />
 
     <!-- Static gradient used by every shimmer overlay: a transparent band with a
          soft light highlight in the middle. Static brush => GradientBrushAnimator
@@ -67,14 +69,22 @@
                                     Background="{TemplateBinding Foreground}"
                                     ClipToBounds="True"
                                     CornerRadius="{TemplateBinding CornerRadius}">
-                                <Border x:Name="DeterminateShimmer"
-                                        Width="80"
-                                        HorizontalAlignment="Left"
-                                        Background="{StaticResource ProgressShimmerBrush}"
-                                        IsHitTestVisible="False">
-                                    <Border.RenderTransform>
-                                        <TranslateTransform />
-                                    </Border.RenderTransform>
+<!-- Opacity ramps with fill: 0 on an empty bar, full by ~22%. This
+                                     suppresses the "whole indicator flashes white" look on a
+                                     nearly empty bar. The per-cycle sweep fade lives on the inner
+                                     DeterminateShimmer and multiplies with this host opacity, so
+                                     the two animations never fight. -->
+                                <Border x:Name="DeterminateShimmerHost"
+                                        Opacity="{Binding Percentage, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource RampOpacityConverter}, ConverterParameter=22}">
+                                    <Border x:Name="DeterminateShimmer"
+                                            Width="80"
+                                            HorizontalAlignment="Left"
+                                            Background="{StaticResource ProgressShimmerBrush}"
+                                            IsHitTestVisible="False">
+                                        <Border.RenderTransform>
+                                            <TranslateTransform />
+                                        </Border.RenderTransform>
+                                    </Border>
                                 </Border>
                             </Border>
                         </Panel>

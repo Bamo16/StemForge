@@ -44,7 +44,27 @@
                          app: there, native Fluent controls are tinted amber via the SystemAccentColor
                          override in Tokens.axaml (ADR 0004), which the IDE previewer doesn't apply,
                          so the previewer's Fluent accent would otherwise show its default blue. -->
-                    <ProgressBar Value="60" Maximum="100" Foreground="{DynamicResource AccentBrush}" />
+                    <!-- Animated 0 to 100 percent sweep (loops up and back down) so the shimmer
+                         can be watched across every fill level, in particular the low-fill ramp,
+                         without running a real job. -->
+                    <ProgressBar Maximum="100" Foreground="{DynamicResource AccentBrush}">
+                        <ProgressBar.Styles>
+                            <Style Selector="ProgressBar">
+                                <Style.Animations>
+                                    <Animation IterationCount="Infinite"
+                                               Duration="0:0:8"
+                                               PlaybackDirection="Alternate">
+                                        <KeyFrame Cue="0%">
+                                            <Setter Property="Value" Value="0" />
+                                        </KeyFrame>
+                                        <KeyFrame Cue="100%">
+                                            <Setter Property="Value" Value="100" />
+                                        </KeyFrame>
+                                    </Animation>
+                                </Style.Animations>
+                            </Style>
+                        </ProgressBar.Styles>
+                    </ProgressBar>
                     <ProgressBar IsIndeterminate="True" Foreground="{DynamicResource AccentBrush}" />
 
                     <!-- Accent / status / category swatches -->
