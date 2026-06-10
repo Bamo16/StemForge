@@ -634,7 +634,10 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                     entry.Description,
                     ModelCount: entry.Models.Count,
                     Vram: string.Empty,
-                    Models: entry.Models
+                    Models: entry.Models,
+                    EnsembleAlgorithm: string.IsNullOrWhiteSpace(entry.Algorithm)
+                        ? null
+                        : entry.Algorithm
                 )
             );
         }

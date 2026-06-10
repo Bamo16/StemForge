@@ -148,29 +148,9 @@ public partial class ModelsViewModel : PageViewModelBase
         SavePresetCommand.NotifyCanExecuteChanged();
 
     public IReadOnlyList<EnsembleOption> EnsembleAlgorithmOptions { get; } =
-    [
-        new(
-            "avg_wave",
-            "Average the waveforms of all models. Simple, reliable general-purpose blend."
-        ),
-        new(
-            "median_wave",
-            "Median of waveforms across models. More robust to outlier models than averaging."
-        ),
-        new(
-            "max_fft",
-            "Maximum spectral magnitude at each frequency. Maximises loudness and recovered detail."
-        ),
-        new(
-            "min_fft",
-            "Minimum spectral magnitude at each frequency. Aggressively suppresses noise at the cost of detail."
-        ),
-        new("mean_fft", "Mean spectral magnitude. Smoother frequency-domain blend than avg_wave."),
-        new(
-            "median_fft",
-            "Median spectral magnitude. Robust frequency-domain blend — good when one model is significantly noisier than the others."
-        ),
-    ];
+        EnsembleAlgorithmCatalog
+            .Known.Select(a => new EnsembleOption(a.Key, a.Description))
+            .ToList();
 
     private bool CanSavePreset => HasChecked && !string.IsNullOrWhiteSpace(NewPresetName);
 

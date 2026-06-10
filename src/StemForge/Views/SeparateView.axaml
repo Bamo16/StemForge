@@ -624,6 +624,11 @@
                                                                 </ToolTip.Tip>
                                                                 <TextBlock Text="{Binding ModelsTag}" />
                                                             </Border>
+                                                            <Border Classes="tag"
+                                                                    IsVisible="{Binding HasAlgorithmTag}"
+                                                                    ToolTip.Tip="{Binding AlgorithmTooltip}">
+                                                                <TextBlock Text="{Binding AlgorithmTag}" />
+                                                            </Border>
                                                         </StackPanel>
                                                     </StackPanel>
                                                 </Grid>
@@ -717,6 +722,11 @@
                                                             </StackPanel>
                                                         </ToolTip.Tip>
                                                         <TextBlock Text="{Binding ModelsTag}" />
+                                                    </Border>
+                                                    <Border Classes="tag"
+                                                            IsVisible="{Binding HasAlgorithmTag}"
+                                                            ToolTip.Tip="{Binding AlgorithmTooltip}">
+                                                        <TextBlock Text="{Binding AlgorithmTag}" />
                                                     </Border>
                                                 </StackPanel>
                                             </StackPanel>
