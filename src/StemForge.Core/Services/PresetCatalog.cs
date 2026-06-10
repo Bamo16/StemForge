@@ -21,7 +21,8 @@ public sealed class PresetCatalog
             [
                 "bs_roformer_vocals_resurrection_unwa.ckpt",
                 "melband_roformer_big_beta6x.ckpt",
-            ]
+            ],
+            EnsembleAlgorithm: "avg_fft"
         ),
         new(
             "vocal_clean",
@@ -34,7 +35,8 @@ public sealed class PresetCatalog
             [
                 "bs_roformer_vocals_revive_v2_unwa.ckpt",
                 "mel_band_roformer_kim_ft2_bleedless_unwa.ckpt",
-            ]
+            ],
+            EnsembleAlgorithm: "min_fft"
         ),
         new(
             "vocal_full",
@@ -47,7 +49,8 @@ public sealed class PresetCatalog
             [
                 "bs_roformer_vocals_revive_v3e_unwa.ckpt",
                 "mel_band_roformer_vocals_becruily.ckpt",
-            ]
+            ],
+            EnsembleAlgorithm: "max_fft"
         ),
         new(
             "vocal_rvc",
@@ -56,7 +59,8 @@ public sealed class PresetCatalog
             "Optimized for RVC/AI voice training data — Beta 6X + Gabox voc_fv4 averaged",
             ModelCount: 2,
             Vram: "",
-            Models: ["melband_roformer_big_beta6x.ckpt", "mel_band_roformer_vocals_fv4_gabox.ckpt"]
+            Models: ["melband_roformer_big_beta6x.ckpt", "mel_band_roformer_vocals_fv4_gabox.ckpt"],
+            EnsembleAlgorithm: "avg_wave"
         ),
         new(
             "instrumental_balanced",
@@ -69,7 +73,8 @@ public sealed class PresetCatalog
             [
                 "mel_band_roformer_instrumental_instv8_gabox.ckpt",
                 "bs_roformer_instrumental_resurrection_unwa.ckpt",
-            ]
+            ],
+            EnsembleAlgorithm: "uvr_max_spec"
         ),
         new(
             "instrumental_clean",
@@ -82,7 +87,8 @@ public sealed class PresetCatalog
             [
                 "mel_band_roformer_instrumental_fv7z_gabox.ckpt",
                 "bs_roformer_instrumental_resurrection_unwa.ckpt",
-            ]
+            ],
+            EnsembleAlgorithm: "uvr_max_spec"
         ),
         new(
             "instrumental_full",
@@ -95,7 +101,8 @@ public sealed class PresetCatalog
             [
                 "melband_roformer_inst_v1e_plus.ckpt",
                 "mel_band_roformer_instrumental_becruily.ckpt",
-            ]
+            ],
+            EnsembleAlgorithm: "uvr_max_spec"
         ),
         new(
             "instrumental_low_resource",
@@ -108,7 +115,8 @@ public sealed class PresetCatalog
             [
                 "bs_roformer_instrumental_resurrection_unwa.ckpt",
                 "UVR-MDX-NET-Inst_HQ_5.onnx",
-            ]
+            ],
+            EnsembleAlgorithm: "avg_fft"
         ),
         new(
             "karaoke",
@@ -122,7 +130,8 @@ public sealed class PresetCatalog
                 "mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
                 "mel_band_roformer_karaoke_gabox_v2.ckpt",
                 "mel_band_roformer_karaoke_becruily.ckpt",
-            ]
+            ],
+            EnsembleAlgorithm: "avg_wave"
         ),
     ];
 }

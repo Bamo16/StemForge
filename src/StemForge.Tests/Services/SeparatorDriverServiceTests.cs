@@ -131,6 +131,65 @@ public sealed class SeparatorDriverServiceTests
         Assert.Empty(presets);
     }
 
+    [Fact]
+    public void ParsePresetsFromJson_CarriesAlgorithmIntoEnsembleAlgorithm()
+    {
+        const string json = """
+            {
+              "vocal_full": {
+                "name": "Vocal Full",
+                "description": "High quality vocal separation",
+                "models": ["model_a.onnx", "model_b.onnx"],
+                "algorithm": "max_fft"
+              }
+            }
+            """;
+
+        var presets = InvokeParse(json);
+
+        Assert.Single(presets);
+        Assert.Equal("max_fft", presets[0].EnsembleAlgorithm);
+    }
+
+    [Fact]
+    public void ParsePresetsFromJson_MissingAlgorithm_LeavesEnsembleAlgorithmNull()
+    {
+        const string json = """
+            {
+              "vocal_full": {
+                "name": "Vocal Full",
+                "description": "",
+                "models": ["model_a.onnx", "model_b.onnx"]
+              }
+            }
+            """;
+
+        var presets = InvokeParse(json);
+
+        Assert.Single(presets);
+        Assert.Null(presets[0].EnsembleAlgorithm);
+    }
+
+    [Fact]
+    public void ParsePresetsFromJson_BlankAlgorithm_LeavesEnsembleAlgorithmNull()
+    {
+        const string json = """
+            {
+              "vocal_full": {
+                "name": "Vocal Full",
+                "description": "",
+                "models": ["model_a.onnx", "model_b.onnx"],
+                "algorithm": "   "
+              }
+            }
+            """;
+
+        var presets = InvokeParse(json);
+
+        Assert.Single(presets);
+        Assert.Null(presets[0].EnsembleAlgorithm);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static IReadOnlyList<Preset> InvokeParse(string json)
