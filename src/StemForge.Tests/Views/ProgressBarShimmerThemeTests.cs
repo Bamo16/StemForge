@@ -28,7 +28,7 @@ public sealed class ProgressBarShimmerThemeTests
             AvaloniaXamlLoader.Load(new Uri("avares://StemForge/Styles/ProgressBar.axaml"));
 
         // The ControlTheme is keyed by the ProgressBar type in the dictionary.
-        var theme = (ControlTheme)dictionary[typeof(ProgressBar)];
+        var theme = (ControlTheme)dictionary[typeof(ProgressBar)]!;
         return theme;
     }
 
