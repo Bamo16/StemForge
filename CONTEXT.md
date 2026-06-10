@@ -55,7 +55,7 @@ How a [[Preset]] is specified to the separator. The modes are not different proc
 A [[Preset]] that runs two or more [[Model]]s and combines their per-[[Stem]] outputs into one result. Single-model presets are not ensembles.
 
 ### Ensemble algorithm
-The method by which an [[Ensemble]] combines its models' outputs. Operates either in the waveform domain (`avg_wave`, `median_wave`, `min_wave`, `max_wave`) or the spectral/FFT-magnitude domain (`avg_fft`/`mean_fft`, `median_fft`, `min_fft`, `max_fft`, and `*_mag` variants). Each algorithm trades off loudness/detail recovery against noise suppression. Built-in presets carry their algorithm in the driver's catalog; custom ensembles let the user pick one. Applies only to ensembles (2+ models).
+The method by which an [[Ensemble]] combines its models' outputs. Operates either in the waveform domain (`avg_wave`, `median_wave`, `min_wave`, `max_wave`) or the spectral/FFT-magnitude domain (`avg_fft`/`mean_fft`, `median_fft`, `min_fft`, `max_fft`, and the UVR spectral blends `uvr_max_spec` and `uvr_min_spec`). Each algorithm trades off loudness/detail recovery against noise suppression. Built-in presets carry their algorithm in the driver's catalog; custom ensembles let the user pick one. Applies only to ensembles (2+ models).
 
 ## Jobs and orchestration
 
