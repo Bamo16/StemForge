@@ -193,7 +193,7 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="vm:ToolStatusViewModel">
                                         <!-- Single line: dot, name, version, variant chip — matches
-                                             the Settings status header so the two reads consistently. -->
+                                        the Settings status header so the two reads consistently. -->
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <Ellipse Classes="statusDot"
                                                      Classes.ok="{Binding Found}"
@@ -286,8 +286,8 @@
                                 <DataTemplate DataType="vm:ToolRowViewModel">
                                     <StackPanel Spacing="6">
                                         <!-- Header row: indicator, name, REQUIRED/OPTIONAL, then either
-                                             the installed-outcome (when Found) or a 2-line sub-stack
-                                             with description + size estimate to the right (when not). -->
+                                        the installed-outcome (when Found) or a 2-line sub-stack
+                                        with description + size estimate to the right (when not). -->
                                         <StackPanel Orientation="Horizontal" Spacing="10">
                                             <Panel Width="22" VerticalAlignment="Center">
                                                 <CheckBox IsChecked="{Binding WantInstall, Mode=TwoWay}"

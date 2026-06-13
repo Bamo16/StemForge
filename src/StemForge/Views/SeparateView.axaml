@@ -431,8 +431,8 @@
         </Border>
 
         <!-- ===== Format picker overlay — in-window, sits above content row.
-             RowSpan=4 + Top/Left alignment makes the layout slot the entire grid so the
-             code-behind can position it precisely under FormatPickerAnchor via Margin. ===== -->
+        RowSpan=4 + Top/Left alignment makes the layout slot the entire grid so the
+        code-behind can position it precisely under FormatPickerAnchor via Margin. ===== -->
         <Border Grid.Row="0" Grid.RowSpan="4"
                 x:Name="FormatPickerOverlay"
                 IsVisible="{Binding IsFormatPickerOpen}"
@@ -506,7 +506,7 @@
                                                VerticalAlignment="Center"
                                                TextTrimming="CharacterEllipsis" />
                                     <!-- YouTube Premium logo (SVG paths from Wikimedia Commons,
-                                         viewBox 846x174). Scaled into the row via Viewbox. -->
+                                    viewBox 846x174). Scaled into the row via Viewbox. -->
                                     <Viewbox Grid.Column="5"
                                              IsVisible="{Binding IsYtPremium}"
                                              Width="58" Height="12"
@@ -659,94 +659,94 @@
                     </StackPanel>
 
                     <!-- User preset grid (same card style as built-in).
-                         Wrapped in a StackPanel so the inner UniformGrid measures to its natural
-                         row-height; without it, a single row stretches vertically to fill the
-                         entire ScrollViewer viewport. Built-in presets get the same constraint
-                         implicitly because each category lives inside its own category StackPanel. -->
+                    Wrapped in a StackPanel so the inner UniformGrid measures to its natural
+                    row-height; without it, a single row stretches vertically to fill the
+                    entire ScrollViewer viewport. Built-in presets get the same constraint
+                    implicitly because each category lives inside its own category StackPanel. -->
                     <StackPanel IsVisible="{Binding HasUserPresets}">
-                    <ItemsControl ItemsSource="{Binding UserPresetItems}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Columns="2" Margin="0,0,-7,0" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="vm:PresetItemViewModel">
-                                <!-- Panel so the × overlays without disrupting the card layout -->
-                                <Panel Margin="0,0,7,7">
-                                    <Border Classes="preset"
-                                            Classes.selected="{Binding IsSelected}"
-                                            PointerPressed="OnPresetCardClicked">
-                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                            <!-- Checkbox -->
-                                            <Border Grid.Column="0" Classes="checkbox">
-                                                <Path Data="M1 4 L4 7 L9 1"
-                                                      Stroke="White" StrokeThickness="1.5"
-                                                      StrokeLineCap="Round" StrokeJoin="Round"
-                                                      Stretch="None"
-                                                      Width="10" Height="8"
-                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                      IsVisible="{Binding IsSelected}" />
-                                            </Border>
+                        <ItemsControl ItemsSource="{Binding UserPresetItems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" Margin="0,0,-7,0" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="vm:PresetItemViewModel">
+                                    <!-- Panel so the × overlays without disrupting the card layout -->
+                                    <Panel Margin="0,0,7,7">
+                                        <Border Classes="preset"
+                                                Classes.selected="{Binding IsSelected}"
+                                                PointerPressed="OnPresetCardClicked">
+                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                                <!-- Checkbox -->
+                                                <Border Grid.Column="0" Classes="checkbox">
+                                                    <Path Data="M1 4 L4 7 L9 1"
+                                                          Stroke="White" StrokeThickness="1.5"
+                                                          StrokeLineCap="Round" StrokeJoin="Round"
+                                                          Stretch="None"
+                                                          Width="10" Height="8"
+                                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                          IsVisible="{Binding IsSelected}" />
+                                                </Border>
 
-                                            <!-- Body -->
-                                            <StackPanel Grid.Column="1" Spacing="2" Margin="0,0,22,0">
-                                                <TextBlock Classes="presetName" Text="{Binding Label}" />
-                                                <TextBlock Text="{Binding Description}"
-                                                           FontSize="11"
-                                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                                           TextWrapping="NoWrap"
-                                                           TextTrimming="CharacterEllipsis" />
-                                                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,4,0,0">
-                                                    <Border Classes="tag">
-                                                        <ToolTip.Tip>
-                                                            <StackPanel Spacing="4"
-                                                                        IsVisible="{Binding HasModelsList}">
-                                                                <TextBlock Text="MODELS"
-                                                                           FontSize="9"
-                                                                           FontWeight="SemiBold"
-                                                                           Foreground="{DynamicResource AccentBrush}"
-                                                                           Margin="0,0,0,4"
-                                                                           LetterSpacing="1" />
-                                                                <ItemsControl ItemsSource="{Binding ModelsList}">
-                                                                    <ItemsControl.ItemTemplate>
-                                                                        <DataTemplate>
-                                                                            <TextBlock Text="{Binding}"
-                                                                                       FontSize="11"
-                                                                                       FontFamily="{DynamicResource MonoFont}"
-                                                                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                                                                       TextWrapping="NoWrap" />
-                                                                        </DataTemplate>
-                                                                    </ItemsControl.ItemTemplate>
-                                                                </ItemsControl>
-                                                            </StackPanel>
-                                                        </ToolTip.Tip>
-                                                        <TextBlock Text="{Binding ModelsTag}" />
-                                                    </Border>
-                                                    <Border Classes="tag"
-                                                            IsVisible="{Binding HasAlgorithmTag}"
-                                                            ToolTip.Tip="{Binding AlgorithmTooltip}">
-                                                        <TextBlock Text="{Binding AlgorithmTag}" />
-                                                    </Border>
+                                                <!-- Body -->
+                                                <StackPanel Grid.Column="1" Spacing="2" Margin="0,0,22,0">
+                                                    <TextBlock Classes="presetName" Text="{Binding Label}" />
+                                                    <TextBlock Text="{Binding Description}"
+                                                               FontSize="11"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                                               TextWrapping="NoWrap"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,4,0,0">
+                                                        <Border Classes="tag">
+                                                            <ToolTip.Tip>
+                                                                <StackPanel Spacing="4"
+                                                                            IsVisible="{Binding HasModelsList}">
+                                                                    <TextBlock Text="MODELS"
+                                                                               FontSize="9"
+                                                                               FontWeight="SemiBold"
+                                                                               Foreground="{DynamicResource AccentBrush}"
+                                                                               Margin="0,0,0,4"
+                                                                               LetterSpacing="1" />
+                                                                    <ItemsControl ItemsSource="{Binding ModelsList}">
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding}"
+                                                                                           FontSize="11"
+                                                                                           FontFamily="{DynamicResource MonoFont}"
+                                                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                                           TextWrapping="NoWrap" />
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                </StackPanel>
+                                                            </ToolTip.Tip>
+                                                            <TextBlock Text="{Binding ModelsTag}" />
+                                                        </Border>
+                                                        <Border Classes="tag"
+                                                                IsVisible="{Binding HasAlgorithmTag}"
+                                                                ToolTip.Tip="{Binding AlgorithmTooltip}">
+                                                            <TextBlock Text="{Binding AlgorithmTag}" />
+                                                        </Border>
+                                                    </StackPanel>
                                                 </StackPanel>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
+                                            </Grid>
+                                        </Border>
 
-                                    <!-- × overlaid top-right, doesn't affect card layout -->
-                                    <Button HorizontalAlignment="Right"
-                                            VerticalAlignment="Top"
-                                            Classes="ghost"
-                                            Content="×"
-                                            FontSize="14"
-                                            Padding="5,2"
-                                            Margin="0,4,4,0"
-                                            Command="{Binding $parent[ItemsControl].((vm:SeparateViewModel)DataContext).RemoveUserPresetCommand}"
-                                            CommandParameter="{Binding}" />
-                                </Panel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                        <!-- × overlaid top-right, doesn't affect card layout -->
+                                        <Button HorizontalAlignment="Right"
+                                                VerticalAlignment="Top"
+                                                Classes="ghost"
+                                                Content="×"
+                                                FontSize="14"
+                                                Padding="5,2"
+                                                Margin="0,4,4,0"
+                                                Command="{Binding $parent[ItemsControl].((vm:SeparateViewModel)DataContext).RemoveUserPresetCommand}"
+                                                CommandParameter="{Binding}" />
+                                    </Panel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
 
                 </Panel>

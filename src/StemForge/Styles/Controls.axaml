@@ -2,9 +2,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- Design-time style gallery: a representative sample of the app's controls and tokens, so
-         theme/font changes (Tokens.axaml) can be previewed live in the IDE panel without running
-         the app. Design-time only (stripped at runtime). Tokens are merged here so the brushes
-         and fonts resolve; the Window style above supplies the UI font + foreground. -->
+    theme/font changes (Tokens.axaml) can be previewed live in the IDE panel without running
+    the app. Design-time only (stripped at runtime). Tokens are merged here so the brushes
+    and fonts resolve; the Window style above supplies the UI font + foreground. -->
     <Design.PreviewWith>
         <Border Padding="24" Background="{DynamicResource Bg0Brush}">
             <Border.Resources>
@@ -41,12 +41,12 @@
                     </StackPanel>
 
                     <!-- Progress. Foreground is pinned to the accent so the preview matches the
-                         app: there, native Fluent controls are tinted amber via the SystemAccentColor
-                         override in Tokens.axaml (ADR 0004), which the IDE previewer doesn't apply,
-                         so the previewer's Fluent accent would otherwise show its default blue. -->
+                    app: there, native Fluent controls are tinted amber via the SystemAccentColor
+                    override in Tokens.axaml (ADR 0004), which the IDE previewer doesn't apply,
+                    so the previewer's Fluent accent would otherwise show its default blue. -->
                     <!-- Animated 0 to 100 percent sweep (loops up and back down) so the shimmer
-                         can be watched across every fill level, in particular the low-fill ramp,
-                         without running a real job. -->
+                    can be watched across every fill level, in particular the low-fill ramp,
+                    without running a real job. -->
                     <ProgressBar Maximum="100" Foreground="{DynamicResource AccentBrush}">
                         <ProgressBar.Styles>
                             <Style Selector="ProgressBar">
