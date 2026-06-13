@@ -12,6 +12,9 @@ namespace StemForge.Converters;
 /// bar the indicator is only a few pixels wide and the shimmer band covers all of it, which reads
 /// as the whole fill flashing white rather than a travelling sweep; ramping the overlay opacity
 /// to zero at low fill suppresses that flash and lets the sweep appear once the bar is wide enough.
+///
+/// A completed bar (100 percent) returns zero so the shimmer stops: the effect is meant to draw
+/// attention to work in progress, so a finished job should not keep animating.
 /// </summary>
 public sealed class RampOpacityConverter : IValueConverter
 {
@@ -27,6 +30,10 @@ public sealed class RampOpacityConverter : IValueConverter
             int i => i,
             _ => 0.0,
         };
+
+        // A finished bar stops shimmering; the effect only marks work in progress.
+        if (percent >= 100.0)
+            return 0.0;
 
         var threshold = parameter switch
         {

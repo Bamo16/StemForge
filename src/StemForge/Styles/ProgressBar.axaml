@@ -5,30 +5,30 @@
 
     <!-- Custom ProgressBar ControlTheme with an animated shimmer overlay.
 
-         This is a full TEMPLATE REPLACEMENT, not a resource override. It mirrors
-         Avalonia 12's Fluent ProgressBar template verbatim (PART_Indicator name,
-         sizing, accent fill, the two indeterminate indicators and their
-         TranslateTransform animations) so determinate fill and the built-in
-         indeterminate motion behave exactly as stock. On top of that it layers a
-         travelling highlight ("shimmer") on the indicators in BOTH states.
+    This is a full TEMPLATE REPLACEMENT, not a resource override. It mirrors
+    Avalonia 12's Fluent ProgressBar template verbatim (PART_Indicator name,
+    sizing, accent fill, the two indeterminate indicators and their
+    TranslateTransform animations) so determinate fill and the built-in
+    indeterminate motion behave exactly as stock. On top of that it layers a
+    travelling highlight ("shimmer") on the indicators in BOTH states.
 
-         Why this shape avoids the earlier crash (issue #16 deferral notes):
-         the previous Style-only attempt animated a brush property on the
-         indicator. Avalonia's GradientBrushAnimator then tried to cast the
-         indicator's base SolidColorBrush (Foreground) to a gradient and threw.
-         Here NO brush property is ever animated. The shimmer is a separate
-         child element carrying a STATIC LinearGradientBrush; only its
-         TranslateTransform.X is animated, which is the same proven-safe
-         mechanism the stock indeterminate indicators already use. The shimmer
-         rides clipped inside each indicator, so the indicator's solid accent
-         fill and its width/sizing (driven by Value/Maximum) are untouched. -->
+    Why this shape avoids the earlier crash (issue #16 deferral notes):
+    the previous Style-only attempt animated a brush property on the
+    indicator. Avalonia's GradientBrushAnimator then tried to cast the
+    indicator's base SolidColorBrush (Foreground) to a gradient and threw.
+    Here NO brush property is ever animated. The shimmer is a separate
+    child element carrying a STATIC LinearGradientBrush; only its
+    TranslateTransform.X is animated, which is the same proven-safe
+    mechanism the stock indeterminate indicators already use. The shimmer
+    rides clipped inside each indicator, so the indicator's solid accent
+    fill and its width/sizing (driven by Value/Maximum) are untouched. -->
 
     <converters:StringFormatConverter x:Key="StringFormatConverter" />
     <conv:RampOpacityConverter x:Key="RampOpacityConverter" />
 
     <!-- Static gradient used by every shimmer overlay: a transparent band with a
-         soft light highlight in the middle. Static brush => GradientBrushAnimator
-         is never invoked; we only animate the overlay's translate transform. -->
+    soft light highlight in the middle. Static brush => GradientBrushAnimator
+    is never invoked; we only animate the overlay's translate transform. -->
     <LinearGradientBrush x:Key="ProgressShimmerBrush"
                          StartPoint="0%,0%"
                          EndPoint="100%,0%">
@@ -61,19 +61,19 @@
                                 </Transitions>
                             </Panel.Transitions>
                             <!-- Determinate fill. Background = Foreground (accent) and
-                                 sizing are kept verbatim from the stock template so the
-                                 indicator fills to Value/Maximum exactly as before.
-                                 ClipToBounds keeps the shimmer inside the fill. -->
+                            sizing are kept verbatim from the stock template so the
+                            indicator fills to Value/Maximum exactly as before.
+                            ClipToBounds keeps the shimmer inside the fill. -->
                             <Border x:Name="PART_Indicator"
                                     Margin="{TemplateBinding Padding}"
                                     Background="{TemplateBinding Foreground}"
                                     ClipToBounds="True"
                                     CornerRadius="{TemplateBinding CornerRadius}">
-<!-- Opacity ramps with fill: 0 on an empty bar, full by ~22%. This
-                                     suppresses the "whole indicator flashes white" look on a
-                                     nearly empty bar. The per-cycle sweep fade lives on the inner
-                                     DeterminateShimmer and multiplies with this host opacity, so
-                                     the two animations never fight. -->
+                                <!-- Opacity ramps with fill: 0 on an empty bar, full by ~22%. This
+                                suppresses the "whole indicator flashes white" look on a
+                                nearly empty bar. The per-cycle sweep fade lives on the inner
+                                DeterminateShimmer and multiplies with this host opacity, so
+                                the two animations never fight. -->
                                 <Border x:Name="DeterminateShimmerHost"
                                         Opacity="{Binding Percentage, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource RampOpacityConverter}, ConverterParameter=22}">
                                     <Border x:Name="DeterminateShimmer"
@@ -237,26 +237,26 @@
         </Style>
 
         <!-- ===== Shimmer: travelling highlight on the DETERMINATE indicator =====
-             Animates only TranslateTransform.X of the static-gradient overlay,
-             sweeping it across the indicator. No brush is animated, so the
-             GradientBrushAnimator that crashed the earlier attempt is never used.
-             Off-screen start/end (relative to the 80px band) give a clean sweep
-             with a pause between cycles. -->
+        Animates only TranslateTransform.X of the static-gradient overlay,
+        sweeping it across the indicator. No brush is animated, so the
+        GradientBrushAnimator that crashed the earlier attempt is never used.
+        Off-screen start/end (relative to the 80px band) give a clean sweep
+        with a pause between cycles. -->
         <Style Selector="^ /template/ Border#DeterminateShimmer">
             <Style.Animations>
-                <Animation IterationCount="Infinite" Duration="0:0:1.6">
+                <Animation IterationCount="Infinite" Duration="0:0:2.4">
                     <KeyFrame KeySpline="0.4,0,0.6,1" KeyTime="0:0:0">
                         <Setter Property="TranslateTransform.X" Value="-80" />
                         <Setter Property="Opacity" Value="0" />
                     </KeyFrame>
-                    <KeyFrame KeySpline="0.4,0,0.6,1" KeyTime="0:0:0.2">
-                        <Setter Property="Opacity" Value="1" />
-                    </KeyFrame>
-                    <KeyFrame KeySpline="0.4,0,0.6,1" KeyTime="0:0:1.0">
-                        <Setter Property="TranslateTransform.X" Value="320" />
+                    <KeyFrame KeySpline="0.4,0,0.6,1" KeyTime="0:0:0.3">
                         <Setter Property="Opacity" Value="1" />
                     </KeyFrame>
                     <KeyFrame KeySpline="0.4,0,0.6,1" KeyTime="0:0:1.6">
+                        <Setter Property="TranslateTransform.X" Value="320" />
+                        <Setter Property="Opacity" Value="1" />
+                    </KeyFrame>
+                    <KeyFrame KeySpline="0.4,0,0.6,1" KeyTime="0:0:2.4">
                         <Setter Property="TranslateTransform.X" Value="320" />
                         <Setter Property="Opacity" Value="0" />
                     </KeyFrame>

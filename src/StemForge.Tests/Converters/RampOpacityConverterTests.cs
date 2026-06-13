@@ -19,10 +19,19 @@ public sealed class RampOpacityConverterTests
     [InlineData(11.0, 0.5)]
     [InlineData(22.0, 1.0)]
     [InlineData(50.0, 1.0)]
-    [InlineData(100.0, 1.0)]
+    [InlineData(99.0, 1.0)]
     public void Ramps_to_full_opacity_at_threshold(double percent, double expected)
     {
         Assert.Equal(expected, Ramp(percent, "22"), precision: 3);
+    }
+
+    [Theory]
+    [InlineData(100.0)]
+    [InlineData(150.0)]
+    public void Completed_bar_stops_shimmering(double percent)
+    {
+        // A finished bar returns zero opacity so the shimmer does not keep animating.
+        Assert.Equal(0.0, Ramp(percent, "22"), precision: 3);
     }
 
     [Fact]
