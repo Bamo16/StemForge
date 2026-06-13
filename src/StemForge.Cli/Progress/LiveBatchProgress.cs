@@ -113,13 +113,17 @@ internal sealed class LiveBatchProgress(IAnsiConsole console, bool verbose) : IB
         }
     }
 
-    /// <summary>Pads or truncates plain status text to a fixed width and escapes it for markup.</summary>
+    /// <summary>
+    /// Pads or truncates plain status text to a fixed width and escapes it for markup. Padding uses
+    /// a non-breaking space because Spectre trims ordinary trailing whitespace when it renders the
+    /// description, which would let the column (and therefore the bar) shrink on short status text.
+    /// </summary>
     private static string Status(string plain, string? color = null)
     {
         var sized =
             plain.Length > StatusWidth
                 ? string.Concat(plain.AsSpan(0, StatusWidth - 1), "…")
-                : plain.PadRight(StatusWidth);
+                : plain.PadRight(StatusWidth, ' ');
         var escaped = Markup.Escape(sized);
         return color is null ? escaped : $"[{color}]{escaped}[/]";
     }
