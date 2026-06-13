@@ -27,6 +27,12 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
         [CommandOption("--cookies-from-browser")]
         public string? CookiesFromBrowser { get; set; }
 
+        [CommandOption("--keep-source")]
+        public bool KeepSource { get; set; }
+
+        [CommandOption("--extract-drums")]
+        public bool ExtractDrums { get; set; }
+
         [CommandOption("--verbose")]
         public bool Verbose { get; set; }
     }
@@ -128,7 +134,9 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
                             Presets: resolvedPresets,
                             OutputDir: resolvedOutputDir,
                             ModelsDir: appPaths.ModelsDirectory,
-                            StemOutputFormat: resolvedFormat
+                            StemOutputFormat: resolvedFormat,
+                            KeepSourceFile: settings.KeepSource,
+                            ExtractDrums: settings.ExtractDrums
                         );
                     }
                     else
@@ -157,7 +165,9 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
                             Presets: resolvedPresets,
                             OutputDir: resolvedOutputDir,
                             ModelsDir: appPaths.ModelsDirectory,
-                            StemOutputFormat: resolvedFormat
+                            StemOutputFormat: resolvedFormat,
+                            KeepSourceFile: settings.KeepSource,
+                            ExtractDrums: settings.ExtractDrums
                         );
                     }
 
