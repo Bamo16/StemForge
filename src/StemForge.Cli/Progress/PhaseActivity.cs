@@ -10,10 +10,22 @@ internal static class PhaseActivity
 {
     /// <summary>
     /// Returns a concise current-activity description for the given update, or null when the
-    /// update carries no display-worthy activity (e.g. a bare log line).
+    /// update carries no display-worthy activity (e.g. a bare log line). The model arguments are
+    /// the caller's running memory of the active model: the driver names the model on
+    /// loading_model but not on every progress tick, so the separating text would otherwise be
+    /// identical for every model in a multi-model preset.
     /// </summary>
-    internal static string? Describe(JobUpdate update)
+    internal static string? Describe(
+        JobUpdate update,
+        string? model = null,
+        int? modelIndex = null,
+        int? modelCount = null
+    )
     {
+        var idx = update.ModelIndex ?? modelIndex;
+        var count = update.ModelCount ?? modelCount;
+        var name = (update.Model ?? model) is { Length: > 0 } m ? m : null;
+
         switch (update.Phase)
         {
             case "downloading":
@@ -23,21 +35,31 @@ internal static class PhaseActivity
                 return update.RunLabel is { Length: > 0 } label ? $"Starting {label}" : "Starting";
 
             case "loading_model":
-                if (update.ModelIndex is { } mi && update.ModelCount is { } mc && mc > 1)
-                    return update.Cached == true
-                        ? $"Loading model {mi}/{mc} (cached)"
-                        : $"Loading model {mi}/{mc}";
-                return update.Cached == true ? "Loading model (cached)" : "Loading model";
+            {
+                var cached = update.Cached == true ? " (cached)" : "";
+                if (idx is { } i && count is { } c && c > 1)
+                {
+                    var named = name is not null ? $": {name}" : "";
+                    return $"Loading model {i}/{c}{named}{cached}";
+                }
+                return $"Loading model{cached}";
+            }
 
             case "downloading_model":
-                return update.Model is { Length: > 0 } model
-                    ? $"Fetching model {model}"
-                    : "Fetching model";
+                return name is not null ? $"Fetching model {name}" : "Fetching model";
 
             case "progress":
-                return update.RunLabel is { Length: > 0 } runLabel
+            {
+                var separating = update.RunLabel is { Length: > 0 } runLabel
                     ? $"Separating {runLabel}"
                     : "Separating";
+                if (idx is { } i && count is { } c && c > 1)
+                {
+                    var named = name is not null ? $": {name}" : "";
+                    return $"{separating} (model {i}/{c}{named})";
+                }
+                return separating;
+            }
 
             case "ensembling":
                 return update.Stem is { Length: > 0 } stem

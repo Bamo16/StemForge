@@ -4,13 +4,19 @@ using StemForge.Core.Services;
 namespace StemForge.Cli.Progress;
 
 /// <summary>
-/// Live terminal progress using Spectre.Console's <see cref="Progress"/> display. Shows a parent
-/// bar for the batch and a per-input bar, each with a percentage and a current-activity
-/// description. Log lines are written above the live display without corrupting it; non-error
-/// logs are shown only when verbose is enabled.
+/// Live terminal progress using Spectre.Console's <see cref="Progress"/> display. Each input gets a
+/// single overall bar (driven by the pipeline's job-wide percentage) plus a fixed-width status
+/// column to its left, so the bar never shifts as the status text changes length. A batch of more
+/// than one input also gets a parent bar. The input's title is printed once above the bars when it
+/// starts; log lines stream above the display without corrupting it, and non-error logs appear only
+/// when verbose is enabled.
 /// </summary>
 internal sealed class LiveBatchProgress(IAnsiConsole console, bool verbose) : IBatchProgress
 {
+    // Fixed status-column width. The status string is padded or truncated to exactly this many
+    // characters so the bar column starts at the same position on every frame.
+    private const int StatusWidth = 46;
+
     private ProgressContext? _ctx;
     private ProgressTask? _parent;
     private int _completedInputs;
@@ -33,7 +39,7 @@ internal sealed class LiveBatchProgress(IAnsiConsole console, bool verbose) : IB
                 _parent =
                     totalInputs > 1
                         ? ctx.AddTask(
-                            $"[bold]Batch[/] (0/{totalInputs})",
+                            Status($"Batch (0/{totalInputs})"),
                             new ProgressTaskSettings { MaxValue = totalInputs }
                         )
                         : null;
@@ -54,11 +60,18 @@ internal sealed class LiveBatchProgress(IAnsiConsole console, bool verbose) : IB
                 "BeginInput called outside of an active progress display."
             );
 
-        var safeLabel = Markup.Escape(label);
-        var prefix = total > 1 ? $"[grey]\\[{index + 1}/{total}][/] " : "";
-        var task = ctx.AddTask($"{prefix}{safeLabel}", new ProgressTaskSettings { MaxValue = 100 });
+        // Announce the input's title once, scrolling in above the live bars. The bars themselves
+        // then only carry the (fixed-width) status, so a long title never widens the bar row.
+        var indexTag = total > 1 ? $"[grey][[{index + 1}/{total}]][/] " : "";
+        console.MarkupLine($"{indexTag}[bold]{Markup.Escape(label)}[/]");
 
-        return new LiveInputProgress(this, task, safeLabel, prefix);
+        var prefix = total > 1 ? $"[{index + 1}/{total}] " : "";
+        var task = ctx.AddTask(
+            Status($"{prefix}Starting"),
+            new ProgressTaskSettings { MaxValue = 100 }
+        );
+
+        return new LiveInputProgress(this, task, prefix);
     }
 
     public void Log(LogLevel level, string source, string message)
@@ -82,9 +95,11 @@ internal sealed class LiveBatchProgress(IAnsiConsole console, bool verbose) : IB
             _ => "???",
         };
 
-        // Writing from within the StartAsync body scrolls the line in above the live bars.
+        // [[ and ]] are Spectre's escape for literal brackets; a single [WRN] would be parsed as a
+        // (nonexistent) style and throw. Writing from inside StartAsync scrolls the line in above
+        // the live bars.
         console.MarkupLine(
-            $"[{color}]\\[{tag}][/] [grey]{Markup.Escape(source)}:[/] {Markup.Escape(message)}"
+            $"[{color}][[{tag}]][/] [grey]{Markup.Escape(source)}:[/] {Markup.Escape(message)}"
         );
     }
 
@@ -94,26 +109,41 @@ internal sealed class LiveBatchProgress(IAnsiConsole console, bool verbose) : IB
         if (_parent is { } parent)
         {
             parent.Value = _completedInputs;
-            parent.Description = $"[bold]Batch[/] ({_completedInputs}/{(int)parent.MaxValue})";
+            parent.Description = Status($"Batch ({_completedInputs}/{(int)parent.MaxValue})");
         }
+    }
+
+    /// <summary>Pads or truncates plain status text to a fixed width and escapes it for markup.</summary>
+    private static string Status(string plain, string? color = null)
+    {
+        var sized =
+            plain.Length > StatusWidth
+                ? string.Concat(plain.AsSpan(0, StatusWidth - 1), "…")
+                : plain.PadRight(StatusWidth);
+        var escaped = Markup.Escape(sized);
+        return color is null ? escaped : $"[{color}]{escaped}[/]";
     }
 
     private sealed class LiveInputProgress(
         LiveBatchProgress owner,
         ProgressTask task,
-        string label,
         string prefix
     ) : IInputProgress
     {
         private bool _completed;
+        private string _lastStatus = "Starting";
 
         public void Report(int overallPercent, string? activity)
         {
+            // The reporter already feeds a monotonic percentage; Max is a cheap belt-and-braces
+            // guard so a stray lower value can never drag the single bar backwards.
             if (overallPercent >= 0)
-                task.Value = Math.Clamp(overallPercent, 0, 100);
+                task.Value = Math.Max(task.Value, Math.Clamp(overallPercent, 0, 100));
 
             if (activity is { Length: > 0 })
-                task.Description = $"{prefix}{label} [grey]- {Markup.Escape(activity)}[/]";
+                _lastStatus = activity;
+
+            task.Description = Status($"{prefix}{_lastStatus}");
         }
 
         public void Complete(InputOutcome outcome, string? message)
@@ -124,17 +154,17 @@ internal sealed class LiveBatchProgress(IAnsiConsole console, bool verbose) : IB
 
             var (mark, color) = outcome switch
             {
-                InputOutcome.Succeeded => ("done", "green"),
-                InputOutcome.Failed => ("failed", "red"),
-                InputOutcome.Cancelled => ("cancelled", "yellow"),
+                InputOutcome.Succeeded => ("Done", "green"),
+                InputOutcome.Failed => ("Error", "red"),
+                InputOutcome.Cancelled => ("Cancelled", "yellow"),
                 _ => ("", "grey"),
             };
 
             if (outcome == InputOutcome.Succeeded)
                 task.Value = 100;
 
-            var suffix = message is { Length: > 0 } ? Markup.Escape(message) : mark;
-            task.Description = $"{prefix}{label} [{color}]- {suffix}[/]";
+            var text = message is { Length: > 0 } ? $"{mark}: {message}" : mark;
+            task.Description = Status($"{prefix}{text}", color);
             task.StopTask();
             owner.OnInputCompleted();
         }

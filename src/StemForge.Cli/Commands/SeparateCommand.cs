@@ -163,9 +163,7 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
 
                     using var inputProgress = display.BeginInput(i, total, displayLabel);
 
-                    var progress = new Progress<JobUpdate>(update =>
-                        inputProgress.Report(update.OverallPercent, PhaseActivity.Describe(update))
-                    );
+                    var progress = JobProgressReporter.For(inputProgress);
 
                     try
                     {

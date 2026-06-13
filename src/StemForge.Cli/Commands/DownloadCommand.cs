@@ -118,9 +118,7 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
 
                     using var inputProgress = display.BeginInput(i, total, normalizedUrl);
 
-                    var progress = new Progress<JobUpdate>(update =>
-                        inputProgress.Report(update.OverallPercent, PhaseActivity.Describe(update))
-                    );
+                    var progress = JobProgressReporter.For(inputProgress);
 
                     try
                     {
