@@ -60,6 +60,10 @@ public sealed class ModelCatalogService(IProcessRunner runner)
 
             var list = new List<ModelInfo>();
 
+            // Upstream output can list the same filename more than once (cache-dependent).
+            // filename is the canonical model identity, so dedupe on it: first occurrence wins.
+            var seenFilenames = new HashSet<string>(StringComparer.Ordinal);
+
             // Top-level keys are architecture names: "MDX", "Demucs", "MDXC", "VR Arch"
             foreach (var archProp in doc.RootElement.EnumerateObject())
             {
@@ -77,6 +81,10 @@ public sealed class ModelCatalogService(IProcessRunner runner)
 
                     var filename = GetString(modelEl, "filename");
                     if (string.IsNullOrWhiteSpace(filename))
+                        continue;
+
+                    // Skip later entries that repeat an already-seen filename (first wins).
+                    if (!seenFilenames.Add(filename))
                         continue;
 
                     var stems = ParseStems(modelEl);
