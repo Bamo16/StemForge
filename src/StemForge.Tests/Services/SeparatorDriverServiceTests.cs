@@ -223,10 +223,26 @@ public sealed class SeparatorDriverServiceTests
         Assert.Contains("no output", message);
     }
 
-    // ── BoundedStderrBuffer ──────────────────────────────────────────────────
+    [Fact]
+    public void BuildTerminationMessage_NativeCrashNoStderr_ReportsActivityTail()
+    {
+        // A native crash (e.g. 0xC0000409) writes nothing to stderr; the structured
+        // activity tail is the only record of what the driver was doing when it died.
+        var message = InvokeBuildTerminationMessage(
+            exitCode: -1073740791,
+            stderrTail: [],
+            activityTail: ["Starting separation process", "Detected input bit depth: 24-bit"]
+        );
+
+        Assert.Contains("-1073740791", message);
+        Assert.Contains("Detected input bit depth: 24-bit", message);
+        Assert.DoesNotContain("no output", message);
+    }
+
+    // ── BoundedLineBuffer ──────────────────────────────────────────────────
 
     [Fact]
-    public void BoundedStderrBuffer_KeepsOnlyMostRecentLinesUpToCapacity()
+    public void BoundedLineBuffer_KeepsOnlyMostRecentLinesUpToCapacity()
     {
         var buffer = NewBoundedBuffer(capacity: 3);
 
@@ -240,7 +256,7 @@ public sealed class SeparatorDriverServiceTests
     }
 
     [Fact]
-    public void BoundedStderrBuffer_BelowCapacity_PreservesOrder()
+    public void BoundedLineBuffer_BelowCapacity_PreservesOrder()
     {
         var buffer = NewBoundedBuffer(capacity: 30);
 
@@ -251,7 +267,7 @@ public sealed class SeparatorDriverServiceTests
     }
 
     [Fact]
-    public void BoundedStderrBuffer_Clear_EmptiesBuffer()
+    public void BoundedLineBuffer_Clear_EmptiesBuffer()
     {
         var buffer = NewBoundedBuffer(capacity: 5);
         BufferAdd(buffer, "stale");
@@ -265,15 +281,17 @@ public sealed class SeparatorDriverServiceTests
 
     private static string InvokeBuildTerminationMessage(
         int? exitCode,
-        IReadOnlyList<string> stderrTail
+        IReadOnlyList<string> stderrTail,
+        IReadOnlyList<string>? activityTail = null
     )
     {
         var method = _type.GetMethod("BuildTerminationMessage", _privateStatic)!;
-        return (string)method.Invoke(null, [exitCode, stderrTail])!;
+        return (string)
+            method.Invoke(null, [exitCode, stderrTail, activityTail ?? (IReadOnlyList<string>)[]])!;
     }
 
     private static readonly Type _bufferType = _type.GetNestedType(
-        "BoundedStderrBuffer",
+        "BoundedLineBuffer",
         BindingFlags.NonPublic
     )!;
 

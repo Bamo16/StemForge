@@ -25,9 +25,13 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
     private Task? _readerTask;
     private Task? _stderrTask;
 
-    // Last few stderr lines from the current driver process, retained so an
-    // unexpected exit can be reported with its tail of output.
-    private readonly BoundedStderrBuffer _stderrTail = new(capacity: 30);
+    // Recent driver output, retained so an unexpected exit can be reported with
+    // context. Stderr carries python warnings/tracebacks; the activity tail
+    // carries the structured log lines, which are the only "where it died" signal
+    // for a native crash that writes nothing to stderr (e.g. a 0xC0000409 abort
+    // inside the inference engine).
+    private readonly BoundedLineBuffer _stderrTail = new(capacity: 30);
+    private readonly BoundedLineBuffer _activityTail = new(capacity: 10);
 
     // ── Synchronisation ──────────────────────────────────────────────────────
 
@@ -139,6 +143,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
             DisposeProcess();
 
             _stderrTail.Clear();
+            _activityTail.Clear();
             _readyTcs = new TaskCompletionSource(
                 TaskCreationOptions.RunContinuationsAsynchronously
             );
@@ -277,7 +282,11 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
             catch { }
 
             var exitCode = TryReadExitCode();
-            var message = BuildTerminationMessage(exitCode, _stderrTail.Snapshot());
+            var message = BuildTerminationMessage(
+                exitCode,
+                _stderrTail.Snapshot(),
+                _activityTail.Snapshot()
+            );
 
             _readyTcs?.TrySetException(new InvalidOperationException(message));
             _activeJob?.Tcs.TrySetException(new InvalidOperationException(message));
@@ -297,15 +306,27 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
     }
 
     /// <summary>
-    /// Builds the message used to fault a job when the driver process ends
-    /// before the job completed: the exit code (when known) plus the tail of
-    /// the driver's stderr output.
+    /// Builds the message used to fault a job when the driver process ends before
+    /// the job completed: the exit code (when known), the tail of the driver's
+    /// stderr (python warnings/tracebacks), and the tail of the structured activity
+    /// log. The activity tail matters for a native crash that writes nothing to
+    /// stderr, where it is the only record of what the driver was doing when it died.
     /// </summary>
-    private static string BuildTerminationMessage(int? exitCode, IReadOnlyList<string> stderrTail)
+    private static string BuildTerminationMessage(
+        int? exitCode,
+        IReadOnlyList<string> stderrTail,
+        IReadOnlyList<string> activityTail
+    )
     {
         var code = exitCode is { } c ? c.ToString() : "unknown";
-        var tail = stderrTail.Count > 0 ? string.Join("\n", stderrTail) : "(no output)";
-        return $"Driver exited (code {code}). Last output: {tail}";
+        var sections = new List<string> { $"Driver exited (code {code})." };
+        if (stderrTail.Count > 0)
+            sections.Add($"Last error output: {string.Join("\n", stderrTail)}");
+        if (activityTail.Count > 0)
+            sections.Add($"Last activity: {string.Join("\n", activityTail)}");
+        if (stderrTail.Count == 0 && activityTail.Count == 0)
+            sections.Add("(no output)");
+        return string.Join(" ", sections);
     }
 
     private void DispatchEvent(string line)
@@ -388,6 +409,10 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                     : "info";
                 var msg = root.TryGetProperty("message", out var m) ? m.GetString() ?? "" : "";
                 LogDriverMessage(level, msg);
+                // Retain the structured log as the activity tail: on a native crash
+                // (no stderr) this is the only record of what the driver was doing.
+                if (msg.Length > 0)
+                    _activityTail.Add(msg);
                 job?.Progress?.Report(
                     new JobProgress
                     {
@@ -619,14 +644,14 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
         }
     }
 
-    // ── Stderr tail buffer ───────────────────────────────────────────────────
+    // ── Bounded line buffer ──────────────────────────────────────────────────
 
     /// <summary>
-    /// Fixed-capacity ring buffer of the most recent stderr lines. Once full,
-    /// adding a new line evicts the oldest, so memory use stays bounded
-    /// regardless of how much the driver writes.
+    /// Fixed-capacity ring buffer of the most recent lines. Once full, adding a
+    /// new line evicts the oldest, so memory use stays bounded regardless of how
+    /// much the driver writes. Used for both the stderr tail and the activity tail.
     /// </summary>
-    private sealed class BoundedStderrBuffer(int capacity)
+    private sealed class BoundedLineBuffer(int capacity)
     {
         private readonly int _capacity = capacity;
         private readonly Queue<string> _lines = new(capacity);
