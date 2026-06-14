@@ -1,13 +1,13 @@
 using Spectre.Console.Cli;
 using StemForge.Cli.Commands;
+using StemForge.Cli.Progress;
 using StemForge.Core.Services;
 
 AppLogger.Initialize();
-AppLogger.RegisterSink(entry =>
-{
-    if (entry is { Level: LogLevel.Warning or LogLevel.Error })
-        Console.Error.WriteLine($"[{entry.LevelTag}] {entry.Source}: {entry.Message}");
-});
+
+// Route log entries to the active progress display when one is running; otherwise fall back to
+// writing warnings and errors to standard error.
+ProgressLogBridge.RegisterSink();
 
 var app = new CommandApp();
 app.Configure(config =>
