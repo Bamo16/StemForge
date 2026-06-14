@@ -25,6 +25,10 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
     private Task? _readerTask;
     private Task? _stderrTask;
 
+    // Last few stderr lines from the current driver process, retained so an
+    // unexpected exit can be reported with its tail of output.
+    private readonly BoundedStderrBuffer _stderrTail = new(capacity: 30);
+
     // ── Synchronisation ──────────────────────────────────────────────────────
 
     private readonly SemaphoreSlim _spawnLock = new(1, 1); // guards spawn/teardown
@@ -134,6 +138,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
 
             DisposeProcess();
 
+            _stderrTail.Clear();
             _readyTcs = new TaskCompletionSource(
                 TaskCreationOptions.RunContinuationsAsynchronously
             );
@@ -182,7 +187,10 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 async () =>
                 {
                     while (await _process.StandardError.ReadLineAsync() is { } line)
+                    {
                         AppLogger.Debug("driver.stderr", line);
+                        _stderrTail.Add(line);
+                    }
                 },
                 CancellationToken.None
             );
@@ -260,13 +268,44 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
         finally
         {
             // EOF or exception — fault any waiting TCS so callers don't hang.
-            _readyTcs?.TrySetException(
-                new InvalidOperationException("Driver process ended before emitting ready")
-            );
-            _activeJob?.Tcs.TrySetException(
-                new InvalidOperationException("Driver process terminated unexpectedly")
-            );
+            // Stderr is drained on its own loop; give it a brief moment to flush
+            // the dying process's final lines into the tail buffer before we read it.
+            try
+            {
+                _stderrTask?.Wait(TimeSpan.FromSeconds(2));
+            }
+            catch { }
+
+            var exitCode = TryReadExitCode();
+            var message = BuildTerminationMessage(exitCode, _stderrTail.Snapshot());
+
+            _readyTcs?.TrySetException(new InvalidOperationException(message));
+            _activeJob?.Tcs.TrySetException(new InvalidOperationException(message));
         }
+    }
+
+    private int? TryReadExitCode()
+    {
+        try
+        {
+            var process = _process;
+            if (process is { HasExited: true })
+                return process.ExitCode;
+        }
+        catch { }
+        return null;
+    }
+
+    /// <summary>
+    /// Builds the message used to fault a job when the driver process ends
+    /// before the job completed: the exit code (when known) plus the tail of
+    /// the driver's stderr output.
+    /// </summary>
+    private static string BuildTerminationMessage(int? exitCode, IReadOnlyList<string> stderrTail)
+    {
+        var code = exitCode is { } c ? c.ToString() : "unknown";
+        var tail = stderrTail.Count > 0 ? string.Join("\n", stderrTail) : "(no output)";
+        return $"Driver exited (code {code}). Last output: {tail}";
     }
 
     private void DispatchEvent(string line)
@@ -577,6 +616,42 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
             default:
                 AppLogger.Info("separator", message);
                 break;
+        }
+    }
+
+    // ── Stderr tail buffer ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Fixed-capacity ring buffer of the most recent stderr lines. Once full,
+    /// adding a new line evicts the oldest, so memory use stays bounded
+    /// regardless of how much the driver writes.
+    /// </summary>
+    private sealed class BoundedStderrBuffer(int capacity)
+    {
+        private readonly int _capacity = capacity;
+        private readonly Queue<string> _lines = new(capacity);
+        private readonly Lock _gate = new();
+
+        public void Add(string line)
+        {
+            lock (_gate)
+            {
+                if (_lines.Count >= _capacity)
+                    _lines.Dequeue();
+                _lines.Enqueue(line);
+            }
+        }
+
+        public IReadOnlyList<string> Snapshot()
+        {
+            lock (_gate)
+                return [.. _lines];
+        }
+
+        public void Clear()
+        {
+            lock (_gate)
+                _lines.Clear();
         }
     }
 
