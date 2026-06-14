@@ -39,7 +39,7 @@ public static class AppLogger
 {
     private const int MaxLogFiles = 10;
 
-    private static readonly object _fileLock = new();
+    private static readonly Lock _fileLock = new();
     private static StreamWriter? _fileWriter;
 
     private static readonly List<Action<LogEntry>> _sinks = [];

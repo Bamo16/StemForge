@@ -22,7 +22,7 @@ namespace StemForge.Cli.Progress;
 /// </summary>
 internal sealed class JobProgressReporter(IInputProgress input) : IProgress<JobUpdate>
 {
-    private readonly object _gate = new();
+    private readonly Lock _gate = new();
     private string? _model;
     private int? _modelIndex;
     private int? _modelCount;

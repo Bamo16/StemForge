@@ -13,7 +13,7 @@ namespace StemForge.Cli.Progress;
 internal static class ProgressLogBridge
 {
     private static IBatchProgress? _active;
-    private static readonly object _gate = new();
+    private static readonly Lock _gate = new();
 
     /// <summary>Registers the single AppLogger sink that forwards to the active display.</summary>
     internal static void RegisterSink()
