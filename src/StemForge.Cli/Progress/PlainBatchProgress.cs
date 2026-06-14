@@ -5,7 +5,13 @@ namespace StemForge.Cli.Progress;
 /// <summary>
 /// Line-based progress for non-interactive or redirected sessions. Emits a single line per input
 /// at start and completion, plus periodic percentage lines, so logs and CI output stay clean and
-/// free of ANSI control sequences. Verbose mode additionally streams every log line.
+/// free of ANSI control sequences.
+///
+/// Verbose mode (which also forces this renderer on an interactive terminal, see
+/// <see cref="BatchProgressFactory"/>) additionally streams every log line, and emits a single
+/// milestone line per phase/model transition instead of periodic percentage ticks: with the driver
+/// logs already on screen, percent spam would only bury them. Non-verbose redirected sessions keep
+/// the periodic percentage lines, which are their only progress signal.
 /// </summary>
 internal sealed class PlainBatchProgress(
     TextWriter standardOut,
@@ -16,7 +22,7 @@ internal sealed class PlainBatchProgress(
     public Task RunAsync(int totalInputs, Func<Task> body) => body();
 
     public IInputProgress BeginInput(int index, int total, string label) =>
-        new PlainInputProgress(standardOut, standardError, index + 1, total, label);
+        new PlainInputProgress(standardOut, standardError, index + 1, total, label, verbose);
 
     public void Log(LogLevel level, string source, string message)
     {
@@ -45,7 +51,8 @@ internal sealed class PlainBatchProgress(
         TextWriter standardError,
         int jobNum,
         int total,
-        string label
+        string label,
+        bool verbose
     ) : IInputProgress
     {
         private int _lastReportedPercent = -1;
@@ -61,10 +68,14 @@ internal sealed class PlainBatchProgress(
                 _announced = true;
             }
 
-            // Print a line when the activity changes or the percentage advances by a visible step.
+            // A milestone is any phase/model transition (the activity text changed). In verbose
+            // that is the only thing that prints a progress line: the percentage ticks are dropped
+            // so the streamed driver logs are not buried under percent spam. In non-verbose plain
+            // (redirected/CI) the periodic percentage line is the only progress signal, so it is
+            // also printed when the percent advances by a visible step.
             var activityChanged = activity is not null && activity != _lastActivity;
             var percentAdvanced =
-                overallPercent >= 0 && overallPercent / 10 != _lastReportedPercent / 10;
+                !verbose && overallPercent >= 0 && overallPercent / 10 != _lastReportedPercent / 10;
 
             if (activityChanged || percentAdvanced)
             {

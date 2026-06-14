@@ -81,6 +81,7 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
             : settings.OutputDir;
 
         var pipeline = provider.GetRequiredService<SeparationPipeline>();
+        var youTubeAudio = provider.GetRequiredService<YouTubeAudioService>();
 
         int total = settings.Urls.Length;
         int succeeded = 0;
@@ -106,6 +107,39 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
                         continue;
                     }
 
+                    // Resolve metadata up front so the input is labelled with its resolved title
+                    // (the eventual filename), not the raw URL, and so a bad URL or network failure
+                    // is reported before any progress bar is drawn. The resolved metadata is reused
+                    // by the pipeline via PreResolvedMeta.
+                    Console.Error.WriteLine($"Resolving {normalizedUrl}...");
+                    UrlInputResolver.Outcome resolution;
+                    try
+                    {
+                        resolution = await UrlInputResolver.ResolveAsync(
+                            youTubeAudio,
+                            normalizedUrl,
+                            appSettings,
+                            cts.Token
+                        );
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        using var cancelledInput = display.BeginInput(i, total, normalizedUrl);
+                        cancelledInput.Complete(InputOutcome.Cancelled, null);
+                        cancelled = true;
+                        break;
+                    }
+
+                    if (!resolution.Succeeded)
+                    {
+                        using var failed = display.BeginInput(i, total, normalizedUrl);
+                        failed.Complete(
+                            InputOutcome.Failed,
+                            resolution.FailureReason ?? "resolution failed"
+                        );
+                        continue;
+                    }
+
                     var job = new JobRecord(
                         Id: Guid.NewGuid(),
                         InputFilePath: null,
@@ -113,10 +147,11 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
                         Presets: [],
                         OutputDir: resolvedOutputDir,
                         ModelsDir: appPaths.ModelsDirectory,
-                        StemOutputFormat: resolvedFormat
+                        StemOutputFormat: resolvedFormat,
+                        PreResolvedMeta: resolution.Meta
                     );
 
-                    using var inputProgress = display.BeginInput(i, total, normalizedUrl);
+                    using var inputProgress = display.BeginInput(i, total, resolution.Title!);
 
                     var progress = JobProgressReporter.For(inputProgress);
 
