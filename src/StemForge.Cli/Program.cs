@@ -5,11 +5,7 @@ using StemForge.Core.Services;
 AppLogger.Initialize();
 AppLogger.RegisterSink(entry =>
 {
-    if (
-        entry.Level
-        is StemForge.Core.Services.LogLevel.Warning
-            or StemForge.Core.Services.LogLevel.Error
-    )
+    if (entry is { Level: LogLevel.Warning or LogLevel.Error })
         Console.Error.WriteLine($"[{entry.LevelTag}] {entry.Source}: {entry.Message}");
 });
 
