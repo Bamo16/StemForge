@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using StemForge.Core.Extensions;
 
 namespace StemForge.Core.Services;
@@ -35,7 +36,7 @@ public sealed record LogEntry(
     public bool IsError => Level == LogLevel.Error;
 }
 
-public static class AppLogger
+public static partial class AppLogger
 {
     private const int MaxLogFiles = 10;
 
@@ -118,7 +119,7 @@ public static class AppLogger
 
     private static void Add(LogLevel level, string source, string message)
     {
-        var entry = new LogEntry(DateTimeOffset.Now, level, source, message);
+        var entry = new LogEntry(DateTimeOffset.Now, level, source, Redact(message));
 
         // Write to file on the calling thread (any thread); guarded by lock.
         lock (_fileLock)
@@ -126,7 +127,7 @@ public static class AppLogger
             try
             {
                 _fileWriter?.WriteLine(
-                    $"{entry.TimeDisplay, -12}  {entry.LevelTag, -3}  {Clip(source, 28), -28}  {message}"
+                    $"{entry.TimeDisplay, -12}  {entry.LevelTag, -3}  {Clip(source, 28), -28}  {entry.Message}"
                 );
             }
             catch { }
@@ -141,4 +142,16 @@ public static class AppLogger
     }
 
     private static string Clip(string s, int max) => s.Length <= max ? s : s[..max];
+
+    // Masks the value of an "ip=" query parameter in logged URLs (e.g. the public IP embedded in
+    // a googlevideo media URL passed to ffmpeg). Logs reach the on-disk file and may be shared in
+    // bug reports, so the IP is scrubbed at the sink, covering every channel at once. Scoped to the
+    // ip= parameter so unrelated addresses in other messages are left intact for troubleshooting.
+    [GeneratedRegex(@"([?&]ip=)[^&\s]+", RegexOptions.IgnoreCase)]
+    private static partial Regex IpParamPattern();
+
+    internal static string Redact(string message) =>
+        message.Contains("ip=", StringComparison.OrdinalIgnoreCase)
+            ? IpParamPattern().Replace(message, "$1<redacted>")
+            : message;
 }
