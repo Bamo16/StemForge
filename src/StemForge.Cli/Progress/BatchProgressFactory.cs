@@ -23,9 +23,14 @@ internal static class BatchProgressFactory
 
     /// <summary>
     /// Creates the appropriate <see cref="IBatchProgress"/> for the current session.
+    ///
+    /// Verbose forces the plain renderer even on an interactive terminal: high-rate driver logs are
+    /// written from a background thread, and those writes tear Spectre's live region, leaving ghost
+    /// progress-bar fragments. With no live region there is nothing to corrupt, so verbose output is
+    /// milestone lines interleaved with the streamed logs.
     /// </summary>
     internal static IBatchProgress Create(IAnsiConsole console, bool verbose) =>
-        ShouldUseLiveDisplay(console)
+        !verbose && ShouldUseLiveDisplay(console)
             ? new LiveBatchProgress(console, verbose)
             : new PlainBatchProgress(Console.Out, Console.Error, verbose);
 }
