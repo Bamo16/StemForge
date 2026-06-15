@@ -282,6 +282,7 @@
                                             <!-- Name -->
                                             <TextBlock Grid.Column="1"
                                                        Text="{Binding FriendlyName}"
+                                                       ToolTip.Tip="{Binding FriendlyName}"
                                                        FontSize="12"
                                                        FontWeight="Medium"
                                                        Foreground="{DynamicResource TextPrimaryBrush}"
@@ -300,6 +301,7 @@
                                             <!-- Stems + SDR -->
                                             <TextBlock Grid.Column="3"
                                                        Text="{Binding StemNames}"
+                                                       ToolTip.Tip="{Binding StemNames}"
                                                        FontSize="11"
                                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                                        VerticalAlignment="Center"
