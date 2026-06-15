@@ -9,7 +9,7 @@
         x:DataType="vm:MainWindowViewModel"
         Title="StemForge"
         Width="1100" Height="800"
-        MinWidth="900" MinHeight="680"
+        MinWidth="940" MinHeight="680"
         Background="{DynamicResource Bg1Brush}"
         ExtendClientAreaToDecorationsHint="False">
 
