@@ -4,6 +4,8 @@
         <TargetFramework>net11.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <!-- Terminal-friendly command name; distinct from the GUI's StemForge.exe. -->
+        <AssemblyName>stemforge-cli</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
