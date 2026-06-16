@@ -111,4 +111,43 @@ public sealed class CatalogWellFormednessTests
         var mac = install.VariantsFor(OSKind.MacOS).Select(v => v.Variant).ToList();
         Assert.Equal([GpuVariant.Cpu], mac);
     }
+
+    // FFmpeg-Builds prunes daily builds after ~2 weeks; only the last-day-of-month autobuild-*
+    // tag is retained long-term. Pinning a mid-month tag causes 404s within weeks (the original
+    // v0.2.1 bug). This test enforces the month-end rule statically so CI catches it before
+    // any live-download check runs.
+    [Fact]
+    public void FfmpegBuildsUrls_UseRetainedMonthEndTag()
+    {
+        var ffmpeg = ToolCatalog.Get(ToolKind.Ffmpeg);
+        var strategy = Assert.IsType<BundledFetch>(ffmpeg.InstallStrategy);
+
+        var ffmpegBuildsUrls = strategy
+            .Assets.Values.Where(a => a.Url.Contains("yt-dlp/FFmpeg-Builds"))
+            .Select(a => a.Url)
+            .ToList();
+
+        Assert.NotEmpty(ffmpegBuildsUrls);
+
+        var tagPattern = new Regex(@"/autobuild-(\d{4})-(\d{2})-(\d{2})-");
+
+        foreach (var url in ffmpegBuildsUrls)
+        {
+            var match = tagPattern.Match(url);
+            Assert.True(match.Success, $"FFmpeg-Builds URL has unexpected tag format: {url}");
+
+            var year = int.Parse(match.Groups[1].Value);
+            var month = int.Parse(match.Groups[2].Value);
+            var day = int.Parse(match.Groups[3].Value);
+            var date = new DateOnly(year, month, day);
+            var lastDay = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
+
+            Assert.True(
+                date == lastDay,
+                $"FFmpeg-Builds URL must use a month-end tag (daily builds are pruned after "
+                    + $"~2 weeks). Found day {day} in {year}-{month:D2} "
+                    + $"(last day is {lastDay.Day}): {url}"
+            );
+        }
+    }
 }
