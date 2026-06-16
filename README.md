@@ -66,6 +66,47 @@ Configure the output directory, default audio format, tool-path overrides, YouTu
 
 ---
 
+## Command-line mode
+
+StemForge ships a companion CLI, `stemforge-cli`, for headless separation and downloads. It uses the same engine, presets, and saved settings as the GUI, so the output directory, default format, and cookie source you configure there all apply.
+
+Separate a local file or a URL into stems with a built-in preset:
+
+```pwsh
+stemforge-cli separate "song.flac" --preset vocal_full
+stemforge-cli separate "https://music.youtube.com/watch?v=..." --preset instrumental_full
+```
+
+<p align="center">
+  <img src="docs/images/screenshot-cli-separate.png" alt="stemforge-cli separate" width="900" />
+</p>
+
+Download audio from a URL without separating, with metadata, provenance, and cover art applied:
+
+```pwsh
+stemforge-cli download "https://music.youtube.com/watch?v=..."
+```
+
+<p align="center">
+  <img src="docs/images/screenshot-cli-download.png" alt="stemforge-cli download" width="900" />
+</p>
+
+Both commands take multiple inputs and process them as a batch, continuing past a failure and ending with a summary and an exit code (0 all succeeded, 2 partial, 1 all failed). Common options:
+
+| Option | Applies to | Effect |
+|---|---|---|
+| `--preset <id>` | separate | Built-in preset to run; repeat for an ensemble of presets |
+| `--output <dir>` | both | Output directory (defaults to the configured Stems folder) |
+| `--format <flac\|wav\|mp3\|...>` | both | Output audio format (defaults to the saved setting) |
+| `--keep-source` | separate | Keep the source audio alongside the stems |
+| `--extract-drums` | separate | Also extract a drums stem |
+| `--cookies-from-browser <name>` | both | Browser to read YouTube cookies from (premium formats) |
+| `--verbose` | both | Stream full engine logs for troubleshooting (off by default) |
+
+Live progress shows a per-input bar with the current activity. Press Ctrl+C once to cancel the running job cleanly, or twice to force-exit. Run `stemforge-cli presets` to list the built-in presets, and `stemforge-cli --help` for the full command reference.
+
+---
+
 ## Getting started (Windows)
 
 1. Open the [Releases](../../releases) page and download the latest `StemForge-vX.Y.Z-win-x64.zip`.
@@ -130,7 +171,7 @@ Bundling deno via the setup wizard is the safe default. If you already have deno
 
 ## Status
 
-StemForge is at v0.2.0, an early release shared mostly with friends and testers. **User presets work but aren't fully fleshed-out yet.** Expect rough edges in the editor and minimal validation. The built-in preset library is the recommended starting point.
+StemForge is at v0.2.1, an early release shared mostly with friends and testers. **User presets work but aren't fully fleshed-out yet.** Expect rough edges in the editor and minimal validation. The built-in preset library is the recommended starting point.
 
 **Cross-platform, with Windows the most tested.** v0.2.0 made the codebase genuinely cross-platform: per-OS path resolution, bundled ffmpeg / yt-dlp / deno for Linux and macOS, and per-OS GPU variants. A Linux CI job builds the app, runs the test suite, and downloads and verifies the Linux bundled binaries on every push. That said, the published binary below is still Windows (win-x64), Windows is where the app runs day to day, and **it has not yet been run end to end on real Linux or macOS hardware**, so expect rough edges there. Linux and macOS users can build and run from source today (see [For developers](#for-developers)); native packaged builds may follow. Patches and reports welcome.
 
@@ -157,18 +198,18 @@ dotnet test
 
 ### Publish + package a Windows release
 
-Two VS Code tasks together produce the shippable zip:
+Three VS Code tasks together produce the shippable zip:
 
-1. **"publish: win-x64 (self-contained)"** runs `dotnet publish` with the right flags into `publish/win-x64/`.
-2. **"package: win-x64"** depends on the publish task. It stages `StemForge.exe` and `tools/` under a `StemForge/` subfolder and produces `publish/StemForge-vX.Y.Z-win-x64.zip`, with the version read from `<Version>` in the csproj.
+1. **"publish: win-x64 GUI"** and **"publish: win-x64 CLI"** each run `dotnet publish` (self-contained, single-file, ReadyToRun) into `publish/win-x64/`, producing `StemForge.exe` and `stemforge-cli.exe` plus the `tools/` scripts.
+2. **"package: win-x64"** depends on the CLI publish. It runs `scripts/package-win-x64.ps1`, which stages that output under a `StemForge/` subfolder and produces `publish/StemForge-vX.Y.Z-win-x64.zip`.
 
-Bumping the release version is one edit in `src/StemForge/StemForge.csproj`:
+Bumping the release version is one edit in `Directory.Build.props`, the single source of truth shared by all projects:
 
 ```xml
-<Version>0.1.1</Version>
+<Version>0.2.1</Version>
 ```
 
-The next package run picks up the new version automatically.
+The package script reads the version from there, so the next run names the zip automatically.
 
 Native debug symbols from Skia and HarfBuzz are removed by an `AfterTargets="Publish"` MSBuild target so they don't pollute the artifact.
 
@@ -182,17 +223,30 @@ Maintainer release steps (version bump, merge, tag, GitHub Release) live in [`do
 docs/
   adr/                     architectural decision records
   images/                  README screenshots + logo
-src/StemForge/
+scripts/                   release/packaging scripts (package-win-x64.ps1)
+tools/                     Python scripts for audio-separator (driver + variant probe)
+src/StemForge.Core/        shared engine, no UI
+  Services/                separation pipeline, separator driver, model catalogue,
+                           yt-dlp / ffmpeg integration, logging, path resolution
+  Models/                  domain models + serialisable settings
+  Helpers/                 pure static utilities (no DI, no state)
+  Extensions/              framework extension methods
+src/StemForge/             Avalonia GUI
   App.axaml                application entry + theme resources
-  Assets/                  embedded resources (app icon, etc.)
-  Styles/                  design tokens (colors, typography, spacing)
   Views/                   XAML views + code-behind
   ViewModels/              view models (CommunityToolkit.Mvvm)
-  Models/                  domain models + serialisable settings
-  Services/                stateful services: process runner, setup detection,
-                           job queue, model catalogue, bundled-binary fetcher
-  Helpers/                 pure static utilities (no DI, no state)
-  Extensions/              extension methods on Avalonia / framework types
-  tools/                   Python scripts for audio-separator (driver + variant probe)
+  Styles/                  design tokens (colors, typography, spacing)
+  Converters/              value converters
+  Services/                GUI-only services (setup detection, job queue, DI wiring)
+  Assets/                  embedded resources (app icon, etc.)
+src/StemForge.Cli/         stemforge-cli console app
+  Commands/                separate, download, presets
+  Progress/                terminal progress rendering
 src/StemForge.Tests/       xUnit test project
 ```
+
+---
+
+## License
+
+StemForge is released under the [MIT License](LICENSE).
