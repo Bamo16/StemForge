@@ -147,11 +147,11 @@ public static partial class AppLogger
     // a googlevideo media URL passed to ffmpeg). Logs reach the on-disk file and may be shared in
     // bug reports, so the IP is scrubbed at the sink, covering every channel at once. Scoped to the
     // ip= parameter so unrelated addresses in other messages are left intact for troubleshooting.
-    [GeneratedRegex(@"([?&]ip=)[^&\s]+", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?<=[?&]ip=)[^&\s]+", RegexOptions.IgnoreCase)]
     private static partial Regex IpParamPattern();
 
     internal static string Redact(string message) =>
         message.Contains("ip=", StringComparison.OrdinalIgnoreCase)
-            ? IpParamPattern().Replace(message, "$1<redacted>")
+            ? IpParamPattern().Replace(message, "<REDACTED>")
             : message;
 }

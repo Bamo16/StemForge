@@ -12,7 +12,7 @@ public sealed class AppLoggerTests
 
         var result = AppLogger.Redact(input);
 
-        Assert.Contains("ip=<redacted>", result);
+        Assert.Contains("ip=<REDACTED>", result);
         Assert.DoesNotContain("2606", result); // the IP value is gone
         Assert.Contains("expire=123", result); // a param before ip= is kept
         Assert.Contains("id=abc", result); // a param after ip= is kept
@@ -24,7 +24,7 @@ public sealed class AppLoggerTests
     {
         var result = AppLogger.Redact("https://host/path?ip=1.2.3.4&x=y");
 
-        Assert.Contains("ip=<redacted>", result);
+        Assert.Contains("ip=<REDACTED>", result);
         Assert.DoesNotContain("1.2.3.4", result);
         Assert.Contains("x=y", result);
     }
