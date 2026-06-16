@@ -1,7 +1,8 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using StemForge.Models;
+using StemForge.Core.Models;
+using StemForge.Core.Services;
 
 namespace StemForge.ViewModels;
 
@@ -26,6 +27,16 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool IsSetupRequired { get; set; }
 
+    /// <summary>
+    /// Non-null when an update is available. Contains the latest version string (e.g. "0.3.0").
+    /// </summary>
+    [ObservableProperty]
+    public partial string? UpdateAvailableVersion { get; set; }
+
+    /// <summary>URL of the GitHub Releases page, opened when the user clicks the update link.</summary>
+    public string ReleasesUrl { get; } =
+        $"https://github.com/{GitHubReleaseFetcher.RepoOwner}/{GitHubReleaseFetcher.RepoName}/releases";
+
     public MainWindowViewModel(
         SeparateViewModel separate,
         QueueViewModel queueVm,
@@ -33,7 +44,8 @@ public partial class MainWindowViewModel : ViewModelBase
         SettingsViewModel settings,
         SetupWizardViewModel wizard,
         LogsViewModel logs,
-        AppSettings appSettings
+        AppSettings appSettings,
+        UpdateCheckService updateCheckService
     )
     {
         Wizard = wizard;
@@ -93,6 +105,17 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         settings.ShowWizardRequested += OpenWizard;
         separate.ShowWizardRequested += OpenWizard;
+
+        // Fire-and-forget: check for a newer release on startup. Failures are swallowed inside
+        // UpdateCheckService, so this never blocks startup or raises an unhandled exception.
+        _ = RunUpdateCheckAsync(updateCheckService);
+    }
+
+    private async Task RunUpdateCheckAsync(UpdateCheckService updateCheckService)
+    {
+        var result = await updateCheckService.CheckAsync().ConfigureAwait(false);
+        if (result.UpdateAvailable)
+            UpdateAvailableVersion = result.LatestVersion;
     }
 
     private void GoToQueue()
@@ -105,6 +128,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void ShowLogs() => ShowLogsRequested?.Invoke();
+
+    [RelayCommand]
+    private static void OpenUrl(string url) =>
+        System.Diagnostics.Process.Start(
+            new System.Diagnostics.ProcessStartInfo { FileName = url, UseShellExecute = true }
+        );
 
     [RelayCommand]
     private void Navigate(NavItem item)

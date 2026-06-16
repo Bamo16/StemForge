@@ -55,4 +55,19 @@ How a [[Preset]] is specified to the separator. The modes are not different proc
 A [[Preset]] that runs two or more [[Model]]s and combines their per-[[Stem]] outputs into one result. Single-model presets are not ensembles.
 
 ### Ensemble algorithm
-The method by which an [[Ensemble]] combines its models' outputs. Operates either in the waveform domain (`avg_wave`, `median_wave`, `min_wave`, `max_wave`) or the spectral/FFT-magnitude domain (`avg_fft`/`mean_fft`, `median_fft`, `min_fft`, `max_fft`, and `*_mag` variants). Each algorithm trades off loudness/detail recovery against noise suppression. Built-in presets carry their algorithm in the driver's catalog; custom ensembles let the user pick one. Applies only to ensembles (2+ models).
+The method by which an [[Ensemble]] combines its models' outputs. Operates either in the waveform domain (`avg_wave`, `median_wave`, `min_wave`, `max_wave`) or the spectral/FFT-magnitude domain (`avg_fft`/`mean_fft`, `median_fft`, `min_fft`, `max_fft`, and the UVR spectral blends `uvr_max_spec` and `uvr_min_spec`). Each algorithm trades off loudness/detail recovery against noise suppression. Built-in presets carry their algorithm in the driver's catalog; custom ensembles let the user pick one. Applies only to ensembles (2+ models).
+
+## Jobs and orchestration
+
+### Job
+All the work StemForge performs on a single input source: one local file or one URL. Carried as a `JobRecord` (source, one or more [[Preset]]s, output directory and format, optional drum extraction and keep-source). A job expands into one [[Separation run]] per preset, plus one more if drum extraction is enabled; keep-source and provenance tagging are job steps but not separation runs. A batch invocation produces one job per input.
+
+### Separation run
+One [[Preset]] (or the drum-extraction preset) executed as a single invocation of the separator driver (`JobRequest` → `JobResult`). The unit a job's progress is divided into. Takes one audio input plus the preset's [[Model]]s and produces that preset's [[Stem]] outputs.
+_Avoid_: "pass" (reserved intuition for a single model running, which is a [[Model run]]).
+
+### Model run
+One execution of a single [[Model]] within a [[Separation run]]. A single-model run contains one; an [[Ensemble]] run contains several, combined by the [[Ensemble algorithm]].
+
+### Separation pipeline
+The UI-agnostic orchestrator that takes one [[Job]] and drives it to completion: download (for URL sources), each [[Separation run]] in order, optional drum extraction, optional keep-source, and provenance tagging. Reports progress as a single update stream consumed by both the GUI (via an adapter that maps updates onto the queue view) and the CLI. Knows nothing about view-models or the UI thread.

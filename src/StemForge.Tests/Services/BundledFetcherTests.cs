@@ -1,7 +1,5 @@
 using System.Net;
-using System.Runtime.InteropServices;
-using StemForge.Models;
-using StemForge.Services;
+using StemForge.Core.Services;
 
 namespace StemForge.Tests.Services;
 
@@ -53,12 +51,13 @@ public sealed class BundledFetcherTests
     }
 
     [Fact]
-    public async Task DownloadAsync_SendsAppInfoUserAgent_AndReportsProgress()
+    public async Task FileDownloader_DownloadAsync_SendsUserAgent_AndReportsProgress()
     {
         var payload = new byte[2_500_000]; // > 1 MiB so progress throttling fires at least once.
         Random.Shared.NextBytes(payload);
 
-        var fetcher = NewFetcher(new AppInfo("StemForgeTest", new Version(9, 8, 7)));
+        var appInfo = new AppInfo("StemForgeTest", new Version(9, 8, 7));
+        var downloader = NewDownloader(appInfo);
         var seenUserAgents = new List<string?>();
 
         using var server = new LoopbackServer(payload, seenUserAgents);
@@ -70,9 +69,9 @@ public sealed class BundledFetcherTests
         var ct = TestContext.Current.CancellationToken;
         try
         {
-            await fetcher.DownloadAsync(server.Url, dest1, progress, ct);
+            await downloader.DownloadAsync(server.Url, dest1, progress, ct);
             // A second download must succeed on the same shared client (no socket churn / disposal).
-            await fetcher.DownloadAsync(server.Url, dest2, progress, ct);
+            await downloader.DownloadAsync(server.Url, dest2, progress, ct);
 
             Assert.Equal(payload, await File.ReadAllBytesAsync(dest1, ct));
             Assert.Equal(payload, await File.ReadAllBytesAsync(dest2, ct));
@@ -92,11 +91,24 @@ public sealed class BundledFetcherTests
         }
     }
 
-    private static BundledFetcher NewFetcher(IAppInfo appInfo)
+    private static FileDownloader NewDownloader(IAppInfo appInfo) =>
+        new(
+            new TestHttpClientFactory(
+                new HttpClient
+                {
+                    Timeout = TimeSpan.FromMinutes(15),
+                    DefaultRequestHeaders =
+                    {
+                        UserAgent = { new(appInfo.ProductName, appInfo.ShortVersion) },
+                    },
+                }
+            )
+        );
+
+    /// <summary>Returns the same <see cref="HttpClient"/> on every <see cref="CreateClient"/> call.</summary>
+    private sealed class TestHttpClientFactory(HttpClient client) : IHttpClientFactory
     {
-        var paths = new AppPaths(new AppSettings());
-        var platform = new PlatformInfo(OSKind.Windows, Architecture.X64);
-        return new BundledFetcher(paths, platform, appInfo);
+        public HttpClient CreateClient(string name) => client;
     }
 
     private static string CreateTempDir()

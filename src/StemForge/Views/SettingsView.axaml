@@ -113,7 +113,7 @@
 
                     <Panel>
                         <!-- Opacity=0 (not IsVisible=False) keeps tool rows in the layout tree
-                             so the card never shrinks during a refresh. -->
+                        so the card never shrinks during a refresh. -->
                         <StackPanel Classes.layoutHidden="{Binding ToolsLoading}"
                                     IsHitTestVisible="{Binding !ToolsLoading}"
                                     Spacing="10" Margin="16,14">
@@ -192,7 +192,7 @@
                     <Border Classes="card">
                         <StackPanel Spacing="14">
                             <!-- Installed: variant chip is shown in the status header above, so
-                                 this card only carries the variant explainer + lifecycle actions. -->
+                            this card only carries the variant explainer + lifecycle actions. -->
                             <StackPanel IsVisible="{Binding IsAudioSeparatorInstalled}" Spacing="6">
                                 <TextBlock FontSize="11"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"

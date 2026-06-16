@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:StemForge.ViewModels"
-xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="1044" d:DesignHeight="720"
              x:Class="StemForge.Views.LogsView"
@@ -9,7 +9,7 @@ xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 
     <UserControl.Styles>
         <!-- Level toggle buttons — minimal custom template so Fluent's :pointerover
-             theme brushes don't clobber our level colors. -->
+        theme brushes don't clobber our level colors. -->
         <Style Selector="Button.levelToggle">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="{DynamicResource Bg3Brush}" />

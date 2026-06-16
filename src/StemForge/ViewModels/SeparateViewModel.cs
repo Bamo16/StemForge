@@ -5,9 +5,10 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using StemForge.Extensions;
-using StemForge.Helpers;
-using StemForge.Models;
+using StemForge.Core.Extensions;
+using StemForge.Core.Helpers;
+using StemForge.Core.Models;
+using StemForge.Core.Services;
 using StemForge.Services;
 
 namespace StemForge.ViewModels;
@@ -159,10 +160,46 @@ public partial class SeparateViewModel : PageViewModelBase
     [NotifyPropertyChangedFor(nameof(HasUrlDuration))]
     public partial string? UrlDuration { get; set; }
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUrlSampleRate))]
+    public partial string? UrlSampleRate { get; set; }
+
     public bool HasUrlTitle => UrlTitle is not null;
     public bool HasUrlCodec => UrlCodec is not null;
     public bool HasUrlBitrate => UrlBitrate is not null;
     public bool HasUrlDuration => UrlDuration is not null;
+    public bool HasUrlSampleRate => UrlSampleRate is not null;
+
+    // ── Local-file resolved metadata ──────────────────────────────────────────
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLocalCodec))]
+    [NotifyPropertyChangedFor(nameof(ShowLocalChips))]
+    public partial string? LocalCodec { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLocalBitrate))]
+    [NotifyPropertyChangedFor(nameof(ShowLocalChips))]
+    public partial string? LocalBitrate { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLocalSampleRate))]
+    [NotifyPropertyChangedFor(nameof(ShowLocalChips))]
+    public partial string? LocalSampleRate { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLocalDuration))]
+    [NotifyPropertyChangedFor(nameof(ShowLocalChips))]
+    public partial string? LocalDuration { get; set; }
+
+    public bool HasLocalCodec => LocalCodec is not null;
+    public bool HasLocalBitrate => LocalBitrate is not null;
+    public bool HasLocalSampleRate => LocalSampleRate is not null;
+    public bool HasLocalDuration => LocalDuration is not null;
+
+    public bool ShowLocalChips =>
+        HasInputFile
+        && (HasLocalCodec || HasLocalBitrate || HasLocalSampleRate || HasLocalDuration);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowUrlFormatRow))]
@@ -233,6 +270,7 @@ public partial class SeparateViewModel : PageViewModelBase
             var kbps = ov.AverageAudioBitrate ?? ov.AverageTotalBitrate;
             if (kbps.HasValue)
                 UrlBitrate = $"{kbps.Value:F0} kb/s";
+            UrlSampleRate = ov.AudioSampleRate is { } hz ? $"{hz / 1000.0:F1} kHz" : null;
         }
         else if (_cachedUrlMeta is { } auto)
         {
@@ -241,6 +279,10 @@ public partial class SeparateViewModel : PageViewModelBase
                     ? AudioFormatInfo.PrettyCodec(c)
                     : null;
             UrlBitrate = auto.SourceBitrateKbps is { } k ? $"{k:F0} kb/s" : null;
+            UrlSampleRate = auto.AudioFormats?.FirstOrDefault(f => f.FormatId == auto.FormatId)
+                is { AudioSampleRate: { } autoHz }
+                ? $"{autoHz / 1000.0:F1} kHz"
+                : null;
         }
 
         IsFormatPickerOpen = false;
@@ -453,6 +495,24 @@ public partial class SeparateViewModel : PageViewModelBase
         OnPropertyChanged(nameof(HasInputFile));
         OnPropertyChanged(nameof(InputFileName));
         NotifyCanRunChanged();
+
+        if (value is not null)
+        {
+            var (codec, bitrate, sampleRate, duration) = AudioTagger.ReadAudioProperties(value);
+            LocalCodec = codec;
+            LocalBitrate = bitrate;
+            LocalSampleRate = sampleRate;
+            LocalDuration = duration;
+        }
+        else
+        {
+            LocalCodec = null;
+            LocalBitrate = null;
+            LocalSampleRate = null;
+            LocalDuration = null;
+        }
+
+        OnPropertyChanged(nameof(ShowLocalChips));
     }
 
     [RelayCommand]
@@ -530,6 +590,7 @@ public partial class SeparateViewModel : PageViewModelBase
         UrlTitle = null;
         UrlCodec = null;
         UrlBitrate = null;
+        UrlSampleRate = null;
         UrlDuration = null;
         UrlFetchError = null;
         FormatPickerItems.Clear();
@@ -578,6 +639,11 @@ public partial class SeparateViewModel : PageViewModelBase
                 UrlCodec = AudioFormatInfo.PrettyCodec(codec);
             if (meta.SourceBitrateKbps is { } kbps)
                 UrlBitrate = $"{kbps:F0} kb/s";
+            if (
+                meta.AudioFormats?.FirstOrDefault(f => f.FormatId == meta.FormatId) is
+                { AudioSampleRate: { } hz }
+            )
+                UrlSampleRate = $"{hz / 1000.0:F1} kHz";
             if (meta.DurationSeconds is { } dur)
             {
                 var ts = TimeSpan.FromSeconds(dur);
@@ -597,8 +663,8 @@ public partial class SeparateViewModel : PageViewModelBase
                             Format = f,
                             Codec = AudioFormatInfo.PrettyCodec(f.AudioCodec),
                             Bitrate = br is { } b ? $"{b:F0} kb/s" : "—",
-                            SampleRate = f.AudioSampleRate is { } hz
-                                ? $"{hz / 1000.0:F1} kHz"
+                            SampleRate = f.AudioSampleRate is { } fHz
+                                ? $"{fHz / 1000.0:F1} kHz"
                                 : "—",
                             FormatNote = f.FormatNote ?? "",
                             IsAutoRecommended = f.FormatId == meta.FormatId,

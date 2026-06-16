@@ -1,6 +1,5 @@
-using Avalonia.Headless.XUnit;
-using StemForge.Models;
-using StemForge.Services;
+using StemForge.Core.Models;
+using StemForge.Core.Services;
 using StemForge.Tests.Fakes;
 using StemForge.ViewModels;
 
@@ -18,7 +17,7 @@ public sealed class SetupWizardViewModelTests
         var runner = (IProcessRunner)fake;
         var setupDetector = new SetupDetector(runner, paths);
         var platform = PlatformInfo.Current;
-        var bundledFetcher = new BundledFetcher(paths, platform, AppInfo.Current);
+        var bundledFetcher = new BundledFetcher(paths, platform, NullFileDownloader.Instance);
         return new SetupWizardViewModel(
             settings,
             setupDetector,
@@ -33,7 +32,7 @@ public sealed class SetupWizardViewModelTests
     private static ToolRowViewModel Row(SetupWizardViewModel vm, ToolKind kind) =>
         vm.InstallRows.Single(r => r.Kind == kind);
 
-    [AvaloniaFact]
+    [Fact]
     public void InitialStep_IsWelcome()
     {
         var vm = Build();
@@ -41,7 +40,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.IsWelcomeStep);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void Start_MovesToDetect()
     {
         var fake = new FakeProcessRunner();
@@ -56,7 +55,7 @@ public sealed class SetupWizardViewModelTests
         Assert.False(vm.IsWelcomeStep);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void Back_FromDetect_GoesToWelcome()
     {
         var vm = Build();
@@ -65,7 +64,7 @@ public sealed class SetupWizardViewModelTests
         Assert.Equal(WizardStep.Welcome, vm.CurrentStep);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void Next_FromDirectories_GoesToInstall()
     {
         var vm = Build();
@@ -74,7 +73,7 @@ public sealed class SetupWizardViewModelTests
         Assert.Equal(WizardStep.Install, vm.CurrentStep);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void Next_FromInstall_GoesToFinish()
     {
         var vm = Build();
@@ -83,7 +82,7 @@ public sealed class SetupWizardViewModelTests
         Assert.Equal(WizardStep.Finish, vm.CurrentStep);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void CanGoNext_OnInstallStep_RequiresAllRequiredToolsFound()
     {
         var vm = Build();
@@ -103,7 +102,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.CanGoNext);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void CanGoNext_OnWelcomeStep_AlwaysTrue()
     {
         var vm = Build();
@@ -111,7 +110,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.CanGoNext);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void IsBackVisible_OnlyForMiddleSteps()
     {
         var vm = Build();
@@ -132,7 +131,7 @@ public sealed class SetupWizardViewModelTests
         Assert.False(vm.IsBackVisible);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void StepIndicators_ActivateProgressively()
     {
         var vm = Build();
@@ -157,7 +156,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.IsStep4Active);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void Reset_RestoresWelcomeStep()
     {
         var vm = Build();
@@ -171,7 +170,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.CanDismiss);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void SetupDismissed_FiredByDismissCommand()
     {
         var vm = Build();
@@ -183,7 +182,7 @@ public sealed class SetupWizardViewModelTests
         Assert.True(fired);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void GpuVariantHelpers_ReflectCurrentVariant()
     {
         var vm = Build();
@@ -201,7 +200,13 @@ public sealed class SetupWizardViewModelTests
         Assert.True(vm.IsDirectML);
     }
 
-    [AvaloniaFact]
+    // Plain [Fact]: FakeProcessRunner returns Task.FromResult everywhere, so every await in
+    // InstallSelectedAsync completes inline (no SynchronizationContext → no dispatcher queue).
+    // [AvaloniaFact] was actively harmful here: the Avalonia SynchronizationContext causes
+    // await-on-completed-task to *post* continuations rather than run them inline, which lets
+    // the fire-and-forget RecheckToolsAsync continuation race against the test's WantInstall
+    // assignments and produce non-deterministic results.
+    [Fact]
     public async Task InstallSelected_SetsIndeterminateProgressDuringAudioSeparatorInstall()
     {
         // Resolve the actual exe paths the wizard will probe/install with (uv resolves to a known
@@ -256,7 +261,7 @@ public sealed class SetupWizardViewModelTests
         Assert.False(vm.IsInstalling);
     }
 
-    [AvaloniaFact]
+    [Fact]
     public void VariantPicker_OffersOnlyCurrentOsVariants()
     {
         IVariantPicker vm = Build();

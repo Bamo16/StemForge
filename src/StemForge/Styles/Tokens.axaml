@@ -21,8 +21,8 @@
     <Color x:Key="AccentMedBgColor">#4DD4703A</Color>  <!-- ~30% alpha -->
 
     <!-- Override Avalonia FluentTheme's system accent so all themed controls
-         (CheckBox, TextBox focus ring, ComboBox highlight, etc.) use StemForge
-         orange automatically without per-control template selectors. -->
+    (CheckBox, TextBox focus ring, ComboBox highlight, etc.) use StemForge
+    orange automatically without per-control template selectors. -->
     <Color x:Key="SystemAccentColor">#d4703a</Color>
     <Color x:Key="SystemAccentColorLight1">#e88040</Color>
     <Color x:Key="SystemAccentColorLight2">#f09060</Color>
@@ -70,10 +70,10 @@
 
     <!-- ====== Typography ====== -->
     <!-- DM Sans + JetBrains Mono are bundled under Assets/Fonts (SIL OFL) so
-         typography is identical on Windows/Linux/macOS without a system install.
-         The avares folder URI + #FamilyName form lets Avalonia pick the right
-         weight (Regular/Medium/SemiBold/Bold) from the static faces in that folder.
-         System families are kept after the comma purely as a last-resort fallback. -->
+    typography is identical on Windows/Linux/macOS without a system install.
+    The avares folder URI + #FamilyName form lets Avalonia pick the right
+    weight (Regular/Medium/SemiBold/Bold) from the static faces in that folder.
+    System families are kept after the comma purely as a last-resort fallback. -->
     <FontFamily x:Key="UiFont">avares://StemForge/Assets/Fonts/#DM Sans, Segoe UI, San Francisco, Arial</FontFamily>
     <FontFamily x:Key="MonoFont">avares://StemForge/Assets/Fonts/#JetBrains Mono, Cascadia Mono, Consolas, Menlo, monospace</FontFamily>
 

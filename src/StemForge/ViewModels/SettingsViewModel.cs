@@ -2,8 +2,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using StemForge.Models;
-using StemForge.Services;
+using StemForge.Core.Models;
+using StemForge.Core.Services;
 
 namespace StemForge.ViewModels;
 
@@ -62,9 +62,9 @@ public partial class SettingsViewModel : PageViewModelBase
     public string InstalledVariantLabel =>
         _settings.InstalledVariant switch
         {
-            Models.GpuVariant.Cuda => "CUDA",
-            Models.GpuVariant.DirectML => "DirectML",
-            Models.GpuVariant.Cpu => "CPU",
+            GpuVariant.Cuda => "CUDA",
+            GpuVariant.DirectML => "DirectML",
+            GpuVariant.Cpu => "CPU",
             _ => "Unknown",
         };
 
@@ -80,9 +80,9 @@ public partial class SettingsViewModel : PageViewModelBase
     [ObservableProperty]
     public partial GpuVariant PendingVariant { get; set; }
 
-    public bool IsPendingCpu => PendingVariant == Models.GpuVariant.Cpu;
-    public bool IsPendingCuda => PendingVariant == Models.GpuVariant.Cuda;
-    public bool IsPendingDirectML => PendingVariant == Models.GpuVariant.DirectML;
+    public bool IsPendingCpu => PendingVariant == GpuVariant.Cpu;
+    public bool IsPendingCuda => PendingVariant == GpuVariant.Cuda;
+    public bool IsPendingDirectML => PendingVariant == GpuVariant.DirectML;
 
     [ObservableProperty]
     public partial bool IsManagingTool { get; set; }

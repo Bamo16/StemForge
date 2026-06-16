@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
-using StemForge.Models;
-using StemForge.Services;
+using StemForge.Core.Models;
+using StemForge.Core.Services;
 using StemForge.Tests.Fakes;
 
 namespace StemForge.Tests.Services;
@@ -18,7 +18,7 @@ public sealed class ToolInstallerTests
         var installer = new ToolInstaller(
             fake,
             paths,
-            new BundledFetcher(paths, platform, AppInfo.Current),
+            new BundledFetcher(paths, platform, NullFileDownloader.Instance),
             platform
         );
         return (installer, fake, paths);

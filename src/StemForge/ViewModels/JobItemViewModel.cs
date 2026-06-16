@@ -1,7 +1,7 @@
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using StemForge.Models;
+using StemForge.Core.Models;
 
 namespace StemForge.ViewModels;
 
@@ -44,16 +44,52 @@ public partial class JobItemViewModel : ObservableObject
 
     private readonly Queue<string> _logLines = new();
 
+    // Accumulates every raw "log" line from the driver regardless of level.
+    // Exposed as LogOutput on failure so the user can see the full subprocess output.
+    private readonly Queue<string> _rawLogLines = new();
+
+    // Set by HandleProgress on loading_model; consumed (once) by the first progress tick
+    // to emit a "Running model X/Y" entry after the model has actually started inference.
+    internal string? PendingRunLogLine { get; set; }
+
+    // Tracks which model within the current preset is running so the progress bar
+    // advances proportionally across all models rather than pegging at 100% after model 1.
+    internal int CurrentModelIndex { get; set; } = 1;
+    internal int CurrentModelCount { get; set; } = 1;
+
     [ObservableProperty]
     public partial string LogOutput { get; set; } = string.Empty;
 
-    /// <summary>Append a line of subprocess output. Must be called on the UI thread.</summary>
+    /// <summary>Append a timeline line to the visible log feed. Must be called on the UI thread.</summary>
     public void AppendLog(string line)
     {
         _logLines.Enqueue(line);
         while (_logLines.Count > _maxLogLines)
             _logLines.Dequeue();
         LogOutput = string.Join('\n', _logLines);
+    }
+
+    /// <summary>
+    /// Accumulate a raw driver log line without showing it in the feed.
+    /// Must be called on the UI thread.
+    /// </summary>
+    public void AccumulateRawLog(string line)
+    {
+        _rawLogLines.Enqueue(line);
+        while (_rawLogLines.Count > _maxLogLines)
+            _rawLogLines.Dequeue();
+    }
+
+    /// <summary>
+    /// Replace the visible LogOutput with the full accumulated raw log.
+    /// Call this when a job fails so the user can see the full subprocess output.
+    /// Must be called on the UI thread.
+    /// </summary>
+    public void FlushRawLogToOutput()
+    {
+        if (_rawLogLines.Count == 0)
+            return;
+        LogOutput = string.Join('\n', _rawLogLines);
     }
 
     public bool HasOutputFiles => OutputFiles.Count > 0;

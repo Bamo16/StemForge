@@ -121,9 +121,29 @@ import sys
 import threading
 import time
 import traceback
+import warnings
 from contextlib import contextmanager
 
 DRIVER_VERSION = "0.1.0"
+
+# ---------------------------------------------------------------------------
+# Dependency warning suppression
+# ---------------------------------------------------------------------------
+# torch, librosa, and audio-separator emit a steady stream of FutureWarning,
+# UserWarning, and DeprecationWarning at import time and during inference.
+# The driver redirects native stdout to stderr and the host logs every stderr
+# line as Debug, so that noise floods the debug channel. Filter it here, before
+# the heavy imports (tqdm/audio_separator and their transitive torch/librosa)
+# fire, so the filters are in place when those warnings are raised.
+#
+# This only silences warnings. Genuine errors are exceptions, not warnings, so
+# tracebacks still reach stderr untouched.
+#
+# Escape hatch: set STEMFORGE_DRIVER_WARNINGS=1 to keep every warning visible
+# for debugging a warning that actually matters.
+if os.environ.get("STEMFORGE_DRIVER_WARNINGS") != "1":
+    for _warn_category in (FutureWarning, UserWarning, DeprecationWarning):
+        warnings.filterwarnings("ignore", category=_warn_category)
 
 # ---------------------------------------------------------------------------
 # stdout discipline

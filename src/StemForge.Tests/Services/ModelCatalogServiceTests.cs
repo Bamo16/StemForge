@@ -1,4 +1,4 @@
-using StemForge.Services;
+using StemForge.Core.Services;
 
 namespace StemForge.Tests.Services;
 
@@ -66,6 +66,34 @@ public sealed class ModelCatalogServiceTests
         var withPrefix = "INFO:audio_separator:listing models\n" + ValidJson + "\nDone.";
         var models = ModelCatalogService.TryParseJson(withPrefix);
         Assert.Equal(2, models.Count);
+    }
+
+    [Fact]
+    public void TryParseJson_DuplicateFilename_DedupedFirstWins()
+    {
+        // Upstream output can repeat the same filename across entries. The first
+        // occurrence should win and the duplicate should be dropped.
+        var json = """
+            {
+              "MDX": {
+                "Kim Vocal 2": {
+                  "filename": "Kim_Vocal_2.onnx",
+                  "stems": ["vocals", "instrumental"]
+                },
+                "Kim Vocal 2 (duplicate)": {
+                  "filename": "Kim_Vocal_2.onnx",
+                  "stems": ["vocals"]
+                }
+              }
+            }
+            """;
+
+        var models = ModelCatalogService.TryParseJson(json);
+
+        Assert.Single(models);
+        var only = models.Single(m => m.Filename == "Kim_Vocal_2.onnx");
+        Assert.Equal("Kim Vocal 2", only.FriendlyName);
+        Assert.Equal(2, only.Stems.Count);
     }
 
     [Fact]

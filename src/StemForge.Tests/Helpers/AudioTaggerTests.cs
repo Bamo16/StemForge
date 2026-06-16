@@ -1,5 +1,5 @@
-using StemForge.Helpers;
-using StemForge.Models;
+using StemForge.Core.Helpers;
+using StemForge.Core.Models;
 
 namespace StemForge.Tests.Helpers;
 
@@ -62,6 +62,30 @@ public sealed class AudioTaggerTests
         var provenance = AudioTagger.BuildProvenance(null, null, "0.2.0");
 
         Assert.Equal($"stemforge/0.2.0 | date: {DateTimeOffset.UtcNow:yyyy-MM-dd}", provenance);
+    }
+
+    [Fact]
+    public void ReadAudioProperties_NonexistentPath_ReturnsAllNulls()
+    {
+        var (codec, bitrate, sampleRate, duration) = AudioTagger.ReadAudioProperties(
+            "/nonexistent/path/file.flac"
+        );
+
+        Assert.Null(codec);
+        Assert.Null(bitrate);
+        Assert.Null(sampleRate);
+        Assert.Null(duration);
+    }
+
+    [Fact]
+    public void ReadAudioProperties_EmptyPath_ReturnsAllNulls()
+    {
+        var (codec, bitrate, sampleRate, duration) = AudioTagger.ReadAudioProperties(string.Empty);
+
+        Assert.Null(codec);
+        Assert.Null(bitrate);
+        Assert.Null(sampleRate);
+        Assert.Null(duration);
     }
 
     [Fact]
