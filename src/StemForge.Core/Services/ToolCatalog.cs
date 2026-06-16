@@ -101,11 +101,14 @@ public static class ToolCatalog
             new BundledFetch(
                 new Dictionary<PlatformInfo, BundledAsset>
                 {
+                    // FFmpeg-Builds retains exactly one build per calendar month (the last-day
+                    // autobuild-YYYY-MM-DD tag). Daily builds are pruned after ~2 weeks. Always
+                    // pin to a month-end tag here; mid-month tags will 404 within weeks.
                     [WinX64] = new(
                         Url: "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/"
-                            + "autobuild-2026-05-26-17-26/"
-                            + "ffmpeg-N-124653-g0ac3b00a18-win64-gpl-shared.zip",
-                        Sha256: "5ea46ea816a48f48e0d4c2ccf5997b4201bc8bed0be8ef05ccd169dc91d11dee",
+                            + "autobuild-2026-05-31-15-28/"
+                            + "ffmpeg-N-124716-g054dffd133-win64-gpl-shared.zip",
+                        Sha256: "1718fdeaaade345f92115319e0852cfd78551c67f24bc5deff76ab4fd1d85faa",
                         Format: ArchiveFormat.Zip,
                         Layout: BundledLayout.FlattenFromBinSubdir
                     ),
@@ -114,9 +117,9 @@ public static class ToolCatalog
                     // so FlattenFromBinSubdir extracts ffmpeg/ffprobe/ffplay identically.
                     [LinuxX64] = new(
                         Url: "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/"
-                            + "autobuild-2026-05-26-17-26/"
-                            + "ffmpeg-N-124653-g0ac3b00a18-linux64-gpl.tar.xz",
-                        Sha256: "89e1f02736132c39bb98392d561362d7747934466ed480a20fe4481c2f71a9e7",
+                            + "autobuild-2026-05-31-15-28/"
+                            + "ffmpeg-N-124716-g054dffd133-linux64-gpl.tar.xz",
+                        Sha256: "64b6f4b1e68c54f6c0bc90d0f0f684dd8c3f68e95fe817ef8849d8a0d6a81c59",
                         Format: ArchiveFormat.TarXz,
                         Layout: BundledLayout.FlattenFromBinSubdir
                     ),

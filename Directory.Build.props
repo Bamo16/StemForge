@@ -3,7 +3,7 @@
          The "package: win-x64" task in .vscode/tasks.json reads <Version> from this file to name
          the release zip. AppInfo surfaces AssemblyVersion at runtime (footer + provenance tags). -->
     <PropertyGroup>
-        <Version>0.2.1</Version>
+        <Version>0.2.1.1</Version>
         <AssemblyVersion>$(Version)</AssemblyVersion>
         <FileVersion>$(Version)</FileVersion>
     </PropertyGroup>
