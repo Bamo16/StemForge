@@ -18,20 +18,14 @@ Protocol
 --------
 All I/O is JSON Lines (one JSON object per line, '\\n'-terminated, flushed).
 
+The event and phase vocabulary is declared in driver_protocol.json (co-located
+with this script) and mirrored by the C# host; emit() asserts against it. Keep
+this section, that manifest, and the host's typed events in sync.
+
 Commands accepted on stdin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-{"cmd": "ping"}
-    -> {"event": "pong"}
-
 {"cmd": "list_presets"}
     -> {"event": "presets", "presets": {...}}
-
-{"cmd": "list_models", "filter": null | "vocals" | "drums" | ...}
-    -> {"event": "models", "models": {...}}  // simplified list
-
-{"cmd": "download_models", "models": ["foo.ckpt", "bar.onnx"]}
-    Pre-fetches model files. Emits download phase + progress events.
-    -> ... -> {"event": "download_completed"}
 
 {"cmd": "run",
  "id": "<caller-chosen string>",
@@ -45,8 +39,11 @@ Commands accepted on stdin
  "stems_to_keep": ["Vocals"],     // optional; see "Stem filtering" below
  "custom_names": {"Vocals": "song_vbal"}  // optional, no extension
 }
-    -> job_started, phase, progress, log, stem_written, stem_discarded,
-       job_completed | job_failed
+    -> phase, progress, log, stem_written,
+       job_completed | job_failed | job_cancelled
+
+{"cmd": "cancel", "id": "..."}
+    Requests the running job stop. -> {"event": "job_cancelled", "id": "..."}
 
 {"cmd": "shutdown"}
     -> {"event": "bye"} then process exits 0.
@@ -62,22 +59,26 @@ Events emitted on stdout
 
 {"event": "phase", "id": "...", "phase": "downloading_model",
  "model": "...", "model_index": 1, "model_count": 3, "cached": false}
-    Phases: downloading_model, loading_model, separating, ensembling,
-            writing_output, finalizing
+    Phases: downloading_model, loading_model, separating, ensembling.
     The downloading_model phase always fires once per model in the job,
     even if the model is already on disk (`cached: true`). When cached,
     no `progress` events follow this phase. When `cached: false`, expect
-    `progress` events with `unit: "iB"` while bytes are fetched.
+    `progress` events while bytes are fetched.
 
-{"event": "progress", "id": "...", "phase": "download" | "separate",
- "current": 1234, "total": 5678, "unit": "iB" | "chunks"}
+{"event": "progress", "id": "...", "current": 1234, "total": 5678,
+ "final": true | null}
+    The host renders this as a percentage; the active phase comes from the
+    preceding `phase` event.
 
 {"event": "stem_written", "id": "...", "stem": "Vocals", "path": "/abs/.../x.flac"}
-{"event": "stem_discarded", "id": "...", "stem": "Instrumental", "path": "..."}
 
 {"event": "job_completed", "id": "...", "outputs": [{"stem":..,"path":..}],
- "discarded": [...], "duration_seconds": 123.4}
+ "discarded": [{"stem":..,"path":..}], "duration_seconds": 123.4}
 {"event": "job_failed", "id": "...", "error": "...", "traceback": "..."}
+{"event": "job_cancelled", "id": "..."}
+
+{"event": "error", "error": "..."}
+    A protocol-level problem (e.g. an unparseable or unknown command).
 
 Stem filtering
 --------------
@@ -174,6 +175,24 @@ except (OSError, io.UnsupportedOperation):
 _emit_lock = threading.Lock()
 
 # ---------------------------------------------------------------------------
+# Protocol manifest
+# ---------------------------------------------------------------------------
+# driver_protocol.json (co-located with this script) is the single source of
+# truth for the event and phase vocabulary. The C# host mirrors it as typed
+# records and a contract test fails the build on drift. We load it here and
+# assert every emitted event/phase is declared, so a new emit() that forgets
+# to update the manifest (and therefore the host) fails loudly in dev/test
+# rather than silently shipping an event the host cannot dispatch.
+
+_PROTOCOL_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "driver_protocol.json"
+)
+with open(_PROTOCOL_PATH, encoding="utf-8") as _pf:
+    _PROTOCOL = json.load(_pf)
+_EVENTS = frozenset(_PROTOCOL["events"])
+_PHASES = frozenset(_PROTOCOL["phases"])
+
+# ---------------------------------------------------------------------------
 # Cancellation
 # ---------------------------------------------------------------------------
 # Set by the main thread when the host sends {"cmd": "cancel"}.
@@ -194,7 +213,18 @@ def _check_cancelled():
 
 
 def emit(event: str, **fields) -> None:
-    """Write a single JSON-Lines event to the real stdout, atomically."""
+    """Write a single JSON-Lines event to the real stdout, atomically.
+
+    Every event (and, for phase events, the phase name) must be declared in
+    driver_protocol.json. Emitting an undeclared name is a contract violation
+    the host cannot dispatch, so we fail loudly here rather than ship it.
+    """
+    if event not in _EVENTS:
+        raise ValueError(f"event {event!r} not declared in {_PROTOCOL_PATH}")
+    if event == "phase" and fields.get("phase") not in _PHASES:
+        raise ValueError(
+            f"phase {fields.get('phase')!r} not declared in {_PROTOCOL_PATH}"
+        )
     payload = {"event": event, **fields}
     line = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     with _emit_lock:
@@ -273,10 +303,6 @@ class EventTqdm(_OriginalTqdm):
         super().__init__(*args, **kwargs)
         self._last_emit = 0.0
         self._closed_once = False
-        # tqdm sets self.unit to "it" by default; downloads pass unit="iB",
-        # demucs uses "seconds". Expose whatever the call site chose so the
-        # host can pick an appropriate label.
-        self._unit = self.unit or ""
 
     def update(self, n=1):
         _check_cancelled()
@@ -299,20 +325,16 @@ class EventTqdm(_OriginalTqdm):
         return super().close()
 
     def _emit(self, final=False):
+        # The host renders progress as a percentage (current/total), so the
+        # bar's phase and unit are not carried on the wire. The active phase is
+        # already conveyed by the preceding `phase` event; `id` correlates the
+        # progress with the running job.
         ctx = _get_phase()
-        # Heuristic phase tagging when no explicit phase is active:
-        # download bars use unit="iB"; inference bars don't.
-        if ctx.get("phase") in (None, "unknown"):
-            phase_name = "download" if self._unit == "iB" else "separate"
-        else:
-            phase_name = ctx.get("phase")
         emit(
             "progress",
             id=ctx.get("id"),
-            phase=phase_name,
             current=int(self.n),
             total=int(self.total) if self.total else None,
-            unit=self._unit or None,
             final=final or None,
         )
 
@@ -596,33 +618,9 @@ class Driver:
 
     # -- command handlers ---------------------------------------------------
 
-    def cmd_ping(self, _cmd):
-        emit("pong")
-
     def cmd_list_presets(self, _cmd):
         sep = self._get_separator()
         emit("presets", presets=sep.list_ensemble_presets())
-
-    def cmd_list_models(self, cmd):
-        sep = self._get_separator()
-        filt = cmd.get("filter")
-        emit("models", models=sep.get_simplified_model_list(filter_sort_by=filt))
-
-    def cmd_download_models(self, cmd):
-        models = cmd.get("models") or []
-        if not models:
-            emit("download_completed", downloaded=[])
-            return
-        sep = self._get_separator()
-        downloaded = []
-        for i, m in enumerate(models, 1):
-            cached = self._is_model_cached(sep, m)
-            with phase(None, "downloading_model",
-                       model=m, model_index=i, model_count=len(models),
-                       cached=cached):
-                sep.download_model_and_data(m)
-                downloaded.append(m)
-        emit("download_completed", downloaded=downloaded)
 
     @staticmethod
     def _is_model_cached(sep: Separator, model_filename: str) -> bool:
@@ -748,20 +746,6 @@ class Driver:
         for stem, name in provided_names.items():
             custom_output_names.setdefault(stem, name)
 
-        emit(
-            "job_started",
-            id=job_id,
-            audio=audio,
-            output_dir=output_dir,
-            output_format=output_format,
-            preset=preset_id,
-            models=models,
-            algorithm=sep.ensemble_algorithm,
-            weights=sep.ensemble_weights,
-            stems_to_keep=stems_to_keep,
-            single_stem_mode=sep.output_single_stem,
-        )
-
         # Reset per-job counters used by IpcLogHandler to emit
         # loading_model phase events with model_index/model_count.
         _reset_job_state(job_id, models)
@@ -866,7 +850,6 @@ class Driver:
                     emit("log", id=job_id, level="warning", module="driver",
                          message=f"failed to delete unwanted stem {out_path}: {e}")
                 discarded.append({"stem": stem, "path": out_path})
-                emit("stem_discarded", id=job_id, stem=stem, path=out_path)
             else:
                 # Enforce expected name if the library didn't honour custom_output_names.
                 expected = custom_output_names.get(stem)
@@ -898,10 +881,7 @@ class Driver:
     # -- main loop ----------------------------------------------------------
 
     DISPATCH = {
-        "ping": cmd_ping,
         "list_presets": cmd_list_presets,
-        "list_models": cmd_list_models,
-        "download_models": cmd_download_models,
         "cancel": cmd_cancel,
         "shutdown": cmd_shutdown,
     }

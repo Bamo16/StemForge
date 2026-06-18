@@ -1,0 +1,15 @@
+# Separator driver: permanent Python boundary with a closed, co-versioned JSONL contract
+
+StemForge drives audio separation through a long-lived Python child process (`separator_driver.py`) over newline-delimited JSON on stdio, rather than reimplementing inference in .NET. The event and [[Phase]] vocabulary is a closed set named in one checked-in manifest (`tools/driver_protocol.json`) that both sides derive from; the C# side models inbound events as per-event polymorphic records dispatched by a type-switch, failing loud on any unrecognized in-band message while tolerating non-JSON transport noise.
+
+## Considered options
+
+- **A .NET inference engine (ONNX Runtime / TorchSharp).** Rejected. The quality-differentiating models are PyTorch RoFormer `.ckpt` files from the fast-moving UVR/ZFTurbo ecosystem. Running them in .NET means per-model ONNX conversion (each requires externalizing STFT/iSTFT from the graph) or porting architectures via TorchSharp, plus reimplementing the band-split preprocessing, chunked overlap-add inference, the ensemble algorithms, and stem post-processing — and then perpetually chasing upstream model releases. The Python boundary buys that entire ecosystem for free; reimplementation is a research project that trades it away.
+- **gRPC / protobuf over a pipe.** Rejected. A shared typed schema is appealing, but it costs a server, a port/pipe lifecycle, and a protobuf toolchain bolted onto a ~1000-line script — too much machinery for one local child process. JSONL over stdio is debuggable by eye and preserves process isolation: a native inference crash (e.g. `0xC0000409`) takes down the child, which we detect and report, not the app.
+- **A flat tolerant event record that silently ignores unknown events.** Rejected. Because the driver script ships inside the app and is co-versioned with the C# code, an unrecognized *in-band* event is a bug, not forward-compatibility skew — so it must be loud. Per-event polymorphic records make the closed set compiler-enforced: a new Python event cannot flow through the dispatcher until someone adds the record and the case.
+
+## Consequences
+
+- Changing the protocol is a deliberate three-touch edit: the manifest, the Python emit site, and a C# record + dispatch case. A contract test reads `driver_protocol.json` and asserts the C# derived-type discriminators and `DriverPhase` enum match it in both directions, so drift fails the build — without spawning Python in the test.
+- Two failure modes are handled distinctly: non-JSON transport noise (stray library output) is tolerated with a warning; a valid-looking in-band message with an unknown event/phase is a contract violation that trips `Debug.Fail` plus an error log, paired with an `emit()` assertion on the Python side.
+- The driver's surface is trimmed to exactly what StemForge consumes: the `ping`/`list_models`/`download_models` commands and their responses are removed, as are the never-consumed `job_started` and `stem_discarded` emits and the unused `phase`/`unit` fields on `progress`.
