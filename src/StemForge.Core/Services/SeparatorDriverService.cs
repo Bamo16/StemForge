@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using StemForge.Core.Extensions;
 using StemForge.Core.Models;
 
@@ -331,83 +330,77 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
 
     private void DispatchEvent(string line)
     {
-        JsonElement root;
-        try
-        {
-            root = JsonSerializer.Deserialize<JsonElement>(line);
-        }
-        catch
+        // Transport noise: a long-running native dependency (torch, onnxruntime, a stray print)
+        // can leak a line to stdout that was never meant as a protocol message. That is not a
+        // contract violation, so tolerate it and keep reading. Protocol lines are always a JSON
+        // object, so anything not starting with '{' is noise.
+        var trimmed = line.AsSpan().TrimStart();
+        if (trimmed.IsEmpty || trimmed[0] != '{')
         {
             AppLogger.Warning("driver", $"Non-JSON from driver: {line}");
             return;
         }
 
-        if (!root.TryGetProperty("event", out var evtProp))
+        DriverEvent? evt;
+        try
+        {
+            evt = JsonSerializer.Deserialize(line, DriverJsonContext.Default.DriverEvent);
+        }
+        catch (Exception ex)
+        {
+            // A JSON object the host cannot dispatch (unknown event/phase, or a malformed payload)
+            // is a contract violation: the driver is co-versioned with this app, so this means a
+            // protocol bug, not version skew. Fail loud — assert in dev/test, log in release — to
+            // mirror the emit() assertion on the Python side.
+            AppLogger.Error("driver", $"Driver protocol violation: {ex.Message} -- {line}");
+            Debug.Fail($"Driver protocol violation: {line}");
+            return;
+        }
+
+        if (evt is null)
             return;
 
-        var evt = evtProp.GetString();
         var job = _activeJob;
 
         switch (evt)
         {
-            case "ready":
-            {
-                var device = root.TryGetProperty("device", out var d) ? d.GetString() : "?";
-                var ver = root.TryGetProperty("separator_version", out var v) ? v.GetString() : "?";
-                AppLogger.Info("driver", $"Ready — audio-separator {ver} on {device}");
+            case ReadyEvent ready:
+                AppLogger.Info(
+                    "driver",
+                    $"Ready — audio-separator {ready.SeparatorVersion ?? "?"} on {ready.Device ?? "?"}"
+                );
                 _readyTcs?.TrySetResult();
                 _ = SendCommandAsync(new { cmd = "list_presets" }, CancellationToken.None);
                 break;
-            }
 
-            case "presets":
+            case PresetsEvent { Presets: { Count: > 0 } entries }:
             {
-                if (!root.TryGetProperty("presets", out var presetsEl))
-                    break;
-                var presets = ParsePresetsFromJson(presetsEl);
+                var presets = DriverPresetCatalog.ToPresets(entries);
                 if (presets.Count > 0)
                     PresetsLoaded?.Invoke(presets);
                 break;
             }
 
-            case "phase":
-            {
-                var phase = root.TryGetProperty("phase", out var p) ? p.GetString() ?? "" : "";
-                job?.Progress?.Report(MapPhase(phase, root));
+            case PhaseEvent phase:
+                job?.Progress?.Report(MapPhase(phase));
                 break;
-            }
 
-            case "progress":
-            {
-                if (job is null)
-                    break;
-                var current = root.TryGetProperty("current", out var c) ? c.GetInt32() : 0;
-                var total =
-                    root.TryGetProperty("total", out var t) && t.ValueKind != JsonValueKind.Null
-                        ? t.GetInt32()
-                        : (int?)null;
-                var final =
-                    root.TryGetProperty("final", out var f) && f.ValueKind != JsonValueKind.Null
-                        ? f.GetBoolean()
-                        : (bool?)null;
-                job.Progress?.Report(
+            case ProgressEvent progress:
+                job?.Progress?.Report(
                     new JobProgress
                     {
                         Phase = "progress",
-                        Current = current,
-                        Total = total,
-                        Final = final,
+                        Current = progress.Current ?? 0,
+                        Total = progress.Total,
+                        Final = progress.Final,
                     }
                 );
                 break;
-            }
 
-            case "log":
+            case LogEvent log:
             {
-                var level = root.TryGetProperty("level", out var l)
-                    ? l.GetString() ?? "info"
-                    : "info";
-                var msg = root.TryGetProperty("message", out var m) ? m.GetString() ?? "" : "";
+                var level = log.Level ?? "info";
+                var msg = log.Message ?? "";
                 LogDriverMessage(level, msg);
                 // Retain the structured log as the activity tail: on a native crash
                 // (no stderr) this is the only record of what the driver was doing.
@@ -424,10 +417,10 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 break;
             }
 
-            case "stem_written":
+            case StemWrittenEvent { } stemWritten:
             {
-                var stem = root.TryGetProperty("stem", out var s) ? s.GetString() ?? "" : "";
-                var path = root.TryGetProperty("path", out var p) ? p.GetString() ?? "" : "";
+                var stem = stemWritten.Stem ?? "";
+                var path = stemWritten.Path ?? "";
                 AppLogger.Info("driver", $"stem_written: {stem} → {path}");
                 job?.Progress?.Report(
                     new JobProgress
@@ -440,98 +433,82 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 break;
             }
 
-            case "job_completed":
+            case JobCompletedEvent completed when job is not null:
             {
-                if (job is null)
-                    break;
-                var outputs = ParseOutputList(root, "outputs");
-                var discarded = ParseOutputList(root, "discarded");
-                var dur = root.TryGetProperty("duration_seconds", out var d) ? d.GetDouble() : 0;
+                var outputs = ToJobOutputs(completed.Outputs);
+                var discarded = ToJobOutputs(completed.Discarded);
+                var dur = completed.DurationSeconds ?? 0;
                 AppLogger.Info("driver", $"Job done in {dur:F1}s — {outputs.Count} stem(s)");
                 job.Tcs.TrySetResult(new JobResult(true, outputs, discarded, dur, null, null));
                 break;
             }
 
-            case "job_cancelled":
-            {
-                if (job is null)
-                    break;
+            case JobCancelledEvent when job is not null:
                 AppLogger.Debug("driver", "Job cancelled by driver");
                 job.CancelAcknowledged.TrySetResult();
                 job.Tcs.TrySetCanceled();
                 break;
-            }
 
-            case "job_failed":
+            case JobFailedEvent failed when job is not null:
             {
-                if (job is null)
-                    break;
-                var err = root.TryGetProperty("error", out var e)
-                    ? e.GetString() ?? "unknown"
-                    : "unknown";
-                var tb = root.TryGetProperty("traceback", out var t) ? t.GetString() : null;
+                var err = failed.Error ?? "unknown";
                 AppLogger.Error("driver", $"Job failed: {err}");
-                if (tb is { Length: > 0 })
+                if (failed.Traceback is { Length: > 0 } tb)
                     AppLogger.Debug("driver.tb", tb);
-                job.Tcs.TrySetResult(new JobResult(false, [], [], 0, err, tb));
+                job.Tcs.TrySetResult(new JobResult(false, [], [], 0, err, failed.Traceback));
                 break;
             }
 
-            case "error":
-            {
-                var err = root.TryGetProperty("error", out var e) ? e.GetString() ?? "" : "";
-                AppLogger.Warning("driver", $"Driver error: {err}");
+            case ErrorEvent error:
+                AppLogger.Warning("driver", $"Driver error: {error.Error ?? ""}");
                 break;
-            }
 
-            case "bye":
+            case ByeEvent:
                 AppLogger.Debug("driver", "Driver exited cleanly");
                 break;
         }
     }
 
-    private static JobProgress MapPhase(string phase, JsonElement root) =>
-        phase switch
+    // The Phase string here is the legacy JobProgress label the GUI timeline and CLI match on, not
+    // the wire discriminator (now the typed DriverPhase). Reshaping JobProgress to carry the phase
+    // as a first-class value is tracked separately (see the JobProgress.Phase follow-up).
+    private static JobProgress MapPhase(PhaseEvent evt) =>
+        evt.Phase switch
         {
-            "downloading_model" => new JobProgress
+            DriverPhase.DownloadingModel => new JobProgress
             {
-                Phase = phase,
-                Model = root.TryGetProperty("model", out var m) ? m.GetString() : null,
-                ModelIndex = root.TryGetProperty("model_index", out var mi) ? mi.GetInt32() : null,
-                ModelCount = root.TryGetProperty("model_count", out var mc) ? mc.GetInt32() : null,
-                Cached = root.TryGetProperty("cached", out var c) ? c.GetBoolean() : null,
+                Phase = "downloading_model",
+                Model = evt.Model,
+                ModelIndex = evt.ModelIndex,
+                ModelCount = evt.ModelCount,
+                Cached = evt.Cached,
             },
-            "loading_model" => new JobProgress
+            DriverPhase.LoadingModel => new JobProgress
             {
-                Phase = phase,
-                Model = root.TryGetProperty("model", out var m) ? m.GetString() : null,
-                ModelIndex = root.TryGetProperty("model_index", out var mi) ? mi.GetInt32() : null,
-                ModelCount = root.TryGetProperty("model_count", out var mc) ? mc.GetInt32() : null,
+                Phase = "loading_model",
+                Model = evt.Model,
+                ModelIndex = evt.ModelIndex,
+                ModelCount = evt.ModelCount,
             },
-            "ensembling" => new JobProgress
+            DriverPhase.Ensembling => new JobProgress { Phase = "ensembling", Stem = evt.Stem },
+            DriverPhase.Separating => new JobProgress
             {
-                Phase = phase,
-                Stem = root.TryGetProperty("stem", out var s) ? s.GetString() : null,
+                Phase = "separating",
+                ModelCount = evt.ModelCount,
             },
-            "separating" => new JobProgress
-            {
-                Phase = phase,
-                ModelCount = root.TryGetProperty("model_count", out var mc) ? mc.GetInt32() : null,
-            },
-            _ => new JobProgress { Phase = phase },
+            _ => new JobProgress { Phase = evt.Phase.ToString() },
         };
 
-    private static List<JobOutput> ParseOutputList(JsonElement root, string key)
+    private static List<JobOutput> ToJobOutputs(List<DriverJobOutput>? items)
     {
         var result = new List<JobOutput>();
-        if (!root.TryGetProperty(key, out var arr) || arr.ValueKind != JsonValueKind.Array)
+        if (items is null)
             return result;
-        foreach (var item in arr.EnumerateArray())
+        foreach (var item in items)
         {
-            var stem = item.TryGetProperty("stem", out var s) ? s.GetString() ?? "" : "";
-            var path = item.TryGetProperty("path", out var p) ? p.GetString() ?? "" : "";
+            var path = item.Path ?? "";
             if (path.Length > 0)
-                result.Add(new JobOutput(stem, path));
+                result.Add(new JobOutput(item.Stem ?? "", path));
         }
         return result;
     }
@@ -680,87 +657,30 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
         }
     }
 
-    // ── Preset parsing ───────────────────────────────────────────────────────
+    // ── Test seams ───────────────────────────────────────────────────────────
+    // The dispatch path normally runs only against a live driver process. These seams let the
+    // characterization tests install an observable active job and feed raw event lines through the
+    // exact same dispatcher the read loop uses, without spawning Python.
 
-    private sealed class PresetEntryDto
+    internal (Task<JobResult> Result, Task CancelAcknowledged) BeginJobForTest(
+        string id,
+        IProgress<JobProgress>? progress
+    )
     {
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = "";
-
-        [JsonPropertyName("description")]
-        public string Description { get; set; } = "";
-
-        [JsonPropertyName("models")]
-        public List<string> Models { get; set; } = [];
-
-        [JsonPropertyName("algorithm")]
-        public string? Algorithm { get; set; }
-
-        [JsonPropertyName("weights")]
-        public List<double>? Weights { get; set; }
+        var job = new ActiveJob { Id = id, Progress = progress };
+        _activeJob = job;
+        return (job.Tcs.Task, job.CancelAcknowledged.Task);
     }
 
-    private static readonly JsonSerializerOptions _presetJsonOpts = new()
+    internal Task ArmReadyForTest()
     {
-        PropertyNameCaseInsensitive = true,
-    };
-
-    private static IReadOnlyList<Preset> ParsePresetsFromJson(JsonElement presetsEl)
-    {
-        Dictionary<string, PresetEntryDto>? dict;
-        try
-        {
-            dict = presetsEl.Deserialize<Dictionary<string, PresetEntryDto>>(_presetJsonOpts);
-        }
-        catch (Exception ex)
-        {
-            AppLogger.Warning("driver", $"Failed to parse preset catalog: {ex.Message}");
-            return [];
-        }
-
-        if (dict is null)
-            return [];
-
-        var result = new List<Preset>(dict.Count);
-        foreach (var (id, entry) in dict)
-        {
-            var category = InferPresetCategory(id);
-            var label = StripCategoryPrefix(entry.Name.Length > 0 ? entry.Name : id, category);
-            result.Add(
-                new Preset(
-                    id,
-                    label,
-                    category,
-                    entry.Description,
-                    ModelCount: entry.Models.Count,
-                    Vram: string.Empty,
-                    Models: entry.Models,
-                    EnsembleAlgorithm: string.IsNullOrWhiteSpace(entry.Algorithm)
-                        ? null
-                        : entry.Algorithm
-                )
-            );
-        }
-        return result;
+        _readyTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        return _readyTcs.Task;
     }
 
-    private static PresetCategory InferPresetCategory(string id) =>
-        id.StartsWith("vocal_") ? PresetCategory.Vocals
-        : id.StartsWith("instrumental_") || id == "karaoke" ? PresetCategory.Instrumentals
-        : PresetCategory.Other;
+    internal void DispatchLineForTest(string line) => DispatchEvent(line);
 
-    private static string StripCategoryPrefix(string name, PresetCategory category)
-    {
-        var prefix = category switch
-        {
-            PresetCategory.Vocals => "Vocal ",
-            PresetCategory.Instrumentals => "Instrumental ",
-            _ => "",
-        };
-        return name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-            ? name[prefix.Length..]
-            : name;
-    }
+    internal IReadOnlyList<string> ActivityTailForTest() => _activityTail.Snapshot();
 
     // ── IAsyncDisposable ─────────────────────────────────────────────────────
 
