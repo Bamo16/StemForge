@@ -16,6 +16,11 @@
             Link="tools\separator_driver.py"
         />
         <Content
+            Include="..\..\tools\driver_protocol.json"
+            CopyToOutputDirectory="PreserveNewest"
+            Link="tools\driver_protocol.json"
+        />
+        <Content
             Include="..\..\tools\detect_variant.py"
             CopyToOutputDirectory="PreserveNewest"
             Link="tools\detect_variant.py"

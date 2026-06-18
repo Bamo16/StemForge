@@ -69,5 +69,9 @@ _Avoid_: "pass" (reserved intuition for a single model running, which is a [[Mod
 ### Model run
 One execution of a single [[Model]] within a [[Separation run]]. A single-model run contains one; an [[Ensemble]] run contains several, combined by the [[Ensemble algorithm]].
 
+### Phase
+A sub-state of a single [[Separation run]] as it progresses, reported by the separator driver: `downloading_model`, `loading_model`, `separating`, `ensembling`, `writing_output`, `finalizing`. A phase says *what kind of work* is happening; progress (a percentage) says *how far along* it is. Distinct from the run's lifecycle outcome (accepted, completed, failed, cancelled).
+_Avoid_: using "phase" for a bare progress percentage, for a [[Separation run]] itself, or (historically) for the coarse download/separate distinction the progress event used to carry.
+
 ### Separation pipeline
 The UI-agnostic orchestrator that takes one [[Job]] and drives it to completion: download (for URL sources), each [[Separation run]] in order, optional drum extraction, optional keep-source, and provenance tagging. Reports progress as a single update stream consumed by both the GUI (via an adapter that maps updates onto the queue view) and the CLI. Knows nothing about view-models or the UI thread.

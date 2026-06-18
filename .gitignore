@@ -4,6 +4,10 @@ design_handoff_stemforge/
 # Test results / coverage output (generated, not committed)
 **/TestResults/
 
+# Python bytecode cache (the separator driver lives in tools/)
+__pycache__/
+*.pyc
+
 # Build outputs
 [Bb]in/
 [Oo]bj/
