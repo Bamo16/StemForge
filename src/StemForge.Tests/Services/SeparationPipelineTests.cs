@@ -224,13 +224,14 @@ public sealed class SeparationPipelineTests : IDisposable
             [
                 new JobProgress
                 {
-                    Phase = "loading_model",
+                    Kind = JobProgressKind.Phase,
+                    Phase = JobPhase.LoadingModel,
                     ModelIndex = 1,
                     ModelCount = 1,
                 },
                 new JobProgress
                 {
-                    Phase = "progress",
+                    Kind = JobProgressKind.Progress,
                     Current = 50,
                     Total = 100,
                 },
@@ -284,13 +285,14 @@ public sealed class SeparationPipelineTests : IDisposable
             [
                 new JobProgress
                 {
-                    Phase = "loading_model",
+                    Kind = JobProgressKind.Phase,
+                    Phase = JobPhase.LoadingModel,
                     ModelIndex = 1,
                     ModelCount = 1,
                 },
                 new JobProgress
                 {
-                    Phase = "progress",
+                    Kind = JobProgressKind.Progress,
                     Current = 50,
                     Total = 100,
                 },

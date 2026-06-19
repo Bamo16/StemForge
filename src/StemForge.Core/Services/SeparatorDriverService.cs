@@ -389,7 +389,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 job?.Progress?.Report(
                     new JobProgress
                     {
-                        Phase = "progress",
+                        Kind = JobProgressKind.Progress,
                         Current = progress.Current ?? 0,
                         Total = progress.Total,
                         Final = progress.Final,
@@ -409,7 +409,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 job?.Progress?.Report(
                     new JobProgress
                     {
-                        Phase = "log",
+                        Kind = JobProgressKind.Log,
                         LogLevel = level,
                         LogMessage = msg,
                     }
@@ -425,7 +425,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 job?.Progress?.Report(
                     new JobProgress
                     {
-                        Phase = "stem_written",
+                        Kind = JobProgressKind.StemWritten,
                         OutputStem = stem,
                         OutputPath = path,
                     }
@@ -469,15 +469,16 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
         }
     }
 
-    // The Phase string here is the legacy JobProgress label the GUI timeline and CLI match on, not
-    // the wire discriminator (now the typed DriverPhase). Reshaping JobProgress to carry the phase
-    // as a first-class value is tracked separately (see the JobProgress.Phase follow-up).
+    // Maps the typed wire phase (DriverPhase, internal to the protocol layer) onto the public
+    // JobProgress phase sub-state. Kind is always Phase here; the phase enum carries the sub-state,
+    // so the event-kind and the phase are never conflated in a single string.
     private static JobProgress MapPhase(PhaseEvent evt) =>
         evt.Phase switch
         {
             DriverPhase.DownloadingModel => new JobProgress
             {
-                Phase = "downloading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.DownloadingModel,
                 Model = evt.Model,
                 ModelIndex = evt.ModelIndex,
                 ModelCount = evt.ModelCount,
@@ -485,18 +486,29 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
             },
             DriverPhase.LoadingModel => new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 Model = evt.Model,
                 ModelIndex = evt.ModelIndex,
                 ModelCount = evt.ModelCount,
             },
-            DriverPhase.Ensembling => new JobProgress { Phase = "ensembling", Stem = evt.Stem },
+            DriverPhase.Ensembling => new JobProgress
+            {
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.Ensembling,
+                Stem = evt.Stem,
+            },
             DriverPhase.Separating => new JobProgress
             {
-                Phase = "separating",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.Separating,
                 ModelCount = evt.ModelCount,
             },
-            _ => new JobProgress { Phase = evt.Phase.ToString() },
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(evt),
+                evt.Phase,
+                "Unhandled driver phase"
+            ),
         };
 
     private static List<JobOutput> ToJobOutputs(List<DriverJobOutput>? items)
