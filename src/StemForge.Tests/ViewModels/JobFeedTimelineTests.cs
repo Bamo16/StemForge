@@ -40,14 +40,14 @@ public sealed class JobFeedTimelineTests
         state ??= new JobQueueService.RunProgressState();
 
         // Mirror the model-tracking update that SeparationPipeline does before reporting.
-        if (p.Phase == "loading_model")
+        if (p.Phase == JobPhase.LoadingModel)
         {
             state.ModelIndex = p.ModelIndex ?? 1;
             state.ModelCount = p.ModelCount ?? 1;
         }
 
         int overallPercent;
-        if (p.Phase == "progress" && p.Total is > 0 && p.Current is { } cur)
+        if (p.Kind == JobProgressKind.Progress && p.Total is > 0 && p.Current is { } cur)
         {
             var withinModel = Math.Min(100, cur * 100 / p.Total.Value);
             var withinPreset = ((state.ModelIndex - 1) * 100 + withinModel) / state.ModelCount;
@@ -60,7 +60,7 @@ public sealed class JobFeedTimelineTests
 
         var update = new JobUpdate
         {
-            Phase = p.Phase,
+            Phase = p.UpdatePhase,
             RunIndex = presetIndex,
             RunCount = totalSteps,
             RunLabel = presetLabel,
@@ -92,7 +92,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 1,
                 ModelCount = 1,
             }
@@ -110,7 +111,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 1,
                 ModelCount = 2,
             }
@@ -128,7 +130,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 1,
                 ModelCount = 1,
             },
@@ -151,7 +154,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "downloading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.DownloadingModel,
                 ModelIndex = 1,
                 ModelCount = 1,
                 Cached = false,
@@ -170,7 +174,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "downloading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.DownloadingModel,
                 ModelIndex = 1,
                 ModelCount = 1,
                 Cached = true,
@@ -187,7 +192,15 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(vm, new JobProgress { Phase = "separating", ModelCount = 1 });
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.Separating,
+                ModelCount = 1,
+            }
+        );
 
         Assert.Contains("Separating", vm.LogOutput);
     }
@@ -197,7 +210,15 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(vm, new JobProgress { Phase = "separating", ModelCount = 3 });
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.Separating,
+                ModelCount = 3,
+            }
+        );
 
         Assert.Contains("3 models", vm.LogOutput);
     }
@@ -209,7 +230,15 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(vm, new JobProgress { Phase = "ensembling", Stem = "Vocals" });
+        Invoke(
+            vm,
+            new JobProgress
+            {
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.Ensembling,
+                Stem = "Vocals",
+            }
+        );
 
         Assert.Contains("Combining Vocals", vm.LogOutput);
     }
@@ -219,7 +248,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(vm, new JobProgress { Phase = "ensembling" });
+        Invoke(vm, new JobProgress { Kind = JobProgressKind.Phase, Phase = JobPhase.Ensembling });
 
         Assert.Contains("Combining stems", vm.LogOutput);
     }
@@ -235,7 +264,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "log",
+                Kind = JobProgressKind.Log,
                 LogLevel = "info",
                 LogMessage = "Input audio subtype: PCM_24",
             }
@@ -253,7 +282,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "log",
+                Kind = JobProgressKind.Log,
                 LogLevel = "warning",
                 LogMessage = "Something looks wrong",
             }
@@ -271,7 +300,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "log",
+                Kind = JobProgressKind.Log,
                 LogLevel = "error",
                 LogMessage = "Fatal error in model",
             }
@@ -324,7 +353,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "progress",
+                Kind = JobProgressKind.Progress,
                 Current = 50,
                 Total = 100,
             }
@@ -344,7 +373,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 Model = "bs_roformer_vocals.ckpt",
                 ModelIndex = 1,
                 ModelCount = 2,
@@ -363,7 +393,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 Model = "bs_roformer_vocals.ckpt",
                 ModelIndex = 1,
                 ModelCount = 1,
@@ -383,7 +414,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 2,
                 ModelCount = 3,
             }
@@ -402,7 +434,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 1,
                 ModelCount = 1,
             },
@@ -426,7 +459,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 1,
                 ModelCount = 1,
             },
@@ -436,7 +470,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "progress",
+                Kind = JobProgressKind.Progress,
                 Current = 10,
                 Total = 100,
             },
@@ -457,7 +491,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 1,
                 ModelCount = 1,
             },
@@ -467,7 +502,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "progress",
+                Kind = JobProgressKind.Progress,
                 Current = 10,
                 Total = 100,
             },
@@ -477,7 +512,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "progress",
+                Kind = JobProgressKind.Progress,
                 Current = 20,
                 Total = 100,
             },
@@ -507,7 +542,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 1,
                 ModelCount = 2,
             },
@@ -517,7 +553,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "progress",
+                Kind = JobProgressKind.Progress,
                 Current = 100,
                 Total = 100,
             },
@@ -538,7 +574,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 1,
                 ModelCount = 2,
             },
@@ -548,7 +585,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "progress",
+                Kind = JobProgressKind.Progress,
                 Current = 100,
                 Total = 100,
             },
@@ -558,7 +595,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 2,
                 ModelCount = 2,
             },
@@ -568,7 +606,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "progress",
+                Kind = JobProgressKind.Progress,
                 Current = 100,
                 Total = 100,
             },
@@ -589,7 +627,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 1,
                 ModelCount = 2,
             },
@@ -599,7 +638,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "progress",
+                Kind = JobProgressKind.Progress,
                 Current = 100,
                 Total = 100,
             },
@@ -611,7 +650,8 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "loading_model",
+                Kind = JobProgressKind.Phase,
+                Phase = JobPhase.LoadingModel,
                 ModelIndex = 2,
                 ModelCount = 2,
             },
@@ -621,7 +661,7 @@ public sealed class JobFeedTimelineTests
             vm,
             new JobProgress
             {
-                Phase = "progress",
+                Kind = JobProgressKind.Progress,
                 Current = 10,
                 Total = 100,
             },

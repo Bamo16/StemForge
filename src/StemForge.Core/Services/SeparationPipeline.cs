@@ -133,14 +133,17 @@ public sealed class SeparationPipeline(
 
             var driverProgress = new Progress<JobProgress>(p =>
             {
-                if (p.Phase == "loading_model")
+                if (p.Phase == JobPhase.LoadingModel)
                 {
                     currentModelIndex = p.ModelIndex ?? 1;
                     currentModelCount = p.ModelCount ?? 1;
                 }
 
                 int overallPercent;
-                if (p is { Phase: "progress", Total: > 0 and var total, Current: { } cur })
+                if (
+                    p is
+                    { Kind: JobProgressKind.Progress, Total: > 0 and var total, Current: { } cur }
+                )
                 {
                     var withinModel = Math.Min(100, cur * 100 / total);
                     var withinPreset =
@@ -166,7 +169,7 @@ public sealed class SeparationPipeline(
                 progress?.Report(
                     new JobUpdate
                     {
-                        Phase = p.Phase,
+                        Phase = p.UpdatePhase,
                         RunIndex = runIndex,
                         RunCount = totalSteps,
                         RunLabel = runLabel,
@@ -247,14 +250,14 @@ public sealed class SeparationPipeline(
 
             var drumProgress = new Progress<JobProgress>(p =>
             {
-                if (p.Phase == "loading_model")
+                if (p.Phase == JobPhase.LoadingModel)
                 {
                     drumModelIndex = p.ModelIndex ?? 1;
                     drumModelCount = p.ModelCount ?? 1;
                 }
 
                 int overallPercent;
-                if (p.Phase == "progress" && p.Total is > 0 && p.Current is { } cur)
+                if (p.Kind == JobProgressKind.Progress && p.Total is > 0 && p.Current is { } cur)
                 {
                     var withinModel = Math.Min(100, cur * 100 / p.Total.Value);
                     var withinPreset = ((drumModelIndex - 1) * 100 + withinModel) / drumModelCount;
@@ -275,7 +278,7 @@ public sealed class SeparationPipeline(
                 progress?.Report(
                     new JobUpdate
                     {
-                        Phase = p.Phase,
+                        Phase = p.UpdatePhase,
                         RunIndex = drumIndex,
                         RunCount = totalSteps,
                         RunLabel = drumLabel,

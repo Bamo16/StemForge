@@ -22,8 +22,12 @@ public sealed class FakeSeparatorDriverService : ISeparatorDriverService
     )
     {
         ct.ThrowIfCancellationRequested();
-        ProgressReporter?.Report(new JobProgress { Phase = "separating" });
-        progress?.Report(new JobProgress { Phase = "separating" });
+        ProgressReporter?.Report(
+            new JobProgress { Kind = JobProgressKind.Phase, Phase = JobPhase.Separating }
+        );
+        progress?.Report(
+            new JobProgress { Kind = JobProgressKind.Phase, Phase = JobPhase.Separating }
+        );
         return Task.FromResult(NextResult);
     }
 

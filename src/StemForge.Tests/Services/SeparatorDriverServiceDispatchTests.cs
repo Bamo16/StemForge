@@ -91,7 +91,8 @@ public sealed class SeparatorDriverServiceDispatchTests
         );
 
         var report = progress.Last;
-        Assert.Equal("downloading_model", report.Phase);
+        Assert.Equal(JobProgressKind.Phase, report.Kind);
+        Assert.Equal(JobPhase.DownloadingModel, report.Phase);
         Assert.Equal("foo.ckpt", report.Model);
         Assert.Equal(1, report.ModelIndex);
         Assert.Equal(3, report.ModelCount);
@@ -110,7 +111,8 @@ public sealed class SeparatorDriverServiceDispatchTests
         );
 
         var report = progress.Last;
-        Assert.Equal("loading_model", report.Phase);
+        Assert.Equal(JobProgressKind.Phase, report.Kind);
+        Assert.Equal(JobPhase.LoadingModel, report.Phase);
         Assert.Equal("foo.ckpt", report.Model);
         Assert.Equal(2, report.ModelIndex);
         Assert.Equal(3, report.ModelCount);
@@ -127,7 +129,7 @@ public sealed class SeparatorDriverServiceDispatchTests
             """{"event":"phase","id":"job_1","phase":"ensembling","stem":"Vocals"}"""
         );
 
-        Assert.Equal("ensembling", progress.Last.Phase);
+        Assert.Equal(JobPhase.Ensembling, progress.Last.Phase);
         Assert.Equal("Vocals", progress.Last.Stem);
     }
 
@@ -140,7 +142,7 @@ public sealed class SeparatorDriverServiceDispatchTests
             """{"event":"phase","id":"job_1","phase":"separating","model_count":2}"""
         );
 
-        Assert.Equal("separating", progress.Last.Phase);
+        Assert.Equal(JobPhase.Separating, progress.Last.Phase);
         Assert.Equal(2, progress.Last.ModelCount);
     }
 
@@ -167,7 +169,8 @@ public sealed class SeparatorDriverServiceDispatchTests
         );
 
         var report = progress.Last;
-        Assert.Equal("progress", report.Phase);
+        Assert.Equal(JobProgressKind.Progress, report.Kind);
+        Assert.Null(report.Phase);
         Assert.Equal(1234, report.Current);
         Assert.Equal(5678, report.Total);
         Assert.True(report.Final);
@@ -200,7 +203,7 @@ public sealed class SeparatorDriverServiceDispatchTests
         );
 
         var report = progress.Last;
-        Assert.Equal("log", report.Phase);
+        Assert.Equal(JobProgressKind.Log, report.Kind);
         Assert.Equal("warning", report.LogLevel);
         Assert.Equal("Detected input bit depth: 24-bit", report.LogMessage);
         Assert.Contains("Detected input bit depth: 24-bit", svc.ActivityTailForTest());
@@ -228,7 +231,7 @@ public sealed class SeparatorDriverServiceDispatchTests
         );
 
         var report = progress.Last;
-        Assert.Equal("stem_written", report.Phase);
+        Assert.Equal(JobProgressKind.StemWritten, report.Kind);
         Assert.Equal("Vocals", report.OutputStem);
         Assert.Equal("/out/song_vocals.flac", report.OutputPath);
     }
