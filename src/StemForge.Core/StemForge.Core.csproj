@@ -30,6 +30,11 @@
             CopyToOutputDirectory="PreserveNewest"
             Link="tools\list_presets.py"
         />
+        <Content
+            Include="..\..\tools\list_models.py"
+            CopyToOutputDirectory="PreserveNewest"
+            Link="tools\list_models.py"
+        />
     </ItemGroup>
 
     <ItemGroup>

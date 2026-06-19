@@ -4,12 +4,16 @@ using StemForge.Core.Models;
 namespace StemForge.Core.Services;
 
 /// <summary>
-/// Runs audio-separator --list_models --list_format=json and parses the result.
-/// Results are cached until Invalidate() or a forced refresh.
+/// Lists supported separation models and parses the result. Runs the lightweight
+/// list_models.py one-shot, which reads the model registry from audio_separator's static
+/// data files (models.json, models-scores.json) plus the cached remote download list,
+/// WITHOUT importing the audio_separator package (which would pull in torch at module load
+/// even though no inference happens). Results are cached until Invalidate() or a forced refresh.
 /// </summary>
-public sealed class ModelCatalogService(IProcessRunner runner)
+public sealed class ModelCatalogService(IProcessRunner runner, AppPaths paths)
 {
     private readonly IProcessRunner _runner = runner;
+    private readonly AppPaths _paths = paths;
     private IReadOnlyList<ModelInfo>? _cache;
 
     public void Invalidate() => _cache = null;
@@ -23,12 +27,33 @@ public sealed class ModelCatalogService(IProcessRunner runner)
         if (!forceRefresh && _cache is not null)
             return _cache;
 
-        var result = await _runner.RunAsync(
-            audioSeparatorExe,
-            ["--list_models", "--list_format=json"],
-            ct,
-            logRawLines: false
-        );
+        var script = Path.Combine(AppContext.BaseDirectory, "tools", "list_models.py");
+
+        if (!File.Exists(script))
+        {
+            AppLogger.Warning("ModelCatalog", $"list_models.py not found at: {script}");
+            _cache = [];
+            return _cache;
+        }
+
+        ProcessRunner.Result result;
+        try
+        {
+            // The script reads download_checks.json from the models directory and merges it
+            // with the bundled lists; pass the directory so the live UVR catalog is included.
+            result = await _runner.RunAsync(
+                _paths.SeparationDriverPython,
+                [script, _paths.ModelsDirectory],
+                ct,
+                logRawLines: false
+            );
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning("ModelCatalog", $"Failed to run list_models.py: {ex.Message}");
+            _cache = [];
+            return _cache;
+        }
 
         // JSON goes to stdout; fall back to combined output if stdout is empty.
         var raw = string.IsNullOrWhiteSpace(result.Stdout) ? result.Output : result.Stdout;
