@@ -12,6 +12,13 @@ namespace StemForge.Core.Services;
 ///   RunStreamingStderrAsync — capture stdout silently, stream stderr live, throws on non-zero exit
 /// All overloads drain both stdout and stderr to prevent OS pipe-buffer deadlocks.
 /// Cancellation kills the entire process tree; the token is checked after exit.
+///
+/// Orphan handling: on Windows and Linux we set <see cref="ProcessStartInfo.KillOnParentExit"/>
+/// so the OS terminates the child if this app dies abruptly (crash, force-kill, SIGKILL) without
+/// running our cooperative cancellation. That property is supported only on Windows/Linux/Android
+/// (Linux uses prctl(PR_SET_PDEATHSIG)); macOS has no equivalent, so there the cancellation-driven
+/// tree kill below remains the only cleanup path. The token-driven Kill(entireProcessTree: true)
+/// handles cooperative cancellation on every platform regardless.
 /// </summary>
 public sealed class ProcessRunner : IProcessRunner
 {
@@ -113,6 +120,12 @@ public sealed class ProcessRunner : IProcessRunner
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
         }.WithEnvironmentVariables(("PYTHONIOENCODING", "utf-8"), ("PYTHONUTF8", "1"));
+
+        // Tie the child's lifetime to ours on platforms that support it, so a hard crash or
+        // force-kill of this app (which never runs the cancellation callback below) still reaps
+        // the child. macOS lacks the primitive, so it relies on the token-driven tree kill alone.
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
+            startInfo.KillOnParentExit = true;
 
         using var p =
             Process.Start(startInfo)
