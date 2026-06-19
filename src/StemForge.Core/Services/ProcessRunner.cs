@@ -124,6 +124,10 @@ public sealed class ProcessRunner : IProcessRunner
         // Tie the child's lifetime to ours on platforms that support it, so a hard crash or
         // force-kill of this app (which never runs the cancellation callback below) still reaps
         // the child. macOS lacks the primitive, so it relies on the token-driven tree kill alone.
+        // This uses OperatingSystem.Is*() rather than the injectable PlatformInfo on purpose:
+        // KillOnParentExit is [SupportedOSPlatform]-attributed, so the real runtime OS (not a
+        // pinned/fakeable abstraction) must gate it, and only these intrinsics are recognized as
+        // guards by the CA1416 platform-compatibility analyzer.
         if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
             startInfo.KillOnParentExit = true;
 

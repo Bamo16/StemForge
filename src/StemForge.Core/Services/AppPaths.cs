@@ -72,7 +72,7 @@ public sealed class AppPaths(AppSettings settings, PlatformInfo? platform = null
 
     /// <summary>Path to the bundled ffmpeg binary inside <see cref="BundledBinDir"/>.</summary>
     public string BundledFfmpeg =>
-        Path.Combine(BundledBinDir, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg");
+        Path.Combine(BundledBinDir, $"ffmpeg{_platform.ExecutableSuffix}");
 
     /// <summary>
     /// Path or PATH-resolvable name of the deno binary. yt-dlp auto-discovers deno on PATH
@@ -83,12 +83,11 @@ public sealed class AppPaths(AppSettings settings, PlatformInfo? platform = null
         OverrideFor(ToolKind.Deno) ?? (File.Exists(BundledDeno) ? BundledDeno : "deno");
 
     /// <summary>Path to the bundled deno binary inside <see cref="BundledBinDir"/>.</summary>
-    public string BundledDeno =>
-        Path.Combine(BundledBinDir, OperatingSystem.IsWindows() ? "deno.exe" : "deno");
+    public string BundledDeno => Path.Combine(BundledBinDir, $"deno{_platform.ExecutableSuffix}");
 
     /// <summary>Path to the bundled yt-dlp binary inside <see cref="BundledBinDir"/>.</summary>
     public string BundledYtdlp =>
-        Path.Combine(BundledBinDir, OperatingSystem.IsWindows() ? "yt-dlp.exe" : "yt-dlp");
+        Path.Combine(BundledBinDir, $"yt-dlp{_platform.ExecutableSuffix}");
 
     // ── Defaults (exposed so the Settings UI can show placeholder text) ──────
 
