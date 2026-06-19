@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace StemForge.Core.Services;
 
 /// <summary>
@@ -19,76 +21,105 @@ public sealed record EnsembleAlgorithmInfo(string Key, string Label, string Desc
 /// </summary>
 public static class EnsembleAlgorithmCatalog
 {
-    // Canonical entries, keyed by the value audio-separator emits.
-    private static readonly IReadOnlyList<EnsembleAlgorithmInfo> _known =
-    [
-        new(
-            "avg_wave",
-            "Averaged",
-            "Average the waveforms of all models. Simple, reliable general-purpose blend."
-        ),
-        new(
-            "median_wave",
-            "Median",
-            "Median of waveforms across models. More robust to outlier models than averaging."
-        ),
-        new(
-            "min_wave",
-            "Min wave",
-            "Minimum waveform amplitude at each sample. Aggressively suppresses anything not shared by all models."
-        ),
-        new(
-            "max_wave",
-            "Max wave",
-            "Maximum waveform amplitude at each sample. Maximises captured signal across models."
-        ),
-        new(
-            "avg_fft",
-            "Mean FFT",
-            "Mean spectral magnitude. Smoother frequency-domain blend than avg_wave."
-        ),
-        new(
-            "median_fft",
-            "Median FFT",
-            "Median spectral magnitude. Robust frequency-domain blend, good when one model is significantly noisier than the others."
-        ),
-        new(
-            "min_fft",
-            "Min FFT",
-            "Minimum spectral magnitude at each frequency. Aggressively suppresses noise at the cost of detail."
-        ),
-        new(
-            "max_fft",
-            "Max FFT",
-            "Maximum spectral magnitude at each frequency. Maximises loudness and recovered detail."
-        ),
-        new(
-            "uvr_max_spec",
-            "Max spectrum",
-            "UVR maximum-spectrum blend. Keeps the loudest spectral content across models, maximising detail and fullness."
-        ),
-        new(
-            "uvr_min_spec",
-            "Min spectrum",
-            "UVR minimum-spectrum blend. Keeps the quietest spectral content across models, suppressing anything not shared by all of them."
-        ),
-    ];
-
-    // Alias keys that map onto a canonical entry (same algorithm, different name).
-    private static readonly IReadOnlyDictionary<string, string> _aliases = new Dictionary<
-        string,
-        string
-    >(StringComparer.OrdinalIgnoreCase)
+    static EnsembleAlgorithmCatalog()
     {
-        // audio-separator emits avg_fft; the Models picker historically used mean_fft.
-        ["mean_fft"] = "avg_fft",
-    };
+        var definitions = new (EnsembleAlgorithmInfo Info, string[] Aliases)[]
+        {
+            (
+                new(
+                    "avg_wave",
+                    "Averaged",
+                    "Average the waveforms of all models. Simple, reliable general-purpose blend."
+                ),
+                []
+            ),
+            (
+                new(
+                    "median_wave",
+                    "Median",
+                    "Median of waveforms across models. More robust to outlier models than averaging."
+                ),
+                []
+            ),
+            (
+                new(
+                    "min_wave",
+                    "Min wave",
+                    "Minimum waveform amplitude at each sample. Aggressively suppresses anything not shared by all models."
+                ),
+                []
+            ),
+            (
+                new(
+                    "max_wave",
+                    "Max wave",
+                    "Maximum waveform amplitude at each sample. Maximises captured signal across models."
+                ),
+                []
+            ),
+            (
+                new(
+                    "avg_fft",
+                    "Mean FFT",
+                    "Mean spectral magnitude. Smoother frequency-domain blend than avg_wave."
+                ),
+                ["mean_fft"] // audio-separator emits avg_fft; the Models picker historically used mean_fft.
+            ),
+            (
+                new(
+                    "median_fft",
+                    "Median FFT",
+                    "Median spectral magnitude. Robust frequency-domain blend, good when one model is significantly noisier than the others."
+                ),
+                []
+            ),
+            (
+                new(
+                    "min_fft",
+                    "Min FFT",
+                    "Minimum spectral magnitude at each frequency. Aggressively suppresses noise at the cost of detail."
+                ),
+                []
+            ),
+            (
+                new(
+                    "max_fft",
+                    "Max FFT",
+                    "Maximum spectral magnitude at each frequency. Maximises loudness and recovered detail."
+                ),
+                []
+            ),
+            (
+                new(
+                    "uvr_max_spec",
+                    "Max spectrum",
+                    "UVR maximum-spectrum blend. Keeps the loudest spectral content across models, maximising detail and fullness."
+                ),
+                []
+            ),
+            (
+                new(
+                    "uvr_min_spec",
+                    "Min spectrum",
+                    "UVR minimum-spectrum blend. Keeps the quietest spectral content across models, suppressing anything not shared by all of them."
+                ),
+                []
+            ),
+        };
 
-    private static readonly IReadOnlyDictionary<string, EnsembleAlgorithmInfo> _byKey =
-        _known.ToDictionary(e => e.Key, StringComparer.OrdinalIgnoreCase);
+        _byKey = definitions
+            .SelectMany(algo =>
+                algo.Aliases.Append(algo.Info.Key)
+                    .Select(key => KeyValuePair.Create(key, algo.Info))
+            )
+            .ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+        Known = [.. definitions.Select(d => d.Info)];
+    }
+
+    private static readonly FrozenDictionary<string, EnsembleAlgorithmInfo> _byKey;
 
     /// <summary>Known algorithms in display order, for the custom-ensemble picker.</summary>
-    public static IReadOnlyList<EnsembleAlgorithmInfo> Known => _known;
+    public static IReadOnlyList<EnsembleAlgorithmInfo> Known { get; }
 
     /// <summary>
     /// Resolves an algorithm key (canonical or alias) to its metadata. An unknown key yields
@@ -96,13 +127,11 @@ public static class EnsembleAlgorithmCatalog
     /// </summary>
     public static EnsembleAlgorithmInfo Resolve(string? key)
     {
-        var trimmed = key?.Trim() ?? string.Empty;
-        if (trimmed.Length == 0)
+        if (key?.Trim() is not { Length: > 0 } trimmed)
             return new EnsembleAlgorithmInfo(string.Empty, string.Empty, string.Empty);
 
-        var canonical = _aliases.TryGetValue(trimmed, out var mapped) ? mapped : trimmed;
-        return _byKey.TryGetValue(canonical, out var info)
-            ? info
+        return _byKey.TryGetValue(trimmed, out var algo)
+            ? algo
             : new EnsembleAlgorithmInfo(trimmed, trimmed, trimmed);
     }
 }
