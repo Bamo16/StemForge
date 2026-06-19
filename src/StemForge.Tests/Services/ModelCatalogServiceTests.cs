@@ -110,4 +110,50 @@ public sealed class ModelCatalogServiceTests
             """;
         Assert.Empty(ModelCatalogService.TryParseJson(json));
     }
+
+    [Fact]
+    public void TryParseJson_ListModelsScriptShape_ParsesFilenameStemsAndScores()
+    {
+        // Shape emitted by the lightweight tools/list_models.py one-shot: each entry carries
+        // filename, stems, a "target_stem" field (ignored by the parser), and scores derived
+        // from the bundled median_scores. Guards that the static-data path stays parseable.
+        var json = """
+            {
+              "MDXC": {
+                "Roformer Model: BS-Roformer-Viperx-1297": {
+                  "filename": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+                  "scores": {
+                    "vocals": { "SDR": 12.9755 },
+                    "instrumental": { "SDR": 16.9171 }
+                  },
+                  "stems": ["vocals", "instrumental"],
+                  "target_stem": null
+                }
+              },
+              "VR": {
+                "No Score Model": {
+                  "filename": "1_HP-UVR.pth",
+                  "scores": {},
+                  "stems": ["vocals", "instrumental"],
+                  "target_stem": null
+                }
+              }
+            }
+            """;
+
+        var models = ModelCatalogService.TryParseJson(json);
+
+        Assert.Equal(2, models.Count);
+
+        var roformer = models.Single(m =>
+            m.Filename == "model_bs_roformer_ep_317_sdr_12.9755.ckpt"
+        );
+        Assert.Equal("MDXC", roformer.Architecture);
+        Assert.Equal(12.9755, roformer.Stems.Single(s => s.Name == "vocals").Sdr);
+
+        // Empty "scores" object leaves every stem SDR null but still lists the stems.
+        var noScore = models.Single(m => m.Filename == "1_HP-UVR.pth");
+        Assert.Equal(2, noScore.Stems.Count);
+        Assert.All(noScore.Stems, s => Assert.Null(s.Sdr));
+    }
 }
