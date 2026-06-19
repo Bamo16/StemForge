@@ -90,8 +90,7 @@ public sealed class SeparatorDriverServiceDispatchTests
             """
         );
 
-        var report = progress.Last;
-        Assert.Equal(JobProgressKind.Phase, report.Kind);
+        var report = Assert.IsType<PhaseProgress>(progress.Last);
         Assert.Equal(JobPhase.DownloadingModel, report.Phase);
         Assert.Equal("foo.ckpt", report.Model);
         Assert.Equal(1, report.ModelIndex);
@@ -110,8 +109,7 @@ public sealed class SeparatorDriverServiceDispatchTests
             """
         );
 
-        var report = progress.Last;
-        Assert.Equal(JobProgressKind.Phase, report.Kind);
+        var report = Assert.IsType<PhaseProgress>(progress.Last);
         Assert.Equal(JobPhase.LoadingModel, report.Phase);
         Assert.Equal("foo.ckpt", report.Model);
         Assert.Equal(2, report.ModelIndex);
@@ -129,8 +127,9 @@ public sealed class SeparatorDriverServiceDispatchTests
             """{"event":"phase","id":"job_1","phase":"ensembling","stem":"Vocals"}"""
         );
 
-        Assert.Equal(JobPhase.Ensembling, progress.Last.Phase);
-        Assert.Equal("Vocals", progress.Last.Stem);
+        var report = Assert.IsType<PhaseProgress>(progress.Last);
+        Assert.Equal(JobPhase.Ensembling, report.Phase);
+        Assert.Equal("Vocals", report.Stem);
     }
 
     [Fact]
@@ -142,8 +141,9 @@ public sealed class SeparatorDriverServiceDispatchTests
             """{"event":"phase","id":"job_1","phase":"separating","model_count":2}"""
         );
 
-        Assert.Equal(JobPhase.Separating, progress.Last.Phase);
-        Assert.Equal(2, progress.Last.ModelCount);
+        var report = Assert.IsType<PhaseProgress>(progress.Last);
+        Assert.Equal(JobPhase.Separating, report.Phase);
+        Assert.Equal(2, report.ModelCount);
     }
 
     [Fact]
@@ -168,9 +168,7 @@ public sealed class SeparatorDriverServiceDispatchTests
             """{"event":"progress","id":"job_1","phase":"separate","current":1234,"total":5678,"final":true}"""
         );
 
-        var report = progress.Last;
-        Assert.Equal(JobProgressKind.Progress, report.Kind);
-        Assert.Null(report.Phase);
+        var report = Assert.IsType<ProgressTick>(progress.Last);
         Assert.Equal(1234, report.Current);
         Assert.Equal(5678, report.Total);
         Assert.True(report.Final);
@@ -185,7 +183,7 @@ public sealed class SeparatorDriverServiceDispatchTests
             """{"event":"progress","id":"job_1","phase":"download","current":42}"""
         );
 
-        var report = progress.Last;
+        var report = Assert.IsType<ProgressTick>(progress.Last);
         Assert.Equal(42, report.Current);
         Assert.Null(report.Total);
         Assert.Null(report.Final);
@@ -202,10 +200,9 @@ public sealed class SeparatorDriverServiceDispatchTests
             """{"event":"log","id":"job_1","level":"warning","message":"Detected input bit depth: 24-bit"}"""
         );
 
-        var report = progress.Last;
-        Assert.Equal(JobProgressKind.Log, report.Kind);
-        Assert.Equal("warning", report.LogLevel);
-        Assert.Equal("Detected input bit depth: 24-bit", report.LogMessage);
+        var report = Assert.IsType<LogLine>(progress.Last);
+        Assert.Equal("warning", report.Level);
+        Assert.Equal("Detected input bit depth: 24-bit", report.Message);
         Assert.Contains("Detected input bit depth: 24-bit", svc.ActivityTailForTest());
     }
 
@@ -216,7 +213,7 @@ public sealed class SeparatorDriverServiceDispatchTests
 
         svc.DispatchLineForTest("""{"event":"log","id":"job_1","message":"hello"}""");
 
-        Assert.Equal("info", progress.Last.LogLevel);
+        Assert.Equal("info", Assert.IsType<LogLine>(progress.Last).Level);
     }
 
     // ── stem_written ───────────────────────────────────────────────────────────
@@ -230,10 +227,9 @@ public sealed class SeparatorDriverServiceDispatchTests
             """{"event":"stem_written","id":"job_1","stem":"Vocals","path":"/out/song_vocals.flac"}"""
         );
 
-        var report = progress.Last;
-        Assert.Equal(JobProgressKind.StemWritten, report.Kind);
-        Assert.Equal("Vocals", report.OutputStem);
-        Assert.Equal("/out/song_vocals.flac", report.OutputPath);
+        var report = Assert.IsType<StemWritten>(progress.Last);
+        Assert.Equal("Vocals", report.Stem);
+        Assert.Equal("/out/song_vocals.flac", report.Path);
     }
 
     // ── job_completed ──────────────────────────────────────────────────────────

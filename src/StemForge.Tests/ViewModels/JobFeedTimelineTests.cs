@@ -39,17 +39,22 @@ public sealed class JobFeedTimelineTests
     {
         state ??= new JobQueueService.RunProgressState();
 
+        var phase = p as PhaseProgress;
+        var tick = p as ProgressTick;
+        var log = p as LogLine;
+        var stem = p as StemWritten;
+
         // Mirror the model-tracking update that SeparationPipeline does before reporting.
-        if (p.Phase == JobPhase.LoadingModel)
+        if (phase is { Phase: JobPhase.LoadingModel })
         {
-            state.ModelIndex = p.ModelIndex ?? 1;
-            state.ModelCount = p.ModelCount ?? 1;
+            state.ModelIndex = phase.ModelIndex ?? 1;
+            state.ModelCount = phase.ModelCount ?? 1;
         }
 
         int overallPercent;
-        if (p.Kind == JobProgressKind.Progress && p.Total is > 0 && p.Current is { } cur)
+        if (tick is { Total: > 0 and var total, Current: { } cur })
         {
-            var withinModel = Math.Min(100, cur * 100 / p.Total.Value);
+            var withinModel = Math.Min(100, cur * 100 / total);
             var withinPreset = ((state.ModelIndex - 1) * 100 + withinModel) / state.ModelCount;
             overallPercent = (int)Math.Round((presetIndex * 100.0 + withinPreset) / totalSteps);
         }
@@ -64,17 +69,17 @@ public sealed class JobFeedTimelineTests
             RunIndex = presetIndex,
             RunCount = totalSteps,
             RunLabel = presetLabel,
-            Model = p.Model,
-            ModelIndex = p.ModelIndex,
-            ModelCount = p.ModelCount,
-            Cached = p.Cached,
-            Stem = p.Stem,
-            ProgressCurrent = p.Current,
-            ProgressTotal = p.Total,
-            ProgressFinal = p.Final,
-            OutputPath = p.OutputPath,
-            LogMessage = p.LogMessage,
-            LogLevel = p.LogLevel,
+            Model = phase?.Model,
+            ModelIndex = phase?.ModelIndex,
+            ModelCount = phase?.ModelCount,
+            Cached = phase?.Cached,
+            Stem = phase?.Stem,
+            ProgressCurrent = tick?.Current,
+            ProgressTotal = tick?.Total,
+            ProgressFinal = tick?.Final,
+            OutputPath = stem?.Path,
+            LogMessage = log?.Message,
+            LogLevel = log?.Level,
             OverallPercent = overallPercent,
         };
 
@@ -88,16 +93,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 1,
-                ModelCount = 1,
-            }
-        );
+        Invoke(vm, new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 1, ModelCount = 1 });
 
         Assert.Contains("Loading model", vm.LogOutput);
     }
@@ -107,16 +103,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 1,
-                ModelCount = 2,
-            }
-        );
+        Invoke(vm, new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 1, ModelCount = 2 });
 
         Assert.Contains("Loading model 1/2", vm.LogOutput);
     }
@@ -128,13 +115,7 @@ public sealed class JobFeedTimelineTests
 
         Invoke(
             vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 1,
-                ModelCount = 1,
-            },
+            new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 1, ModelCount = 1 },
             presetIndex: 0,
             totalSteps: 2,
             presetLabel: "Vocal Clean"
@@ -152,10 +133,8 @@ public sealed class JobFeedTimelineTests
 
         Invoke(
             vm,
-            new JobProgress
+            new PhaseProgress(JobPhase.DownloadingModel)
             {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.DownloadingModel,
                 ModelIndex = 1,
                 ModelCount = 1,
                 Cached = false,
@@ -172,10 +151,8 @@ public sealed class JobFeedTimelineTests
 
         Invoke(
             vm,
-            new JobProgress
+            new PhaseProgress(JobPhase.DownloadingModel)
             {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.DownloadingModel,
                 ModelIndex = 1,
                 ModelCount = 1,
                 Cached = true,
@@ -192,15 +169,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.Separating,
-                ModelCount = 1,
-            }
-        );
+        Invoke(vm, new PhaseProgress(JobPhase.Separating) { ModelCount = 1 });
 
         Assert.Contains("Separating", vm.LogOutput);
     }
@@ -210,15 +179,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.Separating,
-                ModelCount = 3,
-            }
-        );
+        Invoke(vm, new PhaseProgress(JobPhase.Separating) { ModelCount = 3 });
 
         Assert.Contains("3 models", vm.LogOutput);
     }
@@ -230,15 +191,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.Ensembling,
-                Stem = "Vocals",
-            }
-        );
+        Invoke(vm, new PhaseProgress(JobPhase.Ensembling) { Stem = "Vocals" });
 
         Assert.Contains("Combining Vocals", vm.LogOutput);
     }
@@ -248,7 +201,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(vm, new JobProgress { Kind = JobProgressKind.Phase, Phase = JobPhase.Ensembling });
+        Invoke(vm, new PhaseProgress(JobPhase.Ensembling));
 
         Assert.Contains("Combining stems", vm.LogOutput);
     }
@@ -260,15 +213,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Log,
-                LogLevel = "info",
-                LogMessage = "Input audio subtype: PCM_24",
-            }
-        );
+        Invoke(vm, new LogLine { Level = "info", Message = "Input audio subtype: PCM_24" });
 
         Assert.True(string.IsNullOrEmpty(vm.LogOutput));
     }
@@ -278,15 +223,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Log,
-                LogLevel = "warning",
-                LogMessage = "Something looks wrong",
-            }
-        );
+        Invoke(vm, new LogLine { Level = "warning", Message = "Something looks wrong" });
 
         Assert.Contains("Something looks wrong", vm.LogOutput);
     }
@@ -296,15 +233,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Log,
-                LogLevel = "error",
-                LogMessage = "Fatal error in model",
-            }
-        );
+        Invoke(vm, new LogLine { Level = "error", Message = "Fatal error in model" });
 
         Assert.Contains("Fatal error in model", vm.LogOutput);
     }
@@ -349,15 +278,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Progress,
-                Current = 50,
-                Total = 100,
-            }
-        );
+        Invoke(vm, new ProgressTick { Current = 50, Total = 100 });
 
         Assert.True(string.IsNullOrEmpty(vm.LogOutput));
     }
@@ -371,10 +292,8 @@ public sealed class JobFeedTimelineTests
 
         Invoke(
             vm,
-            new JobProgress
+            new PhaseProgress(JobPhase.LoadingModel)
             {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
                 Model = "bs_roformer_vocals.ckpt",
                 ModelIndex = 1,
                 ModelCount = 2,
@@ -391,10 +310,8 @@ public sealed class JobFeedTimelineTests
 
         Invoke(
             vm,
-            new JobProgress
+            new PhaseProgress(JobPhase.LoadingModel)
             {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
                 Model = "bs_roformer_vocals.ckpt",
                 ModelIndex = 1,
                 ModelCount = 1,
@@ -410,16 +327,7 @@ public sealed class JobFeedTimelineTests
     {
         var vm = MakeVm();
 
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 2,
-                ModelCount = 3,
-            }
-        );
+        Invoke(vm, new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 2, ModelCount = 3 });
 
         Assert.Contains("Loading model 2/3", vm.LogOutput);
     }
@@ -432,13 +340,7 @@ public sealed class JobFeedTimelineTests
 
         Invoke(
             vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 1,
-                ModelCount = 1,
-            },
+            new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 1, ModelCount = 1 },
             state: state
         );
 
@@ -457,25 +359,10 @@ public sealed class JobFeedTimelineTests
 
         Invoke(
             vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 1,
-                ModelCount = 1,
-            },
+            new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 1, ModelCount = 1 },
             state: state
         );
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Progress,
-                Current = 10,
-                Total = 100,
-            },
-            state: state
-        );
+        Invoke(vm, new ProgressTick { Current = 10, Total = 100 }, state: state);
 
         Assert.Contains("Running", vm.LogOutput);
         Assert.Null(state.PendingRunLogLine);
@@ -489,35 +376,11 @@ public sealed class JobFeedTimelineTests
 
         Invoke(
             vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 1,
-                ModelCount = 1,
-            },
+            new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 1, ModelCount = 1 },
             state: state
         );
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Progress,
-                Current = 10,
-                Total = 100,
-            },
-            state: state
-        );
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Progress,
-                Current = 20,
-                Total = 100,
-            },
-            state: state
-        );
+        Invoke(vm, new ProgressTick { Current = 10, Total = 100 }, state: state);
+        Invoke(vm, new ProgressTick { Current = 20, Total = 100 }, state: state);
 
         // Count occurrences of "Running" — should appear exactly once.
         var count = 0;
@@ -540,25 +403,10 @@ public sealed class JobFeedTimelineTests
 
         Invoke(
             vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 1,
-                ModelCount = 2,
-            },
+            new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 1, ModelCount = 2 },
             state: state
         );
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Progress,
-                Current = 100,
-                Total = 100,
-            },
-            state: state
-        );
+        Invoke(vm, new ProgressTick { Current = 100, Total = 100 }, state: state);
 
         // Model 1 of 2 fully complete = 50%, not 100%.
         Assert.Equal(50, vm.Progress);
@@ -572,46 +420,16 @@ public sealed class JobFeedTimelineTests
 
         Invoke(
             vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 1,
-                ModelCount = 2,
-            },
+            new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 1, ModelCount = 2 },
             state: state
         );
+        Invoke(vm, new ProgressTick { Current = 100, Total = 100 }, state: state);
         Invoke(
             vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Progress,
-                Current = 100,
-                Total = 100,
-            },
+            new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 2, ModelCount = 2 },
             state: state
         );
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 2,
-                ModelCount = 2,
-            },
-            state: state
-        );
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Progress,
-                Current = 100,
-                Total = 100,
-            },
-            state: state
-        );
+        Invoke(vm, new ProgressTick { Current = 100, Total = 100 }, state: state);
 
         Assert.Equal(100, vm.Progress);
     }
@@ -625,48 +443,18 @@ public sealed class JobFeedTimelineTests
         // Model 1 runs to completion (sets bar to 50%).
         Invoke(
             vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 1,
-                ModelCount = 2,
-            },
+            new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 1, ModelCount = 2 },
             state: state
         );
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Progress,
-                Current = 100,
-                Total = 100,
-            },
-            state: state
-        );
+        Invoke(vm, new ProgressTick { Current = 100, Total = 100 }, state: state);
 
         // Model 2 starts at 0 — progress must still advance from 50%.
         Invoke(
             vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
-                ModelIndex = 2,
-                ModelCount = 2,
-            },
+            new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 2, ModelCount = 2 },
             state: state
         );
-        Invoke(
-            vm,
-            new JobProgress
-            {
-                Kind = JobProgressKind.Progress,
-                Current = 10,
-                Total = 100,
-            },
-            state: state
-        );
+        Invoke(vm, new ProgressTick { Current = 10, Total = 100 }, state: state);
 
         Assert.True(vm.Progress > 50);
     }

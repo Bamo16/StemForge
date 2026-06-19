@@ -222,19 +222,8 @@ public sealed class SeparationPipelineTests : IDisposable
         _driver.EnqueueRun(
             SuccessResult(out2),
             [
-                new JobProgress
-                {
-                    Kind = JobProgressKind.Phase,
-                    Phase = JobPhase.LoadingModel,
-                    ModelIndex = 1,
-                    ModelCount = 1,
-                },
-                new JobProgress
-                {
-                    Kind = JobProgressKind.Progress,
-                    Current = 50,
-                    Total = 100,
-                },
+                new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 1, ModelCount = 1 },
+                new ProgressTick { Current = 50, Total = 100 },
             ]
         );
 
@@ -283,19 +272,8 @@ public sealed class SeparationPipelineTests : IDisposable
         _driver.EnqueueRun(
             SuccessResult(outB),
             [
-                new JobProgress
-                {
-                    Kind = JobProgressKind.Phase,
-                    Phase = JobPhase.LoadingModel,
-                    ModelIndex = 1,
-                    ModelCount = 1,
-                },
-                new JobProgress
-                {
-                    Kind = JobProgressKind.Progress,
-                    Current = 50,
-                    Total = 100,
-                },
+                new PhaseProgress(JobPhase.LoadingModel) { ModelIndex = 1, ModelCount = 1 },
+                new ProgressTick { Current = 50, Total = 100 },
             ]
         );
 

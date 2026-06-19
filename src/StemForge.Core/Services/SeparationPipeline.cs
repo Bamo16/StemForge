@@ -133,17 +133,19 @@ public sealed class SeparationPipeline(
 
             var driverProgress = new Progress<JobProgress>(p =>
             {
-                if (p.Phase == JobPhase.LoadingModel)
+                var phase = p as PhaseProgress;
+                var tick = p as ProgressTick;
+                var log = p as LogLine;
+                var stem = p as StemWritten;
+
+                if (phase is { Phase: JobPhase.LoadingModel })
                 {
-                    currentModelIndex = p.ModelIndex ?? 1;
-                    currentModelCount = p.ModelCount ?? 1;
+                    currentModelIndex = phase.ModelIndex ?? 1;
+                    currentModelCount = phase.ModelCount ?? 1;
                 }
 
                 int overallPercent;
-                if (
-                    p is
-                    { Kind: JobProgressKind.Progress, Total: > 0 and var total, Current: { } cur }
-                )
+                if (tick is { Total: > 0 and var total, Current: { } cur })
                 {
                     var withinModel = Math.Min(100, cur * 100 / total);
                     var withinPreset =
@@ -173,17 +175,17 @@ public sealed class SeparationPipeline(
                         RunIndex = runIndex,
                         RunCount = totalSteps,
                         RunLabel = runLabel,
-                        Model = p.Model,
-                        ModelIndex = p.ModelIndex,
-                        ModelCount = p.ModelCount,
-                        Cached = p.Cached,
-                        Stem = p.Stem,
-                        ProgressCurrent = p.Current,
-                        ProgressTotal = p.Total,
-                        ProgressFinal = p.Final,
-                        OutputPath = p.OutputPath,
-                        LogMessage = p.LogMessage,
-                        LogLevel = p.LogLevel,
+                        Model = phase?.Model,
+                        ModelIndex = phase?.ModelIndex,
+                        ModelCount = phase?.ModelCount,
+                        Cached = phase?.Cached,
+                        Stem = phase?.Stem,
+                        ProgressCurrent = tick?.Current,
+                        ProgressTotal = tick?.Total,
+                        ProgressFinal = tick?.Final,
+                        OutputPath = stem?.Path,
+                        LogMessage = log?.Message,
+                        LogLevel = log?.Level,
                         OverallPercent = overallPercent,
                     }
                 );
@@ -250,16 +252,21 @@ public sealed class SeparationPipeline(
 
             var drumProgress = new Progress<JobProgress>(p =>
             {
-                if (p.Phase == JobPhase.LoadingModel)
+                var phase = p as PhaseProgress;
+                var tick = p as ProgressTick;
+                var log = p as LogLine;
+                var stem = p as StemWritten;
+
+                if (phase is { Phase: JobPhase.LoadingModel })
                 {
-                    drumModelIndex = p.ModelIndex ?? 1;
-                    drumModelCount = p.ModelCount ?? 1;
+                    drumModelIndex = phase.ModelIndex ?? 1;
+                    drumModelCount = phase.ModelCount ?? 1;
                 }
 
                 int overallPercent;
-                if (p.Kind == JobProgressKind.Progress && p.Total is > 0 && p.Current is { } cur)
+                if (tick is { Total: > 0 and var total, Current: { } cur })
                 {
-                    var withinModel = Math.Min(100, cur * 100 / p.Total.Value);
+                    var withinModel = Math.Min(100, cur * 100 / total);
                     var withinPreset = ((drumModelIndex - 1) * 100 + withinModel) / drumModelCount;
                     // Cap at 99 for the same reason as the preset loop (Demucs BagOfModels).
                     overallPercent = Math.Min(
@@ -282,17 +289,17 @@ public sealed class SeparationPipeline(
                         RunIndex = drumIndex,
                         RunCount = totalSteps,
                         RunLabel = drumLabel,
-                        Model = p.Model,
-                        ModelIndex = p.ModelIndex,
-                        ModelCount = p.ModelCount,
-                        Cached = p.Cached,
-                        Stem = p.Stem,
-                        ProgressCurrent = p.Current,
-                        ProgressTotal = p.Total,
-                        ProgressFinal = p.Final,
-                        OutputPath = p.OutputPath,
-                        LogMessage = p.LogMessage,
-                        LogLevel = p.LogLevel,
+                        Model = phase?.Model,
+                        ModelIndex = phase?.ModelIndex,
+                        ModelCount = phase?.ModelCount,
+                        Cached = phase?.Cached,
+                        Stem = phase?.Stem,
+                        ProgressCurrent = tick?.Current,
+                        ProgressTotal = tick?.Total,
+                        ProgressFinal = tick?.Final,
+                        OutputPath = stem?.Path,
+                        LogMessage = log?.Message,
+                        LogLevel = log?.Level,
                         OverallPercent = overallPercent,
                     }
                 );

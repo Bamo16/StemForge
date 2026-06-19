@@ -11,7 +11,7 @@ public sealed record JobUpdate
     public int OverallPercent { get; init; }
 
     /// <summary>
-    /// Semantic phase. Matches <see cref="JobProgress.Phase"/> driver values where applicable,
+    /// Semantic phase. Matches <see cref="JobProgress.UpdatePhase"/> driver values where applicable,
     /// plus pipeline-level phases: "starting", "downloading", "tagging", "keep_source",
     /// "run_complete", "done", "failed", "cancelled".
     /// </summary>

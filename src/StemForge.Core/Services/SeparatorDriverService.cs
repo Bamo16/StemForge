@@ -387,9 +387,8 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
 
             case ProgressEvent progress:
                 job?.Progress?.Report(
-                    new JobProgress
+                    new ProgressTick
                     {
-                        Kind = JobProgressKind.Progress,
                         Current = progress.Current ?? 0,
                         Total = progress.Total,
                         Final = progress.Final,
@@ -406,14 +405,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 // (no stderr) this is the only record of what the driver was doing.
                 if (msg.Length > 0)
                     _activityTail.Add(msg);
-                job?.Progress?.Report(
-                    new JobProgress
-                    {
-                        Kind = JobProgressKind.Log,
-                        LogLevel = level,
-                        LogMessage = msg,
-                    }
-                );
+                job?.Progress?.Report(new LogLine { Level = level, Message = msg });
                 break;
             }
 
@@ -422,14 +414,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 var stem = stemWritten.Stem ?? "";
                 var path = stemWritten.Path ?? "";
                 AppLogger.Info("driver", $"stem_written: {stem} → {path}");
-                job?.Progress?.Report(
-                    new JobProgress
-                    {
-                        Kind = JobProgressKind.StemWritten,
-                        OutputStem = stem,
-                        OutputPath = path,
-                    }
-                );
+                job?.Progress?.Report(new StemWritten { Stem = stem, Path = path });
                 break;
             }
 
@@ -470,38 +455,27 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
     }
 
     // Maps the typed wire phase (DriverPhase, internal to the protocol layer) onto the public
-    // JobProgress phase sub-state. Kind is always Phase here; the phase enum carries the sub-state,
-    // so the event-kind and the phase are never conflated in a single string.
+    // PhaseProgress sub-state. The record type is the event-kind discriminator, so the kind and the
+    // phase are never conflated in a single field.
     private static JobProgress MapPhase(PhaseEvent evt) =>
         evt.Phase switch
         {
-            DriverPhase.DownloadingModel => new JobProgress
+            DriverPhase.DownloadingModel => new PhaseProgress(JobPhase.DownloadingModel)
             {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.DownloadingModel,
                 Model = evt.Model,
                 ModelIndex = evt.ModelIndex,
                 ModelCount = evt.ModelCount,
                 Cached = evt.Cached,
             },
-            DriverPhase.LoadingModel => new JobProgress
+            DriverPhase.LoadingModel => new PhaseProgress(JobPhase.LoadingModel)
             {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.LoadingModel,
                 Model = evt.Model,
                 ModelIndex = evt.ModelIndex,
                 ModelCount = evt.ModelCount,
             },
-            DriverPhase.Ensembling => new JobProgress
+            DriverPhase.Ensembling => new PhaseProgress(JobPhase.Ensembling) { Stem = evt.Stem },
+            DriverPhase.Separating => new PhaseProgress(JobPhase.Separating)
             {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.Ensembling,
-                Stem = evt.Stem,
-            },
-            DriverPhase.Separating => new JobProgress
-            {
-                Kind = JobProgressKind.Phase,
-                Phase = JobPhase.Separating,
                 ModelCount = evt.ModelCount,
             },
             _ => throw new ArgumentOutOfRangeException(
