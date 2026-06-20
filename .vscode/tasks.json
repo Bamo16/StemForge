@@ -95,6 +95,7 @@
             "command": "dotnet",
             "args": [
                 "test",
+                "--project",
                 "${workspaceFolder}/src/StemForge.Tests/StemForge.Tests.csproj"
             ],
             "group": "test",
