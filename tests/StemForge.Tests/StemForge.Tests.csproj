@@ -14,9 +14,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\StemForge.Core\StemForge.Core.csproj" />
-        <ProjectReference Include="..\StemForge\StemForge.csproj" />
-        <ProjectReference Include="..\StemForge.Cli\StemForge.Cli.csproj" />
+        <ProjectReference Include="..\..\src\StemForge.Core\StemForge.Core.csproj" />
+        <ProjectReference Include="..\..\src\StemForge\StemForge.csproj" />
+        <ProjectReference Include="..\..\src\StemForge.Cli\StemForge.Cli.csproj" />
     </ItemGroup>
 
     <ItemGroup>

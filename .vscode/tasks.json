@@ -96,7 +96,7 @@
             "args": [
                 "test",
                 "--project",
-                "${workspaceFolder}/src/StemForge.Tests/StemForge.Tests.csproj"
+                "${workspaceFolder}/tests/StemForge.Tests/StemForge.Tests.csproj"
             ],
             "group": "test",
             "presentation": {

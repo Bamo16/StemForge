@@ -242,7 +242,7 @@ src/StemForge/             Avalonia GUI
 src/StemForge.Cli/         stemforge-cli console app
   Commands/                separate, download, presets
   Progress/                terminal progress rendering
-src/StemForge.Tests/       xUnit test project
+tests/StemForge.Tests/     xUnit test project
 ```
 
 ---

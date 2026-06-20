@@ -8,7 +8,7 @@ namespace StemForge.Tests.Integration;
 /// neither belongs in the default run.
 ///
 /// Run them on demand with:
-/// <code>STEMFORGE_INTEGRATION=1 dotnet test src/StemForge.Tests/StemForge.Tests.csproj</code>
+/// <code>STEMFORGE_INTEGRATION=1 dotnet test tests/StemForge.Tests/StemForge.Tests.csproj</code>
 /// or filter to just this namespace:
 /// <code>STEMFORGE_INTEGRATION=1 dotnet test --filter "FullyQualifiedName~Integration"</code>
 /// </summary>
