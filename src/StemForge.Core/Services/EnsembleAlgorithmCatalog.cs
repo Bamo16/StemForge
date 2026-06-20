@@ -109,7 +109,7 @@ public static class EnsembleAlgorithmCatalog
 
         _byKey = definitions
             .SelectMany(algo =>
-                algo.Aliases.Append(algo.Info.Key)
+                algo.Aliases.Prepend(algo.Info.Key)
                     .Select(key => KeyValuePair.Create(key, algo.Info))
             )
             .ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
