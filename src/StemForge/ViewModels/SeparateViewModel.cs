@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Humanizer;
 using StemForge.Core.Extensions;
 using StemForge.Core.Helpers;
 using StemForge.Core.Models;
@@ -50,7 +51,8 @@ public partial class SeparateViewModel : PageViewModelBase
     public string SelectedCountLabel =>
         SelectedCount == 0
             ? "No presets selected"
-            : $" preset{(SelectedCount == 1 ? "" : "s")} selected";
+            // The count is rendered separately in the view, so pluralize the noun without it.
+            : $" {"preset".ToQuantity(SelectedCount, ShowQuantityAs.None)} selected";
 
     public bool HasSelection => SelectedCount > 0;
 

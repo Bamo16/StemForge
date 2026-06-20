@@ -1,3 +1,4 @@
+using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -182,7 +183,7 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
             if (succeeded > 0)
             {
                 Console.Error.WriteLine(
-                    $"Cancelled after {succeeded}/{total} succeeded. {totalFilesWritten} file(s) written to {resolvedOutputDir}"
+                    $"Cancelled after {succeeded}/{total} succeeded. {"file".ToQuantity(totalFilesWritten)} written to {resolvedOutputDir}"
                 );
                 return 2;
             }
@@ -197,7 +198,7 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
         }
 
         Console.WriteLine(
-            $"Done. {succeeded}/{total} succeeded. {totalFilesWritten} file(s) written to {resolvedOutputDir}"
+            $"Done. {succeeded}/{total} succeeded. {"file".ToQuantity(totalFilesWritten)} written to {resolvedOutputDir}"
         );
 
         return succeeded == total ? 0 : 2;

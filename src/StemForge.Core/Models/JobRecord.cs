@@ -1,3 +1,5 @@
+using Humanizer;
+
 namespace StemForge.Core.Models;
 
 /// <summary>Immutable definition of a separation job — what to run and where to put the output.</summary>
@@ -21,7 +23,7 @@ public sealed record JobRecord(
         );
 
     public string PresetSummary =>
-        ExtractDrums ? $"{Presets.Count} preset{(Presets.Count == 1 ? "" : "s")} + Drums"
+        ExtractDrums ? $"{"preset".ToQuantity(Presets.Count)} + Drums"
         : Presets.Count == 1 ? Presets[0].Label
-        : $"{Presets.Count} presets";
+        : "preset".ToQuantity(Presets.Count);
 }

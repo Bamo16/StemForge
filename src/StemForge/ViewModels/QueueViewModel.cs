@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Humanizer;
 using StemForge.Core.Models;
 using StemForge.Core.Services;
 using StemForge.Services;
@@ -32,8 +33,8 @@ public partial class QueueViewModel : PageViewModelBase
         var running = _queue.Jobs.Count(j => j.Status == JobStatus.Running);
         SummaryLabel =
             total == 0 ? "No jobs"
-            : running > 0 ? $"{total} job{(total == 1 ? "" : "s")} · {running} running"
-            : $"{total} job{(total == 1 ? "" : "s")}";
+            : running > 0 ? $"{"job".ToQuantity(total)} · {running} running"
+            : "job".ToQuantity(total);
     }
 
     [RelayCommand]

@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Humanizer;
 using StemForge.Core.Models;
 
 namespace StemForge.ViewModels;
@@ -30,7 +31,5 @@ public partial class ModelItemViewModel(ModelInfo model) : ObservableObject
     public partial long FileSizeBytes { get; set; }
 
     public string FileSizeDisplay =>
-        FileSizeBytes <= 0 ? string.Empty
-        : FileSizeBytes < 1_048_576 ? $"{FileSizeBytes / 1024.0:F0} KB"
-        : $"{FileSizeBytes / 1_048_576.0:F1} MB";
+        FileSizeBytes <= 0 ? string.Empty : FileSizeBytes.Bytes().Humanize("0.#");
 }
