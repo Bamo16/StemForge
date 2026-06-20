@@ -106,18 +106,6 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "test: coverage report",
-            "type": "shell",
-            "command": "dotnet tool run dotnet-coverage collect --output ${workspaceFolder}/src/StemForge.Tests/TestResults/coverage.cobertura.xml --output-format cobertura --settings ${workspaceFolder}/coverage.settings.xml -- dotnet test ${workspaceFolder}/src/StemForge.Tests/StemForge.Tests.csproj && (Get-Content '${workspaceFolder}/src/StemForge.Tests/TestResults/coverage.cobertura.xml' -Raw) -replace '<packages>', '<sources><source>${workspaceFolder}</source></sources><packages>' | Set-Content '${workspaceFolder}/src/StemForge.Tests/TestResults/coverage.cobertura.xml' && dotnet reportgenerator -reports:${workspaceFolder}/src/StemForge.Tests/TestResults/coverage.cobertura.xml -targetdir:${workspaceFolder}/src/StemForge.Tests/TestResults/report -reporttypes:Html -assemblyfilters:+StemForge -filefilters:-*obj* && start ${workspaceFolder}/src/StemForge.Tests/TestResults/report/index.html",
-            "group": "test",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared",
-                "clear": true
-            },
-            "problemMatcher": "$msCompile"
-        },
-        {
             "label": "publish: win-x64 GUI",
             "detail": "Publish the GUI as a self-contained single-file executable to publish/win-x64/.",
             "type": "process",
