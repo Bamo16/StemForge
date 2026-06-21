@@ -3,8 +3,8 @@ using StemForge.Core.Models;
 namespace StemForge.Core.Services;
 
 /// <summary>
-/// Fallback built-in preset catalog, used before the driver's live <c>list_presets</c>
-/// response arrives. Data matches <c>audio_separator/ensemble_presets.json</c>.
+/// Fallback built-in preset catalog, used before the torch-free <c>list_presets.py</c> one-shot
+/// resolves the live catalog. Data matches <c>audio_separator/ensemble_presets.json</c>.
 /// </summary>
 public sealed class PresetCatalog
 {

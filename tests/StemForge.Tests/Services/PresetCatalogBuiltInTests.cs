@@ -4,8 +4,8 @@ namespace StemForge.Tests.Services;
 
 /// <summary>
 /// Guards the built-in fallback preset catalog: every ensemble (2+ models) must carry an
-/// ensemble algorithm so the preset card can show its algorithm chip before the driver's
-/// live <c>list_presets</c> response arrives.
+/// ensemble algorithm so the preset card can show its algorithm chip before the torch-free
+/// <c>list_presets.py</c> one-shot resolves the live catalog.
 /// </summary>
 public sealed class PresetCatalogBuiltInTests
 {

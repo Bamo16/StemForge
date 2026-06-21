@@ -13,8 +13,6 @@ public sealed class FakeSeparatorDriverService : ISeparatorDriverService
 
     public IProgress<JobProgress>? ProgressReporter { get; set; }
 
-    public event Action<IReadOnlyList<Preset>>? PresetsLoaded;
-
     public Task<JobResult> RunAsync(
         JobRequest request,
         IProgress<JobProgress>? progress,
@@ -26,8 +24,6 @@ public sealed class FakeSeparatorDriverService : ISeparatorDriverService
         progress?.Report(new PhaseProgress(JobPhase.Separating));
         return Task.FromResult(NextResult);
     }
-
-    public void RaisePresetsLoaded(IReadOnlyList<Preset> presets) => PresetsLoaded?.Invoke(presets);
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

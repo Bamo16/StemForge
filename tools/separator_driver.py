@@ -24,9 +24,6 @@ this section, that manifest, and the host's typed events in sync.
 
 Commands accepted on stdin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-{"cmd": "list_presets"}
-    -> {"event": "presets", "presets": {...}}
-
 {"cmd": "run",
  "id": "<caller-chosen string>",
  "audio": "/abs/path/to/input.wav",
@@ -51,9 +48,9 @@ Commands accepted on stdin
 Events emitted on stdout
 ~~~~~~~~~~~~~~~~~~~~~~~~
 {"event": "ready", "driver_version": "...", "separator_version": "...",
- "device": "cuda" | "mps" | "cpu", "model_dir": "...",
- "preset_ids": ["instrumental_clean", "vocal_balanced", ...]}
-    Full preset metadata is available via the "list_presets" command.
+ "device": "cuda" | "mps" | "cpu", "model_dir": "..."}
+    The built-in preset catalog is resolved out-of-band by the host via the
+    torch-free list_presets.py one-shot, not over this protocol.
 
 {"event": "log", "id": "<id|null>", "level": "info", "message": "..."}
 
@@ -618,10 +615,6 @@ class Driver:
 
     # -- command handlers ---------------------------------------------------
 
-    def cmd_list_presets(self, _cmd):
-        sep = self._get_separator()
-        emit("presets", presets=sep.list_ensemble_presets())
-
     @staticmethod
     def _is_model_cached(sep: Separator, model_filename: str) -> bool:
         """Quick heuristic: is the primary model file present in model_file_dir?
@@ -881,7 +874,6 @@ class Driver:
     # -- main loop ----------------------------------------------------------
 
     DISPATCH = {
-        "list_presets": cmd_list_presets,
         "cancel": cmd_cancel,
         "shutdown": cmd_shutdown,
     }
@@ -909,7 +901,6 @@ class Driver:
             separator_version=sep_version,
             device=device,
             model_dir=self.model_file_dir,
-            preset_ids=sorted(sep.list_ensemble_presets().keys()),
         )
 
         # Read commands line-by-line from stdin.

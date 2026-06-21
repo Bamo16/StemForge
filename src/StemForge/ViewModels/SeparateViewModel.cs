@@ -63,6 +63,7 @@ public partial class SeparateViewModel : PageViewModelBase
     private readonly AppPaths _paths;
     private readonly YouTubeAudioService _ytAudio;
     private readonly ISeparatorDriverService _driver;
+    private readonly PresetCatalogService _presetCatalog;
     private CancellationTokenSource? _urlCheckCts;
     private YtDlpMetadata? _cachedUrlMeta;
 
@@ -309,7 +310,8 @@ public partial class SeparateViewModel : PageViewModelBase
         ToolStateService toolState,
         AppPaths paths,
         YouTubeAudioService ytAudio,
-        ISeparatorDriverService driver
+        ISeparatorDriverService driver,
+        PresetCatalogService presetCatalog
     )
     {
         _queue = queue;
@@ -319,6 +321,7 @@ public partial class SeparateViewModel : PageViewModelBase
         _toolState = toolState;
         _paths = paths;
         _driver = driver;
+        _presetCatalog = presetCatalog;
         OutputPath = paths.OutputDirectory;
         StemOutputFormat = settings.DefaultAudioFormat;
         IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
@@ -337,7 +340,7 @@ public partial class SeparateViewModel : PageViewModelBase
         Categories = new ObservableCollection<PresetCategoryGroup>(
             BuildGroups(PresetCatalog.BuiltIn)
         );
-        _driver.PresetsLoaded += OnDriverPresetsLoaded;
+        _ = LoadBuiltInPresetsAsync();
 
         foreach (var g in Categories)
         foreach (var item in g.Items)
@@ -395,9 +398,24 @@ public partial class SeparateViewModel : PageViewModelBase
 
     // ── Preset building ───────────────────────────────────────────────────────
 
-    private void OnDriverPresetsLoaded(IReadOnlyList<Preset> presets)
+    /// <summary>
+    /// Resolves the live built-in preset catalog via the torch-free <c>list_presets.py</c> one-shot
+    /// and refreshes the category list once it returns. The constructor seeds the list with the
+    /// static fallback so the UI is populated immediately; this upgrades it without waiting on the
+    /// long-lived separator driver to start.
+    /// </summary>
+    private async Task LoadBuiltInPresetsAsync()
     {
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => RefreshBuiltInCategories(presets));
+        try
+        {
+            var presets = await _presetCatalog.ListPresetsAsync();
+            if (presets.Count > 0)
+                Dispatcher.UIThread.Post(() => RefreshBuiltInCategories(presets));
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning("SeparateVM", $"Failed to load built-in presets: {ex.Message}");
+        }
     }
 
     private void RefreshBuiltInCategories(IReadOnlyList<Preset> presets)

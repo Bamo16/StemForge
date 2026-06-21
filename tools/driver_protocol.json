@@ -2,7 +2,6 @@
   "note": "Single source of truth for the separator_driver.py wire protocol vocabulary. separator_driver.py loads this and asserts every emitted event/phase is declared here; the C# DriverEvent records and DriverPhase enum mirror it, and a contract test fails the build on drift. Adding or renaming an event or phase requires editing this file plus both sides. See docs/adr/0008.",
   "events": [
     "ready",
-    "presets",
     "phase",
     "progress",
     "log",

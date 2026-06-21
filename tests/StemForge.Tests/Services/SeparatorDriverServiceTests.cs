@@ -7,8 +7,8 @@ namespace StemForge.Tests.Services;
 /// Tests for the private termination-message builder and bounded buffer inside
 /// SeparatorDriverService. Because these members are private (not internal), they are invoked via
 /// reflection. The dispatch path is covered separately in
-/// <see cref="SeparatorDriverServiceDispatchTests"/>; preset mapping in
-/// <see cref="DriverPresetCatalogTests"/>.
+/// <see cref="SeparatorDriverServiceDispatchTests"/>; preset parsing in
+/// <see cref="PresetCatalogServiceTests"/>.
 /// </summary>
 public sealed class SeparatorDriverServiceTests
 {

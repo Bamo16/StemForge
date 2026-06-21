@@ -62,8 +62,6 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
 
     // ── Public API ───────────────────────────────────────────────────────────
 
-    public event Action<IReadOnlyList<Preset>>? PresetsLoaded;
-
     public async Task<JobResult> RunAsync(
         JobRequest request,
         IProgress<JobProgress>? progress,
@@ -370,16 +368,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                     $"Ready — audio-separator {ready.SeparatorVersion ?? "?"} on {ready.Device ?? "?"}"
                 );
                 _readyTcs?.TrySetResult();
-                _ = SendCommandAsync(new { cmd = "list_presets" }, CancellationToken.None);
                 break;
-
-            case PresetsEvent { Presets: { Count: > 0 } entries }:
-            {
-                var presets = DriverPresetCatalog.ToPresets(entries);
-                if (presets.Count > 0)
-                    PresetsLoaded?.Invoke(presets);
-                break;
-            }
 
             case PhaseEvent phase:
                 job?.Progress?.Report(MapPhase(phase));

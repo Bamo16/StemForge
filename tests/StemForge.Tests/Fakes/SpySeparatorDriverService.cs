@@ -21,8 +21,6 @@ public sealed class SpySeparatorDriverService : ISeparatorDriverService
 
     public int CallCount => ReceivedRequests.Count;
 
-    public event Action<IReadOnlyList<Preset>>? PresetsLoaded;
-
     /// <summary>Enqueue a run that returns <paramref name="result"/> with no progress events.</summary>
     public void EnqueueRun(JobResult result) => _runs.Enqueue(new RunConfig(result));
 
@@ -52,8 +50,6 @@ public sealed class SpySeparatorDriverService : ISeparatorDriverService
 
         return Task.FromResult(run.Result);
     }
-
-    public void RaisePresetsLoaded(IReadOnlyList<Preset> presets) => PresetsLoaded?.Invoke(presets);
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

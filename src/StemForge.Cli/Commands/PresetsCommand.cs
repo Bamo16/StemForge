@@ -21,7 +21,7 @@ internal sealed class PresetsCommand : AsyncCommand<PresetsCommand.Settings>
 
         var catalog = provider.GetRequiredService<PresetCatalogService>();
 
-        IReadOnlyList<Core.Models.PresetInfo> presets;
+        IReadOnlyList<Core.Models.Preset> presets;
         try
         {
             presets = await catalog.ListPresetsAsync(cancellationToken);
@@ -47,10 +47,10 @@ internal sealed class PresetsCommand : AsyncCommand<PresetsCommand.Settings>
 
         foreach (var preset in presets)
         {
-            var modelList = string.Join(", ", preset.Models);
+            var modelList = string.Join(", ", preset.AllModels);
             table.AddRow(
                 Markup.Escape(preset.Id),
-                Markup.Escape(preset.Algorithm),
+                Markup.Escape(preset.EnsembleAlgorithm ?? ""),
                 Markup.Escape(modelList)
             );
         }

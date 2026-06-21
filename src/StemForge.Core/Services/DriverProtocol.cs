@@ -34,7 +34,6 @@ internal enum DriverPhase
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "event")]
 [JsonDerivedType(typeof(ReadyEvent), "ready")]
-[JsonDerivedType(typeof(PresetsEvent), "presets")]
 [JsonDerivedType(typeof(PhaseEvent), "phase")]
 [JsonDerivedType(typeof(ProgressEvent), "progress")]
 [JsonDerivedType(typeof(LogEvent), "log")]
@@ -51,12 +50,6 @@ internal sealed record ReadyEvent : DriverEvent
 {
     public string? Device { get; init; }
     public string? SeparatorVersion { get; init; }
-}
-
-/// <summary>The live preset catalog, keyed by preset id.</summary>
-internal sealed record PresetsEvent : DriverEvent
-{
-    public Dictionary<string, DriverPresetEntry>? Presets { get; init; }
 }
 
 /// <summary>A progress sub-state of the running job. Fields populated depend on the phase.</summary>
@@ -124,19 +117,6 @@ internal sealed record DriverJobOutput
 {
     public string? Stem { get; init; }
     public string? Path { get; init; }
-}
-
-/// <summary>
-/// One preset from the driver's <see cref="PresetsEvent"/>, keyed by preset id in the parent
-/// dictionary. Mirrors audio-separator's <c>list_ensemble_presets()</c> entry shape.
-/// </summary>
-internal sealed record DriverPresetEntry
-{
-    public string Name { get; init; } = "";
-    public string Description { get; init; } = "";
-    public List<string> Models { get; init; } = [];
-    public string? Algorithm { get; init; }
-    public List<double>? Weights { get; init; }
 }
 
 /// <summary>

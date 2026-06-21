@@ -34,8 +34,8 @@ public sealed class LightweightListingIntegrationTests
         Assert.NotEmpty(presets);
         // vocal_balanced is a stable built-in preset id shipped in ensemble_presets.json.
         var vocal = presets.Single(p => p.Id == "vocal_balanced");
-        Assert.NotEmpty(vocal.Models);
-        Assert.False(string.IsNullOrWhiteSpace(vocal.Algorithm));
+        Assert.NotEmpty(vocal.AllModels);
+        Assert.False(string.IsNullOrWhiteSpace(vocal.EnsembleAlgorithm));
     }
 
     [Fact(SkipUnless = nameof(IntegrationGate.Enabled), Skip = IntegrationGate.SkipReason)]

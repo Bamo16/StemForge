@@ -47,7 +47,7 @@ A named separation recipe selectable in the UI. Carries a category, a human labe
 
 ### Separation mode
 How a [[Preset]] is specified to the separator. The modes are not different processes so much as different ways of expressing the same separation: most presets are a set of [[Model]]s run together and combined with an [[Ensemble algorithm]]. Three modes:
-- **Built-in preset** — an [[Ensemble]] curated in audio-separator's own catalog, invoked by naming the preset rather than enumerating its models and algorithm. StemForge mirrors the catalog's model list and algorithm for display, but the separator owns the definition. The canonical source is the separator driver's live `list_presets` response; a built-in fallback catalog mirrors it for use before that response arrives.
+- **Built-in preset** — an [[Ensemble]] curated in audio-separator's own catalog, invoked by naming the preset rather than enumerating its models and algorithm. StemForge mirrors the catalog's model list and algorithm for display, but the separator owns the definition. The canonical source is audio-separator's own `ensemble_presets.json`, read at startup by the torch-free `list_presets.py` one-shot; a built-in fallback catalog mirrors it for use before that response arrives.
 - **Custom ensemble** — an [[Ensemble]] whose [[Model]]s and [[Ensemble algorithm]] StemForge specifies explicitly to the separator. Defined the same way as a built-in preset; only the point of definition differs. Shown in the UI as a "User preset".
 - **Single model** — one [[Model]] run on its own. Exists so a single model can be run without being part of an ensemble, which the other two modes cannot express. Also shown in the UI as a "User preset" (one that uses a single model).
 

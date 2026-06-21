@@ -40,43 +40,6 @@ public sealed class SeparatorDriverServiceDispatchTests
         Assert.True(ready.IsCompletedSuccessfully);
     }
 
-    // ── presets ──────────────────────────────────────────────────────────────
-
-    [Fact]
-    public void Presets_RaisesPresetsLoadedWithMappedCatalog()
-    {
-        var svc = NewService();
-        IReadOnlyList<Preset>? loaded = null;
-        svc.PresetsLoaded += p => loaded = p;
-
-        svc.DispatchLineForTest(
-            """
-            {"event":"presets","presets":{"vocal_full":{"name":"Vocal Full","description":"high quality","models":["a.ckpt","b.ckpt"],"algorithm":"max_fft"}}}
-            """
-        );
-
-        Assert.NotNull(loaded);
-        var preset = Assert.Single(loaded);
-        Assert.Equal("vocal_full", preset.Id);
-        Assert.Equal("Full", preset.Label);
-        Assert.Equal(PresetCategory.Vocals, preset.Category);
-        Assert.Equal("high quality", preset.Description);
-        Assert.Equal(["a.ckpt", "b.ckpt"], preset.AllModels);
-        Assert.Equal("max_fft", preset.EnsembleAlgorithm);
-    }
-
-    [Fact]
-    public void Presets_EmptyCatalog_DoesNotRaise()
-    {
-        var svc = NewService();
-        var raised = false;
-        svc.PresetsLoaded += _ => raised = true;
-
-        svc.DispatchLineForTest("""{"event":"presets","presets":{}}""");
-
-        Assert.False(raised);
-    }
-
     // ── phase ──────────────────────────────────────────────────────────────────
 
     [Fact]
