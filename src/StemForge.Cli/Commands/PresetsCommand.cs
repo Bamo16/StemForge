@@ -40,22 +40,17 @@ internal sealed class PresetsCommand : AsyncCommand<PresetsCommand.Settings>
             return 1;
         }
 
-        var table = new Table();
-        table.AddColumn("ID");
-        table.AddColumn("Algorithm");
-        table.AddColumn("Models");
+        var presetTable = presets.Aggregate(
+            new Table().AddColumns("ID", "Algorithm", "Models"),
+            (table, preset) =>
+                table.AddRow(
+                    Markup.Escape(preset.Id),
+                    Markup.Escape(preset.EnsembleAlgorithm ?? string.Empty),
+                    Markup.Escape(string.Join(", ", preset.AllModels))
+                )
+        );
 
-        foreach (var preset in presets)
-        {
-            var modelList = string.Join(", ", preset.AllModels);
-            table.AddRow(
-                Markup.Escape(preset.Id),
-                Markup.Escape(preset.EnsembleAlgorithm ?? ""),
-                Markup.Escape(modelList)
-            );
-        }
-
-        AnsiConsole.Write(table);
+        AnsiConsole.Write(presetTable);
         return 0;
     }
 }
