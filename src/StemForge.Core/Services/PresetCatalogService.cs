@@ -1,14 +1,15 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using StemForge.Core.Models;
 
 namespace StemForge.Core.Services;
 
 /// <summary>
 /// Resolves the built-in ensemble preset catalog by running the torch-free <c>list_presets.py</c>
-/// one-shot against the audio-separator Python interpreter and mapping the result into
-/// <see cref="Preset"/> models. Used at GUI startup and by the CLI <c>presets</c> command; this
-/// avoids spinning up the long-lived (torch-loading) separator driver just to list presets.
-/// Results are cached after first load. Returns an empty list on toolchain absence or parse failure.
+/// one-shot (via <see cref="LightweightCatalog"/>) and mapping the result into <see cref="Preset"/>
+/// models. Used at GUI startup and by the CLI <c>presets</c> command; this avoids spinning up the
+/// long-lived (torch-loading) separator driver just to list presets. Results are cached after first
+/// load. Returns an empty list on toolchain absence or parse failure.
 /// </summary>
 public sealed class PresetCatalogService(IProcessRunner runner, AppPaths paths)
 {
@@ -23,33 +24,15 @@ public sealed class PresetCatalogService(IProcessRunner runner, AppPaths paths)
         if (_cache is not null)
             return _cache;
 
-        var script = AppPaths.ListPresetsScript;
+        var raw = await LightweightCatalog.RunScriptAsync(
+            _runner,
+            _paths,
+            AppPaths.ListPresetsScript,
+            [],
+            "PresetCatalog",
+            ct
+        );
 
-        if (!File.Exists(script))
-        {
-            AppLogger.Warning("PresetCatalog", $"list_presets.py not found at: {script}");
-            _cache = [];
-            return _cache;
-        }
-
-        ProcessRunner.Result result;
-        try
-        {
-            result = await _runner.RunAsync(
-                _paths.SeparationDriverPython,
-                [script],
-                ct,
-                logRawLines: false
-            );
-        }
-        catch (Exception ex)
-        {
-            AppLogger.Warning("PresetCatalog", $"Failed to run list_presets.py: {ex.Message}");
-            _cache = [];
-            return _cache;
-        }
-
-        var raw = string.IsNullOrWhiteSpace(result.Stdout) ? result.Output : result.Stdout;
         _cache = ParsePresets(raw);
         return _cache;
     }
@@ -62,78 +45,51 @@ public sealed class PresetCatalogService(IProcessRunner runner, AppPaths paths)
     /// prefix from each label. The static built-in fallback equivalent lives in
     /// <see cref="PresetCatalog"/>.
     /// </summary>
-    internal static IReadOnlyList<Preset> ParsePresets(string raw)
+    internal static IReadOnlyList<Preset> ParsePresets(string? raw)
     {
-        if (string.IsNullOrWhiteSpace(raw))
+        var json = LightweightCatalog.ExtractJsonObject(raw);
+        if (json is null)
             return [];
 
-        var start = raw.IndexOf('{');
-        var end = raw.LastIndexOf('}');
-        if (start < 0 || end <= start)
-            return [];
-
+        Dictionary<string, PresetEntryDto>? catalog;
         try
         {
-            using var doc = JsonDocument.Parse(raw[start..(end + 1)]);
-            if (doc.RootElement.ValueKind != JsonValueKind.Object)
-                return [];
-
-            var list = new List<Preset>();
-
-            // Top-level keys are preset ids; values are objects with "models", "algorithm", etc.
-            foreach (var prop in doc.RootElement.EnumerateObject())
-            {
-                if (prop.Value.ValueKind != JsonValueKind.Object)
-                    continue;
-
-                var id = prop.Name;
-                var models = ReadStringArray(prop.Value, "models");
-                var name = ReadString(prop.Value, "name");
-                var description = ReadString(prop.Value, "description");
-                var algorithm = ReadString(prop.Value, "algorithm");
-
-                var category = InferCategory(id);
-                var label = StripCategoryPrefix(name.Length > 0 ? name : id, category);
-
-                list.Add(
-                    new Preset(
-                        id,
-                        label,
-                        category,
-                        description,
-                        ModelCount: models.Count,
-                        Vram: string.Empty,
-                        Models: models,
-                        EnsembleAlgorithm: string.IsNullOrWhiteSpace(algorithm) ? null : algorithm
-                    )
-                );
-            }
-
-            return list;
+            catalog = JsonSerializer.Deserialize(
+                json,
+                PresetCatalogJsonContext.Default.PresetCatalog
+            );
         }
-        catch (Exception ex)
+        catch
         {
-            AppLogger.Warning("PresetCatalog", $"Failed to parse preset JSON: {ex.Message}");
             return [];
         }
-    }
 
-    private static string ReadString(JsonElement obj, string name) =>
-        obj.TryGetProperty(name, out var el) && el.ValueKind == JsonValueKind.String
-            ? el.GetString() ?? ""
-            : "";
+        if (catalog is null)
+            return [];
 
-    private static List<string> ReadStringArray(JsonElement obj, string name)
-    {
-        var list = new List<string>();
-        if (obj.TryGetProperty(name, out var el) && el.ValueKind == JsonValueKind.Array)
+        var list = new List<Preset>(catalog.Count);
+        foreach (var (id, entry) in catalog)
         {
-            foreach (var m in el.EnumerateArray())
-            {
-                if (m.ValueKind == JsonValueKind.String)
-                    list.Add(m.GetString()!);
-            }
+            var category = InferCategory(id);
+            var name = entry.Name ?? "";
+            var label = StripCategoryPrefix(name.Length > 0 ? name : id, category);
+
+            list.Add(
+                new Preset(
+                    id,
+                    label,
+                    category,
+                    entry.Description ?? "",
+                    ModelCount: entry.Models.Count,
+                    Vram: string.Empty,
+                    Models: entry.Models,
+                    EnsembleAlgorithm: string.IsNullOrWhiteSpace(entry.Algorithm)
+                        ? null
+                        : entry.Algorithm
+                )
+            );
         }
+
         return list;
     }
 
@@ -155,3 +111,26 @@ public sealed class PresetCatalogService(IProcessRunner runner, AppPaths paths)
             : name;
     }
 }
+
+// ── JSON DTOs ─────────────────────────────────────────────────────────────────
+
+/// <summary>One preset from list_presets.py. Mirrors audio-separator's ensemble_presets.json entry
+/// shape; "weights" is unused by StemForge and intentionally not modelled.</summary>
+internal sealed record PresetEntryDto
+{
+    public string? Name { get; init; }
+    public string? Description { get; init; }
+    public List<string> Models { get; init; } = [];
+    public string? Algorithm { get; init; }
+}
+
+/// <summary>
+/// Source-generated serializer context for the list_presets.py catalog. The camelCase policy maps
+/// the DTO properties onto the script's lowercase JSON keys.
+/// </summary>
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(
+    typeof(Dictionary<string, PresetEntryDto>),
+    TypeInfoPropertyName = "PresetCatalog"
+)]
+internal sealed partial class PresetCatalogJsonContext : JsonSerializerContext { }

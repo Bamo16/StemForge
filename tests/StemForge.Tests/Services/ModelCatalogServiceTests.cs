@@ -26,9 +26,9 @@ public sealed class ModelCatalogServiceTests
         """;
 
     [Fact]
-    public void TryParseJson_ValidJson_ReturnsModels()
+    public void ParseModels_ValidJson_ReturnsModels()
     {
-        var models = ModelCatalogService.TryParseJson(ValidJson);
+        var models = ModelCatalogService.ParseModels(ValidJson);
 
         Assert.Equal(2, models.Count);
         var kim = models.Single(m => m.Filename == "Kim_Vocal_2.onnx");
@@ -41,9 +41,9 @@ public sealed class ModelCatalogServiceTests
     }
 
     [Fact]
-    public void TryParseJson_StemsWithoutScores_SdrIsNull()
+    public void ParseModels_StemsWithoutScores_SdrIsNull()
     {
-        var models = ModelCatalogService.TryParseJson(ValidJson);
+        var models = ModelCatalogService.ParseModels(ValidJson);
         var ht = models.Single(m => m.Filename == "htdemucs.yaml");
 
         Assert.Equal(4, ht.Stems.Count);
@@ -55,21 +55,21 @@ public sealed class ModelCatalogServiceTests
     [InlineData("   ")]
     [InlineData("not json at all")]
     [InlineData("{ invalid }")]
-    public void TryParseJson_InvalidOrEmpty_ReturnsEmpty(string raw)
+    public void ParseModels_InvalidOrEmpty_ReturnsEmpty(string raw)
     {
-        Assert.Empty(ModelCatalogService.TryParseJson(raw));
+        Assert.Empty(ModelCatalogService.ParseModels(raw));
     }
 
     [Fact]
-    public void TryParseJson_JsonWithLogPrefix_StillParsed()
+    public void ParseModels_JsonWithLogPrefix_StillParsed()
     {
         var withPrefix = "INFO:audio_separator:listing models\n" + ValidJson + "\nDone.";
-        var models = ModelCatalogService.TryParseJson(withPrefix);
+        var models = ModelCatalogService.ParseModels(withPrefix);
         Assert.Equal(2, models.Count);
     }
 
     [Fact]
-    public void TryParseJson_DuplicateFilename_DedupedFirstWins()
+    public void ParseModels_DuplicateFilename_DedupedFirstWins()
     {
         // Upstream output can repeat the same filename across entries. The first
         // occurrence should win and the duplicate should be dropped.
@@ -88,7 +88,7 @@ public sealed class ModelCatalogServiceTests
             }
             """;
 
-        var models = ModelCatalogService.TryParseJson(json);
+        var models = ModelCatalogService.ParseModels(json);
 
         Assert.Single(models);
         var only = models.Single(m => m.Filename == "Kim_Vocal_2.onnx");
@@ -97,7 +97,7 @@ public sealed class ModelCatalogServiceTests
     }
 
     [Fact]
-    public void TryParseJson_ModelMissingFilename_Skipped()
+    public void ParseModels_ModelMissingFilename_Skipped()
     {
         var json = """
             {
@@ -108,11 +108,11 @@ public sealed class ModelCatalogServiceTests
               }
             }
             """;
-        Assert.Empty(ModelCatalogService.TryParseJson(json));
+        Assert.Empty(ModelCatalogService.ParseModels(json));
     }
 
     [Fact]
-    public void TryParseJson_ListModelsScriptShape_ParsesFilenameStemsAndScores()
+    public void ParseModels_ListModelsScriptShape_ParsesFilenameStemsAndScores()
     {
         // Shape emitted by the lightweight tools/list_models.py one-shot: each entry carries
         // filename, stems, a "target_stem" field (ignored by the parser), and scores derived
@@ -141,7 +141,7 @@ public sealed class ModelCatalogServiceTests
             }
             """;
 
-        var models = ModelCatalogService.TryParseJson(json);
+        var models = ModelCatalogService.ParseModels(json);
 
         Assert.Equal(2, models.Count);
 

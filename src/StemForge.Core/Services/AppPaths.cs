@@ -101,21 +101,25 @@ public sealed class AppPaths(AppSettings settings, PlatformInfo? platform = null
     public string SeparationDriverPython =>
         File.Exists(UvAudioSeparatorPython) ? UvAudioSeparatorPython : "python";
 
+    /// <summary>Directory holding the bundled Python tool scripts and the protocol manifest,
+    /// co-located with the app binary.</summary>
+    private static string ToolsDir => Path.Combine(AppContext.BaseDirectory, "tools");
+
     /// <summary>Path to the separation driver script, co-located with the app binary.</summary>
-    public static string SeparationDriverScript =>
-        Path.Combine(AppContext.BaseDirectory, "tools", "separator_driver.py");
+    public static string SeparationDriverScript => Path.Combine(ToolsDir, "separator_driver.py");
 
     /// <summary>Path to the preset listing script, co-located with the app binary.</summary>
-    public static string ListPresetsScript =>
-        Path.Combine(AppContext.BaseDirectory, "tools", "list_presets.py");
+    public static string ListPresetsScript => Path.Combine(ToolsDir, "list_presets.py");
+
+    /// <summary>Path to the model listing script, co-located with the app binary.</summary>
+    public static string ListModelsScript => Path.Combine(ToolsDir, "list_models.py");
 
     /// <summary>
     /// Path to the driver protocol manifest (the single source of truth for the separator driver's
     /// event and phase vocabulary), co-located with the app binary. The Python driver reads it at
     /// startup; the C# contract test reads it to detect drift from the typed events.
     /// </summary>
-    public static string DriverProtocolManifest =>
-        Path.Combine(AppContext.BaseDirectory, "tools", "driver_protocol.json");
+    public static string DriverProtocolManifest => Path.Combine(ToolsDir, "driver_protocol.json");
 
     // uv installs itself to ~/.local/bin (uv.exe on Windows, bare uv on Unix). Probing this lets
     // callers use uv immediately after installation without requiring a PATH-refresh restart.

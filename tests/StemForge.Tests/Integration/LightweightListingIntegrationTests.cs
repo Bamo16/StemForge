@@ -46,10 +46,8 @@ public sealed class LightweightListingIntegrationTests
         await using var provider = services.BuildServiceProvider();
 
         var catalog = provider.GetRequiredService<ModelCatalogService>();
-        var paths = provider.GetRequiredService<AppPaths>();
 
         var models = await catalog.ListModelsAsync(
-            paths.AudioSeparator,
             forceRefresh: true,
             ct: TestContext.Current.CancellationToken
         );

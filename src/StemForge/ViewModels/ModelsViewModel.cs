@@ -251,7 +251,7 @@ public partial class ModelsViewModel : PageViewModelBase
 
         try
         {
-            var models = await _catalog.ListModelsAsync(_paths.AudioSeparator, forceRefresh);
+            var models = await _catalog.ListModelsAsync(forceRefresh);
             var modelsDir = _paths.ModelsDirectory;
 
             foreach (var m in models)
