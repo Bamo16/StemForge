@@ -613,7 +613,7 @@ public sealed class SeparationPipeline(
                 args.AddRange(["-i", sourceFlac]);
                 args.AddRange(FfmpegArgs.Codec(format));
                 args.Add(dest);
-                await _runner.RunCheckedAsync(_paths.Ffmpeg, args, ct, logRawLines: false);
+                await _runner.RunCheckedAsync(_paths.Ffmpeg, args, logRawLines: false, ct: ct);
             }
 
             return dest;

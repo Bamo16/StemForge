@@ -25,7 +25,7 @@ public sealed class ProcessRunnerTests
     {
         var (exe, args) = EchoCommand("stemforge-marker");
 
-        var result = await _runner.RunAsync(exe, args, TestContext.Current.CancellationToken);
+        var result = await _runner.RunAsync(exe, args, ct: TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, result.Stderr);
         Assert.Contains("stemforge-marker", result.Output);
@@ -41,7 +41,7 @@ public sealed class ProcessRunnerTests
 
         var sw = Stopwatch.StartNew();
         await Assert.ThrowsAsync<OperationCanceledException>(async () =>
-            await _runner.RunAsync(exe, args, cts.Token)
+            await _runner.RunAsync(exe, args, ct: cts.Token)
         );
         sw.Stop();
 

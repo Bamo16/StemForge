@@ -51,8 +51,8 @@ public sealed class ProcessRunner : IProcessRunner
     public Task<Result> RunAsync(
         string exe,
         IEnumerable<string> args,
-        CancellationToken ct = default,
-        bool logRawLines = true
+        bool logRawLines = true,
+        CancellationToken ct = default
     ) => CoreAsync(exe, args, progress: null, throwOnFailure: false, logRawLines, ct);
 
     /// Run to completion and capture output. Throws <see cref="ProcessFailedException"/>
@@ -60,8 +60,8 @@ public sealed class ProcessRunner : IProcessRunner
     public Task<Result> RunCheckedAsync(
         string exe,
         IEnumerable<string> args,
-        CancellationToken ct = default,
-        bool logRawLines = true
+        bool logRawLines = true,
+        CancellationToken ct = default
     ) => CoreAsync(exe, args, progress: null, throwOnFailure: true, logRawLines, ct);
 
     /// Run and stream each line (stdout + stderr) to <paramref name="progress"/> as it arrives.
@@ -70,8 +70,8 @@ public sealed class ProcessRunner : IProcessRunner
         string exe,
         IEnumerable<string> args,
         IProgress<string>? progress = null,
-        CancellationToken ct = default,
-        bool logRawLines = true
+        bool logRawLines = true,
+        CancellationToken ct = default
     ) => await CoreAsync(exe, args, progress, throwOnFailure: true, logRawLines, ct);
 
     /// Captures stdout into the returned <see cref="Result"/> while streaming stderr lines live
@@ -80,8 +80,8 @@ public sealed class ProcessRunner : IProcessRunner
         string exe,
         IEnumerable<string> args,
         IProgress<string>? stderrProgress = null,
-        CancellationToken ct = default,
-        bool logRawLines = true
+        bool logRawLines = true,
+        CancellationToken ct = default
     ) =>
         CoreAsync(
             exe,

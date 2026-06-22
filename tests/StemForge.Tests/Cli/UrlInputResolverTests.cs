@@ -121,30 +121,30 @@ public sealed class UrlInputResolverTests
             string exe,
             IEnumerable<string> args,
             IProgress<string>? progress = null,
-            CancellationToken ct = default,
-            bool logRawLines = true
+            bool logRawLines = true,
+            CancellationToken ct = default
         ) => throw new OperationCanceledException();
 
         public Task<ProcessRunner.Result> RunAsync(
             string exe,
             IEnumerable<string> args,
-            CancellationToken ct = default,
-            bool logRawLines = true
+            bool logRawLines = true,
+            CancellationToken ct = default
         ) => throw new OperationCanceledException();
 
         public Task<ProcessRunner.Result> RunCheckedAsync(
             string exe,
             IEnumerable<string> args,
-            CancellationToken ct = default,
-            bool logRawLines = true
+            bool logRawLines = true,
+            CancellationToken ct = default
         ) => throw new OperationCanceledException();
 
         public Task<ProcessRunner.Result> RunStreamingStderrAsync(
             string exe,
             IEnumerable<string> args,
             IProgress<string>? stderrProgress = null,
-            CancellationToken ct = default,
-            bool logRawLines = true
+            bool logRawLines = true,
+            CancellationToken ct = default
         ) => throw new OperationCanceledException();
     }
 }
