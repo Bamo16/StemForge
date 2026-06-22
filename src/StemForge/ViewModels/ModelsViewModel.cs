@@ -15,6 +15,7 @@ public partial class ModelsViewModel : PageViewModelBase
     public override string Title => "Model Library";
 
     private readonly ModelCatalogService _catalog;
+    private readonly ModelProfileResolver _profiles;
     private readonly AppPaths _paths;
     private readonly UserPresetService _userPresets;
     private readonly ToolStateService _toolState;
@@ -25,10 +26,12 @@ public partial class ModelsViewModel : PageViewModelBase
         AppPaths paths,
         UserPresetService userPresets,
         ModelCatalogService catalog,
+        ModelProfileResolver profiles,
         ToolStateService toolState
     )
     {
         _catalog = catalog;
+        _profiles = profiles;
         _paths = paths;
         _userPresets = userPresets;
         _toolState = toolState;
@@ -256,7 +259,13 @@ public partial class ModelsViewModel : PageViewModelBase
             {
                 var fullPath = Path.Combine(modelsDir, m.Filename);
                 var exists = File.Exists(fullPath);
-                var vm = new ModelItemViewModel(m)
+
+                // Resolve the advisory profile so models the benchmark lists no stems for still
+                // show their resolved stems. The resolver only reaches the network when a
+                // config-driven model has no benchmark stems; for everything else this is local.
+                var profile = await _profiles.ResolveAsync(m);
+
+                var vm = new ModelItemViewModel(m, profile)
                 {
                     IsLocal = exists,
                     FileSizeBytes = exists ? new FileInfo(fullPath).Length : 0,
@@ -302,7 +311,15 @@ public partial class ModelsViewModel : PageViewModelBase
 
             if (!string.IsNullOrEmpty(stem))
             {
-                if (!m.Stems.Any(s => s.Name.Equals(stem, StringComparison.OrdinalIgnoreCase)))
+                var hasBenchmarkStem = m.Stems.Any(s =>
+                    s.Name.Equals(stem, StringComparison.OrdinalIgnoreCase)
+                );
+                var hasProfileStem =
+                    m.Profile is { IsUnknown: false }
+                    && m.Profile.Stems.Any(s =>
+                        s.Name.Equals(stem, StringComparison.OrdinalIgnoreCase)
+                    );
+                if (!hasBenchmarkStem && !hasProfileStem)
                     return false;
             }
 
