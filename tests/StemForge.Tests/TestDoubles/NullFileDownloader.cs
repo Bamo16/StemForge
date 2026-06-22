@@ -1,4 +1,4 @@
-namespace StemForge.Tests.Fakes;
+namespace StemForge.Tests.TestDoubles;
 
 /// <summary>
 /// A no-op <see cref="IFileDownloader"/> for tests that construct services requiring a downloader

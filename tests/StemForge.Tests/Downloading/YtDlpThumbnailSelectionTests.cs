@@ -373,7 +373,7 @@ public sealed class YtDlpThumbnailSelectionTests
             }
             """;
 
-        var fake = new StemForge.Tests.Fakes.FakeProcessRunner();
+        var fake = new StemForge.Tests.TestDoubles.FakeProcessRunner();
         fake.Setup("yt-dlp", json);
         var settings = new StemForge.Core.AppSettings();
         settings.SetToolPathOverride(StemForge.Core.Tooling.ToolKind.Ytdlp, "yt-dlp");
@@ -413,7 +413,7 @@ public sealed class YtDlpThumbnailSelectionTests
             }
             """;
 
-        var fake = new StemForge.Tests.Fakes.FakeProcessRunner();
+        var fake = new StemForge.Tests.TestDoubles.FakeProcessRunner();
         fake.Setup("yt-dlp", json);
         var settings = new StemForge.Core.AppSettings();
         settings.SetToolPathOverride(StemForge.Core.Tooling.ToolKind.Ytdlp, "yt-dlp");

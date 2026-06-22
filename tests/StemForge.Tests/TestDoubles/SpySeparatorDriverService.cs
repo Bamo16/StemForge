@@ -1,4 +1,4 @@
-namespace StemForge.Tests.Fakes;
+namespace StemForge.Tests.TestDoubles;
 
 /// <summary>
 /// Configurable test spy for <see cref="ISeparatorDriverService"/>. Records all received

@@ -1,4 +1,4 @@
-using StemForge.Tests.Fakes;
+using StemForge.Tests.TestDoubles;
 using StemForge.ViewModels;
 
 namespace StemForge.Tests.ViewModels;

@@ -1,4 +1,4 @@
-namespace StemForge.Tests.Fakes;
+namespace StemForge.Tests.TestDoubles;
 
 /// <summary>
 /// Configurable fake for IProcessRunner. Register responses keyed by exe name.

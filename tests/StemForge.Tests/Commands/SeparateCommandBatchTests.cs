@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using StemForge.Cli.Commands;
-using StemForge.Tests.Fakes;
+using StemForge.Tests.TestDoubles;
 
 namespace StemForge.Tests.Commands;
 

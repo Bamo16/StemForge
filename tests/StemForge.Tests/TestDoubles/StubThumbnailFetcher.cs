@@ -1,4 +1,4 @@
-namespace StemForge.Tests.Fakes;
+namespace StemForge.Tests.TestDoubles;
 
 /// <summary>
 /// Returns a canned thumbnail path (or null) without performing any HTTP work. Records the

@@ -1,4 +1,4 @@
-namespace StemForge.Tests.Fakes;
+namespace StemForge.Tests.TestDoubles;
 
 /// <summary>
 /// Hand-written test double for ISeparatorDriverService.

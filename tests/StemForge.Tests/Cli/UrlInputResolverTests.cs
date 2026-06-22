@@ -1,5 +1,5 @@
 using StemForge.Cli.Progress;
-using StemForge.Tests.Fakes;
+using StemForge.Tests.TestDoubles;
 
 namespace StemForge.Tests.Cli;
 
