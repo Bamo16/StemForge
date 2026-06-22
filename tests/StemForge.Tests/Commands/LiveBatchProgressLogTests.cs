@@ -1,6 +1,5 @@
 using Spectre.Console;
 using StemForge.Cli.Progress;
-using StemForge.Core.Services;
 
 namespace StemForge.Tests.Commands;
 

@@ -2,7 +2,6 @@ using System.Text;
 using Spectre.Console.Cli;
 using StemForge.Cli.Commands;
 using StemForge.Cli.Progress;
-using StemForge.Core.Services;
 
 // Emit UTF-8 to the console so Unicode in log and progress output (the process arrows, box-drawing
 // bars, track titles) renders correctly on Windows, where the default console codepage otherwise

@@ -6,10 +6,6 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Humanizer;
-using StemForge.Core.Extensions;
-using StemForge.Core.Helpers;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 using StemForge.Services;
 
 namespace StemForge.ViewModels;

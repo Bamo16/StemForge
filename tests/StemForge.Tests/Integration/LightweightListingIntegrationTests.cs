@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using StemForge.Core.Services;
 
 namespace StemForge.Tests.Integration;
 

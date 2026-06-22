@@ -1,6 +1,4 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 
 namespace StemForge.ViewModels;
 

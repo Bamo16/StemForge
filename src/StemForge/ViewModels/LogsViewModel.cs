@@ -3,7 +3,6 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using StemForge.Core.Services;
 using StemForge.Services;
 
 namespace StemForge.ViewModels;

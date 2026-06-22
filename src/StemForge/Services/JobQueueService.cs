@@ -1,8 +1,6 @@
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using Humanizer;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 using StemForge.ViewModels;
 
 namespace StemForge.Services;

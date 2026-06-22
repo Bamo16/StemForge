@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using StemForge.Core.Services;
 
 namespace StemForge.Cli.Commands;
 
@@ -21,7 +20,7 @@ internal sealed class PresetsCommand : AsyncCommand<PresetsCommand.Settings>
 
         var catalog = provider.GetRequiredService<PresetCatalogService>();
 
-        IReadOnlyList<Core.Models.Preset> presets;
+        IReadOnlyList<Preset> presets;
         try
         {
             presets = await catalog.ListPresetsAsync(cancellationToken);

@@ -1,5 +1,3 @@
-using StemForge.Core.Services;
-
 namespace StemForge.ViewModels;
 
 public sealed class ToolStatusViewModel

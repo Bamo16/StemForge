@@ -1,6 +1,4 @@
 using System.Diagnostics;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 
 namespace StemForge.Tests.Services;
 

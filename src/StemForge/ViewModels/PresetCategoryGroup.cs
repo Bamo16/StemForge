@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Avalonia.Media;
-using StemForge.Core.Models;
 
 namespace StemForge.ViewModels;
 

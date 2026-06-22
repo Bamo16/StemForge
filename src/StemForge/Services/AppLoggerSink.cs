@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
-using StemForge.Core.Services;
 
 namespace StemForge.Services;
 

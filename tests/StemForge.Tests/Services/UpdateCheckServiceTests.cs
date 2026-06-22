@@ -1,5 +1,3 @@
-using StemForge.Core.Services;
-
 namespace StemForge.Tests.Services;
 
 public sealed class UpdateCheckServiceTests

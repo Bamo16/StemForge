@@ -1,5 +1,3 @@
-using StemForge.Core.Models;
-
 namespace StemForge.Tests.Models;
 
 public sealed class YtDlpMetadataTests

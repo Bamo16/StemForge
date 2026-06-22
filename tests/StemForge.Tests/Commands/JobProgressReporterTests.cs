@@ -1,5 +1,4 @@
 using StemForge.Cli.Progress;
-using StemForge.Core.Models;
 
 namespace StemForge.Tests.Commands;
 

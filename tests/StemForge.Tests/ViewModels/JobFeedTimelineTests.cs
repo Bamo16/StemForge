@@ -1,5 +1,3 @@
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 using StemForge.Services;
 using StemForge.ViewModels;
 

@@ -1,7 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Humanizer;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 
 namespace StemForge.ViewModels;
 

@@ -1,5 +1,3 @@
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 using StemForge.Tests.Fakes;
 
 namespace StemForge.Tests.Services;

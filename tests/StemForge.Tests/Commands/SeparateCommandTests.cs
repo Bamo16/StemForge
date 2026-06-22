@@ -1,7 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using StemForge.Cli.Commands;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 using StemForge.Tests.Fakes;
 
 namespace StemForge.Tests.Commands;

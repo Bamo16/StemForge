@@ -3,9 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using StemForge.Cli.Progress;
-using StemForge.Core.Helpers;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 
 namespace StemForge.Cli.Commands;
 

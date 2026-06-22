@@ -2,8 +2,6 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 using StemForge.Services;
 using StemForge.ViewModels;
 using StemForge.Views;

@@ -1,6 +1,3 @@
-using StemForge.Core.Helpers;
-using StemForge.Core.Models;
-
 namespace StemForge.Tests.Helpers;
 
 public sealed class AudioTaggerTests
