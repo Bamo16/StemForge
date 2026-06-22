@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace StemForge.Core;
 
-public static class HttpClientBuilderExtensions
+internal static class HttpClientBuilderExtensions
 {
     public static IHttpClientBuilder WithUserAgent(this IHttpClientBuilder builder) =>
         builder.ConfigureHttpClient(

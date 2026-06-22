@@ -1,4 +1,3 @@
-using System.Text;
 using Spectre.Console;
 using StemForge.Cli.Progress;
 
