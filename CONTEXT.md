@@ -42,8 +42,17 @@ A single audio-separation neural network, identified by its weight file (`.ckpt`
 ### Stem
 An isolated audio component produced by separation — vocals, instrumental, drums, bass, etc. A separation run writes one file per stem.
 
+### Model profile
+The set of facts StemForge derives about a [[Model]] *without running it*: its architecture, its output [[Stem]]s with a confidence/source (exact names from the model config or benchmark data; a target stem inferred from the filename; or unknown), and whether it is a composite/bag model — one weight file that is internally several sub-models, e.g. `htdemucs_ft`. Drives stem-aware UI: the [[Keep set]] picker, ensemble overlap hints, and the drum-extraction model list. Advisory, never authoritative — audio-separator remains the source of truth for what a model actually emits.
+
+### Keep set
+The subset of a [[Separation run]]'s output [[Stem]]s that StemForge retains; the rest are discarded after the run. Built-in presets carry an opinionated keep set (a vocal preset keeps only Vocals); user presets default to keeping all stems, narrowed by the user via a stem picker when the [[Model profile]] can name the stems.
+
 ### Preset
-A named separation recipe selectable in the UI. Carries a category, a human label, and a [[Separation mode]] that determines how its [[Model]]s are run. User-defined presets (custom ensembles and single-model presets) are surfaced in the UI as "User presets".
+A named separation recipe selectable in the UI. Carries a category, a human label, and a [[Separation mode]] that determines how its [[Model]]s are run. User-defined presets (custom ensembles and single-model presets) are surfaced in the UI as "User presets". Structurally a preset is an ordered list of [[Step]]s; today every preset is exactly one step, with multi-step (chained) presets a deferred extension.
+
+### Step
+A single stage of a [[Preset]]'s recipe: an input (the source audio, or a named [[Stem]] from an earlier step), a [[Model]]-or-[[Ensemble]] to run, a [[Keep set]], and optionally a terminal operation that combines kept stems into one file. A preset is an ordered list of steps; when executed, each step is one [[Separation run]]. With a single-step preset (the only kind today) the step's input is always the source audio. _Not to be confused_ with the loose "step" the pipeline uses for progress, which counts [[Separation run]]s within a [[Job]] (one per preset today).
 
 ### Separation mode
 How a [[Preset]] is specified to the separator. The modes are not different processes so much as different ways of expressing the same separation: most presets are a set of [[Model]]s run together and combined with an [[Ensemble algorithm]]. Three modes:
@@ -52,7 +61,7 @@ How a [[Preset]] is specified to the separator. The modes are not different proc
 - **Single model** — one [[Model]] run on its own. Exists so a single model can be run without being part of an ensemble, which the other two modes cannot express. Also shown in the UI as a "User preset" (one that uses a single model).
 
 ### Ensemble
-A [[Preset]] that runs two or more [[Model]]s and combines their per-[[Stem]] outputs into one result. Single-model presets are not ensembles.
+A [[Preset]] that runs two or more [[Model]]s and groups their outputs by [[Stem]] name. A stem name produced by two or more of the models is blended into a single stem via the [[Ensemble algorithm]]; a stem name produced by only one model passes through unchanged. The result is the union of every stem name the models produce, with only the overlapping names actually combined. So ensembling models that share a target stem improves that stem, while ensembling models with disjoint stems just collects their stems side by side (no quality benefit). Single-model presets are not ensembles.
 
 ### Ensemble algorithm
 The method by which an [[Ensemble]] combines its models' outputs. Operates either in the waveform domain (`avg_wave`, `median_wave`, `min_wave`, `max_wave`) or the spectral/FFT-magnitude domain (`avg_fft`/`mean_fft`, `median_fft`, `min_fft`, `max_fft`, and the UVR spectral blends `uvr_max_spec` and `uvr_min_spec`). Each algorithm trades off loudness/detail recovery against noise suppression. Built-in presets carry their algorithm in the driver's catalog; custom ensembles let the user pick one. Applies only to ensembles (2+ models).
