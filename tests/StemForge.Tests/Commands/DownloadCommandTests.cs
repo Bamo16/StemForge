@@ -54,8 +54,8 @@ public sealed class DownloadCommandTests : IDisposable
             string exe,
             IEnumerable<string> args,
             IProgress<string>? progress = null,
-            CancellationToken ct = default,
-            bool logRawLines = true
+            bool logRawLines = true,
+            CancellationToken ct = default
         )
         {
             StreamedExes.Add(exe);
@@ -67,23 +67,23 @@ public sealed class DownloadCommandTests : IDisposable
         public Task<ProcessRunner.Result> RunAsync(
             string exe,
             IEnumerable<string> args,
-            CancellationToken ct = default,
-            bool logRawLines = true
+            bool logRawLines = true,
+            CancellationToken ct = default
         ) => Task.FromResult(new ProcessRunner.Result(0, "", ""));
 
         public Task<ProcessRunner.Result> RunCheckedAsync(
             string exe,
             IEnumerable<string> args,
-            CancellationToken ct = default,
-            bool logRawLines = true
+            bool logRawLines = true,
+            CancellationToken ct = default
         ) => Task.FromResult(new ProcessRunner.Result(0, "", ""));
 
         public Task<ProcessRunner.Result> RunStreamingStderrAsync(
             string exe,
             IEnumerable<string> args,
             IProgress<string>? stderrProgress = null,
-            CancellationToken ct = default,
-            bool logRawLines = true
+            bool logRawLines = true,
+            CancellationToken ct = default
         ) => Task.FromResult(new ProcessRunner.Result(0, "", ""));
     }
 

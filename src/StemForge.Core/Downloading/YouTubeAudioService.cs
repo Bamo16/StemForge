@@ -62,7 +62,7 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         args.Add(url);
 
         // Stderr streams live (yt-dlp info lines); stdout (the JSON blob) is captured silently.
-        var result = await _runner.RunStreamingStderrAsync(_paths.Ytdlp, args, log, ct);
+        var result = await _runner.RunStreamingStderrAsync(_paths.Ytdlp, args, log, ct: ct);
 
         var info = DeserializeVideoInfo(result.Stdout);
 
@@ -143,7 +143,7 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         args.AddRange(FfmpegArgs.Codec(format));
         args.Add(outputPath);
 
-        await _runner.RunStreamingAsync(_paths.Ffmpeg, args, log, ct);
+        await _runner.RunStreamingAsync(_paths.Ffmpeg, args, log, ct: ct);
 
         return outputPath;
     }

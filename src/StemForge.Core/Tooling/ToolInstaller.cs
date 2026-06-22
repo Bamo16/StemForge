@@ -61,7 +61,7 @@ public sealed class ToolInstaller(
             command.Executable,
             command.Arguments,
             AsLineProgress(progress),
-            ct
+            ct: ct
         );
     }
 
@@ -84,7 +84,7 @@ public sealed class ToolInstaller(
         if (selected is not null)
             args.AddRange(selected.ExtraArgs);
 
-        return _runner.RunStreamingAsync(_paths.Uv, args, AsLineProgress(progress), ct);
+        return _runner.RunStreamingAsync(_paths.Uv, args, AsLineProgress(progress), ct: ct);
     }
 
     public Task UninstallAsync(
@@ -100,7 +100,7 @@ public sealed class ToolInstaller(
             _paths.Uv,
             ["tool", "uninstall", u.Package],
             AsLineProgress(progress),
-            ct
+            ct: ct
         );
     }
 

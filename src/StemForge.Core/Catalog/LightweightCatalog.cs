@@ -36,8 +36,8 @@ internal static class LightweightCatalog
             result = await runner.RunAsync(
                 paths.SeparationDriverPython,
                 [script, .. args],
-                ct,
-                logRawLines: false
+                logRawLines: false,
+                ct: ct
             );
         }
         catch (Exception ex)
