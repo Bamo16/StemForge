@@ -49,9 +49,14 @@ def _load_bundled(name):
 def _entry(filename, scores):
     """Build a single model entry matching list_supported_model_files() output."""
     score_data = scores.get(filename, {})
+    # median_scores mixes per-stem score objects ({"SDR": ...}) with scalar metrics such as
+    # "seconds_per_minute_m3". Keep only the per-stem objects so the emitted contract is a clean
+    # map of stem name -> score object.
+    median = score_data.get("median_scores", {})
+    stem_scores = {k: v for k, v in median.items() if isinstance(v, dict)}
     return {
         "filename": filename,
-        "scores": score_data.get("median_scores", {}),
+        "scores": stem_scores,
         "stems": score_data.get("stems", []),
         "target_stem": score_data.get("target_stem"),
     }

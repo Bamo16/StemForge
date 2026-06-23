@@ -59,8 +59,9 @@ public sealed class ModelCatalogService(IProcessRunner runner, AppPaths paths)
                 ModelCatalogJsonContext.Default.ModelCatalog
             );
         }
-        catch
+        catch (Exception ex)
         {
+            AppLogger.Warning("ModelCatalog", $"Failed to parse model catalog: {ex.Message}");
             return [];
         }
 
@@ -92,14 +93,22 @@ public sealed class ModelCatalogService(IProcessRunner runner, AppPaths paths)
 
     /// <summary>Pairs each stem name with its SDR from the entry's score map (null when absent).</summary>
     private static IReadOnlyList<StemSdr> MapStems(ModelEntryDto entry) =>
-        [
-            .. entry.Stems.Select(stem => new StemSdr(
-                stem,
-                entry.Scores is not null && entry.Scores.TryGetValue(stem, out var score)
-                    ? score.Sdr
-                    : null
-            )),
-        ];
+        [.. entry.Stems.Select(stem => new StemSdr(stem, SdrFor(entry.Scores, stem)))];
+
+    /// <summary>
+    /// Reads a stem's SDR from the entry's score map. Upstream mixes per-stem score objects with
+    /// scalar metrics (e.g. "seconds_per_minute_m3") under the same map, so only an object value
+    /// carrying a numeric "SDR" yields a score; anything else (scalar, missing, non-numeric) is
+    /// null. This keeps one unexpected field from breaking the whole catalog parse.
+    /// </summary>
+    internal static double? SdrFor(Dictionary<string, JsonElement>? scores, string stem) =>
+        scores is not null
+        && scores.TryGetValue(stem, out var el)
+        && el.ValueKind == JsonValueKind.Object
+        && el.TryGetProperty("SDR", out var sdr)
+        && sdr.ValueKind == JsonValueKind.Number
+            ? sdr.GetDouble()
+            : null;
 }
 
 // ── JSON DTOs ─────────────────────────────────────────────────────────────────
@@ -110,14 +119,13 @@ internal sealed record ModelEntryDto
 {
     public string? Filename { get; init; }
     public List<string> Stems { get; init; } = [];
-    public Dictionary<string, ModelScoreDto>? Scores { get; init; }
-}
 
-/// <summary>Per-stem score block; only the signal-to-distortion ratio is consumed.</summary>
-internal sealed record ModelScoreDto
-{
-    [JsonPropertyName("SDR")]
-    public double? Sdr { get; init; }
+    /// <summary>
+    /// Raw per-stem score map. Held as <see cref="JsonElement"/> values because upstream mixes
+    /// per-stem score objects with scalar metrics (e.g. "seconds_per_minute_m3") under the same
+    /// map; <see cref="ModelCatalogService.SdrFor"/> reads SDR only from the object values.
+    /// </summary>
+    public Dictionary<string, JsonElement>? Scores { get; init; }
 }
 
 /// <summary>
