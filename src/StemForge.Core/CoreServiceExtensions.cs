@@ -37,6 +37,7 @@ public static class CoreServiceExtensions
         services.AddSingleton<ToolInstaller>();
         services.AddSingleton<ModelCatalogService>();
         services.AddSingleton<ModelProfileResolver>();
+        services.AddSingleton<DrumModelCatalog>();
         services.AddSingleton<PresetCatalogService>();
         services.AddSingleton<ToolStateService>();
         services.AddSingleton<YouTubeAudioService>();
