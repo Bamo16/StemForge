@@ -50,7 +50,8 @@ public sealed record Preset(
     string? EnsembleAlgorithm = null,
     IReadOnlyList<string>? ExtraModels = null,
     IReadOnlyList<double>? EnsembleWeights = null,
-    IReadOnlyList<PresetStep>? Steps = null
+    IReadOnlyList<PresetStep>? Steps = null,
+    string? NameTemplate = null
 )
 {
     /// <summary>
@@ -77,9 +78,18 @@ public sealed record Preset(
                         _ => Models ?? [],
                     },
                     Algorithm: EnsembleAlgorithm,
-                    KeepSet: null
+                    KeepSet: null,
+                    NameTemplate: NameTemplate
                 ),
             ];
+
+    /// <summary>
+    /// The optional output-name template that drives this preset's output file names, or null to use
+    /// the clean "title (stem)" default. Read from the terminal step (the step that writes the files
+    /// the user keeps); for a single-step preset that is the only step. See
+    /// <see cref="StemForge.Core.Separation.OutputNamer"/> for the token set.
+    /// </summary>
+    public string? OutputNameTemplate => Steps[^1].NameTemplate;
 
     /// <summary>All model filenames for this preset, regardless of mode.</summary>
     public IReadOnlyList<string> AllModels =>

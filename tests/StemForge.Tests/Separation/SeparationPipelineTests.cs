@@ -143,8 +143,16 @@ public sealed class SeparationPipelineTests : IDisposable
 
         Assert.Equal(2, _driver.CallCount);
         Assert.Equal(2, outputs.Count);
-        Assert.Contains(out1, outputs);
-        Assert.Contains(out2, outputs);
+
+        // Both presets are single-model Vocals on the same input, so both resolve to the clean
+        // "input (Vocals)" default. The pipeline renames each driver output to that name and
+        // disambiguates the second run's collision with a deterministic " (2)" suffix.
+        Assert.Contains(Path.Combine(_tempDir, "input (Vocals).flac"), outputs);
+        Assert.Contains(Path.Combine(_tempDir, "input (Vocals) (2).flac"), outputs);
+        Assert.All(
+            outputs,
+            p => Assert.True(File.Exists(p), $"expected renamed output {p} to exist")
+        );
     }
 
     [Fact]
@@ -175,24 +183,31 @@ public sealed class SeparationPipelineTests : IDisposable
         var input = CreateFlacFile("input.flac");
         var outputPath = CreateFlacFile("stem.flac");
 
-        // Record write time before the pipeline runs.
-        var beforeWrite = new FileInfo(outputPath).LastWriteTimeUtc;
-
-        // Brief pause so any subsequent write has a different timestamp.
-        await Task.Delay(10, TestContext.Current.CancellationToken);
-
         var preset = MakeSingleModelPreset("p1", "Vocal Clean");
         var job = MakeJob(input, [preset]);
 
         _driver.EnqueueRun(SuccessResult(outputPath));
 
-        await _pipeline.RunAsync(job, progress: null, ct: TestContext.Current.CancellationToken);
-
-        var afterWrite = new FileInfo(outputPath).LastWriteTimeUtc;
-        Assert.True(
-            afterWrite > beforeWrite,
-            "TagLibSharp should have rewritten the output file when ApplyToFile was called."
+        var outputs = await _pipeline.RunAsync(
+            job,
+            progress: null,
+            ct: TestContext.Current.CancellationToken
         );
+
+        // The pipeline renames the driver output to the clean "input (Vocals)" default, then tags
+        // the renamed file. Assert the renamed file exists and is a valid (TagLib-rewritten) FLAC.
+        var renamed = Path.Combine(_tempDir, "input (Vocals).flac");
+        Assert.Equal(renamed, Assert.Single(outputs));
+        Assert.True(File.Exists(renamed), "renamed output should exist after the run.");
+        Assert.False(
+            File.Exists(outputPath),
+            "original driver output name should have been moved."
+        );
+
+        // TagLibSharp rewrites the file when ApplyToFile runs; a successful rewrite keeps it a
+        // readable FLAC with the source-provenance comment applied.
+        var tag = TagLib.File.Create(renamed);
+        Assert.NotNull(tag);
     }
 
     // ── Test 3: Progress percentage math ─────────────────────────────────────

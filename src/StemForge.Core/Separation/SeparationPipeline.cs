@@ -41,6 +41,11 @@ public sealed class SeparationPipeline(
         SourceTagInfo? sourceInfo = null;
         var version = _appInfo.FullVersion;
 
+        // One naming authority for the whole job. Every run writes into the shared output directory,
+        // so collisions (two runs emitting the same stem name) are resolved against this single set
+        // of already-claimed names in deterministic reservation order.
+        var namer = new OutputNamer();
+
         // ── Download step ─────────────────────────────────────────────────────
         string inputFile;
         if (job.SourceUrl is { Length: > 0 } url)
@@ -194,12 +199,18 @@ public sealed class SeparationPipeline(
             if (!result.Succeeded)
                 throw new InvalidOperationException(result.ErrorMessage ?? "Separation failed");
 
+            var title = Path.GetFileNameWithoutExtension(inputFile);
             var runPaths = new List<string>();
             foreach (var o in result.Outputs)
             {
-                runPaths.Add(o.Path);
-                allOutputFiles.Add(o.Path);
-                AudioTagger.ApplyToFile(o.Path, sourceInfo, preset.DisplayName, version);
+                // Rename each written stem to its job-unique clean (or templated) name. The driver
+                // already wrote a name, but the job-scoped namer is the single authority for the
+                // shared output directory: it applies the clean "title (stem)" default (or the
+                // preset's template) and disambiguates names that collide with an earlier run.
+                var finalPath = ApplyOutputName(namer, o, preset, title);
+                runPaths.Add(finalPath);
+                allOutputFiles.Add(finalPath);
+                AudioTagger.ApplyToFile(finalPath, sourceInfo, preset.DisplayName, version);
             }
 
             cumulativeModelWeight += preset.ModelCount;
@@ -499,6 +510,72 @@ public sealed class SeparationPipeline(
         return audioPath;
     }
 
+    // ── Output naming ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Resolves the job-unique output name for one written stem and renames the file on disk to it,
+    /// returning the final path. The name is the preset's template (when set) or the clean
+    /// "title (stem)" default, reserved through the job-scoped <paramref name="namer"/> so a name
+    /// that collides with an earlier run in the same job is given a deterministic " (n)" suffix.
+    /// </summary>
+    internal static string ApplyOutputName(
+        OutputNamer namer,
+        JobOutput output,
+        Preset preset,
+        string title
+    )
+    {
+        var dir = Path.GetDirectoryName(output.Path) ?? "";
+        var ext = Path.GetExtension(output.Path);
+        var baseName = namer.Reserve(DesiredBaseName(preset, output.Stem, title));
+        var finalPath = Path.Combine(dir, baseName + ext);
+
+        if (!string.Equals(output.Path, finalPath, StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                File.Move(output.Path, finalPath, overwrite: true);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Warning(
+                    "job",
+                    $"Could not rename {Path.GetFileName(output.Path)} → {baseName + ext}: {ex.Message}"
+                );
+                return output.Path;
+            }
+        }
+
+        return finalPath;
+    }
+
+    /// <summary>
+    /// The desired base name (no extension) for one stem, before collision disambiguation.
+    ///
+    /// User presets (single-model / custom ensemble) use the preset's optional template, falling back
+    /// to the clean "title (stem)" default. Built-in presets keep their curated descriptive name for
+    /// their <em>target</em> stem (e.g. "Title (Vocal - Balanced)") and the clean default for any
+    /// residual stem, matching the convention the built-in catalog has always emitted.
+    /// </summary>
+    internal static string DesiredBaseName(Preset preset, string stem, string title)
+    {
+        if (preset.Mode == SeparationMode.BuiltinPreset)
+        {
+            var targetStem = preset.Category == PresetCategory.Vocals ? "Vocals" : "Instrumental";
+            if (stem.Equals(targetStem, StringComparison.OrdinalIgnoreCase))
+                return $"{title} ({BuiltinTargetLabel(preset)})";
+            return OutputNamer.CleanName(title, stem);
+        }
+
+        return OutputNamer.BuildName(preset.OutputNameTemplate, title, stem, preset.DisplayName);
+    }
+
+    /// <summary>The descriptive label a built-in preset stamps onto its target stem's file name.</summary>
+    internal static string BuiltinTargetLabel(Preset preset) =>
+        preset.Id == "karaoke"
+            ? "Karaoke"
+            : $"{(preset.Category == PresetCategory.Vocals ? "Vocal" : "Instrumental")} - {SanitizeLabel(preset.Label)}";
+
     // ── Request builder ───────────────────────────────────────────────────────
 
     internal static JobRequest BuildRequest(
@@ -558,11 +635,10 @@ public sealed class SeparationPipeline(
     {
         var title = Path.GetFileNameWithoutExtension(audioPath);
         var stemKey = preset.Category == PresetCategory.Vocals ? "Vocals" : "Instrumental";
-        var label =
-            preset.Id == "karaoke"
-                ? "Karaoke"
-                : $"{(preset.Category == PresetCategory.Vocals ? "Vocal" : "Instrumental")} - {SanitizeLabel(preset.Label)}";
-        return new Dictionary<string, string> { [stemKey] = $"{title} ({label})" };
+        return new Dictionary<string, string>
+        {
+            [stemKey] = $"{title} ({BuiltinTargetLabel(preset)})",
+        };
     }
 
     internal static string EffectiveLabel(Preset preset) =>
