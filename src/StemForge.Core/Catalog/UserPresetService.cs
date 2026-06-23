@@ -149,12 +149,16 @@ public sealed partial class UserPresetService
         public string? Algorithm { get; set; }
         public List<string>? KeepSet { get; set; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? NameTemplate { get; set; }
+
         public PresetStep ToStep() =>
             new(
                 Enum.TryParse<StepInput>(Input, out var input) ? input : StepInput.Source,
                 Models,
                 Algorithm,
-                KeepSet
+                KeepSet,
+                NameTemplate
             );
 
         public static StepDto FromStep(PresetStep s) =>
@@ -164,6 +168,7 @@ public sealed partial class UserPresetService
                 Models = s.Models.ToList(),
                 Algorithm = s.Algorithm,
                 KeepSet = s.KeepSet?.ToList(),
+                NameTemplate = s.NameTemplate,
             };
     }
 

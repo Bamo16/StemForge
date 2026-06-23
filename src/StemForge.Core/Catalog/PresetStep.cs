@@ -31,11 +31,20 @@ public enum StepInput
 /// "keep everything the run emits" (the prior default for user presets), so the keep set never has
 /// to enumerate stems the model profile cannot name yet.
 /// </param>
+/// <param name="NameTemplate">
+/// Optional output-name template for the stems this step writes. When set, it drives each output's
+/// file name via the <c>title</c>, <c>stem</c>, and <c>preset</c> tokens (see
+/// <see cref="StemForge.Core.Separation.OutputNamer"/>); when null/empty, naming falls back to the
+/// clean "title (stem)" default. Lives on the step because the step is the unit that emits stems; a
+/// future chained preset names each step's outputs independently, with the terminal step naming the
+/// files the user ultimately keeps.
+/// </param>
 public sealed record PresetStep(
     StepInput Input,
     IReadOnlyList<string> Models,
     string? Algorithm = null,
-    IReadOnlyList<string>? KeepSet = null
+    IReadOnlyList<string>? KeepSet = null,
+    string? NameTemplate = null
 )
 {
     /// <summary>True when this step runs two or more models combined by <see cref="Algorithm"/>.</summary>
