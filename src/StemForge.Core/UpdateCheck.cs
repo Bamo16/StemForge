@@ -32,7 +32,10 @@ public sealed class UpdateCheckService(IAppInfo appInfo, IReleaseFetcher fetcher
     /// </summary>
     public async Task<UpdateCheckResult> CheckAsync(CancellationToken ct = default)
     {
-        if (!Version.TryParse(appInfo.ShortVersion, out var runningVersion))
+        // Compare on the full (4-component) version: ShortVersion drops the 4th component, so a
+        // hotfix carried there (e.g. 0.2.1.1) would parse as 0.2.1 and forever look out of date
+        // against its own release tag.
+        if (!Version.TryParse(appInfo.FullVersion, out var runningVersion))
             return new UpdateCheckResult(false, null);
 
         string? tag;

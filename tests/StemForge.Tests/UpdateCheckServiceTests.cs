@@ -139,6 +139,34 @@ public sealed class UpdateCheckServiceTests
         Assert.Null(result.LatestVersion);
     }
 
+    // ── Four-component (hotfix) versions ─────────────────────────────────────
+
+    [Fact]
+    public async Task RunningVersionMatchesFourPartReleaseTag_ReturnsNoUpdate()
+    {
+        // The running build reports a 4-component version (a 0.2.1.1 hotfix) and the latest release
+        // tag is that same version. It must not report an update against itself. Regression for
+        // comparing the full version rather than the 3-component ShortVersion, which drops the 4th
+        // part and made the app perpetually offer the version it was already running.
+        var appInfo = new AppInfo("StemForge", new Version(0, 2, 1, 1));
+        var svc = new UpdateCheckService(appInfo, new StubReleaseFetcher("v0.2.1.1"));
+
+        var result = await svc.CheckAsync(TestContext.Current.CancellationToken);
+
+        Assert.False(result.UpdateAvailable);
+    }
+
+    [Fact]
+    public async Task NewerFourPartReleaseTag_ReturnsUpdateAvailable()
+    {
+        var appInfo = new AppInfo("StemForge", new Version(0, 2, 1, 1));
+        var svc = new UpdateCheckService(appInfo, new StubReleaseFetcher("v0.2.1.2"));
+
+        var result = await svc.CheckAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(result.UpdateAvailable);
+    }
+
     // ── Running version edge cases ───────────────────────────────────────────
 
     [Fact]
