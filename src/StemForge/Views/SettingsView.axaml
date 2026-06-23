@@ -409,12 +409,50 @@
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="6">
                                 <TextBlock Classes="settingLabel" Text="Model" />
-                                <TextBox Classes="settingInput"
-                                         Text="{Binding DrumExtractionModel, Mode=TwoWay}"
-                                         PlaceholderText="htdemucs_ft.yaml" />
+                                <ComboBox ItemsSource="{Binding DrumModelOptions}"
+                                          SelectedItem="{Binding SelectedDrumModel, Mode=TwoWay}"
+                                          IsEnabled="{Binding !DrumModelsLoading}"
+                                          PlaceholderText="Loading drum-capable models…"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate DataType="vm:DrumModelOptionViewModel">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                <StackPanel Grid.Column="0" Spacing="1">
+                                                    <TextBlock Text="{Binding FriendlyName}"
+                                                               FontSize="12"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                    <TextBlock Classes="mono"
+                                                               Text="{Binding Filename}"
+                                                               FontSize="10"
+                                                               Foreground="{DynamicResource TextPlaceholderBrush}" />
+                                                </StackPanel>
+                                                <Border Grid.Column="1"
+                                                        VerticalAlignment="Center"
+                                                        CornerRadius="3" Padding="5,1"
+                                                        Background="{DynamicResource Bg2Brush}">
+                                                    <TextBlock Text="{Binding StateLabel}"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                </Border>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                                 <TextBlock FontSize="11" TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="audio-separator model used for drum stem extraction. Leave blank to use the default." />
+                                           Text="Only models that produce a drums stem are listed. &quot;Downloaded&quot; models are already on disk; others are fetched the first time they run." />
+                                <Border IsVisible="{Binding HasUnlistedDrumModel}"
+                                        Background="{DynamicResource Bg2Brush}"
+                                        CornerRadius="6" Padding="10,8">
+                                    <TextBlock FontSize="11" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextSecondaryBrush}">
+                                        <Run Text="Current setting" />
+                                        <Run Text="{Binding DrumExtractionModel}"
+                                             FontFamily="{DynamicResource MonoFont}"
+                                             Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        <Run Text="is not in the list. Pick a model above to replace it." />
+                                    </TextBlock>
+                                </Border>
                             </StackPanel>
                             <CheckBox IsChecked="{Binding DrumStemsWithOutputs, Mode=TwoWay}"
                                       Content="Write drum stem alongside other output files"

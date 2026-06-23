@@ -12,6 +12,7 @@ public partial class SettingsViewModel : PageViewModelBase
     private readonly GpuDetector _gpuDetector;
     private readonly ToolInstaller _toolInstaller;
     private readonly ToolStateService _toolState;
+    private readonly DrumModelCatalog _drumModels;
 
     public override string Title => "Settings";
 
@@ -123,8 +124,48 @@ public partial class SettingsViewModel : PageViewModelBase
 
     // ── Drum extraction ────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// The drum-extraction model setting. Persisted as the model filename, but surfaced as a picker
+    /// (issue #70) restricted to models known to emit a "drums" stem, so an invalid or non-drums
+    /// model can no longer be entered. Held as the filename so the saved value round-trips even
+    /// before the option list has loaded.
+    /// </summary>
     [ObservableProperty]
     public partial string DrumExtractionModel { get; set; } = string.Empty;
+
+    public ObservableCollection<DrumModelOptionViewModel> DrumModelOptions { get; } = [];
+
+    /// <summary>The picked option, two-way bound to the ComboBox. Setting it writes the filename back
+    /// to <see cref="DrumExtractionModel"/>; loading the list selects the option matching the saved
+    /// filename.</summary>
+    [ObservableProperty]
+    public partial DrumModelOptionViewModel? SelectedDrumModel { get; set; }
+
+    [ObservableProperty]
+    public partial bool DrumModelsLoading { get; set; } = true;
+
+    /// <summary>
+    /// True when a previously-saved drum model is not in the current option list (e.g. it was
+    /// removed from the catalog, or set by hand before the picker existed). The UI shows the stored
+    /// value with a note rather than silently dropping it; saving as-is keeps it until the user
+    /// picks a listed model.
+    /// </summary>
+    public bool HasUnlistedDrumModel =>
+        !DrumModelsLoading
+        && !string.IsNullOrWhiteSpace(DrumExtractionModel)
+        && DrumModelOptions.All(o =>
+            !o.Filename.Equals(DrumExtractionModel, StringComparison.OrdinalIgnoreCase)
+        );
+
+    partial void OnSelectedDrumModelChanged(DrumModelOptionViewModel? value)
+    {
+        if (value is not null)
+            DrumExtractionModel = value.Filename;
+        OnPropertyChanged(nameof(HasUnlistedDrumModel));
+    }
+
+    partial void OnDrumModelsLoadingChanged(bool value) =>
+        OnPropertyChanged(nameof(HasUnlistedDrumModel));
 
     /// <summary>True = DrumStemLocation.WithStems; false = CacheOnly.</summary>
     [ObservableProperty]
@@ -142,6 +183,7 @@ public partial class SettingsViewModel : PageViewModelBase
         GpuDetector gpuDetector,
         ToolInstaller toolInstaller,
         ToolStateService toolState,
+        DrumModelCatalog drumModels,
         IAppInfo appInfo
     )
     {
@@ -150,6 +192,7 @@ public partial class SettingsViewModel : PageViewModelBase
         _gpuDetector = gpuDetector;
         _toolInstaller = toolInstaller;
         _toolState = toolState;
+        _drumModels = drumModels;
         ProductName = appInfo.ProductName;
         VersionText = $"v{appInfo.ShortVersion}";
 
@@ -161,6 +204,36 @@ public partial class SettingsViewModel : PageViewModelBase
         _toolState.PropertyChanged += OnToolStatePropertyChanged;
         SyncToolsFromState();
         _ = DetectGpuAsync();
+        _ = LoadDrumModelsAsync();
+    }
+
+    private async Task LoadDrumModelsAsync()
+    {
+        DrumModelsLoading = true;
+        try
+        {
+            var options = await _drumModels.ListAsync(_paths.ModelsDirectory);
+
+            DrumModelOptions.Clear();
+            foreach (var option in options)
+                DrumModelOptions.Add(new DrumModelOptionViewModel(option));
+
+            // Re-select the saved filename now that the list exists. A saved value not in the list
+            // (removed model, or hand-set before the picker) is left selected as nothing so the UI
+            // surfaces it via HasUnlistedDrumModel rather than silently switching it.
+            SelectedDrumModel = DrumModelOptions.FirstOrDefault(o =>
+                o.Filename.Equals(DrumExtractionModel, StringComparison.OrdinalIgnoreCase)
+            );
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning(nameof(SettingsViewModel), $"Drum model list failed: {ex.Message}");
+        }
+        finally
+        {
+            DrumModelsLoading = false;
+            OnPropertyChanged(nameof(HasUnlistedDrumModel));
+        }
     }
 
     private void OnToolStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
