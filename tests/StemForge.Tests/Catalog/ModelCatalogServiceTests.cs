@@ -95,6 +95,40 @@ public sealed class ModelCatalogServiceTests
     }
 
     [Fact]
+    public void ParseModels_ScoresMixObjectsAndScalarMetrics_ParsesAndIgnoresScalars()
+    {
+        // Real upstream data: median_scores can carry a scalar metric (seconds_per_minute_m3)
+        // alongside the per-stem score objects. The whole catalog must still parse, the scalar
+        // must be ignored, and real stem SDRs must come through. Regression for the empty-catalog
+        // failure where one scalar value tripped the deserializer and silently emptied the list.
+        var json = """
+            {
+              "MDXC": {
+                "Roformer Model: BS-Roformer-Viperx-1053": {
+                  "filename": "model_bs_roformer_ep_937_sdr_10.5309.ckpt",
+                  "scores": {
+                    "vocals": { "SDR": 10.5309 },
+                    "instrumental": { "SDR": 16.4 },
+                    "seconds_per_minute_m3": 8.6
+                  },
+                  "stems": ["vocals", "instrumental"],
+                  "target_stem": null
+                }
+              }
+            }
+            """;
+
+        var models = ModelCatalogService.ParseModels(json);
+
+        var model = Assert.Single(models);
+        Assert.Equal(2, model.Stems.Count);
+        Assert.Equal(10.5309, model.Stems.Single(s => s.Name == "vocals").Sdr);
+        Assert.Equal(16.4, model.Stems.Single(s => s.Name == "instrumental").Sdr);
+        // The scalar metric is not a stem and must not appear among the stems.
+        Assert.DoesNotContain(model.Stems, s => s.Name == "seconds_per_minute_m3");
+    }
+
+    [Fact]
     public void ParseModels_ModelMissingFilename_Skipped()
     {
         var json = """
