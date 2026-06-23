@@ -102,11 +102,10 @@ public sealed class ModelCatalogService(IProcessRunner runner, AppPaths paths)
     /// null. This keeps one unexpected field from breaking the whole catalog parse.
     /// </summary>
     internal static double? SdrFor(Dictionary<string, JsonElement>? scores, string stem) =>
-        scores is not null
-        && scores.TryGetValue(stem, out var el)
-        && el.ValueKind == JsonValueKind.Object
+        scores?.TryGetValue(stem, out var el) is true
+        && el is { ValueKind: JsonValueKind.Object }
         && el.TryGetProperty("SDR", out var sdr)
-        && sdr.ValueKind == JsonValueKind.Number
+        && sdr is { ValueKind: JsonValueKind.Number }
             ? sdr.GetDouble()
             : null;
 }
