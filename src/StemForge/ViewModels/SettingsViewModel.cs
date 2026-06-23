@@ -19,7 +19,9 @@ public partial class SettingsViewModel : PageViewModelBase
     /// <summary>Product name shown in the footer build stamp. Sourced from <see cref="IAppInfo"/>.</summary>
     public string ProductName { get; }
 
-    /// <summary>Footer version, e.g. "v0.2.0" (rendered monospaced). Sourced from <see cref="IAppInfo"/>.</summary>
+    /// <summary>Footer version, e.g. "v0.2.1.1" (rendered monospaced). Full 4-component version so a
+    /// hotfix in the 4th component is visible and matches what the update check compares against.
+    /// Sourced from <see cref="IAppInfo"/>.</summary>
     public string VersionText { get; }
 
     // ── Tool rows (status header + tool paths share this collection) ──────────
@@ -194,7 +196,7 @@ public partial class SettingsViewModel : PageViewModelBase
         _toolState = toolState;
         _drumModels = drumModels;
         ProductName = appInfo.ProductName;
-        VersionText = $"v{appInfo.ShortVersion}";
+        VersionText = $"v{appInfo.FullVersion}";
 
         foreach (var tool in ToolCatalog.All)
             SettingsToolRows.Add(new SettingsToolRowViewModel(tool));
