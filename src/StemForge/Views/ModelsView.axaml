@@ -373,7 +373,7 @@
                 BorderBrush="{DynamicResource Bg3Brush}"
                 BorderThickness="0,1,0,0"
                 Padding="20,14">
-            <Grid RowDefinitions="Auto,10,Auto">
+            <Grid RowDefinitions="Auto,10,Auto,Auto">
 
                 <!-- Selection summary -->
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
@@ -390,8 +390,86 @@
                                TextTrimming="CharacterEllipsis" />
                 </StackPanel>
 
+                <!-- ===== Ensemble stem-overlap guidance (issue #69) =====
+                     Advisory: audio-separator averages stem names emitted by 2+ models and passes
+                     through names emitted by a single model. Shown only for a multi-model ensemble. -->
+                <StackPanel Grid.Row="2"
+                            IsVisible="{Binding ShowOverlapGuidance}"
+                            Spacing="6"
+                            Margin="0,0,0,10">
+
+                    <!-- Averaged (blended) stems -->
+                    <StackPanel Orientation="Horizontal" Spacing="6"
+                                IsVisible="{Binding HasAveragedStems}">
+                        <TextBlock Text="Blended:"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   VerticalAlignment="Center"
+                                   ToolTip.Tip="Stem names produced by two or more selected models are averaged together." />
+                        <ItemsControl ItemsSource="{Binding AveragedStems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:StemOverlap">
+                                    <Border Background="{DynamicResource AccentDimBgBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="3"
+                                            Padding="6,1"
+                                            Margin="0,0,6,0">
+                                        <TextBlock Text="{Binding AveragedDisplay}"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource AccentBrush}" />
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!-- Passthrough stems -->
+                    <StackPanel Orientation="Horizontal" Spacing="6"
+                                IsVisible="{Binding HasPassthroughStems}">
+                        <TextBlock Text="Passed through:"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   VerticalAlignment="Center"
+                                   ToolTip.Tip="Stem names produced by only one selected model pass through unchanged — an ensemble does not blend them." />
+                        <ItemsControl ItemsSource="{Binding PassthroughStems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:StemOverlap">
+                                    <Border Background="{DynamicResource Bg2Brush}"
+                                            CornerRadius="3"
+                                            Padding="6,1"
+                                            Margin="0,0,6,0">
+                                        <TextBlock Text="{Binding Name}"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource TextPlaceholderBrush}" />
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!-- Unknown-stem models: surfaced, not counted -->
+                    <TextBlock Text="{Binding UnknownStemModelsLabel}"
+                               IsVisible="{Binding HasUnknownStemModels}"
+                               FontSize="10"
+                               FontStyle="Italic"
+                               Foreground="{DynamicResource TextPlaceholderBrush}"
+                               TextWrapping="Wrap"
+                               ToolTip.Tip="StemForge could not resolve these models' output stems, so they are not counted in the blending guidance above. audio-separator still runs them normally." />
+                </StackPanel>
+
                 <!-- Create-preset form -->
-                <Grid Grid.Row="2" ColumnDefinitions="*,12,Auto,12,Auto">
+                <Grid Grid.Row="3" ColumnDefinitions="*,12,Auto,12,Auto">
 
                     <!-- Name input -->
                     <Border Grid.Column="0" Classes="presetInput">

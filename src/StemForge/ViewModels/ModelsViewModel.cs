@@ -134,7 +134,66 @@ public partial class ModelsViewModel : PageViewModelBase
         OnPropertyChanged(nameof(HasChecked));
         OnPropertyChanged(nameof(IsMultiModel));
         OnPropertyChanged(nameof(CheckedSummary));
+        RecomputeOverlap();
         SavePresetCommand.NotifyCanExecuteChanged();
+    }
+
+    // ── Ensemble stem-overlap guidance (issue #69) ─────────────────────────────
+
+    /// <summary>
+    /// Stem names produced by 2+ of the checked models — audio-separator blends (averages) these.
+    /// </summary>
+    public ObservableCollection<StemOverlap> AveragedStems { get; } = [];
+
+    /// <summary>
+    /// Stem names produced by exactly one checked model — these pass through unchanged.
+    /// </summary>
+    public ObservableCollection<StemOverlap> PassthroughStems { get; } = [];
+
+    /// <summary>
+    /// Friendly names of checked models whose stems StemForge could not resolve. Surfaced so the
+    /// guidance does not silently drop them or miscount them as contributors.
+    /// </summary>
+    public ObservableCollection<string> UnknownStemModels { get; } = [];
+
+    public bool HasAveragedStems => AveragedStems.Count > 0;
+    public bool HasPassthroughStems => PassthroughStems.Count > 0;
+    public bool HasUnknownStemModels => UnknownStemModels.Count > 0;
+
+    /// <summary>
+    /// The overlap guidance is only meaningful for a multi-model ensemble. With a single model every
+    /// stem trivially passes through, so there is nothing an ensemble buys the user to explain.
+    /// </summary>
+    public bool ShowOverlapGuidance => IsMultiModel;
+
+    public string UnknownStemModelsLabel =>
+        UnknownStemModels.Count == 0
+            ? string.Empty
+            : "Unknown stems (not counted): " + string.Join(", ", UnknownStemModels);
+
+    private void RecomputeOverlap()
+    {
+        var result = EnsembleOverlap.Aggregate(
+            _all.Where(m => m.IsChecked).Select(m => (m.FriendlyName, m.Profile))
+        );
+
+        AveragedStems.Clear();
+        foreach (var s in result.Averaged)
+            AveragedStems.Add(s);
+
+        PassthroughStems.Clear();
+        foreach (var s in result.Passthrough)
+            PassthroughStems.Add(s);
+
+        UnknownStemModels.Clear();
+        foreach (var m in result.UnknownModels)
+            UnknownStemModels.Add(m);
+
+        OnPropertyChanged(nameof(HasAveragedStems));
+        OnPropertyChanged(nameof(HasPassthroughStems));
+        OnPropertyChanged(nameof(HasUnknownStemModels));
+        OnPropertyChanged(nameof(ShowOverlapGuidance));
+        OnPropertyChanged(nameof(UnknownStemModelsLabel));
     }
 
     // ── Save as preset ────────────────────────────────────────────────────────
