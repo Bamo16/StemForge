@@ -137,6 +137,43 @@ public sealed partial class UserPresetService
         }
     }
 
+    /// <summary>
+    /// One persisted <see cref="PresetStep"/>: where it reads its audio, the model-or-ensemble to
+    /// run, the ensemble algorithm (for two or more models), and the keep set. This is the unit the
+    /// on-disk schema is built around so chained (multi-step) presets need no future migration.
+    /// </summary>
+    private sealed class StepDto
+    {
+        public string Input { get; set; } = nameof(StepInput.Source);
+        public List<string> Models { get; set; } = [];
+        public string? Algorithm { get; set; }
+        public List<string>? KeepSet { get; set; }
+
+        public PresetStep ToStep() =>
+            new(
+                Enum.TryParse<StepInput>(Input, out var input) ? input : StepInput.Source,
+                Models,
+                Algorithm,
+                KeepSet
+            );
+
+        public static StepDto FromStep(PresetStep s) =>
+            new()
+            {
+                Input = s.Input.ToString(),
+                Models = s.Models.ToList(),
+                Algorithm = s.Algorithm,
+                KeepSet = s.KeepSet?.ToList(),
+            };
+    }
+
+    /// <summary>
+    /// Persisted shape of a user <see cref="Preset"/>. Carries the preset's metadata plus its
+    /// ordered <see cref="Steps"/> list. The flat model/algorithm fields (<see cref="PrimaryModel"/>,
+    /// <see cref="ExtraModels"/>, <see cref="EnsembleAlgorithm"/>, <see cref="Mode"/>) are the legacy
+    /// v0.2.x schema: still read when <see cref="Steps"/> is absent and migrated into a single step,
+    /// but no longer written.
+    /// </summary>
     private sealed class PresetDto
     {
         public string Id { get; set; } = "";
@@ -145,29 +182,71 @@ public sealed partial class UserPresetService
         public string Description { get; set; } = "";
         public int ModelCount { get; set; } = 1;
         public string Vram { get; set; } = "";
-        public string Mode { get; set; } = "SingleModel";
+
+        // Current schema: an ordered steps list. Single-step today.
+        public List<StepDto>? Steps { get; set; }
+
+        // Legacy (v0.2.x) flat schema. Read-only fallback when Steps is absent; never written.
+        public string? Mode { get; set; }
         public string? PrimaryModel { get; set; }
         public string? EnsembleAlgorithm { get; set; }
         public List<string>? ExtraModels { get; set; }
         public List<double>? EnsembleWeights { get; set; }
 
-        public Preset ToPreset() =>
-            new(
+        public Preset ToPreset()
+        {
+            var category = Enum.TryParse<PresetCategory>(Category, out var cat)
+                ? cat
+                : PresetCategory.Other;
+
+            // Current schema: an explicit steps list is authoritative.
+            if (Steps is { Count: > 0 } stepDtos)
+            {
+                var steps = stepDtos.Select(s => s.ToStep()).ToList();
+                var first = steps[0];
+                var mode =
+                    first.Models.Count >= 2 ? SeparationMode.CustomEnsemble
+                    : first.Models.Count == 1 ? SeparationMode.SingleModel
+                    : SeparationMode.BuiltinPreset;
+
+                // Re-expose the single step through the flat accessors so in-memory consumers and the
+                // pipeline see the same shape as a freshly created preset.
+                return new Preset(
+                    Id,
+                    Label,
+                    category,
+                    Description,
+                    ModelCount,
+                    Vram,
+                    Models: null,
+                    Mode: mode,
+                    PrimaryModel: first.Models.Count > 0 ? first.Models[0] : null,
+                    EnsembleAlgorithm: first.Algorithm,
+                    ExtraModels: first.Models.Count > 1 ? first.Models.Skip(1).ToList() : null,
+                    EnsembleWeights: EnsembleWeights,
+                    Steps: steps
+                );
+            }
+
+            // Legacy flat schema: migrate into a single-step preset. The flat parameters flow into
+            // the synthesized step via the Preset constructor, so no data is lost.
+            return new Preset(
                 Id,
                 Label,
-                Enum.TryParse<PresetCategory>(Category, out var cat) ? cat : PresetCategory.Other,
+                category,
                 Description,
                 ModelCount,
                 Vram,
                 Models: null,
-                Mode: Enum.TryParse<SeparationMode>(Mode, out var mode)
-                    ? mode
+                Mode: Enum.TryParse<SeparationMode>(Mode, out var legacyMode)
+                    ? legacyMode
                     : SeparationMode.SingleModel,
                 PrimaryModel: PrimaryModel,
                 EnsembleAlgorithm: EnsembleAlgorithm,
                 ExtraModels: ExtraModels,
                 EnsembleWeights: EnsembleWeights
             );
+        }
 
         public static PresetDto FromPreset(Preset p) =>
             new()
@@ -178,10 +257,7 @@ public sealed partial class UserPresetService
                 Description = p.Description,
                 ModelCount = p.ModelCount,
                 Vram = p.Vram,
-                Mode = p.Mode.ToString(),
-                PrimaryModel = p.PrimaryModel,
-                EnsembleAlgorithm = p.EnsembleAlgorithm,
-                ExtraModels = p.ExtraModels?.ToList(),
+                Steps = p.Steps.Select(StepDto.FromStep).ToList(),
                 EnsembleWeights = p.EnsembleWeights?.ToList(),
             };
     }
