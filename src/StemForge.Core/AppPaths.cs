@@ -94,9 +94,15 @@ public sealed class AppPaths(AppSettings settings, PlatformInfo? platform = null
     public static string DefaultModelsDirectory =>
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("audio-separator", "models");
 
-    /// <summary>Python executable inside the uv-managed audio-separator tool environment.</summary>
-    public string SeparationDriverPython =>
-        File.Exists(UvAudioSeparatorPython) ? UvAudioSeparatorPython : "python";
+    /// <summary>
+    /// Python executable inside the uv-managed audio-separator tool environment. There is
+    /// deliberately no fallback to a bare "python" on PATH: the scripts need the exact torch /
+    /// audio-separator dependencies that only this uv environment provides, so a random PATH python
+    /// would either lack them or (on Windows) hit the Microsoft Store alias stub. If this path is
+    /// missing the environment is not set up; fail loud (a clear file-not-found, surfaced to setup)
+    /// rather than silently running the wrong interpreter. The python path is not user-overridable.
+    /// </summary>
+    public string SeparationDriverPython => UvAudioSeparatorPython;
 
     /// <summary>Directory holding the bundled Python tool scripts and the protocol manifest,
     /// co-located with the app binary.</summary>
