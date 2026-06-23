@@ -320,7 +320,6 @@
                                                         VerticalAlignment="Center">
                                                     <TextBlock Text="inferred"
                                                                FontSize="9"
-                                                               FontStyle="Italic"
                                                                Foreground="{DynamicResource TextPlaceholderBrush}"
                                                                ToolTip.Tip="Stems resolved without running the model. Advisory; audio-separator decides the actual output." />
                                                 </Border>
