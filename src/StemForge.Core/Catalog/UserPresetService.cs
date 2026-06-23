@@ -186,11 +186,21 @@ public sealed partial class UserPresetService
         // Current schema: an ordered steps list. Single-step today.
         public List<StepDto>? Steps { get; set; }
 
-        // Legacy (v0.2.x) flat schema. Read-only fallback when Steps is absent; never written.
+        // Legacy (v0.2.x) flat schema. Read-only fallback when Steps is absent. Omitted on write
+        // (null in a freshly saved preset) so the on-disk shape is the steps list alone.
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Mode { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? PrimaryModel { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? EnsembleAlgorithm { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public List<string>? ExtraModels { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public List<double>? EnsembleWeights { get; set; }
 
         public Preset ToPreset()
