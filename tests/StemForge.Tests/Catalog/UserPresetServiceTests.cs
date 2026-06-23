@@ -253,6 +253,202 @@ public sealed class UserPresetServiceTests
         }
     }
 
+    // ── Steps schema: migration from the legacy flat format ────────────────────
+
+    [Fact]
+    public void Load_LegacyFlatSingleModel_MigratesToSingleStepWithoutLoss()
+    {
+        var (roaming, legacy, dir) = MakeTempPaths();
+        try
+        {
+            // Old v0.2.x flat schema: a single-model preset with no Steps list.
+            File.WriteAllText(
+                roaming,
+                System.Text.Json.JsonSerializer.Serialize(
+                    new[]
+                    {
+                        new
+                        {
+                            Id = "flat-single",
+                            Label = "Flat Single",
+                            Category = nameof(PresetCategory.Vocals),
+                            Description = "Legacy single model",
+                            ModelCount = 1,
+                            Vram = "4 GB",
+                            Mode = nameof(SeparationMode.SingleModel),
+                            PrimaryModel = "only_model.onnx",
+                        },
+                    }
+                )
+            );
+
+            var svc = UserPresetService.Load(roaming, legacy);
+
+            var preset = Assert.Single(svc.Presets);
+            // Migrated into exactly one step whose input is the source audio.
+            var step = Assert.Single(preset.Steps);
+            Assert.Equal(StepInput.Source, step.Input);
+            Assert.Equal(["only_model.onnx"], step.Models);
+            Assert.Null(step.Algorithm);
+            // Every flat field preserved and re-exposed through the flat accessors.
+            Assert.Equal(SeparationMode.SingleModel, preset.Mode);
+            Assert.Equal("only_model.onnx", preset.PrimaryModel);
+            Assert.Equal(["only_model.onnx"], preset.AllModels);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Load_LegacyFlatCustomEnsemble_MigratesToSingleStepWithoutLoss()
+    {
+        var (roaming, legacy, dir) = MakeTempPaths();
+        try
+        {
+            // Old v0.2.x flat schema: a custom ensemble (primary + extras + algorithm).
+            File.WriteAllText(
+                roaming,
+                System.Text.Json.JsonSerializer.Serialize(
+                    new[]
+                    {
+                        new
+                        {
+                            Id = "flat-ensemble",
+                            Label = "Flat Ensemble",
+                            Category = nameof(PresetCategory.Instrumentals),
+                            Description = "Legacy ensemble",
+                            ModelCount = 3,
+                            Vram = "8 GB",
+                            Mode = nameof(SeparationMode.CustomEnsemble),
+                            PrimaryModel = "primary.ckpt",
+                            EnsembleAlgorithm = "avg_fft",
+                            ExtraModels = new[] { "extra1.ckpt", "extra2.ckpt" },
+                        },
+                    }
+                )
+            );
+
+            var svc = UserPresetService.Load(roaming, legacy);
+
+            var preset = Assert.Single(svc.Presets);
+            // All three models collapse into one ensemble step, ordered primary-first.
+            var step = Assert.Single(preset.Steps);
+            Assert.Equal(StepInput.Source, step.Input);
+            Assert.Equal(["primary.ckpt", "extra1.ckpt", "extra2.ckpt"], step.Models);
+            Assert.Equal("avg_fft", step.Algorithm);
+            Assert.True(step.IsEnsemble);
+            // Flat accessors reconstructed identically.
+            Assert.Equal(SeparationMode.CustomEnsemble, preset.Mode);
+            Assert.Equal("primary.ckpt", preset.PrimaryModel);
+            Assert.Equal(["extra1.ckpt", "extra2.ckpt"], preset.ExtraModels);
+            Assert.Equal("avg_fft", preset.EnsembleAlgorithm);
+            Assert.Equal(["primary.ckpt", "extra1.ckpt", "extra2.ckpt"], preset.AllModels);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    // ── Steps schema: round-trip persists AS a steps list ──────────────────────
+
+    [Fact]
+    public void Save_WritesStepsList_NotFlatModelFields()
+    {
+        var (roaming, _, dir) = MakeTempPaths();
+        try
+        {
+            var svc = new UserPresetService(roaming);
+            svc.Add(
+                new Preset(
+                    Id: "ensemble-id",
+                    Label: "Ensemble Preset",
+                    Category: PresetCategory.Other,
+                    Description: "Two models",
+                    ModelCount: 2,
+                    Vram: "",
+                    Mode: SeparationMode.CustomEnsemble,
+                    PrimaryModel: "a.ckpt",
+                    EnsembleAlgorithm: "avg_wave",
+                    ExtraModels: ["b.ckpt"]
+                )
+            );
+
+            var json = File.ReadAllText(roaming);
+
+            // On-disk schema is an ordered steps list, not the legacy flat fields.
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var presetElement = doc.RootElement[0];
+            Assert.True(
+                presetElement.TryGetProperty("Steps", out var steps),
+                "Persisted preset must carry a Steps list."
+            );
+            Assert.Equal(1, steps.GetArrayLength());
+            var firstStep = steps[0];
+            Assert.Equal("Source", firstStep.GetProperty("Input").GetString());
+            Assert.Equal(
+                ["a.ckpt", "b.ckpt"],
+                firstStep
+                    .GetProperty("Models")
+                    .EnumerateArray()
+                    .Select(e => e.GetString())
+                    .ToArray()
+            );
+            Assert.Equal("avg_wave", firstStep.GetProperty("Algorithm").GetString());
+            // The legacy flat model fields are no longer written.
+            Assert.False(presetElement.TryGetProperty("PrimaryModel", out _));
+            Assert.False(presetElement.TryGetProperty("ExtraModels", out _));
+            Assert.False(presetElement.TryGetProperty("Mode", out _));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Add_EnsembleThenReload_RoundTripsStepIntact()
+    {
+        var (roaming, legacy, dir) = MakeTempPaths();
+        try
+        {
+            var svc = new UserPresetService(roaming);
+            svc.Add(
+                new Preset(
+                    Id: "rt-ensemble",
+                    Label: "Round Trip Ensemble",
+                    Category: PresetCategory.Vocals,
+                    Description: "Three models",
+                    ModelCount: 3,
+                    Vram: "8 GB",
+                    Mode: SeparationMode.CustomEnsemble,
+                    PrimaryModel: "p.ckpt",
+                    EnsembleAlgorithm: "max_fft",
+                    ExtraModels: ["x.ckpt", "y.ckpt"]
+                )
+            );
+
+            var reloaded = UserPresetService.Load(roaming, legacy);
+
+            var preset = Assert.Single(reloaded.Presets);
+            var step = Assert.Single(preset.Steps);
+            Assert.Equal(StepInput.Source, step.Input);
+            Assert.Equal(["p.ckpt", "x.ckpt", "y.ckpt"], step.Models);
+            Assert.Equal("max_fft", step.Algorithm);
+            // Metadata and reconstructed flat shape survive intact.
+            Assert.Equal("rt-ensemble", preset.Id);
+            Assert.Equal(SeparationMode.CustomEnsemble, preset.Mode);
+            Assert.Equal("p.ckpt", preset.PrimaryModel);
+            Assert.Equal(["x.ckpt", "y.ckpt"], preset.ExtraModels);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static (string Roaming, string Legacy, string Dir) MakeTempPaths()
