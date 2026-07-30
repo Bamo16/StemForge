@@ -169,6 +169,35 @@ public partial class SeparateViewModel : PageViewModelBase
     public bool HasUrlDuration => UrlDuration is not null;
     public bool HasUrlSampleRate => UrlSampleRate is not null;
 
+    /// <summary>
+    /// How the resolved URL compares against the user's premium expectation. Lives on the chips
+    /// row rather than the format-picker toggle because that toggle is hidden whenever the
+    /// candidate list is thin, which is exactly the case worth reporting. See ADR 0013.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPremiumFormat))]
+    [NotifyPropertyChangedFor(nameof(HasNoPremiumAudio))]
+    [NotifyPropertyChangedFor(nameof(HasNoPremiumLadder))]
+    [NotifyPropertyChangedFor(nameof(HasAccountNotPremium))]
+    [NotifyPropertyChangedFor(nameof(HasNotSignedIn))]
+    [NotifyPropertyChangedFor(nameof(PremiumAdvisoryMessage))]
+    [NotifyPropertyChangedFor(nameof(HasPremiumAdvisory))]
+    public partial PremiumStatus UrlPremiumStatus { get; set; }
+
+    public bool HasPremiumFormat => UrlPremiumStatus is PremiumStatus.Premium;
+    public bool HasNoPremiumAudio => UrlPremiumStatus is PremiumStatus.SourceHasNoPremiumAudio;
+    public bool HasNoPremiumLadder => UrlPremiumStatus is PremiumStatus.NoPremiumLadder;
+    public bool HasAccountNotPremium => UrlPremiumStatus is PremiumStatus.AccountNotPremium;
+    public bool HasNotSignedIn => UrlPremiumStatus is PremiumStatus.NotSignedIn;
+
+    /// <summary>
+    /// Hover-help for whichever premium chip is showing. One message rather than one per chip,
+    /// since the states are mutually exclusive; the ⓘ affordance that carries it is likewise a
+    /// single icon (see ADR 0001 for why the tooltip does not hang off the chip itself).
+    /// </summary>
+    public string? PremiumAdvisoryMessage => PremiumExpectation.AdvisoryFor(UrlPremiumStatus);
+    public bool HasPremiumAdvisory => PremiumAdvisoryMessage is not null;
+
     // ── Local-file resolved metadata ──────────────────────────────────────────
 
     [ObservableProperty]
@@ -242,7 +271,9 @@ public partial class SeparateViewModel : PageViewModelBase
     [NotifyPropertyChangedFor(nameof(FormatPickerToggleLabel))]
     public partial bool IsFormatPickerOpen { get; set; }
 
-    public bool HasFormatPicker => FormatPickerItems.Count > 1;
+    // One candidate still gets a picker: a thin format list is the moment a user most wants to
+    // see what they are about to download, so hiding the affordance there is backwards.
+    public bool HasFormatPicker => FormatPickerItems.Count >= 1;
     public bool ShowFormatPicker => IsFormatPickerOpen && HasFormatPicker;
     public string FormatPickerToggleLabel =>
         $"{(IsFormatPickerOpen ? "▴" : "▾")} Format options ({FormatPickerItems.Count} available)";
@@ -609,6 +640,7 @@ public partial class SeparateViewModel : PageViewModelBase
         UrlSampleRate = null;
         UrlDuration = null;
         UrlFetchError = null;
+        UrlPremiumStatus = PremiumStatus.NotApplicable;
         FormatPickerItems.Clear();
         IsFormatPickerOpen = false;
         OnPropertyChanged(nameof(HasFormatPicker));
@@ -651,6 +683,10 @@ public partial class SeparateViewModel : PageViewModelBase
             NotifyCanRunChanged();
 
             UrlTitle = meta.DisplayTitle;
+            UrlPremiumStatus = PremiumExpectation.Evaluate(
+                meta,
+                PremiumExpectation.IsHeldBy(_settings)
+            );
             if (meta.SourceCodec is { Length: > 0 } codec && codec != "none")
                 UrlCodec = AudioFormatInfo.PrettyCodec(codec);
             if (meta.SourceBitrateKbps is { } kbps)
@@ -668,7 +704,7 @@ public partial class SeparateViewModel : PageViewModelBase
             }
 
             FormatPickerItems.Clear();
-            if (meta.AudioFormats is { Count: > 1 } formats)
+            if (meta.AudioFormats is { Count: > 0 } formats)
             {
                 foreach (var f in formats)
                 {
@@ -685,10 +721,10 @@ public partial class SeparateViewModel : PageViewModelBase
                             FormatNote = f.FormatNote ?? "",
                             IsAutoRecommended = f.FormatId == meta.FormatId,
                             IsSelected = f.FormatId == meta.FormatId,
-                            IsYtPremium = AudioFormatInfo.IsYouTubePremium(
-                                f.FormatId,
-                                meta.Extractor
-                            ),
+                            // Only badge a gated format that is actually an improvement on what
+                            // this source gives away free, so the logo always means "better
+                            // audio you paid for" rather than merely "signed in".
+                            IsYtPremium = PremiumFormats.IsPremium(f, formats, meta.Extractor),
                         }
                     );
                 }

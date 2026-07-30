@@ -61,8 +61,49 @@ public sealed record YtDlpVideoInfo
     /// </summary>
     public List<YtDlpThumbnail> Thumbnails { get; init; } = [];
 
+    /// <summary>
+    /// Audio-only candidates, with AI auto-dubbed tracks removed.
+    ///
+    /// YouTube's auto-dubbing emits one audio format per language, and a dub can carry a
+    /// <em>higher</em> bitrate than the original, so any bitrate-driven choice will sometimes pick
+    /// one. That matters more here than a wrong language would: a dub is produced by separating
+    /// the original's vocal stem, replacing it with synthesised speech, and remixing, so it is
+    /// already-separated audio being fed into a separator, and the artifacts compound.
+    ///
+    /// The filter is relative, not a threshold. <see cref="YtDlpFormat.LanguagePreference"/> marks
+    /// the original track 10 and dubs -1, but on an undubbed video every format is -1, so keeping
+    /// only the highest-scoring group leaves an undubbed video untouched while reducing a dubbed
+    /// one to its original-language tracks.
+    /// </summary>
     [JsonIgnore]
-    public List<YtDlpFormat> AudioOnlyFormats => [.. Formats.Where(f => f.IsAudioOnly)];
+    public List<YtDlpFormat> AudioOnlyFormats
+    {
+        get
+        {
+            List<YtDlpFormat> audio = [.. Formats.Where(f => f.IsAudioOnly)];
+            if (audio.Count == 0)
+                return audio;
+
+            var original = audio.Max(f => f.LanguagePreference);
+            List<YtDlpFormat> originalLanguage =
+            [
+                .. audio.Where(f => f.LanguagePreference == original),
+            ];
+
+            // Drop a DRC variant when its bare twin survived. DRC is a parallel copy of the same
+            // rung, not a quality tier, and it can carry a marginally higher bitrate than its base
+            // itag, so ranking alone would sometimes still choose the compressed one. Where the
+            // bare itag is absent entirely the DRC variant is the only way to get that rung and is
+            // kept. This also keeps near-duplicate rows out of the format picker.
+            var bareItags = originalLanguage
+                .Where(f => !f.IsDrc)
+                .Select(f => f.Itag)
+                .Where(itag => itag is not null)
+                .ToHashSet(StringComparer.Ordinal);
+
+            return [.. originalLanguage.Where(f => !f.IsDrc || !bareItags.Contains(f.Itag))];
+        }
+    }
 
     /// <summary>
     /// Audio-only formats ordered best-first by quality so the picker reads top-down from the
@@ -78,6 +119,8 @@ public sealed record YtDlpVideoInfo
                 .OrderByDescending(f => f.AudioBitrate)
                 .ThenByDescending(f => f.AudioChannels ?? 0)
                 .ThenByDescending(f => f.CodecPreference)
+                // A DRC variant sits below its bare equivalent: same rung, compressed dynamics.
+                .ThenBy(f => f.IsDrc)
                 .ThenByDescending(f => f.FileSize ?? f.FileSizeApprox ?? 0)
                 .ThenBy(f => f.FormatId, StringComparer.Ordinal),
         ];
@@ -89,9 +132,16 @@ public sealed record YtDlpVideoInfo
     /// a lossy resampling step with no quality benefit).
     /// </summary>
     public YtDlpFormat SelectBestAudioFormat() =>
-        AudioOnlyFormats.MaxBy(f =>
-            f is { AudioSampleRate: 44100, AudioBitrate: var br441 } ? br441 : f.AudioBitrate * 0.90
-        )
+        // MaxBy keeps the first maximal element, so ordering non-DRC first makes the bare variant
+        // win whenever it ties with its DRC twin, which is the common case (their bitrates differ
+        // by a fraction of a percent).
+        AudioOnlyFormats
+            .OrderBy(f => f.IsDrc)
+            .MaxBy(f =>
+                f is { AudioSampleRate: 44100, AudioBitrate: var br441 }
+                    ? br441
+                    : f.AudioBitrate * 0.90
+            )
         ?? new YtDlpFormat
         {
             FormatId = FormatId,
@@ -188,6 +238,39 @@ public sealed record YtDlpFormat
     /// <summary>Audio sampling rate in Hz.</summary>
     [JsonPropertyName("asr")]
     public int? AudioSampleRate { get; init; }
+
+    /// <summary>
+    /// yt-dlp's relative ranking of this format's audio language. The original audio track scores
+    /// 10; AI auto-dubbed tracks score -1, as does every format on a video with no dubs at all.
+    /// Only ever meaningful <em>relative to the other formats on the same video</em> — an absolute
+    /// threshold would reject every format on an undubbed video, since nothing there scores above
+    /// -1. Defaults to -1 so a video whose formats omit the field forms one flat group.
+    /// </summary>
+    [JsonPropertyName("language_preference")]
+    public int LanguagePreference { get; init; } = -1;
+
+    /// <summary>BCP-47 language tag of this audio track, when the video has more than one.</summary>
+    public string? Language { get; init; }
+
+    /// <summary>
+    /// The bare itag, with any trailing per-video suffix removed: <c>140-drc</c> and <c>140-9</c>
+    /// both reduce to <c>140</c>. On a dubbed video the bare id ceases to exist entirely, so
+    /// comparing raw format-id strings against a known set silently matches nothing.
+    /// </summary>
+    [JsonIgnore]
+    public string? Itag =>
+        FormatId is null ? null
+        : FormatId.IndexOf('-') is var dash && dash > 0 ? FormatId[..dash]
+        : FormatId;
+
+    /// <summary>
+    /// True for a Dynamic Range Compression variant (YouTube's "Stable Volume" audio). A parallel
+    /// copy of the same rung rather than a quality tier: same codec and sample rate, bitrate
+    /// within a fraction of a percent of its base itag. Compressed dynamics are processed audio,
+    /// so the bare variant is preferred when both are offered.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsDrc => FormatId?.EndsWith("-drc", StringComparison.OrdinalIgnoreCase) ?? false;
 
     /// <summary>Number of audio channels.</summary>
     public int? AudioChannels { get; init; }

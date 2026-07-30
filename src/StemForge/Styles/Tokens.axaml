@@ -36,6 +36,9 @@
     <Color x:Key="SuccessDimBgColor">#1F30D158</Color> <!-- ~12% alpha -->
     <Color x:Key="ErrorColor">#ff453a</Color>
     <Color x:Key="ErrorDimBgColor">#1FFF453A</Color>
+    <!-- Advisory: something worth noticing that did not fail. -->
+    <Color x:Key="WarningColor">#ffd60a</Color>
+    <Color x:Key="WarningDimBgColor">#1FFFD60A</Color>
 
     <!-- Category accents -->
     <Color x:Key="CategoryVocalsColor">#0a84ff</Color>
@@ -63,6 +66,8 @@
     <SolidColorBrush x:Key="SuccessDimBgBrush" Color="{StaticResource SuccessDimBgColor}" />
     <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}" />
     <SolidColorBrush x:Key="ErrorDimBgBrush" Color="{StaticResource ErrorDimBgColor}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
+    <SolidColorBrush x:Key="WarningDimBgBrush" Color="{StaticResource WarningDimBgColor}" />
 
     <SolidColorBrush x:Key="CategoryVocalsBrush" Color="{StaticResource CategoryVocalsColor}" />
     <SolidColorBrush x:Key="CategoryInstrumentalsBrush" Color="{StaticResource CategoryInstrumentalsColor}" />

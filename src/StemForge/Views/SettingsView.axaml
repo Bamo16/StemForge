@@ -352,6 +352,9 @@
                                 <TextBlock FontSize="11" TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
                                            Text="Needed for YouTube Premium audio (up to 264 kbps opus vs ~135 kbps without). Alternatively, export a cookies.txt file from your browser using the &quot;Get cookies.txt LOCALLY&quot; extension and enter its path instead." />
+                                <TextBlock FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="A browser name on its own follows whichever profile you used most recently, so on a machine with several profiles it can quietly switch accounts. Name one to be certain: firefox:0gx213hv.default-release, using the directory name from about:profiles, or firefox::container for a Multi-Account Container. Firefox is the most reliable choice; Chrome locks its cookie database while running." />
                                 <HyperlinkButton Padding="0" FontSize="11"
                                                  NavigateUri="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
                                                  Foreground="{DynamicResource AccentBrush}"
