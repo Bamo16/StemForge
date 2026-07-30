@@ -4,8 +4,6 @@ using System.Text;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 
 namespace StemForge.ViewModels;
 

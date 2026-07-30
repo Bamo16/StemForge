@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Code-coverage settings for the VS Code Test Explorer ("Run Tests with Coverage").
+  C# Dev Kit collects coverage with the "Code Coverage" data collector; this file scopes it:
+
+  - Includes only the StemForge product assemblies (GUI, Core, CLI); third-party assemblies drop out.
+  - Excludes the test assembly, so the numbers measure product code, not the tests.
+  - Excludes generated code via GeneratedCodeAttribute: Avalonia compiles XAML to IL tagged with
+    [GeneratedCode], so the .axaml build/populate glue stops counting, while the hand-written
+    .axaml.cs code-behind (not generated) still counts.
+
+  Wired up via .vscode/settings.json -> "dotnet.unitTests.runSettingsPath".
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage">
+        <Configuration>
+          <CodeCoverage>
+            <ModulePaths>
+              <Include>
+                <ModulePath>.*StemForge.*\.dll$</ModulePath>
+              </Include>
+              <Exclude>
+                <ModulePath>.*\.Tests\.dll$</ModulePath>
+              </Exclude>
+            </ModulePaths>
+            <Attributes>
+              <Exclude>
+                <Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+              </Exclude>
+            </Attributes>
+            <Sources>
+              <Exclude>
+                <!-- Avalonia compiles .axaml to IL whose sequence points map back to the .axaml
+                     file, but it does not tag that code [GeneratedCode], so exclude it by source.
+                     The hand-written .axaml.cs code-behind ends in .cs and is unaffected. -->
+                <Source>.*\.axaml$</Source>
+              </Exclude>
+            </Sources>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

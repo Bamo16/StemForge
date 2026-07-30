@@ -1,15 +1,21 @@
+using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
 using Spectre.Console.Cli;
+using StemForge.Cli.Json;
 using StemForge.Cli.Progress;
-using StemForge.Core.Helpers;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 
 namespace StemForge.Cli.Commands;
 
 internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
 {
+    private sealed record SeparateResult(
+        string Input,
+        bool Succeeded,
+        IReadOnlyList<string>? OutputFiles,
+        string? Error
+    );
+
     public sealed class Settings : CommandSettings
     {
         [CommandArgument(0, "<inputs...>")]
@@ -35,6 +41,9 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
 
         [CommandOption("--verbose")]
         public bool Verbose { get; set; }
+
+        [CommandOption("--json")]
+        public bool Json { get; set; }
     }
 
     protected override async Task<int> ExecuteAsync(
@@ -107,8 +116,13 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
         int succeeded = 0;
         int totalFilesWritten = 0;
         bool cancelled = false;
+        var results = new List<SeparateResult>(total);
 
-        var display = BatchProgressFactory.Create(AnsiConsole.Console, settings.Verbose);
+        var display = BatchProgressFactory.Create(
+            AnsiConsole.Console,
+            settings.Verbose,
+            settings.Json
+        );
         using var logScope = ProgressLogBridge.Activate(display);
 
         await display.RunAsync(
@@ -123,6 +137,7 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
                     // Build a display label and create the JobRecord.
                     JobRecord job;
                     string displayLabel;
+                    string reportedInput;
 
                     if (YtUrlHelper.TryNormalize(input, out var normalizedUrl))
                     {
@@ -145,6 +160,9 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
                         {
                             using var cancelledInput = display.BeginInput(i, total, normalizedUrl);
                             cancelledInput.Complete(InputOutcome.Cancelled, null);
+                            results.Add(
+                                new SeparateResult(normalizedUrl, false, null, "cancelled")
+                            );
                             cancelled = true;
                             break;
                         }
@@ -152,13 +170,13 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
                         if (!resolution.Succeeded)
                         {
                             using var failed = display.BeginInput(i, total, normalizedUrl);
-                            failed.Complete(
-                                InputOutcome.Failed,
-                                resolution.FailureReason ?? "resolution failed"
-                            );
+                            var reason = resolution.FailureReason ?? "resolution failed";
+                            failed.Complete(InputOutcome.Failed, reason);
+                            results.Add(new SeparateResult(normalizedUrl, false, null, reason));
                             continue;
                         }
 
+                        reportedInput = normalizedUrl;
                         displayLabel = resolution.Title!;
                         job = new JobRecord(
                             Id: Guid.NewGuid(),
@@ -188,9 +206,18 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
                                 InputOutcome.Failed,
                                 $"Input file not found: {resolvedPath}"
                             );
+                            results.Add(
+                                new SeparateResult(
+                                    resolvedPath,
+                                    false,
+                                    null,
+                                    $"Input file not found: {resolvedPath}"
+                                )
+                            );
                             continue;
                         }
 
+                        reportedInput = resolvedPath;
                         displayLabel = Path.GetFileName(resolvedPath);
                         job = new JobRecord(
                             Id: Guid.NewGuid(),
@@ -216,22 +243,34 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
                         totalFilesWritten += outputFiles.Count;
                         inputProgress.Complete(
                             InputOutcome.Succeeded,
-                            $"{outputFiles.Count} file(s)"
+                            "file".ToQuantity(outputFiles.Count)
                         );
+                        results.Add(new SeparateResult(reportedInput, true, outputFiles, null));
                     }
                     catch (OperationCanceledException)
                     {
                         inputProgress.Complete(InputOutcome.Cancelled, null);
+                        results.Add(new SeparateResult(reportedInput, false, null, "cancelled"));
                         cancelled = true;
                         break;
                     }
                     catch (Exception ex)
                     {
                         inputProgress.Complete(InputOutcome.Failed, ex.Message);
+                        results.Add(new SeparateResult(reportedInput, false, null, ex.Message));
                     }
                 }
             }
         );
+
+        if (settings.Json)
+        {
+            CliJson.Write(results);
+            return cancelled ? (succeeded > 0 ? 2 : 1)
+                : succeeded == 0 ? 1
+                : succeeded == total ? 0
+                : 2;
+        }
 
         // Print end-of-run summary.
         if (cancelled)
@@ -239,7 +278,7 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
             if (succeeded > 0)
             {
                 Console.Error.WriteLine(
-                    $"Cancelled after {succeeded}/{total} succeeded. {totalFilesWritten} file(s) written to {resolvedOutputDir}"
+                    $"Cancelled after {succeeded}/{total} succeeded. {"file".ToQuantity(totalFilesWritten)} written to {resolvedOutputDir}"
                 );
                 return 2;
             }
@@ -254,7 +293,7 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
         }
 
         Console.WriteLine(
-            $"Done. {succeeded}/{total} succeeded. {totalFilesWritten} file(s) written to {resolvedOutputDir}"
+            $"Done. {succeeded}/{total} succeeded. {"file".ToQuantity(totalFilesWritten)} written to {resolvedOutputDir}"
         );
 
         return succeeded == total ? 0 : 2;

@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
+using Humanizer;
 
 namespace StemForge.ViewModels;
 
@@ -12,9 +11,7 @@ public partial class PresetItemViewModel(Preset preset) : ObservableObject
     public string Label => Preset.Label;
     public string Description => Preset.Description;
     public string ModelsTag =>
-        Preset.Mode == SeparationMode.SingleModel ? "1 model"
-        : Preset.ModelCount > 0 ? $"{Preset.ModelCount} models"
-        : string.Empty;
+        Preset is { ModelCount: > 0 and var count } ? "model".ToQuantity(count) : string.Empty;
     public string VramTag => Preset.Vram;
     public bool HasVramTag => !string.IsNullOrEmpty(Preset.Vram);
 

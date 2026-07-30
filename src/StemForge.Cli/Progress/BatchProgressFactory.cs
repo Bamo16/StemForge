@@ -28,9 +28,12 @@ internal static class BatchProgressFactory
     /// written from a background thread, and those writes tear Spectre's live region, leaving ghost
     /// progress-bar fragments. With no live region there is nothing to corrupt, so verbose output is
     /// milestone lines interleaved with the streamed logs.
+    ///
+    /// <paramref name="json"/> takes precedence over both: stdout must carry only the final JSON
+    /// payload the command writes after the batch completes, so progress is dropped entirely.
     /// </summary>
-    internal static IBatchProgress Create(IAnsiConsole console, bool verbose) =>
-        !verbose && ShouldUseLiveDisplay(console)
-            ? new LiveBatchProgress(console, verbose)
-            : new PlainBatchProgress(Console.Out, Console.Error, verbose);
+    internal static IBatchProgress Create(IAnsiConsole console, bool verbose, bool json = false) =>
+        json ? new JsonBatchProgress()
+        : !verbose && ShouldUseLiveDisplay(console) ? new LiveBatchProgress(console, verbose)
+        : new PlainBatchProgress(Console.Out, Console.Error, verbose);
 }

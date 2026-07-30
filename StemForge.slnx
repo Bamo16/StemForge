@@ -2,7 +2,9 @@
     <Folder Name="/src/">
         <Project Path="src/StemForge.Core/StemForge.Core.csproj" />
         <Project Path="src/StemForge/StemForge.csproj" />
-        <Project Path="src/StemForge.Tests/StemForge.Tests.csproj" />
         <Project Path="src/StemForge.Cli/StemForge.Cli.csproj" />
+    </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/StemForge.Tests/StemForge.Tests.csproj" />
     </Folder>
 </Solution>

@@ -5,10 +5,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using StemForge.Core.Extensions;
-using StemForge.Core.Helpers;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
+using Humanizer;
 using StemForge.Services;
 
 namespace StemForge.ViewModels;
@@ -50,7 +47,8 @@ public partial class SeparateViewModel : PageViewModelBase
     public string SelectedCountLabel =>
         SelectedCount == 0
             ? "No presets selected"
-            : $" preset{(SelectedCount == 1 ? "" : "s")} selected";
+            // The count is rendered separately in the view, so pluralize the noun without it.
+            : $" {"preset".ToQuantity(SelectedCount, ShowQuantityAs.None)} selected";
 
     public bool HasSelection => SelectedCount > 0;
 
@@ -61,6 +59,7 @@ public partial class SeparateViewModel : PageViewModelBase
     private readonly AppPaths _paths;
     private readonly YouTubeAudioService _ytAudio;
     private readonly ISeparatorDriverService _driver;
+    private readonly PresetCatalogService _presetCatalog;
     private CancellationTokenSource? _urlCheckCts;
     private YtDlpMetadata? _cachedUrlMeta;
 
@@ -170,6 +169,35 @@ public partial class SeparateViewModel : PageViewModelBase
     public bool HasUrlDuration => UrlDuration is not null;
     public bool HasUrlSampleRate => UrlSampleRate is not null;
 
+    /// <summary>
+    /// How the resolved URL compares against the user's premium expectation. Lives on the chips
+    /// row rather than the format-picker toggle because that toggle is hidden whenever the
+    /// candidate list is thin, which is exactly the case worth reporting. See ADR 0013.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPremiumFormat))]
+    [NotifyPropertyChangedFor(nameof(HasNoPremiumAudio))]
+    [NotifyPropertyChangedFor(nameof(HasNoPremiumLadder))]
+    [NotifyPropertyChangedFor(nameof(HasAccountNotPremium))]
+    [NotifyPropertyChangedFor(nameof(HasNotSignedIn))]
+    [NotifyPropertyChangedFor(nameof(PremiumAdvisoryMessage))]
+    [NotifyPropertyChangedFor(nameof(HasPremiumAdvisory))]
+    public partial PremiumStatus UrlPremiumStatus { get; set; }
+
+    public bool HasPremiumFormat => UrlPremiumStatus is PremiumStatus.Premium;
+    public bool HasNoPremiumAudio => UrlPremiumStatus is PremiumStatus.SourceHasNoPremiumAudio;
+    public bool HasNoPremiumLadder => UrlPremiumStatus is PremiumStatus.NoPremiumLadder;
+    public bool HasAccountNotPremium => UrlPremiumStatus is PremiumStatus.AccountNotPremium;
+    public bool HasNotSignedIn => UrlPremiumStatus is PremiumStatus.NotSignedIn;
+
+    /// <summary>
+    /// Hover-help for whichever premium chip is showing. One message rather than one per chip,
+    /// since the states are mutually exclusive; the ⓘ affordance that carries it is likewise a
+    /// single icon (see ADR 0001 for why the tooltip does not hang off the chip itself).
+    /// </summary>
+    public string? PremiumAdvisoryMessage => PremiumExpectation.AdvisoryFor(UrlPremiumStatus);
+    public bool HasPremiumAdvisory => PremiumAdvisoryMessage is not null;
+
     // ── Local-file resolved metadata ──────────────────────────────────────────
 
     [ObservableProperty]
@@ -243,7 +271,9 @@ public partial class SeparateViewModel : PageViewModelBase
     [NotifyPropertyChangedFor(nameof(FormatPickerToggleLabel))]
     public partial bool IsFormatPickerOpen { get; set; }
 
-    public bool HasFormatPicker => FormatPickerItems.Count > 1;
+    // One candidate still gets a picker: a thin format list is the moment a user most wants to
+    // see what they are about to download, so hiding the affordance there is backwards.
+    public bool HasFormatPicker => FormatPickerItems.Count >= 1;
     public bool ShowFormatPicker => IsFormatPickerOpen && HasFormatPicker;
     public string FormatPickerToggleLabel =>
         $"{(IsFormatPickerOpen ? "▴" : "▾")} Format options ({FormatPickerItems.Count} available)";
@@ -307,7 +337,8 @@ public partial class SeparateViewModel : PageViewModelBase
         ToolStateService toolState,
         AppPaths paths,
         YouTubeAudioService ytAudio,
-        ISeparatorDriverService driver
+        ISeparatorDriverService driver,
+        PresetCatalogService presetCatalog
     )
     {
         _queue = queue;
@@ -317,6 +348,7 @@ public partial class SeparateViewModel : PageViewModelBase
         _toolState = toolState;
         _paths = paths;
         _driver = driver;
+        _presetCatalog = presetCatalog;
         OutputPath = paths.OutputDirectory;
         StemOutputFormat = settings.DefaultAudioFormat;
         IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
@@ -335,7 +367,7 @@ public partial class SeparateViewModel : PageViewModelBase
         Categories = new ObservableCollection<PresetCategoryGroup>(
             BuildGroups(PresetCatalog.BuiltIn)
         );
-        _driver.PresetsLoaded += OnDriverPresetsLoaded;
+        _ = LoadBuiltInPresetsAsync();
 
         foreach (var g in Categories)
         foreach (var item in g.Items)
@@ -393,9 +425,24 @@ public partial class SeparateViewModel : PageViewModelBase
 
     // ── Preset building ───────────────────────────────────────────────────────
 
-    private void OnDriverPresetsLoaded(IReadOnlyList<Preset> presets)
+    /// <summary>
+    /// Resolves the live built-in preset catalog via the torch-free <c>list_presets.py</c> one-shot
+    /// and refreshes the category list once it returns. The constructor seeds the list with the
+    /// static fallback so the UI is populated immediately; this upgrades it without waiting on the
+    /// long-lived separator driver to start.
+    /// </summary>
+    private async Task LoadBuiltInPresetsAsync()
     {
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => RefreshBuiltInCategories(presets));
+        try
+        {
+            var presets = await _presetCatalog.ListPresetsAsync();
+            if (presets.Count > 0)
+                Dispatcher.UIThread.Post(() => RefreshBuiltInCategories(presets));
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning("SeparateVM", $"Failed to load built-in presets: {ex.Message}");
+        }
     }
 
     private void RefreshBuiltInCategories(IReadOnlyList<Preset> presets)
@@ -593,6 +640,7 @@ public partial class SeparateViewModel : PageViewModelBase
         UrlSampleRate = null;
         UrlDuration = null;
         UrlFetchError = null;
+        UrlPremiumStatus = PremiumStatus.NotApplicable;
         FormatPickerItems.Clear();
         IsFormatPickerOpen = false;
         OnPropertyChanged(nameof(HasFormatPicker));
@@ -635,6 +683,10 @@ public partial class SeparateViewModel : PageViewModelBase
             NotifyCanRunChanged();
 
             UrlTitle = meta.DisplayTitle;
+            UrlPremiumStatus = PremiumExpectation.Evaluate(
+                meta,
+                PremiumExpectation.IsHeldBy(_settings)
+            );
             if (meta.SourceCodec is { Length: > 0 } codec && codec != "none")
                 UrlCodec = AudioFormatInfo.PrettyCodec(codec);
             if (meta.SourceBitrateKbps is { } kbps)
@@ -652,7 +704,7 @@ public partial class SeparateViewModel : PageViewModelBase
             }
 
             FormatPickerItems.Clear();
-            if (meta.AudioFormats is { Count: > 1 } formats)
+            if (meta.AudioFormats is { Count: > 0 } formats)
             {
                 foreach (var f in formats)
                 {
@@ -669,10 +721,10 @@ public partial class SeparateViewModel : PageViewModelBase
                             FormatNote = f.FormatNote ?? "",
                             IsAutoRecommended = f.FormatId == meta.FormatId,
                             IsSelected = f.FormatId == meta.FormatId,
-                            IsYtPremium = AudioFormatInfo.IsYouTubePremium(
-                                f.FormatId,
-                                meta.Extractor
-                            ),
+                            // Only badge a gated format that is actually an improvement on what
+                            // this source gives away free, so the logo always means "better
+                            // audio you paid for" rather than merely "signed in".
+                            IsYtPremium = PremiumFormats.IsPremium(f, formats, meta.Extractor),
                         }
                     );
                 }

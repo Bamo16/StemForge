@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
+using Humanizer;
 using StemForge.ViewModels;
 
 namespace StemForge.Services;
@@ -73,8 +72,7 @@ public sealed class JobQueueService(SeparationPipeline pipeline, AppSettings set
             {
                 vm.OutputFiles.AddRange(outputFiles);
                 vm.Progress = 100;
-                vm.StatusText =
-                    $"{outputFiles.Count} stem{(outputFiles.Count == 1 ? "" : "s")} written";
+                vm.StatusText = $"{"stem".ToQuantity(outputFiles.Count)} written";
                 vm.Status = JobStatus.Done;
                 vm.IsExpanded = true;
                 OnPropertyChanged();

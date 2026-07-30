@@ -352,6 +352,9 @@
                                 <TextBlock FontSize="11" TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
                                            Text="Needed for YouTube Premium audio (up to 264 kbps opus vs ~135 kbps without). Alternatively, export a cookies.txt file from your browser using the &quot;Get cookies.txt LOCALLY&quot; extension and enter its path instead." />
+                                <TextBlock FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPlaceholderBrush}"
+                                           Text="A browser name on its own follows whichever profile you used most recently, so on a machine with several profiles it can quietly switch accounts. Name one to be certain: firefox:0gx213hv.default-release, using the directory name from about:profiles, or firefox::container for a Multi-Account Container. Firefox is the most reliable choice; Chrome locks its cookie database while running." />
                                 <HyperlinkButton Padding="0" FontSize="11"
                                                  NavigateUri="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
                                                  Foreground="{DynamicResource AccentBrush}"
@@ -409,12 +412,46 @@
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="6">
                                 <TextBlock Classes="settingLabel" Text="Model" />
-                                <TextBox Classes="settingInput"
-                                         Text="{Binding DrumExtractionModel, Mode=TwoWay}"
-                                         PlaceholderText="htdemucs_ft.yaml" />
+                                <ComboBox ItemsSource="{Binding DrumModelOptions}"
+                                          SelectedItem="{Binding SelectedDrumModel, Mode=TwoWay}"
+                                          IsEnabled="{Binding !DrumModelsLoading}"
+                                          PlaceholderText="Loading drum-capable models…"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate DataType="vm:DrumModelOptionViewModel">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding FriendlyName}"
+                                                           FontSize="12"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                <Border Grid.Column="1"
+                                                        VerticalAlignment="Center"
+                                                        CornerRadius="3" Padding="5,1"
+                                                        Background="{DynamicResource Bg2Brush}">
+                                                    <TextBlock Text="{Binding StateLabel}"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                </Border>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                                 <TextBlock FontSize="11" TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="audio-separator model used for drum stem extraction. Leave blank to use the default." />
+                                           Text="Only models that produce a drums stem are listed. &quot;Downloaded&quot; models are already on disk; others are fetched the first time they run." />
+                                <Border IsVisible="{Binding HasUnlistedDrumModel}"
+                                        Background="{DynamicResource Bg2Brush}"
+                                        CornerRadius="6" Padding="10,8">
+                                    <TextBlock FontSize="11" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextSecondaryBrush}">
+                                        <Run Text="Current setting" />
+                                        <Run Text="{Binding DrumExtractionModel}"
+                                             FontFamily="{DynamicResource MonoFont}"
+                                             Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        <Run Text="is not in the list. Pick a model above to replace it." />
+                                    </TextBlock>
+                                </Border>
                             </StackPanel>
                             <CheckBox IsChecked="{Binding DrumStemsWithOutputs, Mode=TwoWay}"
                                       Content="Write drum stem alongside other output files"

@@ -2,8 +2,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 
 namespace StemForge.ViewModels;
 
@@ -17,6 +15,7 @@ public partial class ModelsViewModel : PageViewModelBase
     public override string Title => "Model Library";
 
     private readonly ModelCatalogService _catalog;
+    private readonly ModelProfileResolver _profiles;
     private readonly AppPaths _paths;
     private readonly UserPresetService _userPresets;
     private readonly ToolStateService _toolState;
@@ -27,10 +26,12 @@ public partial class ModelsViewModel : PageViewModelBase
         AppPaths paths,
         UserPresetService userPresets,
         ModelCatalogService catalog,
+        ModelProfileResolver profiles,
         ToolStateService toolState
     )
     {
         _catalog = catalog;
+        _profiles = profiles;
         _paths = paths;
         _userPresets = userPresets;
         _toolState = toolState;
@@ -133,7 +134,66 @@ public partial class ModelsViewModel : PageViewModelBase
         OnPropertyChanged(nameof(HasChecked));
         OnPropertyChanged(nameof(IsMultiModel));
         OnPropertyChanged(nameof(CheckedSummary));
+        RecomputeOverlap();
         SavePresetCommand.NotifyCanExecuteChanged();
+    }
+
+    // ── Ensemble stem-overlap guidance (issue #69) ─────────────────────────────
+
+    /// <summary>
+    /// Stem names produced by 2+ of the checked models — audio-separator blends (averages) these.
+    /// </summary>
+    public ObservableCollection<StemOverlap> AveragedStems { get; } = [];
+
+    /// <summary>
+    /// Stem names produced by exactly one checked model — these pass through unchanged.
+    /// </summary>
+    public ObservableCollection<StemOverlap> PassthroughStems { get; } = [];
+
+    /// <summary>
+    /// Friendly names of checked models whose stems StemForge could not resolve. Surfaced so the
+    /// guidance does not silently drop them or miscount them as contributors.
+    /// </summary>
+    public ObservableCollection<string> UnknownStemModels { get; } = [];
+
+    public bool HasAveragedStems => AveragedStems.Count > 0;
+    public bool HasPassthroughStems => PassthroughStems.Count > 0;
+    public bool HasUnknownStemModels => UnknownStemModels.Count > 0;
+
+    /// <summary>
+    /// The overlap guidance is only meaningful for a multi-model ensemble. With a single model every
+    /// stem trivially passes through, so there is nothing an ensemble buys the user to explain.
+    /// </summary>
+    public bool ShowOverlapGuidance => IsMultiModel;
+
+    public string UnknownStemModelsLabel =>
+        UnknownStemModels.Count == 0
+            ? string.Empty
+            : "Unknown stems (not counted): " + string.Join(", ", UnknownStemModels);
+
+    private void RecomputeOverlap()
+    {
+        var result = EnsembleOverlap.Aggregate(
+            _all.Where(m => m.IsChecked).Select(m => (m.FriendlyName, m.Profile))
+        );
+
+        AveragedStems.Clear();
+        foreach (var s in result.Averaged)
+            AveragedStems.Add(s);
+
+        PassthroughStems.Clear();
+        foreach (var s in result.Passthrough)
+            PassthroughStems.Add(s);
+
+        UnknownStemModels.Clear();
+        foreach (var m in result.UnknownModels)
+            UnknownStemModels.Add(m);
+
+        OnPropertyChanged(nameof(HasAveragedStems));
+        OnPropertyChanged(nameof(HasPassthroughStems));
+        OnPropertyChanged(nameof(HasUnknownStemModels));
+        OnPropertyChanged(nameof(ShowOverlapGuidance));
+        OnPropertyChanged(nameof(UnknownStemModelsLabel));
     }
 
     // ── Save as preset ────────────────────────────────────────────────────────
@@ -251,14 +311,20 @@ public partial class ModelsViewModel : PageViewModelBase
 
         try
         {
-            var models = await _catalog.ListModelsAsync(_paths.AudioSeparator, forceRefresh);
+            var models = await _catalog.ListModelsAsync(forceRefresh);
             var modelsDir = _paths.ModelsDirectory;
 
             foreach (var m in models)
             {
                 var fullPath = Path.Combine(modelsDir, m.Filename);
                 var exists = File.Exists(fullPath);
-                var vm = new ModelItemViewModel(m)
+
+                // Resolve the advisory profile so models the benchmark lists no stems for still
+                // show their resolved stems. The resolver only reaches the network when a
+                // config-driven model has no benchmark stems; for everything else this is local.
+                var profile = await _profiles.ResolveAsync(m);
+
+                var vm = new ModelItemViewModel(m, profile)
                 {
                     IsLocal = exists,
                     FileSizeBytes = exists ? new FileInfo(fullPath).Length : 0,
@@ -304,7 +370,15 @@ public partial class ModelsViewModel : PageViewModelBase
 
             if (!string.IsNullOrEmpty(stem))
             {
-                if (!m.Stems.Any(s => s.Name.Equals(stem, StringComparison.OrdinalIgnoreCase)))
+                var hasBenchmarkStem = m.Stems.Any(s =>
+                    s.Name.Equals(stem, StringComparison.OrdinalIgnoreCase)
+                );
+                var hasProfileStem =
+                    m.Profile is { IsUnknown: false }
+                    && m.Profile.Stems.Any(s =>
+                        s.Name.Equals(stem, StringComparison.OrdinalIgnoreCase)
+                    );
+                if (!hasBenchmarkStem && !hasProfileStem)
                     return false;
             }
 

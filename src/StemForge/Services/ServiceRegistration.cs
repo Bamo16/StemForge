@@ -1,6 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using StemForge.Core.Models;
-using StemForge.Core.Services;
 using StemForge.ViewModels;
 
 namespace StemForge.Services;

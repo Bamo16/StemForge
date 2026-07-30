@@ -1,7 +1,6 @@
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using StemForge.Core.Models;
 
 namespace StemForge.ViewModels;
 
