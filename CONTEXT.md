@@ -34,6 +34,52 @@ Divergence happens when an install silently falls back. Example: the user picks 
 ### Bundled bin dir
 `%LOCALAPPDATA%\StemForge\bin` on Windows (analogous paths on other OSes). Holds the output of every [[Bundled fetch]]. Not on the user's system PATH; reachable only from StemForge's own child processes, which are pointed at these binaries by explicit path argument (see ADR 0003 for how).
 
+## Acquisition
+
+### Resolve
+Determining everything knowable about a URL source *without fetching its audio*: title, artist, duration, the candidate [[Source format]]s, and which one the selection policy would pick. Every URL [[Job]] resolves before it downloads, so the facts a download will produce are known before any audio bytes are paid for.
+
+### Source format
+One audio-only candidate a URL source offers, identified by a format id assigned by the extractor and described by codec, bitrate, and sample rate. A [[Resolve]] returns the full candidate set; exactly one is selected to fetch. Selection is StemForge's policy, not a user choice, unless the user explicitly pins one.
+
+Two kinds of candidate are excluded before any of that, because neither is the source audio as recorded: an **AI auto-dub** (a synthesised-speech translation, which YouTube produces by separating the original's vocal stem and remixing, so it is already-separated audio) and a **DRC variant** (a dynamic-range-compressed copy of another candidate, retained only when it is the sole route to that quality rung). A candidate's format id is not a stable name on such sources: an id may carry a per-video suffix, so only the leading **itag** may be compared against a known set.
+_Avoid_: "format" unqualified, and "audio format" — both collide with [[Output format]], which sits at the opposite end of the pipeline. A source format is what StemForge fetches **from**; an output format is what it writes **to**.
+
+### Output format
+The container and codec StemForge encodes an acquired or separated file into (`flac`, `mp3`, `wav`). Independent of the [[Source format]]: any source format may be transcoded to any output format, and every URL acquisition is normalised to 44.1 kHz on the way, because separation [[Model]]s operate at that rate.
+
+### Auth-gated format
+A [[Source format]] YouTube withholds from an unauthenticated request, identified by its itag against a known set. An authentication signal, not a quality one: the gated set includes formats *worse* than what the same source gives away freely. Like a [[Model profile]], this is **advisory, never authoritative** (see ADR 0010): the set is empirically derived and will drift as YouTube changes its formats.
+
+Gating has two tiers, and the difference is what makes an unmet expectation diagnosable:
+- **Session-gated** — shown to any signed-in account, paying or not. Presence proves a live session and nothing more.
+- **Premium-gated** — withheld even from a signed-in account without a subscription. Presence proves a Premium entitlement.
+
+### Premium format
+An [[Auth-gated format]] whose bitrate also exceeds the best ungated format the same source offers, i.e. audio the user could not have obtained without authenticating. Determined per source rather than from a fixed list, since the ungated candidates in a resolve are exactly the baseline an unauthenticated request would have received. Gating alone is not enough to be premium.
+
+### Premium ladder
+The set of [[Auth-gated format]]s a source is provisioned with. Provisioned in tiers rather than per format: a source has the full ladder, a low-quality-only ladder, or none at all, and the high-bitrate formats never appear without the low one. The ladder attaches to the [[Music track entity]], not to the video, so two YouTube entries for the same recording can differ.
+
+### Music track entity
+A URL YouTube surfaces as a music track rather than an ordinary upload, marked by populated artist, track, and album metadata (typically served from a `- Topic` channel). Distinct from a video upload of the same recording, **including an official one from the artist's or label's own channel**, which is not a music track entity and carries no [[Premium ladder]]. The distinction is what makes a [[Premium shortfall]] diagnosable.
+
+### Premium expectation
+A user's declared expectation that acquisitions should yield a [[Premium format]], inferred from their having configured a cookie source rather than from a separate setting. A user with no cookie source configured holds no premium expectation, and premium-ness is not surfaced to them.
+
+### Premium shortfall
+A [[Resolve]] in which a [[Premium expectation]] holds but no [[Premium format]] was selected. An umbrella for four outcomes, distinguished by whether the source is a [[Music track entity]] and which tier of [[Auth-gated format]] survived, because each calls for a different response:
+
+- **Not signed in** — a music track with no gated format at all. A signed-in free account would still have been shown the session-gated rungs, so their total absence means the browser session is no longer authenticated. This is the outcome the whole signal exists to catch, and the only one that points at the session.
+- **Account not Premium** — a music track with session-gated formats but no Premium-gated ones. The ladder exists; this account cannot reach it. Most often cookies read from a browser profile signed into a different account than intended.
+- **Source has no Premium audio** — not a music track, signed in, and nothing on offer beats the source's own free formats. A property of the source.
+- **No Premium ladder** — not a music track and nothing gated at all, so none was ever provisioned. The ordinary outcome for a video upload, and not a fault.
+
+None of these asserts a cause it cannot observe. A dead session is silent: it yields a normal, successful resolve with fewer formats and no error.
+
+### Provenance
+The record of where an audio file came from and how it was obtained — source URL, acquisition date, and the codec, bitrate, and id of the selected [[Source format]] — written into the file itself so it survives being moved, re-ingested, or used as the input to a later [[Job]].
+
 ## Separation
 
 ### Model

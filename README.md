@@ -95,13 +95,41 @@ Both commands take multiple inputs and process them as a batch, continuing past 
 
 | Option | Applies to | Effect |
 |---|---|---|
-| `--preset <id>` | separate | Built-in preset to run; repeat for an ensemble of presets |
+| `--preset <id>` | separate | Built-in preset to run; repeat to run several presets as independent stem sets in one call |
 | `--output <dir>` | both | Output directory (defaults to the configured Stems folder) |
 | `--format <flac\|wav\|mp3\|...>` | both | Output audio format (defaults to the saved setting) |
 | `--keep-source` | separate | Keep the source audio alongside the stems |
 | `--extract-drums` | separate | Also extract a drums stem |
 | `--cookies-from-browser <name>` | both | Browser to read YouTube cookies from (premium formats) |
+| `--list-formats` | download | Show the source formats on offer and exit without downloading |
+| `--format-id <id>` | download | Fetch a specific source format instead of the automatic pick |
 | `--verbose` | both | Stream full engine logs for troubleshooting (off by default) |
+| `--json` | both, presets | Suppress human output; print a single JSON result payload to stdout |
+
+Note that `--format` and `--format-id` sit at opposite ends of the pipeline: `--format` is what the file gets written as, `--format-id` is which source format gets fetched.
+
+### Choosing a source format
+
+`--list-formats` resolves a URL and reports what it offers, without downloading anything:
+
+```
+stemforge-cli download "https://www.youtube.com/watch?v=..." --list-formats
+```
+```
+Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)
+  ID     CODEC      KBPS    KHZ  PREMIUM  NOTE
+> 141    AAC LC      258   44.1  yes      high
+  774    Opus        257   48.0  yes      high
+  140    AAC LC      130   44.1           medium
+  251    Opus        129   48.0           medium
+  (> marks the format that would be downloaded)
+```
+
+This is useful when several URLs exist for the same track and you want to compare them before spending the download. Add `--json` for the same data as a machine-readable candidate list.
+
+By default StemForge picks the best source format for separation, preferring 44.1 kHz so no resampling is needed later. `--format-id` overrides that when you need identical acquisition across a set of tracks rather than the best result for each one. A source that does not offer the pinned format fails that input rather than quietly substituting another, so a batch reports exactly which tracks could not be satisfied.
+
+If you have configured `--cookies-from-browser` (or the equivalent setting) and a source turns out to have no YouTube Premium format, StemForge says so before downloading. That means either the source genuinely has no premium audio, or your browser session is no longer signed in. An expired cookie is otherwise silent: yt-dlp still succeeds and simply returns the lower-quality format set.
 
 Live progress shows a per-input bar with the current activity. Press Ctrl+C once to cancel the running job cleanly, or twice to force-exit. Run `stemforge-cli presets` to list the built-in presets, and `stemforge-cli --help` for the full command reference.
 
