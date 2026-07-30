@@ -1,7 +1,45 @@
 namespace StemForge.Tests.Separation;
 
-public sealed class AudioTaggerTests
+public sealed class AudioTaggerTests : IDisposable
 {
+    // Minimal valid FLAC: magic + last-metadata STREAMINFO block (all-zero stream info).
+    // TagLibSharp can open and Save() this file without errors.
+    private static readonly byte[] _minimalFlac =
+    [
+        0x66,
+        0x4C,
+        0x61,
+        0x43,
+        0x80,
+        0x00,
+        0x00,
+        0x22,
+        .. new byte[34],
+    ];
+
+    private readonly string _tempDir = Path.Combine(
+        Path.GetTempPath(),
+        $"sftest-tagger-{Guid.NewGuid():N}"
+    );
+
+    public AudioTaggerTests() => Directory.CreateDirectory(_tempDir);
+
+    public void Dispose()
+    {
+        try
+        {
+            Directory.Delete(_tempDir, recursive: true);
+        }
+        catch { }
+    }
+
+    private string CreateFlacFile()
+    {
+        var path = Path.Combine(_tempDir, $"{Guid.NewGuid():N}.flac");
+        File.WriteAllBytes(path, _minimalFlac);
+        return path;
+    }
+
     private static SourceTagInfo UrlSource() =>
         new()
         {
@@ -107,5 +145,59 @@ public sealed class AudioTaggerTests
         Assert.Equal(160, info.SourceBitrateKbps);
         Assert.Equal("251", info.SourceFormatId);
         Assert.Equal("Artist - Track", info.Title);
+    }
+
+    [Fact]
+    public void ReadFromFile_AfterApplyToFileWithUrlSource_RecoversSourceProvenance()
+    {
+        // #4 of the KeyBPM handoff: a file downloaded via a URL job, then fed back in as a
+        // local-file input (e.g. `download` followed by `separate` on the saved path), must not
+        // silently lose its original SOURCE_URL/codec/bitrate/format-id.
+        var path = CreateFlacFile();
+        AudioTagger.ApplyToFile(path, UrlSource(), "Vocal - Full", "0.2.0");
+
+        var recovered = AudioTagger.ReadFromFile(path);
+
+        Assert.NotNull(recovered);
+        Assert.Equal("https://www.youtube.com/watch?v=abc123", recovered.SourceUrl);
+        Assert.Equal("opus", recovered.SourceCodec);
+        Assert.Equal(160, recovered.SourceBitrateKbps);
+        Assert.Equal("251", recovered.SourceFormatId);
+    }
+
+    [Fact]
+    public void ReadFromFile_AfterApplyToFileWithLocalSource_HasNoSourceProvenance()
+    {
+        // A stem produced from a local-file job never had exact-source fields to begin with;
+        // re-reading it must degrade to null rather than fabricate provenance.
+        var path = CreateFlacFile();
+        var localSource = new SourceTagInfo { Title = "Track", Artist = "Artist" };
+        AudioTagger.ApplyToFile(path, localSource, "Vocal - Full", "0.2.0");
+
+        var recovered = AudioTagger.ReadFromFile(path);
+
+        Assert.NotNull(recovered);
+        Assert.Null(recovered.SourceUrl);
+        Assert.Null(recovered.SourceCodec);
+        Assert.Null(recovered.SourceBitrateKbps);
+        Assert.Null(recovered.SourceFormatId);
+    }
+
+    [Fact]
+    public void ReadFromFile_UnrelatedComment_DoesNotMisparseAsProvenance()
+    {
+        // A file with an ordinary user/DAW comment (not written by this tool) must not have
+        // its Comment text misinterpreted as provenance fields.
+        var path = CreateFlacFile();
+        using (var f = TagLib.File.Create(path))
+        {
+            f.Tag.Comment = "source: my personal notes, not a URL";
+            f.Save();
+        }
+
+        var recovered = AudioTagger.ReadFromFile(path);
+
+        Assert.NotNull(recovered);
+        Assert.Null(recovered.SourceUrl);
     }
 }

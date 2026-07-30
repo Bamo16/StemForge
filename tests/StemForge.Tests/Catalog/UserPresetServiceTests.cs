@@ -390,11 +390,13 @@ public sealed class UserPresetServiceTests
             Assert.Equal("Source", firstStep.GetProperty("Input").GetString());
             Assert.Equal(
                 ["a.ckpt", "b.ckpt"],
-                firstStep
-                    .GetProperty("Models")
-                    .EnumerateArray()
-                    .Select(e => e.GetString())
-                    .ToArray()
+                [
+                    .. firstStep
+                        .GetProperty("Models")
+                        .EnumerateArray()
+                        .Select(e => e.GetString())
+                        .OfType<string>(),
+                ]
             );
             Assert.Equal("avg_wave", firstStep.GetProperty("Algorithm").GetString());
             // The legacy flat model fields are no longer written.

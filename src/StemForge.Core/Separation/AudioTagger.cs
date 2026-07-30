@@ -79,6 +79,7 @@ public static class AudioTagger
         {
             using var f = TFile.Create(path);
             var pic = BestPicture(f.Tag.Pictures);
+            var provenance = ParseProvenance(f.Tag.Comment);
             return new SourceTagInfo
             {
                 Title = NullIfEmpty(f.Tag.Title),
@@ -87,6 +88,10 @@ public static class AudioTagger
                 Year = f.Tag.Year,
                 CoverArtBytes = pic?.Data.Data,
                 CoverArtMimeType = NullIfEmpty(pic?.MimeType) ?? "image/jpeg",
+                SourceUrl = provenance.SourceUrl,
+                SourceCodec = provenance.SourceCodec,
+                SourceBitrateKbps = provenance.SourceBitrateKbps,
+                SourceFormatId = provenance.SourceFormatId,
             };
         }
         catch (Exception ex)
@@ -222,6 +227,61 @@ public static class AudioTagger
             parts.Add($"format-id: {formatId}");
 
         return string.Join(" | ", parts);
+    }
+
+    /// <summary>
+    /// Recovers the exact-source fields <see cref="BuildProvenance"/> wrote into the Comment
+    /// tag, so a file produced by a prior download or separation keeps its original provenance
+    /// when fed back in as a local-file input (e.g. download once, then separate on the saved
+    /// path). Only parses comments this tool wrote (must start with "stemforge/"); anything
+    /// else — including a plain stem with no source fields — degrades to all-null, which is
+    /// correct since there is nothing to recover.
+    /// </summary>
+    private static (
+        string? SourceUrl,
+        string? SourceCodec,
+        double? SourceBitrateKbps,
+        string? SourceFormatId
+    ) ParseProvenance(string? comment)
+    {
+        if (
+            string.IsNullOrEmpty(comment)
+            || !comment.StartsWith("stemforge/", StringComparison.Ordinal)
+        )
+            return (null, null, null, null);
+
+        string? sourceUrl = null;
+        string? sourceCodec = null;
+        double? sourceBitrateKbps = null;
+        string? sourceFormatId = null;
+
+        foreach (var part in comment.Split(" | "))
+        {
+            if (part.StartsWith("source: ", StringComparison.Ordinal))
+                sourceUrl = NullIfEmpty(part["source: ".Length..]);
+            else if (part.StartsWith("codec: ", StringComparison.Ordinal))
+                sourceCodec = NullIfEmpty(part["codec: ".Length..]);
+            else if (
+                part.StartsWith("bitrate: ", StringComparison.Ordinal)
+                && part.EndsWith(" kbps", StringComparison.Ordinal)
+            )
+            {
+                var digits = part["bitrate: ".Length..^" kbps".Length];
+                if (
+                    double.TryParse(
+                        digits,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out var bitrate
+                    )
+                )
+                    sourceBitrateKbps = bitrate;
+            }
+            else if (part.StartsWith("format-id: ", StringComparison.Ordinal))
+                sourceFormatId = NullIfEmpty(part["format-id: ".Length..]);
+        }
+
+        return (sourceUrl, sourceCodec, sourceBitrateKbps, sourceFormatId);
     }
 
     private static IPicture? BestPicture(IPicture[]? pictures) =>
