@@ -10,16 +10,31 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="..\..\tools\separator_driver.py" CopyToOutputDirectory="PreserveNewest"
-            Link="tools\separator_driver.py" />
-        <Content Include="..\..\tools\driver_protocol.json" CopyToOutputDirectory="PreserveNewest"
-            Link="tools\driver_protocol.json" />
-        <Content Include="..\..\tools\detect_variant.py" CopyToOutputDirectory="PreserveNewest"
-            Link="tools\detect_variant.py" />
-        <Content Include="..\..\tools\list_presets.py" CopyToOutputDirectory="PreserveNewest"
-            Link="tools\list_presets.py" />
-        <Content Include="..\..\tools\list_models.py" CopyToOutputDirectory="PreserveNewest"
-            Link="tools\list_models.py" />
+        <Content
+            Include="..\..\tools\separator_driver.py"
+            CopyToOutputDirectory="PreserveNewest"
+            Link="tools\separator_driver.py"
+        />
+        <Content
+            Include="..\..\tools\driver_protocol.json"
+            CopyToOutputDirectory="PreserveNewest"
+            Link="tools\driver_protocol.json"
+        />
+        <Content
+            Include="..\..\tools\detect_variant.py"
+            CopyToOutputDirectory="PreserveNewest"
+            Link="tools\detect_variant.py"
+        />
+        <Content
+            Include="..\..\tools\list_presets.py"
+            CopyToOutputDirectory="PreserveNewest"
+            Link="tools\list_presets.py"
+        />
+        <Content
+            Include="..\..\tools\list_models.py"
+            CopyToOutputDirectory="PreserveNewest"
+            Link="tools\list_models.py"
+        />
     </ItemGroup>
 
     <ItemGroup>
