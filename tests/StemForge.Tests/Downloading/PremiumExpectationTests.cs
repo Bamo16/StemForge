@@ -98,6 +98,88 @@ public sealed class PremiumExpectationTests
         );
     }
 
+    // ── Premium offered but not taken ──────────────────────────────────────────
+
+    [Fact]
+    public void Evaluate_PremiumOfferedButLowerFormatSelected_IsPremiumNotSelected()
+    {
+        // The false-accusation case: a music track on a Premium account, pinned to 140. Every
+        // signal the account-not-premium arm keys on is present (music track, session evidence,
+        // selected format not premium), so without its own arm this told a paying user their
+        // account has no Premium.
+        var meta = Build(
+            "youtube",
+            selected: "140",
+            candidates: ["140", "251", "141", "774"],
+            artist: "Nu:Tone"
+        );
+
+        Assert.Equal(
+            PremiumStatus.PremiumNotSelected,
+            PremiumExpectation.Evaluate(meta, expectationHeld: true)
+        );
+        Assert.False(meta.SelectedFormatIsPremium);
+        Assert.True(meta.OffersPremiumFormat);
+    }
+
+    [Fact]
+    public void Evaluate_SelectedFormatIdOverride_IsAboutTheOverriddenFormat()
+    {
+        // The GUI picker substitutes a format without touching the resolved metadata, so the
+        // verdict has to be asked about the override rather than about what resolution chose.
+        var meta = Build("youtube", selected: "141", candidates: ["140", "251", "141", "774"]);
+
+        Assert.Equal(
+            PremiumStatus.Premium,
+            PremiumExpectation.Evaluate(meta, expectationHeld: true)
+        );
+        Assert.Equal(
+            PremiumStatus.PremiumNotSelected,
+            PremiumExpectation.Evaluate(meta, expectationHeld: true, selectedFormatId: "140")
+        );
+    }
+
+    [Fact]
+    public void Evaluate_OverrideBackToAPremiumFormat_IsPremium()
+    {
+        var meta = Build("youtube", selected: "140", candidates: ["140", "251", "141", "774"]);
+
+        Assert.Equal(
+            PremiumStatus.Premium,
+            PremiumExpectation.Evaluate(meta, expectationHeld: true, selectedFormatId: "774")
+        );
+    }
+
+    [Fact]
+    public void Evaluate_PremiumNotSelected_AdvisorySaysNothingAboutTheSession()
+    {
+        // Nothing is wrong here, so the wording must not borrow from the diagnostic outcomes.
+        var advisory = PremiumExpectation.AdvisoryFor(PremiumStatus.PremiumNotSelected);
+
+        Assert.NotNull(advisory);
+        Assert.DoesNotContain("cookie", advisory, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("signed in", advisory, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("account", advisory, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Evaluate_NoPremiumOffered_StillDiagnosesTheSession()
+    {
+        // Guard on the new arm's placement: it must not swallow the outcomes below it. With no
+        // premium format on offer, a music track with session evidence is still the account case.
+        var meta = Build(
+            "youtube",
+            selected: "140",
+            candidates: ["140", "250", "251"],
+            artist: "Nu:Tone"
+        );
+
+        Assert.Equal(
+            PremiumStatus.AccountNotPremium,
+            PremiumExpectation.Evaluate(meta, expectationHeld: true)
+        );
+    }
+
     [Fact]
     public void IsMusicTrackEntity_KeysOnArtistMetadata()
     {

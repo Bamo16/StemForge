@@ -467,6 +467,15 @@
                                     <TextBlock Classes="premiumNoteText" Text="No Premium audio" />
                                 </Border>
 
+                                <!-- A premium format is on offer but the user picked a different
+                                one in the format picker. A note, not a warning: nothing is wrong
+                                and there is nothing to fix. -->
+                                <Border Classes="premiumNote"
+                                        IsVisible="{Binding HasPremiumNotSelected}"
+                                        ToolTip.Tip="{Binding PremiumAdvisoryMessage}">
+                                    <TextBlock Classes="premiumNoteText" Text="Premium available" />
+                                </Border>
+
                                 <!-- Not a YouTube Music track entity, so there was no premium
                                 ladder to expect. -->
                                 <Border Classes="premiumNote"

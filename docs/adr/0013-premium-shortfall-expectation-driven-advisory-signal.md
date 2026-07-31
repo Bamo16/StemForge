@@ -15,15 +15,23 @@ format 250 is auth-gated at 61 kbps and loses to the freely-available 140 at 130
 it premium would tell a user they received better audio than they did. Measured across a
 72-video corpus, 250 was gated on 65 sources and beat the ungated baseline on **zero** of them.
 
-Five outcomes follow, distinguished by two facts, and only two of them are the user's to fix:
+Six outcomes follow, distinguished by three facts, and only two of them are the user's to fix:
 
 | source | gated formats offered | outcome | what the user should do |
 | --- | --- | --- | --- |
 | any | a Premium-gated one is selected | met | nothing |
+| any | a Premium-gated one is offered but another was taken | premium not selected | nothing; pick it if wanted |
 | [[Music track entity]] | none at all | **not signed in** | re-authenticate the browser session |
 | [[Music track entity]] | session-gated only | **account not Premium** | check which profile/account the cookies come from |
 | video upload | session-gated only | source has no Premium audio | nothing; try a song version |
 | video upload | none at all | no [[Premium ladder]] | nothing; try a song version |
+
+The second row is tested before every row below it. Those all explain why no premium format was on
+offer, so when one *is* on offer and simply was not taken, each of them is false; the account row in
+particular would tell a paying subscriber their account has no Premium. The row is reachable only by
+an explicit choice (the format picker, or `--format-id`), because the automatic pick scores a
+44.1 kHz candidate at its full bitrate and the premium AAC rung therefore always outranks the free
+one. It is still worth stating: the picker lists bitrates rather than what is being given up.
 
 Two independent measurements make that table possible, both from a 552-video corpus resolved three
 times over (logged out, signed-in free, signed-in Premium):

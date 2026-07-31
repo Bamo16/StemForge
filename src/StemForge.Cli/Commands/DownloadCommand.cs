@@ -53,6 +53,11 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
     /// read input/succeeded/path/error keep working, while those that care about acquisition
     /// quality can assert it per input instead of reading provenance tags off the finished file.
     /// They are null when the input never resolved.
+    ///
+    /// <c>premiumShortfall</c> is a bare "did not get premium" flag, so a caller who pinned a lower
+    /// format with <c>--format-id</c> sees the same true as one whose cookies died.
+    /// <c>premiumStatus</c> carries the outcome name, which is what separates a deliberate choice
+    /// from a broken session.
     /// </summary>
     private sealed record DownloadResult(
         string Input,
@@ -63,7 +68,8 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
         string? Codec = null,
         double? BitrateKbps = null,
         bool? IsPremium = null,
-        bool? PremiumShortfall = null
+        bool? PremiumShortfall = null,
+        string? PremiumStatus = null
     );
 
     /// <summary>One candidate source format, as reported by <c>--list-formats --json</c>.</summary>
@@ -282,7 +288,8 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
                                 BitrateKbps: meta.SourceBitrateKbps,
                                 IsPremium: meta.SelectedFormatIsPremium,
                                 PremiumShortfall: premiumStatus
-                                    is not (PremiumStatus.NotApplicable or PremiumStatus.Premium)
+                                    is not (PremiumStatus.NotApplicable or PremiumStatus.Premium),
+                                PremiumStatus: premiumStatus.ToString()
                             )
                         );
                     }
