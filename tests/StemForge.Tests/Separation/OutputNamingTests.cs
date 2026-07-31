@@ -112,13 +112,20 @@ public sealed class OutputNamingTests
         var balanced = Builtin("vocal_balanced", "Balanced", PresetCategory.Vocals);
         var clean = Builtin("vocal_clean", "Clean", PresetCategory.Vocals);
         var namer = new OutputNamer();
+        var dir = OutDir();
 
         // Run 1 (balanced): target then residual.
-        var b1 = namer.Reserve(SeparationPipeline.DesiredBaseName(balanced, "Vocals", Title));
-        var b2 = namer.Reserve(SeparationPipeline.DesiredBaseName(balanced, "Instrumental", Title));
+        var b1 = namer.Reserve(dir, SeparationPipeline.DesiredBaseName(balanced, "Vocals", Title));
+        var b2 = namer.Reserve(
+            dir,
+            SeparationPipeline.DesiredBaseName(balanced, "Instrumental", Title)
+        );
         // Run 2 (clean): target then residual.
-        var c1 = namer.Reserve(SeparationPipeline.DesiredBaseName(clean, "Vocals", Title));
-        var c2 = namer.Reserve(SeparationPipeline.DesiredBaseName(clean, "Instrumental", Title));
+        var c1 = namer.Reserve(dir, SeparationPipeline.DesiredBaseName(clean, "Vocals", Title));
+        var c2 = namer.Reserve(
+            dir,
+            SeparationPipeline.DesiredBaseName(clean, "Instrumental", Title)
+        );
 
         // Targets are inherently distinct (descriptive labels differ).
         Assert.Equal("Song Title (Vocal - Balanced)", b1);
@@ -139,13 +146,19 @@ public sealed class OutputNamingTests
         var balanced = Builtin("instrumental_balanced", "Balanced", PresetCategory.Instrumentals);
         var clean = Builtin("instrumental_clean", "Clean", PresetCategory.Instrumentals);
         var namer = new OutputNamer();
+        var dir = OutDir();
 
-        var r1 = namer.Reserve(SeparationPipeline.DesiredBaseName(balanced, "Vocals", Title));
-        var r2 = namer.Reserve(SeparationPipeline.DesiredBaseName(clean, "Vocals", Title));
+        var r1 = namer.Reserve(dir, SeparationPipeline.DesiredBaseName(balanced, "Vocals", Title));
+        var r2 = namer.Reserve(dir, SeparationPipeline.DesiredBaseName(clean, "Vocals", Title));
 
         Assert.Equal("Song Title (Vocals)", r1);
         Assert.Equal("Song Title (Vocals) (2)", r2);
     }
+
+    // An output directory that does not exist, so the namer starts from an empty claim set and the
+    // assertions are about reservation order alone.
+    private static string OutDir() =>
+        Path.Combine(Path.GetTempPath(), "stemforge-naming-absent", Guid.NewGuid().ToString("N"));
 
     private static Preset SaveAndReload(Preset preset)
     {

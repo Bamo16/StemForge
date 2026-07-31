@@ -68,8 +68,9 @@ A URL YouTube surfaces as a music track rather than an ordinary upload, marked b
 A user's declared expectation that acquisitions should yield a [[Premium format]], inferred from their having configured a cookie source rather than from a separate setting. A user with no cookie source configured holds no premium expectation, and premium-ness is not surfaced to them.
 
 ### Premium shortfall
-A [[Resolve]] in which a [[Premium expectation]] holds but no [[Premium format]] was selected. An umbrella for four outcomes, distinguished by whether the source is a [[Music track entity]] and which tier of [[Auth-gated format]] survived, because each calls for a different response:
+A [[Resolve]] in which a [[Premium expectation]] holds but no [[Premium format]] was selected. An umbrella for five outcomes, distinguished by whether a [[Premium format]] was on offer at all, whether the source is a [[Music track entity]], and which tier of [[Auth-gated format]] survived, because each calls for a different response:
 
+- **Premium not selected** — a premium format was on offer and a different one was taken, via the format picker or `--format-id`. The only outcome where nothing is wrong: the ladder is present and reachable, and the choice was the user's. Distinguished first, because every outcome below explains an *absent* ladder and would be false here.
 - **Not signed in** — a music track with no gated format at all. A signed-in free account would still have been shown the session-gated rungs, so their total absence means the browser session is no longer authenticated. This is the outcome the whole signal exists to catch, and the only one that points at the session.
 - **Account not Premium** — a music track with session-gated formats but no Premium-gated ones. The ladder exists; this account cannot reach it. Most often cookies read from a browser profile signed into a different account than intended.
 - **Source has no Premium audio** — not a music track, signed in, and nothing on offer beats the source's own free formats. A property of the source.

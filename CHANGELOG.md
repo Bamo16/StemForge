@@ -2,6 +2,19 @@
 
 All notable changes to StemForge are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-07-31
+
+Bug-fix release. No new features.
+
+### Fixed
+
+- **Output files are no longer overwritten.** The clean output names introduced in 0.3.0 could collide in two ways, and in both the existing file was silently replaced rather than renamed: a second run into an output directory that already held stems from an earlier run, and drum extraction writing its stem alongside a preset that also produced one. Names now account for what is already in the directory, and a collision gets a numbered suffix instead of destroying the earlier file.
+- **A Premium format you chose not to use is no longer reported as an account problem.** Picking a non-Premium format in the format picker, or pinning one with `--format-id`, previously produced the advisory that says your account does not have YouTube Premium. It now says a Premium format is available and a different one was selected. With `--json`, the outcome is also reported as a new `premiumStatus` field alongside the existing `premiumShortfall` flag.
+- **The format picker updates the Premium indicators.** Choosing a different source format left the Premium wordmark and advisory describing the automatically selected one.
+- **Built-in presets load after first-run setup.** On a first run the preset list is read before setup has installed the toolchain, and the failed read was cached, so the session stayed on the built-in fallback list until the app was restarted.
+- **The job log reports the paths files were actually written to**, instead of the separation engine's temporary names from before they are renamed.
+- **The source builds on Linux again.** A missing `using` made 0.3.0 fail to compile on some .NET SDK builds, including the one CI uses. This affects building from source only; the published Windows download was unaffected.
+
 ## [0.3.0] - 2026-07-30
 
 ### Added
@@ -95,6 +108,7 @@ All notable changes to StemForge are documented here. The format is based on [Ke
 
 Initial release.
 
+[0.3.1]: https://github.com/Bamo16/StemForge/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Bamo16/StemForge/compare/v0.2.1.1...v0.3.0
 [0.2.1.1]: https://github.com/Bamo16/StemForge/compare/v0.2.1...v0.2.1.1
 [0.2.1]: https://github.com/Bamo16/StemForge/compare/v0.2.0...v0.2.1

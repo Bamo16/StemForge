@@ -3,9 +3,9 @@ using System.Text;
 namespace StemForge.Core.Separation;
 
 /// <summary>
-/// Pure, deterministic output-file-name builder shared by every separation run in a job.
+/// Deterministic output-file-name builder shared by every separation run in a job.
 ///
-/// Two responsibilities, both side-effect free:
+/// Two responsibilities:
 /// <list type="bullet">
 /// <item>
 /// Build a stem's output base name (no extension) from the clean "title (stem)" convention, or from
@@ -13,23 +13,37 @@ namespace StemForge.Core.Separation;
 /// This is the same convention the built-in presets already use, now applied to user presets too.
 /// </item>
 /// <item>
-/// Disambiguate names that would collide within a single job. The shared output directory is written
-/// by every run in the job, so two runs that resolve to the same base name (e.g. two vocal presets
-/// each emitting an "Instrumental" residual) would otherwise overwrite each other. Collisions are
-/// resolved by a stable numeric suffix (" (2)", " (3)", …) in the deterministic order the names are
-/// reserved — never random, never timestamped.
+/// Disambiguate names that would collide in the directory being written. Two runs that resolve to
+/// the same base name (e.g. two vocal presets each emitting an "Instrumental" residual) would
+/// otherwise overwrite each other. Collisions are resolved by a stable numeric suffix
+/// (" (2)", " (3)", …) in the deterministic order the names are reserved: never random, never
+/// timestamped.
 /// </item>
 /// </list>
 ///
-/// A single instance is the naming authority for one job: callers reserve each name through
-/// <see cref="Reserve"/>, which records what has already been claimed so the next collision gets the
-/// next suffix. Reservation is case-insensitive because the output directory is shared and may live
-/// on a case-insensitive filesystem (Windows/macOS).
+/// Claims are tracked <em>per directory</em>, and a directory's claim set is seeded on first use
+/// with the base names of files already present there. Both facts matter for correctness:
+///
+/// <list type="bullet">
+/// <item>Seeding from disk is what stops a later job from silently overwriting an earlier job's
+/// output. A job-scoped claim set only knows about the runs in its own job, so without this a second
+/// job into the same folder resolves to the same clean names and clobbers them.</item>
+/// <item>Keying by directory is what stops a drum stem written to its own subfolder from being
+/// needlessly suffixed just because a preset run claimed the same name elsewhere.</item>
+/// </list>
+///
+/// The seed is taken once per directory, before the job writes anything into it, so the separator's
+/// own pre-rename output files are never mistaken for pre-existing occupants. Reservation is
+/// case-insensitive because the output directory may live on a case-insensitive filesystem
+/// (Windows/macOS).
 /// </summary>
 public sealed class OutputNamer
 {
-    // Names already claimed in this job, case-folded for case-insensitive collision detection.
-    private readonly HashSet<string> _claimed = new(StringComparer.OrdinalIgnoreCase);
+    // Claimed base names per directory, both keys case-folded: paths and file names are
+    // case-insensitive on Windows and macOS, and treating them otherwise would miss collisions.
+    private readonly Dictionary<string, HashSet<string>> _claimedByDirectory = new(
+        StringComparer.OrdinalIgnoreCase
+    );
 
     private static readonly char[] _invalidFileNameChars = Path.GetInvalidFileNameChars();
 
@@ -94,34 +108,81 @@ public sealed class OutputNamer
     }
 
     /// <summary>
-    /// Reserves <paramref name="baseName"/> for this job and returns the name to actually use: the
-    /// requested name if free, otherwise the same name with the smallest unused " (n)" suffix
-    /// (starting at 2). The returned name is recorded as claimed so subsequent reservations of the
-    /// same base name receive the next suffix. Deterministic: the suffix is a function only of how
-    /// many equal names were reserved before it, never of time or randomness.
+    /// Reserves <paramref name="baseName"/> in <paramref name="directory"/> and returns the name to
+    /// actually use: the requested name if free, otherwise the same name with the smallest unused
+    /// " (n)" suffix (starting at 2). A name is free only when no earlier reservation and no file
+    /// already on disk in that directory holds it. The returned name is recorded as claimed so
+    /// subsequent reservations of the same base name receive the next suffix. Deterministic: the
+    /// suffix is a function only of the directory's starting contents and how many equal names were
+    /// reserved before it, never of time or randomness.
     /// </summary>
-    public string Reserve(string baseName)
+    public string Reserve(string directory, string baseName)
     {
-        if (_claimed.Add(baseName))
+        var claimed = ClaimsFor(directory);
+
+        if (claimed.Add(baseName))
             return baseName;
 
         for (int n = 2; ; n++)
         {
             var candidate = $"{baseName} ({n})";
-            if (_claimed.Add(candidate))
+            if (claimed.Add(candidate))
                 return candidate;
         }
     }
 
     /// <summary>
+    /// Gives up a name previously returned by <see cref="Reserve"/>, so it is available again. Used
+    /// when the write the reservation was made for did not happen: holding the claim would push
+    /// every later stem with that name onto a needless " (n)" suffix for a file that is not there.
+    /// </summary>
+    public void Release(string directory, string name) => ClaimsFor(directory).Remove(name);
+
+    /// <summary>
     /// Convenience that builds a name (template or clean default) and reserves it in one step.
     /// </summary>
     public string ResolveAndReserve(
+        string directory,
         string? template,
         string title,
         string stem,
         string presetName
-    ) => Reserve(BuildName(template, title, stem, presetName));
+    ) => Reserve(directory, BuildName(template, title, stem, presetName));
+
+    /// <summary>
+    /// Takes the snapshot of a directory's existing files now rather than on first reservation.
+    /// Call this before the job writes anything into <paramref name="directory"/>: the separator
+    /// writes its own pre-rename output files there, and a snapshot taken after that would treat
+    /// them as pre-existing occupants. Safe to call more than once; only the first takes effect.
+    /// </summary>
+    public void Seed(string directory) => ClaimsFor(directory);
+
+    /// <summary>
+    /// The claim set for one directory, seeded on first use from the base names of the files already
+    /// in it so an earlier job's output is treated as occupied rather than overwritten. An
+    /// unreadable or not-yet-created directory simply starts empty: naming must never be the reason
+    /// a job fails, and the worst case is the collision behaviour that existed before seeding.
+    /// </summary>
+    private HashSet<string> ClaimsFor(string directory)
+    {
+        if (_claimedByDirectory.TryGetValue(directory, out var existing))
+            return existing;
+
+        var claimed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            if (Directory.Exists(directory))
+                foreach (var file in Directory.EnumerateFiles(directory))
+                    claimed.Add(Path.GetFileNameWithoutExtension(file));
+        }
+        catch (Exception)
+        {
+            // Unreadable directory: fall through with an empty set.
+        }
+
+        _claimedByDirectory[directory] = claimed;
+        return claimed;
+    }
 
     internal static string Sanitize(string name) =>
         string.Concat(name.Select(c => _invalidFileNameChars.Contains(c) ? '-' : c)).Trim();

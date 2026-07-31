@@ -143,4 +143,99 @@ public sealed class PresetCatalogServiceTests
 
         Assert.Equal("vocal_full", Assert.Single(presets).Id);
     }
+
+    // ── Caching ───────────────────────────────────────────────────────────────
+
+    private const string OnePreset = """{"vocal_full":{"name":"Vocal Full","models":["m.onnx"]}}""";
+
+    [Fact]
+    public async Task ListPresetsAsync_FailedRead_IsNotCached()
+    {
+        // The first-run case: the script cannot run before setup installs the toolchain, which
+        // surfaces as an empty list. Caching that answered "no presets" for the rest of the
+        // session, long after setup had made the real catalog available.
+        var runner = new SequencedRunner(["", OnePreset]);
+        var service = new PresetCatalogService(runner, Paths());
+        var ct = TestContext.Current.CancellationToken;
+
+        Assert.Empty(await service.ListPresetsAsync(ct));
+        Assert.Equal("vocal_full", Assert.Single(await service.ListPresetsAsync(ct)).Id);
+        Assert.Equal(2, runner.CallCount);
+    }
+
+    [Fact]
+    public async Task ListPresetsAsync_SuccessfulRead_IsCached()
+    {
+        // The point of the cache: a good answer is not re-fetched, so the script runs once.
+        var runner = new SequencedRunner([OnePreset, ""]);
+        var service = new PresetCatalogService(runner, Paths());
+        var ct = TestContext.Current.CancellationToken;
+
+        Assert.Single(await service.ListPresetsAsync(ct));
+        Assert.Single(await service.ListPresetsAsync(ct));
+        Assert.Equal(1, runner.CallCount);
+    }
+
+    [Fact]
+    public async Task ListPresetsAsync_Invalidate_RereadsASuccessfulCache()
+    {
+        // Invalidate exists for the cache that succeeded but has gone stale; a failed read never
+        // reaches the cache and needs no invalidation.
+        var runner = new SequencedRunner([OnePreset, OnePreset]);
+        var service = new PresetCatalogService(runner, Paths());
+        var ct = TestContext.Current.CancellationToken;
+
+        await service.ListPresetsAsync(ct);
+        service.Invalidate();
+        await service.ListPresetsAsync(ct);
+
+        Assert.Equal(2, runner.CallCount);
+    }
+
+    private static AppPaths Paths() => new(new AppSettings());
+
+    /// <summary>
+    /// Returns a different stdout per call, so a test can distinguish "asked again" from "served
+    /// the cache". <see cref="TestDoubles.FakeProcessRunner"/> answers identically every time,
+    /// which cannot express a read that fails and then succeeds.
+    /// </summary>
+    private sealed class SequencedRunner(IReadOnlyList<string> stdouts) : IProcessRunner
+    {
+        public int CallCount { get; private set; }
+
+        public Task<ProcessRunner.Result> RunAsync(
+            string exe,
+            IEnumerable<string> args,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        )
+        {
+            var stdout = stdouts[Math.Min(CallCount, stdouts.Count - 1)];
+            CallCount++;
+            return Task.FromResult(new ProcessRunner.Result(0, stdout, ""));
+        }
+
+        public Task<ProcessRunner.Result> RunCheckedAsync(
+            string exe,
+            IEnumerable<string> args,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        ) => RunAsync(exe, args, logRawLines, ct);
+
+        public Task RunStreamingAsync(
+            string exe,
+            IEnumerable<string> args,
+            IProgress<string>? progress = null,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        ) => Task.CompletedTask;
+
+        public Task<ProcessRunner.Result> RunStreamingStderrAsync(
+            string exe,
+            IEnumerable<string> args,
+            IProgress<string>? stderrProgress = null,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        ) => RunAsync(exe, args, logRawLines, ct);
+    }
 }

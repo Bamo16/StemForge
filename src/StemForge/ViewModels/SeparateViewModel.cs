@@ -180,6 +180,7 @@ public partial class SeparateViewModel : PageViewModelBase
     [NotifyPropertyChangedFor(nameof(HasNoPremiumLadder))]
     [NotifyPropertyChangedFor(nameof(HasAccountNotPremium))]
     [NotifyPropertyChangedFor(nameof(HasNotSignedIn))]
+    [NotifyPropertyChangedFor(nameof(HasPremiumNotSelected))]
     [NotifyPropertyChangedFor(nameof(PremiumAdvisoryMessage))]
     [NotifyPropertyChangedFor(nameof(HasPremiumAdvisory))]
     public partial PremiumStatus UrlPremiumStatus { get; set; }
@@ -189,6 +190,7 @@ public partial class SeparateViewModel : PageViewModelBase
     public bool HasNoPremiumLadder => UrlPremiumStatus is PremiumStatus.NoPremiumLadder;
     public bool HasAccountNotPremium => UrlPremiumStatus is PremiumStatus.AccountNotPremium;
     public bool HasNotSignedIn => UrlPremiumStatus is PremiumStatus.NotSignedIn;
+    public bool HasPremiumNotSelected => UrlPremiumStatus is PremiumStatus.PremiumNotSelected;
 
     /// <summary>
     /// Hover-help for whichever premium chip is showing. One message rather than one per chip,
@@ -315,7 +317,28 @@ public partial class SeparateViewModel : PageViewModelBase
                 : null;
         }
 
+        // The premium verdict is about the format being fetched, so it has to be recomputed here
+        // too. Leaving it on the resolve-time value showed a Premium wordmark next to a format that
+        // is not premium, or an advisory explaining an absent ladder while one is on offer.
+        RefreshPremiumStatus();
+
         IsFormatPickerOpen = false;
+    }
+
+    /// <summary>
+    /// Re-evaluates the premium verdict for whichever format is currently active: the manual
+    /// override when the user picked one, otherwise resolution's own choice.
+    /// </summary>
+    private void RefreshPremiumStatus()
+    {
+        if (_cachedUrlMeta is not { } meta)
+            return;
+
+        UrlPremiumStatus = PremiumExpectation.Evaluate(
+            meta,
+            PremiumExpectation.IsHeldBy(_settings),
+            _selectedFormatOverride?.FormatId
+        );
     }
 
     public bool CanStartRun =>
@@ -444,6 +467,13 @@ public partial class SeparateViewModel : PageViewModelBase
             AppLogger.Warning("SeparateVM", $"Failed to load built-in presets: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Re-reads the live catalog after setup installs the toolchain. On a first run the constructor's
+    /// attempt happens before there is anything to run it with, and nothing else would ever ask
+    /// again, so the session would stay on the static fallback until the app was restarted.
+    /// </summary>
+    public void ReloadBuiltInPresets() => _ = LoadBuiltInPresetsAsync();
 
     private void RefreshBuiltInCategories(IReadOnlyList<Preset> presets)
     {
@@ -683,10 +713,7 @@ public partial class SeparateViewModel : PageViewModelBase
             NotifyCanRunChanged();
 
             UrlTitle = meta.DisplayTitle;
-            UrlPremiumStatus = PremiumExpectation.Evaluate(
-                meta,
-                PremiumExpectation.IsHeldBy(_settings)
-            );
+            RefreshPremiumStatus();
             if (meta.SourceCodec is { Length: > 0 } codec && codec != "none")
                 UrlCodec = AudioFormatInfo.PrettyCodec(codec);
             if (meta.SourceBitrateKbps is { } kbps)

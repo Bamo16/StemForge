@@ -42,9 +42,17 @@ public sealed record YtDlpMetadata(
     /// True when the format actually selected for download is premium: gated behind
     /// authentication <em>and</em> better than anything this source offers ungated.
     /// </summary>
-    public bool SelectedFormatIsPremium =>
+    public bool SelectedFormatIsPremium => IsFormatPremium(FormatId);
+
+    /// <summary>
+    /// True when <paramref name="formatId"/> is premium by that same measure. Takes the id rather
+    /// than reading <see cref="FormatId"/> because the format being fetched is not always the one
+    /// resolution picked: the GUI picker and <c>--format-id</c> both substitute another, and the
+    /// verdict has to be about what is actually being downloaded.
+    /// </summary>
+    public bool IsFormatPremium(string? formatId) =>
         AudioFormats is { } formats
-        && formats.FirstOrDefault(f => f.FormatId == FormatId) is { } selected
+        && formats.FirstOrDefault(f => f.FormatId == formatId) is { } selected
         && PremiumFormats.IsPremium(selected, formats, Extractor);
 
     /// <summary>True when any candidate format is premium by that same measure.</summary>

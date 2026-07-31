@@ -14,6 +14,21 @@ public enum PremiumStatus
     Premium,
 
     /// <summary>
+    /// The source offers a premium format, but the one being fetched is not it. Nothing is wrong
+    /// with the session, so this must never be reported in the language of the outcomes below: they
+    /// all diagnose a missing premium ladder, and the ladder is present here.
+    ///
+    /// Reached only by an explicit choice: the GUI picker or <c>--format-id</c>. The automatic pick
+    /// does not land here, because it scores a 44.1 kHz candidate at its full bitrate and the
+    /// premium AAC rung (141, ~257 kbps) therefore always beats the free one (140, ~130 kbps).
+    ///
+    /// Still worth stating rather than treating as self-evident. The picker lists bitrates, not
+    /// what is being given up, so choosing a format for its sample rate or codec can cost the
+    /// premium rung without that being apparent at the moment of choosing.
+    /// </summary>
+    PremiumNotSelected,
+
+    /// <summary>
     /// A music track, signed in, but no Premium format on offer. Music track entities are
     /// reliably provisioned (326/326 in the corpus), and a signed-in <em>free</em> account is
     /// shown the session-gated formats while being withheld the Premium ones, so this is what a
@@ -78,8 +93,17 @@ public static class PremiumExpectation
     /// Compares a resolved source against the expectation. Reads as a decision table: the two
     /// music-track arms are the ones a user can act on, and the two below them are properties of
     /// the source that only merit a note.
+    ///
+    /// <paramref name="selectedFormatId"/> overrides which format the verdict is about. It exists
+    /// because the format actually being fetched is not always the one resolution picked: the GUI
+    /// picker and <c>--format-id</c> both substitute another. Passing null asks about the format
+    /// resolution chose.
     /// </summary>
-    public static PremiumStatus Evaluate(YtDlpMetadata meta, bool expectationHeld) =>
+    public static PremiumStatus Evaluate(
+        YtDlpMetadata meta,
+        bool expectationHeld,
+        string? selectedFormatId = null
+    ) =>
         meta switch
         {
             // Nothing is surfaced to a user who never asked for premium audio.
@@ -88,7 +112,13 @@ public static class PremiumExpectation
             // Premium is a YouTube concept; nothing can be inferred about any other source.
             { IsYouTube: false } => PremiumStatus.NotApplicable,
 
-            { SelectedFormatIsPremium: true } => PremiumStatus.Premium,
+            _ when meta.IsFormatPremium(selectedFormatId ?? meta.FormatId) => PremiumStatus.Premium,
+
+            // Tested before the arms below because every one of them explains why no premium format
+            // was on offer. When one is on offer and simply was not the one taken, all of those
+            // explanations are false, and the account-not-premium arm in particular would accuse a
+            // paying user of not having paid.
+            { OffersPremiumFormat: true } => PremiumStatus.PremiumNotSelected,
 
             // A music track was always provisioned a ladder, so its absence is about the request
             // rather than the source. Which gated formats survived says which: a signed-in free
@@ -116,12 +146,21 @@ public static class PremiumExpectation
     public static string? AdvisoryFor(PremiumStatus status) =>
         status switch
         {
+            PremiumStatus.PremiumNotSelected => PremiumNotSelectedMessage,
             PremiumStatus.NotSignedIn => NotSignedInMessage,
             PremiumStatus.AccountNotPremium => AccountNotPremiumMessage,
             PremiumStatus.SourceHasNoPremiumAudio => NoPremiumAudioMessage,
             PremiumStatus.NoPremiumLadder => NoPremiumLadderMessage,
             _ => null,
         };
+
+    /// <summary>
+    /// Advisory when a premium format was on offer but a different one is being fetched. States the
+    /// fact and stops. There is nothing to fix and no cause to attribute: the user may have chosen
+    /// this deliberately, and the automatic pick may have chosen it for a good reason.
+    /// </summary>
+    public const string PremiumNotSelectedMessage =
+        "A Premium format is available for this source, but a different one was selected.";
 
     /// <summary>
     /// Advisory when a music track offered no gated format at all. This is the only case that
