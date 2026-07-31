@@ -7,8 +7,13 @@ namespace StemForge.Core.Catalog;
 /// Resolves the built-in ensemble preset catalog by running the torch-free <c>list_presets.py</c>
 /// one-shot (via <see cref="LightweightCatalog"/>) and mapping the result into <see cref="Preset"/>
 /// models. Used at GUI startup and by the CLI <c>presets</c> command; this avoids spinning up the
-/// long-lived (torch-loading) separator driver just to list presets. Results are cached after first
-/// load. Returns an empty list on toolchain absence or parse failure.
+/// long-lived (torch-loading) separator driver just to list presets. Returns an empty list on
+/// toolchain absence or parse failure.
+///
+/// Only a non-empty result is cached. An empty list is how both failure modes surface (the script
+/// could not run, or its output could not be parsed), and audio-separator always ships ensemble
+/// presets, so empty is never a real catalog. Caching it would pin a first-run failure for the rest
+/// of the session, long after setup had installed the toolchain that would have answered.
 /// </summary>
 public sealed class PresetCatalogService(IProcessRunner runner, AppPaths paths)
 {
@@ -16,6 +21,11 @@ public sealed class PresetCatalogService(IProcessRunner runner, AppPaths paths)
     private readonly AppPaths _paths = paths;
     private IReadOnlyList<Preset>? _cache;
 
+    /// <summary>
+    /// Drops a cached catalog so the next read runs the script again. For a cache that succeeded
+    /// but has since gone stale (audio-separator upgraded under a running app); a failed read is
+    /// never cached in the first place and needs no invalidation.
+    /// </summary>
     public void Invalidate() => _cache = null;
 
     public async Task<IReadOnlyList<Preset>> ListPresetsAsync(CancellationToken ct = default)
@@ -32,8 +42,11 @@ public sealed class PresetCatalogService(IProcessRunner runner, AppPaths paths)
             ct
         );
 
-        _cache = ParsePresets(raw);
-        return _cache;
+        var parsed = ParsePresets(raw);
+        if (parsed.Count > 0)
+            _cache = parsed;
+
+        return parsed;
     }
 
     // ── Parsing / mapping ──────────────────────────────────────────────────────

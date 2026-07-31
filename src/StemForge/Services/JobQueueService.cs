@@ -208,8 +208,12 @@ public sealed class JobQueueService(SeparationPipeline pipeline, AppSettings set
                 break;
 
             case "stem_written":
-                if (update.OutputPath is { } path)
-                    vm.AppendLog(path);
+                // The separator's own path, not the final one: the pipeline renames each stem to
+                // its clean job-unique name after the run finishes, so logging the path here shows
+                // a file that no longer exists by the time the user reads it. The live line reports
+                // that the stem landed; run_complete reports where.
+                if (update.Stem is { Length: > 0 } written)
+                    vm.AppendLog($"{prefix} Wrote {written}");
                 break;
 
             case "log":
@@ -222,6 +226,11 @@ public sealed class JobQueueService(SeparationPipeline pipeline, AppSettings set
                 break;
 
             case "run_complete":
+                // Reported here rather than at stem_written because these are the post-rename
+                // paths, which are the ones the user can actually open.
+                if (update.WrittenPaths is { Count: > 0 } finalPaths)
+                    foreach (var final in finalPaths)
+                        vm.AppendLog(final);
                 vm.Progress = update.OverallPercent;
                 // Reset run-local model state for next run.
                 state.ModelIndex = 1;

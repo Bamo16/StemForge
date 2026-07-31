@@ -86,6 +86,9 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             IsSetupRequired = false;
             separate.HasCompletedSetup = true;
+            // The toolchain only exists as of now, so the constructor's catalog read had nothing to
+            // run. This is the one moment that can turn the static fallback into the live catalog.
+            separate.ReloadBuiltInPresets();
         };
         Wizard.SetupDismissed += () =>
         {

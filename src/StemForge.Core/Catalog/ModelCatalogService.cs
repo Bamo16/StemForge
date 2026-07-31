@@ -38,8 +38,15 @@ public sealed class ModelCatalogService(IProcessRunner runner, AppPaths paths)
             ct
         );
 
-        _cache = ParseModels(raw);
-        return _cache;
+        // Only a non-empty result is cached, for the same reason as PresetCatalogService: an empty
+        // list is how a failed or unparseable run surfaces, and pinning that would keep answering
+        // "no models" for the rest of the session. Recoverable here via Refresh even so, but a
+        // failure should not need a user to notice it first.
+        var parsed = ParseModels(raw);
+        if (parsed.Count > 0)
+            _cache = parsed;
+
+        return parsed;
     }
 
     // ── Parsing ───────────────────────────────────────────────────────────────
