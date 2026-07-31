@@ -43,7 +43,7 @@ jobs:
           STEMFORGE_LIVE_ASSETS: "1"
         run: >-
           dotnet test StemForge.slnx --configuration Release --no-build
-          -- --filter-class StemForge.Tests.Services.LiveBundledAssetTests
+          -- --filter-class StemForge.Tests.Tooling.LiveBundledAssetTests
 
       # Networked download integration test: fetches a small license-safe audio clip over the
       # network and verifies the file plus its metadata. Gated by STEMFORGE_INTEGRATION so the
