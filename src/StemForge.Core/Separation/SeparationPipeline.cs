@@ -43,8 +43,10 @@ public sealed class SeparationPipeline(
 
         // One naming authority for the whole job. Every run writes into the shared output directory,
         // so collisions (two runs emitting the same stem name) are resolved against this single set
-        // of already-claimed names in deterministic reservation order.
+        // of already-claimed names in deterministic reservation order. Seeded before anything is
+        // written, so what is already in the directory (an earlier job's stems) counts as taken.
         var namer = new OutputNamer();
+        namer.Seed(job.OutputDir);
 
         // ── Download step ─────────────────────────────────────────────────────
         string inputFile;
@@ -255,6 +257,11 @@ public sealed class SeparationPipeline(
 
             Directory.CreateDirectory(drumOutDir);
 
+            // Seeded before the drum run writes. When drums go beside the stems this is already
+            // claimed from the job's output directory and does nothing; when they go to the drum
+            // cache it stops a previous job's cached drums file from being overwritten.
+            namer.Seed(drumOutDir);
+
             int drumModelIndex = 1;
             int drumModelCount = 1;
 
@@ -353,18 +360,13 @@ public sealed class SeparationPipeline(
 
                 if (drumStem is not null)
                 {
-                    var drumExt = Path.GetExtension(drumStem.Path).ToLowerInvariant();
-                    var renamedPath = Path.Combine(drumOutDir, $"{drumTitle} (Drums){drumExt}");
-                    if (
-                        !string.Equals(
-                            drumStem.Path,
-                            renamedPath,
-                            StringComparison.OrdinalIgnoreCase
-                        )
-                    )
-                        File.Move(drumStem.Path, renamedPath, overwrite: true);
-
+                    // Named through the same job-scoped namer as every preset stem. The drum step
+                    // wants exactly the clean "title (Drums)" name a 4-stem preset also produces, so
+                    // naming it independently meant the two could resolve to the same path and the
+                    // drum step would overwrite the preset's own drums stem.
                     var drumPreset = Preset.DrumExtraction(_settings.DrumExtractionModel);
+                    var renamedPath = ApplyOutputName(namer, drumStem, drumPreset, drumTitle);
+
                     AudioTagger.ApplyToFile(
                         renamedPath,
                         sourceInfo,
@@ -513,10 +515,17 @@ public sealed class SeparationPipeline(
     // ── Output naming ──────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Resolves the job-unique output name for one written stem and renames the file on disk to it,
-    /// returning the final path. The name is the preset's template (when set) or the clean
-    /// "title (stem)" default, reserved through the job-scoped <paramref name="namer"/> so a name
-    /// that collides with an earlier run in the same job is given a deterministic " (n)" suffix.
+    /// Resolves the output name for one written stem and renames the file on disk to it, returning
+    /// the final path. The name is the preset's template (when set) or the clean "title (stem)"
+    /// default, reserved through the job-scoped <paramref name="namer"/> so a name already taken (by
+    /// an earlier run in this job, or by a file an earlier job left in the directory) is given a
+    /// deterministic " (n)" suffix instead of overwriting it.
+    ///
+    /// The move deliberately does not overwrite. The namer having handed out this name is the proof
+    /// that nothing should be there, so a file at the destination means the two disagree, and losing
+    /// audio the user already has is far worse than leaving a stem under the separator's own name.
+    /// A failed rename releases the claim, so the name is not left blocked for a file that does not
+    /// exist.
     /// </summary>
     internal static string ApplyOutputName(
         OutputNamer namer,
@@ -527,17 +536,18 @@ public sealed class SeparationPipeline(
     {
         var dir = Path.GetDirectoryName(output.Path) ?? "";
         var ext = Path.GetExtension(output.Path);
-        var baseName = namer.Reserve(DesiredBaseName(preset, output.Stem, title));
+        var baseName = namer.Reserve(dir, DesiredBaseName(preset, output.Stem, title));
         var finalPath = Path.Combine(dir, baseName + ext);
 
         if (!string.Equals(output.Path, finalPath, StringComparison.OrdinalIgnoreCase))
         {
             try
             {
-                File.Move(output.Path, finalPath, overwrite: true);
+                File.Move(output.Path, finalPath);
             }
             catch (Exception ex)
             {
+                namer.Release(dir, baseName);
                 AppLogger.Warning(
                     "job",
                     $"Could not rename {Path.GetFileName(output.Path)} → {baseName + ext}: {ex.Message}"
