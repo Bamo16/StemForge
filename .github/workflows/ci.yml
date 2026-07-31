@@ -14,14 +14,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # The project targets net11.0, a preview SDK. There is no global.json pin, so install the
-      # exact preview build the repo is developed against and allow preview quality as a fallback
-      # in case the precise patch is unavailable on the runner.
-      - name: Setup .NET 11 preview SDK
+      # Read the SDK version from global.json rather than repeating it here. The two drifted once
+      # (a runner on preview.4, local development on preview.6) and the difference in their
+      # implicit-using sets shipped a release whose source did not compile on Linux. One source of
+      # truth means a local build and this job use the same compiler.
+      - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "11.0.100-preview.4.26230.115"
-          dotnet-quality: preview
+          global-json-file: global.json
 
       - name: Restore
         run: dotnet restore StemForge.slnx

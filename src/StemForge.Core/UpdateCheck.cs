@@ -1,3 +1,10 @@
+// Explicit rather than implicit: System.Net.Http.Json is in the net11.0 implicit-using set on some
+// preview SDKs and not others, so relying on it builds locally and fails on a runner pinned to a
+// different preview. This exact line was removed once as an "unused using" and broke the Linux CI
+// build for a whole release; the suppression is here so the IDE does not offer that fix again.
+#pragma warning disable IDE0005 // Using directive is unnecessary
+using System.Net.Http.Json;
+#pragma warning restore IDE0005
 using System.Text.Json.Serialization;
 
 namespace StemForge.Core;
