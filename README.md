@@ -236,10 +236,12 @@ Three VS Code tasks together produce the shippable zip:
 Bumping the release version is one edit in `Directory.Build.props`, the single source of truth shared by all projects:
 
 ```xml
-<Version>0.2.1</Version>
+<Version>0.3.1</Version>
 ```
 
 The package script reads the version from there, so the next run names the zip automatically.
+
+Cutting an official tagged release is more than this. See [docs/RELEASING.md](docs/RELEASING.md) for the full runbook, including the pinned SDK, the CHANGELOG step, and what CI does and does not verify.
 
 Native debug symbols from Skia and HarfBuzz are removed by an `AfterTargets="Publish"` MSBuild target so they don't pollute the artifact.
 
