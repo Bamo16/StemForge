@@ -11,7 +11,12 @@ public enum StemSource
     /// <summary>No stem could be resolved at all.</summary>
     Unknown = 0,
 
-    /// <summary>Inferred from the model's filename as a last resort (target only, no complement).</summary>
+    /// <summary>
+    /// Inferred from the model's filename as a last resort. Yields the target, and its complement
+    /// when the target is one half of a vocals/instrumental split, since each of those guarantees
+    /// the other. Both carry this same source: the complement is only as certain as the filename
+    /// guess it came from.
+    /// </summary>
     FilenameTarget = 1,
 
     /// <summary>Filled from a fixed architecture default (Demucs four-stem; MDX/VR target + complement).</summary>

@@ -12,7 +12,8 @@ namespace StemForge.Core.Catalog;
 ///         to fetch the config on demand (config only, never the weights).</item>
 ///   <item>Architecture defaults: Demucs is a fixed four-stem set; MDX and VR are two-stem
 ///         (a target plus its complement).</item>
-///   <item>A filename-derived target as a last resort (target only, no complement).</item>
+///   <item>A filename-derived target as a last resort, plus its complement when the target is one
+///         half of a vocals/instrumental split; other targets resolve to the target alone.</item>
 /// </list>
 ///
 /// Anything that survives all three tiers with no stems is reported UNKNOWN rather than failing.
@@ -75,12 +76,22 @@ public sealed class ModelProfileResolver(IModelConfigSource? configSource = null
         var target = ResolveFilenameTarget(model.Filename);
         if (target is not null)
         {
-            return new ModelProfile(
-                model.Filename,
-                model.Architecture,
-                [new ProfileStem(target, StemSource.FilenameTarget)],
-                isComposite
-            );
+            // A vocals/instrumental target implies its complement: a model separating one of those
+            // writes the residual too, by construction. Naming it matters because this tier is where
+            // roformer models land, and they land here routinely rather than exceptionally. MDXC is
+            // not in the tier-2 two-stem list (that family does contain genuine multi-stem models),
+            // and the config fetch above needs the network, so offline every roformer without
+            // bundled stems arrives here. Reporting the target alone understated those models as
+            // one-stem, which also fed the ensemble overlap guidance a contributor count that was
+            // too low.
+            //
+            // The complement carries the same low confidence as the target it was derived from, so
+            // this stays advisory (ADR 0010) rather than asserting a stem the model may not emit.
+            var stems = new List<ProfileStem> { new(target, StemSource.FilenameTarget) };
+            if (HasNamedComplement(target))
+                stems.Add(new ProfileStem(ComplementOf(target), StemSource.FilenameTarget));
+
+            return new ModelProfile(model.Filename, model.Architecture, stems, isComposite);
         }
 
         // ── Unknown ─────────────────────────────────────────────────────────────
@@ -150,6 +161,18 @@ public sealed class ModelProfileResolver(IModelConfigSource? configSource = null
 
         return null;
     }
+
+    /// <summary>
+    /// Whether a filename-derived target implies a complement worth naming. Only vocals and
+    /// instrumental qualify: those are the two halves of the same split, so each guarantees the
+    /// other. The rest do not. A drums or guitar model's residual is not a stem name a user would
+    /// recognise ("no drums"), and a filename mentioning one of those says nothing about how many
+    /// stems the model emits, since it may be one rung of a multi-stem architecture.
+    ///
+    /// Deliberately narrower than <see cref="ComplementOf"/>, which still answers for every target
+    /// because tier 2 calls it for architectures already known to be two-stem.
+    /// </summary>
+    private static bool HasNamedComplement(string target) => target is "vocals" or "instrumental";
 
     /// <summary>The complementary stem produced opposite a two-stem model's target.</summary>
     private static string ComplementOf(string target) =>
