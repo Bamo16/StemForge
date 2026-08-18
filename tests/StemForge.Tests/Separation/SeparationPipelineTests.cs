@@ -119,6 +119,72 @@ public sealed class SeparationPipelineTests : IDisposable
             Traceback: null
         );
 
+    // ── Drums-only ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task RunAsync_DrumsOnlyNoPresets_RunsTheDrumStepAlone()
+    {
+        // A source that is already an instrumental wants a drum stem and nothing else. The weight
+        // arithmetic is the part worth pinning: with no presets the model-weight total would be
+        // zero but for its Math.Max(1, ...) floor, and every OverallPercent divides by it.
+        var input = CreateFlacFile("instrumental.flac");
+        var drums = CreateFlacFile("raw_drums.flac");
+
+        var job = MakeJob(input, [], extractDrums: true);
+        _driver.EnqueueRun(
+            new JobResult(
+                Succeeded: true,
+                Outputs: [new JobOutput(Stem: "Drums", Path: drums)],
+                Discarded: [],
+                DurationSeconds: 1.0,
+                ErrorMessage: null,
+                Traceback: null
+            )
+        );
+
+        var progress = new List<JobUpdate>();
+        var outputs = await _pipeline.RunAsync(
+            job,
+            new Progress<JobUpdate>(progress.Add),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(1, _driver.CallCount);
+        Assert.Equal(Path.Combine(_tempDir, "instrumental (Drums).flac"), Assert.Single(outputs));
+    }
+
+    [Fact]
+    public async Task RunAsync_DrumsOnly_ReportsOneStepAndCompletes()
+    {
+        var input = CreateFlacFile("instrumental.flac");
+        var drums = CreateFlacFile("raw_drums.flac");
+
+        var job = MakeJob(input, [], extractDrums: true);
+        _driver.EnqueueRun(
+            new JobResult(
+                Succeeded: true,
+                Outputs: [new JobOutput(Stem: "Drums", Path: drums)],
+                Discarded: [],
+                DurationSeconds: 1.0,
+                ErrorMessage: null,
+                Traceback: null
+            )
+        );
+
+        var progress = new List<JobUpdate>();
+        await _pipeline.RunAsync(
+            job,
+            new Progress<JobUpdate>(progress.Add),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        // The drum step is the whole job, so it is step 1 of 1 and finishes at 100.
+        var runCounts = progress.Where(u => u.RunCount > 0).Select(u => u.RunCount).Distinct();
+        Assert.Equal([1], runCounts);
+        Assert.All(progress, u => Assert.InRange(u.OverallPercent, 0, 100));
+        Assert.Contains(progress, u => u.Phase == "run_complete" && u.OverallPercent == 100);
+    }
+
     // ── Test 1: Sequence of runs ──────────────────────────────────────────────
 
     [Fact]

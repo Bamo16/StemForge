@@ -230,6 +230,42 @@ public sealed class SeparateCommandTests : IDisposable
         Assert.Equal(customDir, result.ResolvedOutputDir);
     }
 
+    // ── What counts as work ────────────────────────────────────────────────────
+
+    [Fact]
+    public void HasWorkToDo_PresetGiven_IsTrue() =>
+        Assert.True(SeparateCommand.HasWorkToDo(["vocal_full"], extractDrums: false));
+
+    [Fact]
+    public void HasWorkToDo_ExtractDrumsAlone_IsTrue() =>
+        // The case this exists for: an already-instrumental source needs only a drum stem, and
+        // requiring a preset alongside meant running a separation just to discard its output.
+        Assert.True(SeparateCommand.HasWorkToDo([], extractDrums: true));
+
+    [Fact]
+    public void HasWorkToDo_PresetAndExtractDrums_IsTrue() =>
+        Assert.True(SeparateCommand.HasWorkToDo(["vocal_full"], extractDrums: true));
+
+    [Fact]
+    public void HasWorkToDo_NoPresetsAndNoDrums_IsFalse() =>
+        Assert.False(SeparateCommand.HasWorkToDo([], extractDrums: false));
+
+    [Fact]
+    public void HasWorkToDo_NullPresetsAndNoDrums_IsFalse() =>
+        // Spectre leaves the array null when the option never appears, so the guard has to accept
+        // null rather than only an empty array.
+        Assert.False(SeparateCommand.HasWorkToDo(null, extractDrums: false));
+
+    [Fact]
+    public void ValidatePresets_EmptyList_SucceedsWithNoPresets()
+    {
+        // Reachable now that --extract-drums can stand alone; the drum step is not a preset.
+        var result = SeparateCommand.ValidatePresets([]);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Empty(result.Presets!);
+    }
+
     // ── Pipeline invocation shape ──────────────────────────────────────────────
 
     [Fact]

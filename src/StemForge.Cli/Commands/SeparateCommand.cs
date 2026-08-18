@@ -70,10 +70,9 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
         if (!string.IsNullOrWhiteSpace(settings.CookiesFromBrowser))
             appSettings.YtdlpCookiesFromBrowser = settings.CookiesFromBrowser;
 
-        // Require at least one preset.
-        if (settings.PresetIds is not { Length: > 0 })
+        if (!HasWorkToDo(settings.PresetIds, settings.ExtractDrums))
         {
-            Console.Error.WriteLine("Error: --preset is required.");
+            Console.Error.WriteLine("Error: --preset is required unless --extract-drums is given.");
             return 1;
         }
 
@@ -85,7 +84,7 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
         }
 
         // Validate all preset IDs up front before any work begins.
-        var presetValidation = ValidatePresets(settings.PresetIds);
+        var presetValidation = ValidatePresets(settings.PresetIds ?? []);
         if (presetValidation.ExitCode != 0)
         {
             Console.Error.WriteLine($"Error: {presetValidation.ErrorMessage}");
@@ -298,6 +297,18 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
 
         return succeeded == total ? 0 : 2;
     }
+
+    /// <summary>
+    /// Whether the invocation asks for any separation at all.
+    ///
+    /// <c>--extract-drums</c> is a run in its own right, not a modifier on a preset. A source that
+    /// is already an instrumental needs a drum stem and nothing else, and requiring a preset
+    /// alongside it meant running a separation purely to satisfy the flag and deleting its output
+    /// afterwards. The pipeline has always supported this shape: with no presets it reports one
+    /// step, and its model-weight total is already floored at 1.
+    /// </summary>
+    internal static bool HasWorkToDo(string[]? presetIds, bool extractDrums) =>
+        presetIds is { Length: > 0 } || extractDrums;
 
     /// <summary>
     /// Validates all preset IDs up front. Returns failure on the first unknown preset.

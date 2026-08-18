@@ -95,16 +95,22 @@ Both commands take multiple inputs and process them as a batch, continuing past 
 
 | Option | Applies to | Effect |
 |---|---|---|
-| `--preset <id>` | separate | Built-in preset to run; repeat to run several presets as independent stem sets in one call |
+| `--preset <id>` | separate | Built-in preset to run; repeat to run several presets as independent stem sets in one call. Required unless `--extract-drums` is given |
 | `--output <dir>` | both | Output directory (defaults to the configured Stems folder) |
 | `--format <flac\|wav\|mp3\|...>` | both | Output audio format (defaults to the saved setting) |
 | `--keep-source` | separate | Keep the source audio alongside the stems |
-| `--extract-drums` | separate | Also extract a drums stem |
+| `--extract-drums` | separate | Extract a drums stem. Runs alongside any presets given, or on its own when none are |
 | `--cookies-from-browser <name>` | both | Browser to read YouTube cookies from (premium formats) |
 | `--list-formats` | download | Show the source formats on offer and exit without downloading |
 | `--format-id <id>` | download | Fetch a specific source format instead of the automatic pick |
 | `--verbose` | both | Stream full engine logs for troubleshooting (off by default) |
 | `--json` | both, presets | Suppress human output; print a single JSON result payload to stdout |
+
+`--extract-drums` on its own runs only the drum-extraction preset, which is what you want when the source is already an instrumental and the drum stem is the only thing missing:
+
+```
+stemforge-cli separate track.flac --extract-drums --format flac
+```
 
 Note that `--format` and `--format-id` sit at opposite ends of the pipeline: `--format` is what the file gets written as, `--format-id` is which source format gets fetched.
 
