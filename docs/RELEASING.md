@@ -77,4 +77,6 @@ So CI is a compile-and-unit gate plus a check that the pinned external downloads
 
 `dotnet test StemForge.slnx` locally runs the same offline suite CI does, and skips the same two env-gated classes. Set `STEMFORGE_LIVE_ASSETS=1` or `STEMFORGE_INTEGRATION=1` to run those.
 
-A local run is Windows and CI is Linux, so the two can still disagree on platform-conditional code. `ProcessRunner`'s `KillOnParentExit` guard is the standing example: it is correct on both, and it produces a `CA1416` warning on an SDK where the API is attributed Windows-only.
+A local run is Windows and CI is Linux, so the two can still disagree on platform-conditional code. `ProcessRunner`'s `KillOnParentExit` guard is the standing example. It is correct on both and warns on neither today, because the API is attributed for Windows and Linux (and Android) as of the pinned SDK. It did warn once: the property landed Windows-only in .NET 11 preview 4, so the Linux leg of the guard tripped `CA1416` on CI while a local build stayed clean. macOS is not supported and is not expected to be, since the platform has neither of the primitives this is built on.
+
+The general shape is worth remembering when bumping the SDK pin: platform attributes move between previews, and a `CA1416` that appears on one OS only will not show up until the other one builds.
