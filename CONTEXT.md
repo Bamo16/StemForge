@@ -39,6 +39,20 @@ Divergence happens when an install silently falls back. Example: the user picks 
 ### Resolve
 Determining everything knowable about a URL source *without fetching its audio*: title, artist, duration, the candidate [[Source format]]s, and which one the selection policy would pick. Every URL [[Job]] resolves before it downloads, so the facts a download will produce are known before any audio bytes are paid for.
 
+### Display name
+The human-readable name for an acquired source: its artist and title as `Artist - Title`, or the bare title when no artist is known. Not the same thing as the title — a [[Resolve]] returns both, and they routinely differ.
+
+Two shaping rules apply, and they pull in opposite directions, so the distinction is worth holding:
+- **Repeated credits are collapsed.** A [[Music track entity]] names a contributor once per role held, so a source can report eleven artist entries naming three artists. The repeats carry no information, so the collapsed list is simply the truth and is what every consumer sees, [[Provenance]] included.
+- **A credit the title already carries is dropped from the name only.** Where the title credits a featured performer, that artist is omitted from the display name so the name does not say the same thing twice — but they remain a genuine artist on the track, so they stay in the artist list and in [[Provenance]]. A name is allowed to be shorter than the truth; a provenance tag is not.
+
+_Avoid_: treating the display name as the artist list. It is a name derived from that list, and is deliberately lossy.
+
+### Base name
+The [[Display name]] reduced to characters a filesystem accepts, which is exactly what the acquired source file is called on disk, without extension. The name a [[Job]]'s [[Stem]] files are built from — conventionally `Base name (Stem)`, though a [[Preset]]'s own naming template or a collision between two outputs in one directory may reshape that.
+
+Only the source file's base name is a promise StemForge makes to a caller ahead of time; a stem's final name depends on the preset and on what already occupies the output directory, neither of which a [[Resolve]] can know.
+
 ### Source format
 One audio-only candidate a URL source offers, identified by a format id assigned by the extractor and described by codec, bitrate, and sample rate. A [[Resolve]] returns the full candidate set; exactly one is selected to fetch. Selection is StemForge's policy, not a user choice, unless the user explicitly pins one.
 

@@ -7,6 +7,13 @@ public sealed record YtDlpVideoInfo
 {
     public string Title { get; init; } = string.Empty;
     public string? Artist { get; init; }
+
+    /// <summary>
+    /// Structured credit list, preferred over the flattened <see cref="Artist"/> string because a
+    /// name may itself contain a comma. YouTube Music repeats a contributor once per role, so this
+    /// arrives with duplicates; <see cref="ArtistNames.Canonical"/> collapses them.
+    /// </summary>
+    public List<string>? Artists { get; init; }
     public string? Uploader { get; init; }
     public double? Duration { get; init; }
     public string? FormatId { get; init; }

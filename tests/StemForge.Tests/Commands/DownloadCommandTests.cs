@@ -94,7 +94,7 @@ public sealed class DownloadCommandTests : IDisposable
         new(
             SourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
             Title: title,
-            Artist: artist,
+            Artists: artist is null ? null : [artist],
             Uploader: "Channel",
             SourceCodec: "opus",
             SourceBitrateKbps: 160.0,

@@ -14,11 +14,6 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
     private readonly IProcessRunner _runner = runner;
     private readonly AppPaths _paths = paths;
 
-    private static readonly HashSet<char> _invalidFileNameChars =
-    [
-        .. Path.GetInvalidFileNameChars(),
-    ];
-
     public async Task<YtDlpMetadata> ResolveAsync(
         string url,
         AppSettings settings,
@@ -82,7 +77,9 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             // tracking params. Fall back to the originally requested URL if it is absent.
             SourceUrl: info.WebpageUrl ?? info.OriginalUrl ?? url,
             Title: info.Title,
-            Artist: info.Artist,
+            // Collapse YouTube Music's per-role repeats before anything downstream sees them:
+            // this value reaches the filename, the JSON row and the file's own ARTIST tag.
+            Artists: ArtistNames.Canonical(info.Artists, info.Artist),
             Uploader: info.Uploader,
             SourceCodec: selected.AudioCodec,
             SourceBitrateKbps: selected.AudioBitrate,
@@ -131,7 +128,7 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
     )
     {
         Directory.CreateDirectory(outDir);
-        var fileName = $"{SanitizeFileName(meta.DisplayTitle)}.{FfmpegArgs.Extension(format)}";
+        var fileName = $"{meta.BaseName}.{FfmpegArgs.Extension(format)}";
         var outputPath = Path.Combine(outDir, fileName);
 
         var args = new List<string>();
@@ -191,7 +188,4 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
                 "yt-dlp metadata deserialization returned null."
             );
     }
-
-    private static string SanitizeFileName(string value) =>
-        string.Concat(value.Where(c => !_invalidFileNameChars.Contains(c)));
 }

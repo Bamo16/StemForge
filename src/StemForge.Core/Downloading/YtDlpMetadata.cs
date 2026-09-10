@@ -5,7 +5,7 @@ namespace StemForge.Core.Downloading;
 public sealed record YtDlpMetadata(
     string SourceUrl,
     string Title,
-    string? Artist,
+    IReadOnlyList<string>? Artists,
     string? Uploader,
     string? SourceCodec,
     double? SourceBitrateKbps,
@@ -17,8 +17,48 @@ public sealed record YtDlpMetadata(
     string? Extractor = null
 )
 {
-    /// <summary>"Artist - Title" when artist is available, plain Title otherwise.</summary>
-    public string DisplayTitle => string.IsNullOrWhiteSpace(Artist) ? Title : $"{Artist} - {Title}";
+    private static readonly HashSet<char> _invalidFileNameChars =
+    [
+        .. Path.GetInvalidFileNameChars(),
+    ];
+
+    /// <summary>
+    /// Every credited artist as one string, in first-seen order. The only place the credit list is
+    /// flattened, and what reaches the file's ARTIST tag and the CLI's JSON row. Null when the
+    /// source credits no artist, which is what marks it as an ordinary upload.
+    /// </summary>
+    public string? Artist => Artists is { Count: > 0 } names ? string.Join(", ", names) : null;
+
+    /// <summary>
+    /// "Artist - Title" when artist is available, plain Title otherwise. An artist the title
+    /// already credits as a featured performer is dropped here so the name does not say it twice;
+    /// <see cref="Artist"/> itself keeps every credit, because the provenance tag written into the
+    /// file must stay true (see <see cref="ArtistNames"/>).
+    /// </summary>
+    public string DisplayTitle
+    {
+        get
+        {
+            if (Artists is not { Count: > 0 } credits)
+                return Title;
+
+            var named = string.Join(", ", ArtistNames.WithoutFeatured(credits, Title));
+
+            // IsNullOrWhiteSpace rather than a length pattern: patterns have no concept of
+            // whitespace, and a credit list of blanks must fall through to the bare title.
+            return string.IsNullOrWhiteSpace(named) ? Title : $"{named} - {Title}";
+        }
+    }
+
+    /// <summary>
+    /// The base name the downloaded source file will be given, without extension: the display
+    /// title with characters no filesystem accepts removed. Sole definition of that rule, so the
+    /// name a caller is told to expect and the name the download actually writes cannot drift.
+    /// Stems derive from this, conventionally as "{BaseName} ({stem})", but a preset template or a
+    /// collision suffix may reshape them, so only the source file's name is promised.
+    /// </summary>
+    public string BaseName =>
+        string.Concat(DisplayTitle.Where(c => !_invalidFileNameChars.Contains(c)));
 
     /// <summary>
     /// True when this came from YouTube. Format ids mean different things per extractor, so every
