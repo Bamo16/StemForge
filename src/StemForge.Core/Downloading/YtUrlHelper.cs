@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
@@ -23,7 +24,10 @@ public static partial class YtUrlHelper
         }
 
         // YouTube video ID or URL → canonicalise to music.youtube.com
-        if (YtVideoIdRegex.Match(trimmed).Groups["VideoId"] is { Success: true, Value: { } id })
+        if (
+            YtVideoIdRegex.Match(trimmed).Groups.TryGetValue("VideoId", out var idGroup)
+            && idGroup is { Success: true, Value: { } id }
+        )
         {
             normalized = $"https://music.youtube.com/watch?v={id}";
             return true;
