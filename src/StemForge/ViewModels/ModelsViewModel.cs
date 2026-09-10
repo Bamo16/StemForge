@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Humanizer;
 
 namespace StemForge.ViewModels;
 
@@ -121,21 +122,35 @@ public partial class ModelsViewModel : PageViewModelBase
     public bool HasChecked => _all.Any(m => m.IsChecked);
     public bool IsMultiModel => CheckedCount > 1;
 
-    public string CheckedSummary =>
-        CheckedCount == 0
-            ? string.Empty
-            : string.Join(", ", _all.Where(m => m.IsChecked).Select(m => m.FriendlyName));
+    /// <summary>
+    /// The checked models' friendly names, one entry per model so the view can render each as its
+    /// own chip. Previously a comma-joined string, which separation model names defeat: they carry
+    /// underscores, colons, dashes and version fragments, so commas are far too weak a delimiter to
+    /// tell one name from the next.
+    /// </summary>
+    public ObservableCollection<string> CheckedModelNames { get; } = [];
+
+    /// <summary>Count and noun, pluralized ("1 model", "6 models").</summary>
+    public string CheckedCountLabel => "model".ToQuantity(CheckedCount);
 
     private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName != nameof(ModelItemViewModel.IsChecked))
             return;
         OnPropertyChanged(nameof(CheckedCount));
+        OnPropertyChanged(nameof(CheckedCountLabel));
         OnPropertyChanged(nameof(HasChecked));
         OnPropertyChanged(nameof(IsMultiModel));
-        OnPropertyChanged(nameof(CheckedSummary));
+        RefreshCheckedModelNames();
         RecomputeOverlap();
         SavePresetCommand.NotifyCanExecuteChanged();
+    }
+
+    private void RefreshCheckedModelNames()
+    {
+        CheckedModelNames.Clear();
+        foreach (var m in _all.Where(m => m.IsChecked))
+            CheckedModelNames.Add(m.FriendlyName);
     }
 
     // ── Ensemble stem-overlap guidance (issue #69) ─────────────────────────────
@@ -161,10 +176,14 @@ public partial class ModelsViewModel : PageViewModelBase
     public bool HasUnknownStemModels => UnknownStemModels.Count > 0;
 
     /// <summary>
-    /// The overlap guidance is only meaningful for a multi-model ensemble. With a single model every
-    /// stem trivially passes through, so there is nothing an ensemble buys the user to explain.
+    /// Shown from the first checked model, not the second. It was originally gated on a multi-model
+    /// ensemble, reasoning that with one model every stem trivially passes through and there is
+    /// nothing an ensemble buys yet to explain. In use that is backwards: the stems a single model
+    /// produces are exactly what informs the decision to add a second, and appearing only on that
+    /// second selection makes the panel read as incidental rather than as part of building the
+    /// ensemble.
     /// </summary>
-    public bool ShowOverlapGuidance => IsMultiModel;
+    public bool ShowOverlapGuidance => HasChecked;
 
     public string UnknownStemModelsLabel =>
         UnknownStemModels.Count == 0
@@ -309,6 +328,16 @@ public partial class ModelsViewModel : PageViewModelBase
         _all.Clear();
         Models.Clear();
 
+        // Selection does not survive a reload, and the derived views of it are built from _all, so
+        // they have to be reset here too rather than waiting for an item change that is no longer
+        // coming from any of the detached items.
+        RefreshCheckedModelNames();
+        RecomputeOverlap();
+        OnPropertyChanged(nameof(CheckedCount));
+        OnPropertyChanged(nameof(CheckedCountLabel));
+        OnPropertyChanged(nameof(HasChecked));
+        OnPropertyChanged(nameof(IsMultiModel));
+
         try
         {
             var models = await _catalog.ListModelsAsync(forceRefresh);
@@ -393,7 +422,5 @@ public partial class ModelsViewModel : PageViewModelBase
     }
 
     private static string SanitizeId(string name) =>
-        new string(
-            name.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '_').ToArray()
-        );
+        new(name.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '_').ToArray());
 }
