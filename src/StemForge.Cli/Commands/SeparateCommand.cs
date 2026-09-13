@@ -83,8 +83,14 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
             return 1;
         }
 
-        // Validate all preset IDs up front before any work begins.
-        var presetValidation = ValidatePresets(settings.PresetIds ?? []);
+        // Validate all preset IDs up front before any work begins, against the same catalog the
+        // `presets` command reports, so the display name it reports is the one written here.
+        var catalog = await ResolveCatalogAsync(
+            provider.GetRequiredService<PresetCatalogService>(),
+            cts.Token
+        );
+
+        var presetValidation = ValidatePresets(settings.PresetIds ?? [], catalog);
         if (presetValidation.ExitCode != 0)
         {
             Console.Error.WriteLine($"Error: {presetValidation.ErrorMessage}");
@@ -311,19 +317,55 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
         presetIds is { Length: > 0 } || extractDrums;
 
     /// <summary>
-    /// Validates all preset IDs up front. Returns failure on the first unknown preset.
+    /// Resolves the catalog to validate against: the live audio-separator catalog where
+    /// <see cref="PresetCatalogService"/> can read it, and the static built-ins otherwise.
+    ///
+    /// Sharing the live catalog with the <c>presets</c> command is what makes the display name that
+    /// command reports the name this one writes into provenance and output filenames for the same
+    /// id. The fallback is not optional though: a missing or broken toolchain must not make
+    /// <c>separate</c> start refusing presets it has always accepted, so both an empty result (how
+    /// the service signals a failed read) and an outright throw fall back rather than propagate.
     /// </summary>
-    internal static PresetValidationOutcome ValidatePresets(string[] presetIds)
+    private static async Task<IReadOnlyList<Preset>> ResolveCatalogAsync(
+        PresetCatalogService catalog,
+        CancellationToken cancellationToken
+    )
     {
+        try
+        {
+            return await catalog.ListPresetsAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning(
+                "preset",
+                $"Live preset catalog unavailable ({ex.Message}); using built-in catalog."
+            );
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Validates all preset IDs up front. Returns failure on the first unknown preset. Resolves
+    /// against <paramref name="catalog"/>, falling back to <see cref="PresetCatalog.BuiltIn"/> when
+    /// it is empty or omitted.
+    /// </summary>
+    internal static PresetValidationOutcome ValidatePresets(
+        string[] presetIds,
+        IReadOnlyList<Preset>? catalog = null
+    )
+    {
+        var source = catalog is { Count: > 0 } live ? live : PresetCatalog.BuiltIn;
+
         var presets = new List<Preset>(presetIds.Length);
         foreach (var id in presetIds)
         {
-            var preset = PresetCatalog.BuiltIn.FirstOrDefault(p =>
+            var preset = source.FirstOrDefault(p =>
                 string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase)
             );
             if (preset is null)
             {
-                var validIds = string.Join(", ", PresetCatalog.BuiltIn.Select(p => p.Id));
+                var validIds = string.Join(", ", source.Select(p => p.Id));
                 return PresetValidationOutcome.Fail(
                     $"Unknown preset '{id}'. Valid presets: {validIds}"
                 );

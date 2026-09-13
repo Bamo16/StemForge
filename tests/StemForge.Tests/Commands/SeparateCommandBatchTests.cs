@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using StemForge.Cli.Commands;
 using StemForge.Tests.TestDoubles;
@@ -105,6 +106,64 @@ public sealed class SeparateCommandBatchTests : IDisposable
         Assert.Equal(0, outcome.ExitCode);
         Assert.NotNull(outcome.Presets);
         Assert.Equal(2, outcome.Presets.Count);
+    }
+
+    [Fact]
+    public void ValidatePresets_LiveCatalog_ResolvesFromItRatherThanTheBuiltIns()
+    {
+        // A preset that exists live but not in the static fallback must still be accepted: the
+        // live catalog is the authority whenever it resolves.
+        var live = PresetCatalogService.ParsePresets(
+            """{"vocal_experimental":{"name":"Vocal Experimental","models":["m.onnx"]}}"""
+        );
+
+        var outcome = SeparateCommand.ValidatePresets(["vocal_experimental"], live);
+
+        Assert.Equal(0, outcome.ExitCode);
+        Assert.Equal("Vocal - Experimental", Assert.Single(outcome.Presets!).DisplayName);
+    }
+
+    [Fact]
+    public void ValidatePresets_EmptyLiveCatalog_FallsBackToBuiltIns()
+    {
+        // An empty list is how PresetCatalogService reports a failed read. `separate` must not
+        // start refusing valid presets because the toolchain is absent or the script failed.
+        var outcome = SeparateCommand.ValidatePresets(["vocal_balanced"], []);
+
+        Assert.Equal(0, outcome.ExitCode);
+        Assert.Equal("vocal_balanced", Assert.Single(outcome.Presets!).Id);
+    }
+
+    /// <summary>
+    /// The contract <c>presets --json</c> now publishes: the display name it reports for an id is
+    /// the name <c>separate</c> writes into provenance and output filenames for that same id. The
+    /// two commands read the same live catalog, so this holds as long as a live entry named the way
+    /// audio-separator names it resolves to the same display name as the static fallback does.
+    /// </summary>
+    [Theory]
+    [InlineData("vocal_full", "Vocal Full")]
+    [InlineData("vocal_balanced", "Vocal Balanced")]
+    [InlineData("instrumental_full", "Instrumental Full")]
+    [InlineData("instrumental_clean", "Instrumental Clean")]
+    [InlineData("karaoke", "Karaoke")]
+    public void ValidatePresets_LiveAndBuiltInCatalogs_AgreeOnDisplayName(
+        string id,
+        string upstreamName
+    )
+    {
+        var live = PresetCatalogService.ParsePresets(
+            JsonSerializer.Serialize(
+                new Dictionary<string, object>
+                {
+                    [id] = new { name = upstreamName, models = new[] { "m.onnx" } },
+                }
+            )
+        );
+
+        var viaLive = SeparateCommand.ValidatePresets([id], live).Presets![0];
+        var viaBuiltIn = SeparateCommand.ValidatePresets([id], []).Presets![0];
+
+        Assert.Equal(viaBuiltIn.DisplayName, viaLive.DisplayName);
     }
 
     // ── ValidateFormat ────────────────────────────────────────────────────────

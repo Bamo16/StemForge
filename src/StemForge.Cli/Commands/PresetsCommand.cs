@@ -7,7 +7,20 @@ namespace StemForge.Cli.Commands;
 
 internal sealed class PresetsCommand : AsyncCommand<PresetsCommand.Settings>
 {
-    private sealed record PresetResult(string Id, string? Algorithm, IReadOnlyList<string> Models);
+    /// <summary>
+    /// One row of <c>presets --json</c>. <see cref="DisplayName"/> is the contract that matters to
+    /// automation: it is the name <c>separate</c> writes into the provenance tag and the output
+    /// filename for the same id, so a caller holding its own preset vocabulary can join the two.
+    /// Both commands resolve through <see cref="PresetCatalogService"/> to keep that true.
+    /// </summary>
+    private sealed record PresetResult(
+        string Id,
+        string DisplayName,
+        string Category,
+        string Description,
+        string? Algorithm,
+        IReadOnlyList<string> Models
+    );
 
     public sealed class Settings : CommandSettings
     {
@@ -59,17 +72,25 @@ internal sealed class PresetsCommand : AsyncCommand<PresetsCommand.Settings>
         {
             CliJson.Write(
                 presets
-                    .Select(p => new PresetResult(p.Id, p.EnsembleAlgorithm, p.AllModels))
+                    .Select(p => new PresetResult(
+                        p.Id,
+                        p.DisplayName,
+                        p.Category.ToString(),
+                        p.Description,
+                        p.EnsembleAlgorithm,
+                        p.AllModels
+                    ))
                     .ToList()
             );
             return 0;
         }
 
         var presetTable = presets.Aggregate(
-            new Table().AddColumns("ID", "Algorithm", "Models"),
+            new Table().AddColumns("ID", "Name", "Algorithm", "Models"),
             (table, preset) =>
                 table.AddRow(
                     Markup.Escape(preset.Id),
+                    Markup.Escape(preset.DisplayName),
                     Markup.Escape(preset.EnsembleAlgorithm ?? string.Empty),
                     Markup.Escape(string.Join(", ", preset.AllModels))
                 )
