@@ -26,6 +26,8 @@ public static class CoreServiceExtensions
         services.AddSingleton<IThumbnailFetcher, ThumbnailFetcher>();
         services.AddHttpClient("bundled").WithTimeout(TimeSpan.FromMinutes(15));
         services.AddSingleton<IFileDownloader, FileDownloader>();
+        services.AddHttpClient("pypi");
+        services.AddSingleton<IPackageIndex, PyPiPackageIndex>();
 
         // Update check
         services.AddSingleton<UpdateCheckService>();

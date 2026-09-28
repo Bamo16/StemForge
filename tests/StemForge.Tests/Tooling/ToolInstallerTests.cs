@@ -40,6 +40,35 @@ public sealed class ToolInstallerTests
     }
 
     [Fact]
+    public async Task UpgradeAsync_AudioSeparator_RunsUvToolUpgrade()
+    {
+        var (installer, fake, paths) = Build(OSKind.Windows);
+        fake.Setup(paths.Uv, "");
+
+        await installer.UpgradeAsync(
+            ToolCatalog.Get(ToolKind.AudioSeparator),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        var call = Assert.Single(fake.Calls);
+        Assert.Equal(paths.Uv, call.Exe);
+        Assert.Equal(["tool", "upgrade", "audio-separator"], call.Args);
+    }
+
+    [Fact]
+    public async Task UpgradeAsync_BundledTool_Throws()
+    {
+        var (installer, _, _) = Build();
+
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            installer.UpgradeAsync(
+                ToolCatalog.Get(ToolKind.Ffmpeg),
+                ct: TestContext.Current.CancellationToken
+            )
+        );
+    }
+
+    [Fact]
     public async Task InstallAsync_Uv_Linux_RunsShellScript()
     {
         var (installer, fake, _) = Build(OSKind.Linux);

@@ -13,6 +13,7 @@ public partial class SettingsViewModel : PageViewModelBase
     private readonly ToolInstaller _toolInstaller;
     private readonly ToolStateService _toolState;
     private readonly DrumModelCatalog _drumModels;
+    private readonly IPackageIndex _packageIndex;
 
     public override string Title => "Settings";
 
@@ -67,6 +68,31 @@ public partial class SettingsViewModel : PageViewModelBase
             GpuVariant.DirectML => "DirectML",
             GpuVariant.Cpu => "CPU",
             _ => "Unknown",
+        };
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAudioSeparatorUpdateAvailable))]
+    [NotifyPropertyChangedFor(nameof(AudioSeparatorVersionText))]
+    public partial string AudioSeparatorVersion { get; set; } = string.Empty;
+
+    /// <summary>The newest audio-separator on PyPI, or null until (or unless) PyPI answers.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAudioSeparatorUpdateAvailable))]
+    [NotifyPropertyChangedFor(nameof(AudioSeparatorVersionText))]
+    public partial string? LatestAudioSeparatorVersion { get; set; }
+
+    public bool IsAudioSeparatorUpdateAvailable =>
+        Version.TryParse(AudioSeparatorVersion, out var installed)
+        && Version.TryParse(LatestAudioSeparatorVersion, out var latest)
+        && latest > installed;
+
+    public string AudioSeparatorVersionText =>
+        AudioSeparatorVersion switch
+        {
+            { Length: 0 } => string.Empty,
+            var installed when IsAudioSeparatorUpdateAvailable =>
+                $"Version {installed} installed. {LatestAudioSeparatorVersion} is available.",
+            var installed => $"Version {installed} installed.",
         };
 
     [ObservableProperty]
@@ -186,6 +212,7 @@ public partial class SettingsViewModel : PageViewModelBase
         ToolInstaller toolInstaller,
         ToolStateService toolState,
         DrumModelCatalog drumModels,
+        IPackageIndex packageIndex,
         IAppInfo appInfo
     )
     {
@@ -195,6 +222,7 @@ public partial class SettingsViewModel : PageViewModelBase
         _toolInstaller = toolInstaller;
         _toolState = toolState;
         _drumModels = drumModels;
+        _packageIndex = packageIndex;
         ProductName = appInfo.ProductName;
         VersionText = $"v{appInfo.FullVersion}";
 
@@ -207,7 +235,13 @@ public partial class SettingsViewModel : PageViewModelBase
         SyncToolsFromState();
         _ = DetectGpuAsync();
         _ = LoadDrumModelsAsync();
+        _ = LoadLatestAudioSeparatorVersionAsync();
     }
+
+    private async Task LoadLatestAudioSeparatorVersionAsync() =>
+        LatestAudioSeparatorVersion = await _packageIndex.LatestVersionAsync(
+            ((UvToolInstall)ToolCatalog.Get(ToolKind.AudioSeparator).InstallStrategy).Package
+        );
 
     private async Task LoadDrumModelsAsync()
     {
@@ -267,6 +301,10 @@ public partial class SettingsViewModel : PageViewModelBase
             row.VariantTag = VariantTagFor(row.Kind, row.Found);
         }
 
+        AudioSeparatorVersion = snapshot.FirstOrDefault(t => t.Kind == ToolKind.AudioSeparator)
+            is { Found: true, Version: { } version }
+            ? version
+            : string.Empty;
         AllSystemsGo = snapshot.All(t => t.Found || !t.IsRequired);
         ToolsLoading = _toolState.IsLoading;
     }
@@ -345,6 +383,18 @@ public partial class SettingsViewModel : PageViewModelBase
     {
         var variant = _settings.InstalledVariant ?? GpuVariant;
         await RunInstallAsync($"Reinstalling audio-separator ({variant})…", variant);
+    }
+
+    [RelayCommand]
+    private async Task UpgradeAudioSeparator()
+    {
+        CloseAllPanels();
+        await RunManageActionAsync(
+            $"Updating audio-separator to {LatestAudioSeparatorVersion}…",
+            (progress, ct) =>
+                _toolInstaller.UpgradeAsync(ToolCatalog.Get(ToolKind.AudioSeparator), progress, ct),
+            onSuccess: () => { }
+        );
     }
 
     [RelayCommand]
