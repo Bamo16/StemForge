@@ -208,6 +208,21 @@ public sealed class OutputNamerTests
     }
 
     [Fact]
+    public void Seed_SpelledDifferentlyFromTheReservation_IsStillTheSameDirectory()
+    {
+        // The job seeds --output as typed, then reserves under the directory of the path the
+        // separator reports; a mismatch snapshots the separator's own files as occupants.
+        using var dir = new TempDir();
+        var namer = new OutputNamer();
+        namer.Seed(dir.Path.Replace('\\', '/') + "/");
+
+        var written = Path.Combine(dir.Path, "Song (Kick).flac");
+        File.WriteAllText(written, "");
+
+        Assert.Equal("Song (Kick)", namer.Reserve(Path.GetDirectoryName(written)!, "Song (Kick)"));
+    }
+
+    [Fact]
     public void Reserve_MissingDirectory_StartsEmptyRatherThanThrowing()
     {
         var namer = new OutputNamer();

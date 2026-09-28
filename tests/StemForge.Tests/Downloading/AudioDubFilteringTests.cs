@@ -179,7 +179,7 @@ public sealed class AudioDubFilteringTests
         new(
             SourceUrl: "https://www.youtube.com/watch?v=x",
             Title: "T",
-            Artist: null,
+            Artists: null,
             Uploader: null,
             SourceCodec: null,
             SourceBitrateKbps: null,

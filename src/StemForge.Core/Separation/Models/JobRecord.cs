@@ -22,8 +22,37 @@ public sealed record JobRecord(
             InputFilePath is not null ? Path.GetFileName(InputFilePath) : SourceUrl ?? string.Empty
         );
 
-    public string PresetSummary =>
-        ExtractDrums ? $"{"preset".ToQuantity(Presets.Count)} + Drums"
-        : Presets.Count == 1 ? Presets[0].Label
-        : "preset".ToQuantity(Presets.Count);
+    /// <summary>True when the job only fetches the source: no preset and no drum stem.</summary>
+    public bool IsSourceOnly =>
+        this
+            is {
+                Presets.Count: 0,
+                ExtractDrums: false,
+                KeepSourceFile: true,
+                SourceUrl.Length: > 0
+            };
+
+    /// <summary>What the job writes, for the queue: "Balanced + Source", "2 presets + Drums", "Drums only".</summary>
+    public string OutputSummary
+    {
+        get
+        {
+            List<string> parts = Presets.Count switch
+            {
+                0 => [],
+                1 => [Presets[0].Label],
+                var count => ["preset".ToQuantity(count)],
+            };
+            if (ExtractDrums)
+                parts.Add("Drums");
+            if (KeepSourceFile && SourceUrl is not null)
+                parts.Add("Source");
+
+            return parts switch
+            {
+                [var only] when Presets.Count == 0 => $"{only} only",
+                _ => string.Join(" + ", parts),
+            };
+        }
+    }
 }

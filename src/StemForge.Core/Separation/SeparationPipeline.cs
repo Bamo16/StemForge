@@ -37,6 +37,11 @@ public sealed class SeparationPipeline(
         CancellationToken ct
     )
     {
+        // A job that asks only for the source is a download, and goes the way
+        // `stemforge-cli download` does: named, tagged and given cover art identically.
+        if (job.IsSourceOnly)
+            return [await DownloadOnlyAsync(job, progress, ct)];
+
         var allOutputFiles = new List<string>();
         SourceTagInfo? sourceInfo = null;
         var version = _appInfo.FullVersion;
@@ -201,6 +206,9 @@ public sealed class SeparationPipeline(
             if (!result.Succeeded)
                 throw new InvalidOperationException(result.ErrorMessage ?? "Separation failed");
 
+            if (preset.Steps[0].KeepSet is { Count: > 0 } keepSet)
+                CheckKeepSet(keepSet, result, preset);
+
             var title = Path.GetFileNameWithoutExtension(inputFile);
             var runPaths = new List<string>();
             foreach (var o in result.Outputs)
@@ -250,10 +258,12 @@ public sealed class SeparationPipeline(
                 }
             );
 
-            var drumOutDir =
-                _settings.DrumStemLocation == DrumStemLocation.WithStems
-                    ? job.OutputDir
-                    : _paths.DrumCacheDirectory;
+            // The cache is for a drum stem kept alongside preset stems. In a drums-only run the
+            // stem is the whole result, so it goes beside the outputs whatever the setting says.
+            var drumsOnly = presets.Count == 0;
+            var drumsBesideOutputs =
+                drumsOnly || _settings.DrumStemLocation == DrumStemLocation.WithStems;
+            var drumOutDir = drumsBesideOutputs ? job.OutputDir : _paths.DrumCacheDirectory;
 
             Directory.CreateDirectory(drumOutDir);
 
@@ -373,10 +383,19 @@ public sealed class SeparationPipeline(
                         drumPreset.DisplayName,
                         version
                     );
-                    if (_settings.DrumStemLocation == DrumStemLocation.WithStems)
+                    if (drumsBesideOutputs)
                         allOutputFiles.Add(renamedPath);
                 }
+                else if (drumsOnly)
+                    throw new InvalidOperationException(
+                        $"{_settings.DrumExtractionModel} wrote no drum stem."
+                    );
             }
+            // Beside presets a failed drum stem is a missing extra; on its own it is the job failing.
+            else if (drumsOnly)
+                throw new InvalidOperationException(
+                    drumResult.ErrorMessage ?? "Drum extraction failed"
+                );
             else
             {
                 AppLogger.Warning("job", $"Drum extraction failed: {drumResult.ErrorMessage}");
@@ -567,7 +586,7 @@ public sealed class SeparationPipeline(
     /// their <em>target</em> stem (e.g. "Title (Vocal - Balanced)") and the clean default for any
     /// residual stem, matching the convention the built-in catalog has always emitted.
     /// </summary>
-    internal static string DesiredBaseName(Preset preset, string stem, string title)
+    public static string DesiredBaseName(Preset preset, string stem, string title)
     {
         if (preset.Mode == SeparationMode.BuiltinPreset)
         {
@@ -585,6 +604,43 @@ public sealed class SeparationPipeline(
         preset.Id == "karaoke"
             ? "Karaoke"
             : $"{(preset.Category == PresetCategory.Vocals ? "Vocal" : "Instrumental")} - {SanitizeLabel(preset.Label)}";
+
+    // ── Keep set ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Throws when a keep set matched none of the stems written (the driver already deleted the rest,
+    /// so the run would read as success with no files), and warns for each kept name that matched nothing.
+    /// </summary>
+    internal static void CheckKeepSet(
+        IReadOnlyList<string> keepSet,
+        JobResult result,
+        Preset preset
+    )
+    {
+        var written = result
+            .Outputs.Concat(result.Discarded)
+            .Select(output => output.Stem)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var wrote = written is [] ? "nothing" : string.Join(", ", written);
+
+        if (result.Outputs.Count == 0)
+            throw new InvalidOperationException(
+                $"No stem matched the keep set ({string.Join(", ", keepSet)}); {preset.Label} wrote {wrote}."
+            );
+
+        foreach (
+            var stem in keepSet.Where(kept =>
+                !result.Outputs.Any(output =>
+                    output.Stem.Equals(kept, StringComparison.OrdinalIgnoreCase)
+                )
+            )
+        )
+            AppLogger.Warning(
+                "job",
+                $"Kept stem '{stem}' matched nothing; {preset.Label} wrote {wrote}."
+            );
+    }
 
     // ── Request builder ───────────────────────────────────────────────────────
 
@@ -608,7 +664,8 @@ public sealed class SeparationPipeline(
                             $"Preset '{preset.Id}' has no PrimaryModel"
                         ),
                 ],
-                Algorithm: null
+                Algorithm: null,
+                StemsToKeep: preset.Steps[0].KeepSet
             ),
 
             SeparationMode.CustomEnsemble => new JobRequest(
@@ -624,7 +681,8 @@ public sealed class SeparationPipeline(
                         ),
                     .. preset.ExtraModels ?? [],
                 ],
-                Algorithm: preset.EnsembleAlgorithm ?? "avg_wave"
+                Algorithm: preset.EnsembleAlgorithm ?? "avg_wave",
+                StemsToKeep: preset.Steps[0].KeepSet
             ),
 
             _ => new JobRequest( // BuiltinPreset
@@ -668,10 +726,9 @@ public sealed class SeparationPipeline(
             _ => category.ToString(),
         };
 
-    private static readonly char[] _invalidFileNameChars = Path.GetInvalidFileNameChars();
-
     internal static string SanitizeLabel(string label) =>
-        string.Concat(label.Select(c => _invalidFileNameChars.Contains(c) ? '-' : c)).Trim();
+        string.Concat(label.Select(c => PortableFileName.InvalidChars.Contains(c) ? '-' : c))
+            .Trim();
 
     // ── Keep-source helper ────────────────────────────────────────────────────
 

@@ -72,7 +72,9 @@ public sealed class JobQueueService(SeparationPipeline pipeline, AppSettings set
             {
                 vm.OutputFiles.AddRange(outputFiles);
                 vm.Progress = 100;
-                vm.StatusText = $"{"stem".ToQuantity(outputFiles.Count)} written";
+                vm.StatusText = vm.Job.IsSourceOnly
+                    ? "Downloaded"
+                    : $"{"stem".ToQuantity(outputFiles.Count)} written";
                 vm.Status = JobStatus.Done;
                 vm.IsExpanded = true;
                 OnPropertyChanged();

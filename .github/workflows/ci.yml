@@ -36,7 +36,7 @@ jobs:
         run: dotnet test StemForge.slnx --configuration Release --no-build
 
       # Network step: download + SHA-256 verify the three linux-x64 bundled binaries (yt-dlp,
-      # ffmpeg, deno) and exercise the ffmpeg tar.xz extraction path. Gated by the env var so the
+      # ffmpeg, deno) and exercise the ffmpeg tar.gz extraction path (running it once). Gated by the env var so the
       # offline suite above stays fast and hermetic.
       - name: Verify bundled assets (live download + SHA-256)
         env:

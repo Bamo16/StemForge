@@ -266,7 +266,7 @@ public sealed class PremiumExpectationTests
         new(
             SourceUrl: "https://www.youtube.com/watch?v=x",
             Title: "Track",
-            Artist: artist,
+            Artists: artist is null ? null : [artist],
             Uploader: null,
             SourceCodec: null,
             SourceBitrateKbps: null,

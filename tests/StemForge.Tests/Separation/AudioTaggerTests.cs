@@ -129,7 +129,7 @@ public sealed class AudioTaggerTests : IDisposable
         var meta = new YtDlpMetadata(
             SourceUrl: "https://www.youtube.com/watch?v=abc123",
             Title: "Track",
-            Artist: "Artist",
+            Artists: ["Artist"],
             Uploader: "Uploader",
             SourceCodec: "opus",
             SourceBitrateKbps: 160,

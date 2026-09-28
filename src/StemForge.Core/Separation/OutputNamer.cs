@@ -45,8 +45,6 @@ public sealed class OutputNamer
         StringComparer.OrdinalIgnoreCase
     );
 
-    private static readonly char[] _invalidFileNameChars = Path.GetInvalidFileNameChars();
-
     /// <summary>
     /// The clean default base name for a stem: <c>"{title} ({stem})"</c>. This is the convention the
     /// built-in presets emit, reused verbatim so user presets default to the same shape.
@@ -165,6 +163,7 @@ public sealed class OutputNamer
     /// </summary>
     private HashSet<string> ClaimsFor(string directory)
     {
+        directory = KeyFor(directory);
         if (_claimedByDirectory.TryGetValue(directory, out var existing))
             return existing;
 
@@ -184,6 +183,23 @@ public sealed class OutputNamer
         return claimed;
     }
 
+    /// <summary>
+    /// One key per directory however it is spelled (separators, trailing slash, relative), so the
+    /// seed taken from <c>--output</c> and a reservation made from a written file's path meet.
+    /// </summary>
+    private static string KeyFor(string directory)
+    {
+        try
+        {
+            return Path.TrimEndingDirectorySeparator(Path.GetFullPath(directory));
+        }
+        catch (Exception)
+        {
+            // An unnormalizable path keeps its spelling; naming must never fail a job.
+            return directory;
+        }
+    }
+
     internal static string Sanitize(string name) =>
-        string.Concat(name.Select(c => _invalidFileNameChars.Contains(c) ? '-' : c)).Trim();
+        string.Concat(name.Select(c => PortableFileName.InvalidChars.Contains(c) ? '-' : c)).Trim();
 }

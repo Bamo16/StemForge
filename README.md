@@ -26,7 +26,7 @@ https://github.com/user-attachments/assets/660daf67-0953-405d-a6ef-1c71e59f6a7b
 
 ## What it does
 
-Drop in an audio file (or paste a YouTube URL) and StemForge runs one of dozens of separation models, or an ensemble of them, to split the track into stems: vocals, instrumentals, drums, bass, and so on. Pick from the curated built-in presets, or browse the full model catalogue and roll your own.
+Drop in an audio file (or paste a YouTube URL) and StemForge runs one of dozens of separation models, or an ensemble of them, to split the track into stems: vocals, instrumentals, drums, bass, and so on. Pick from the curated built-in presets, or browse the full model catalogue and roll your own. A drum stem can come alongside a preset's stems or on its own.
 
 <p align="center">
   <img src="docs/images/screenshot-separate-presets.png" alt="Separate page with presets" width="900" />
@@ -35,6 +35,8 @@ Drop in an audio file (or paste a YouTube URL) and StemForge runs one of dozens 
 ### URL ingestion with format selection
 
 Paste a YouTube link and StemForge resolves the available audio formats via `yt-dlp`, picks the best one automatically, and surfaces a picker if you want to override. Any URL `yt-dlp` supports works in principle; YouTube is the most common case, but the same flow handles other sources. Premium audio formats (higher-bitrate opus and AAC) show up when available. See [YouTube authentication](#youtube-authentication-cookies-premium-formats) below if you want StemForge to use them.
+
+Tick **Source audio** to keep the downloaded audio beside the stems. With nothing else ticked, StemForge just downloads it, named and tagged the same way `stemforge-cli download` does.
 
 <p align="center">
   <img src="docs/images/screenshot-separate-url.png" alt="URL pasted with format picker expanded" width="900" />
@@ -58,7 +60,7 @@ Browse hundreds of community models from the audio-separator catalogue. Save any
 
 ### Settings
 
-Configure the output directory, default audio format, tool-path overrides, YouTube cookie source, and the GPU variant audio-separator runs on.
+Configure the output directory, default audio format, tool-path overrides, YouTube cookie source, and the GPU variant audio-separator runs on. When a newer audio-separator is out, Settings offers to update it in place, keeping the GPU variant.
 
 <p align="center">
   <img src="docs/images/screenshot-settings.png" alt="Settings page" width="900" />
@@ -95,16 +97,30 @@ Both commands take multiple inputs and process them as a batch, continuing past 
 
 | Option | Applies to | Effect |
 |---|---|---|
-| `--preset <id>` | separate | Built-in preset to run; repeat to run several presets as independent stem sets in one call |
+| `--preset <id>` | separate | Built-in preset to run; repeat to run several presets as independent stem sets in one call. Give at least one of `--preset`, `--model` or `--extract-drums` |
+| `--model <file>` | separate | Run one model by its file name (for example `MDX23C-DrumSep-aufr33-jarredou.ckpt`), alongside any presets |
+| `--keep <stem>` | separate | With `--model`: keep only this stem and discard the rest; repeat to keep several. The input fails if none of them is written |
 | `--output <dir>` | both | Output directory (defaults to the configured Stems folder) |
 | `--format <flac\|wav\|mp3\|...>` | both | Output audio format (defaults to the saved setting) |
 | `--keep-source` | separate | Keep the source audio alongside the stems |
-| `--extract-drums` | separate | Also extract a drums stem |
+| `--extract-drums` | separate | Extract a drums stem. Runs alongside any presets given, or on its own when none are |
 | `--cookies-from-browser <name>` | both | Browser to read YouTube cookies from (premium formats) |
 | `--list-formats` | download | Show the source formats on offer and exit without downloading |
 | `--format-id <id>` | download | Fetch a specific source format instead of the automatic pick |
 | `--verbose` | both | Stream full engine logs for troubleshooting (off by default) |
 | `--json` | both, presets | Suppress human output; print a single JSON result payload to stdout |
+
+`--extract-drums` on its own runs only the drum-extraction preset, which is what you want when the source is already an instrumental and the drum stem is the only thing missing:
+
+```
+stemforge-cli separate track.flac --extract-drums --format flac
+```
+
+`--model` runs any single model audio-separator knows, which is how to reach models no preset uses. Splitting a drum stem into kick and snare:
+
+```
+stemforge-cli separate "track (Drums).flac" --model MDX23C-DrumSep-aufr33-jarredou.ckpt --keep kick --keep snare
+```
 
 Note that `--format` and `--format-id` sit at opposite ends of the pipeline: `--format` is what the file gets written as, `--format-id` is which source format gets fetched.
 
@@ -144,7 +160,7 @@ Live progress shows a per-input bar with the current activity. Press Ctrl+C once
 3. **First-run wizard** offers to install everything you need:
    - `uv`: Python tool manager, ~25 MB, installed via [Astral's official installer](https://astral.sh/uv).
    - `audio-separator`: the separation engine, ~250 MB to 2 GB depending on GPU variant, installed as a uv tool.
-   - `ffmpeg`: ~100 MB, bundled binary from [`yt-dlp/FFmpeg-Builds`](https://github.com/yt-dlp/FFmpeg-Builds), dropped into `%LOCALAPPDATA%\StemForge\bin`.
+   - `ffmpeg`: ~265 MB, bundled binary from [`nomercy-ffmpeg`](https://github.com/NoMercy-Entertainment/nomercy-ffmpeg), dropped into `%LOCALAPPDATA%\StemForge\bin`.
    - `yt-dlp` *(optional, ~17 MB)*: only needed for URL downloads. Bundled binary, not added to your system PATH so it never shadows a yt-dlp you already have installed elsewhere.
    - `deno` *(optional, ~42 MB)*: JS runtime, needed for some YouTube URL workflows. Also bundled, not on PATH. See [YouTube authentication](#youtube-authentication-cookies-premium-formats) for when this matters.
 4. Pick your GPU variant: **CPU**, **CUDA** (NVIDIA), or **DirectML** (any modern Windows GPU). The wizard auto-detects what you have.
@@ -236,7 +252,7 @@ Three VS Code tasks together produce the shippable zip:
 Bumping the release version is one edit in `Directory.Build.props`, the single source of truth shared by all projects:
 
 ```xml
-<Version>0.3.1</Version>
+<Version>0.4.0</Version>
 ```
 
 The package script reads the version from there, so the next run names the zip automatically.

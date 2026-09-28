@@ -375,24 +375,51 @@
                 Padding="20,14">
             <Grid RowDefinitions="Auto,10,Auto,Auto">
 
-                <!-- Selection summary -->
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
-                    <TextBlock FontSize="11" FontWeight="SemiBold"
+                <!-- ===== Selection summary (issue #79) =====
+                     One chip per model rather than a comma-joined run of names: model filenames
+                     carry underscores, colons, dashes and version fragments, so a comma cannot be
+                     seen as a separator among them. A star column plus a WrapPanel lets the chips
+                     flow onto further lines instead of running off the edge of the window, and the
+                     ScrollViewer caps how much of the panel a large selection can claim. -->
+                <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding CheckedCountLabel, StringFormat='{}{0} selected:'}"
+                               FontSize="11" FontWeight="SemiBold"
                                Foreground="{DynamicResource AccentBrush}"
-                               VerticalAlignment="Center">
-                        <Run Text="{Binding CheckedCount}" />
-                        <Run Text=" model(s) selected:" />
-                    </TextBlock>
-                    <TextBlock Text="{Binding CheckedSummary}"
-                               FontSize="11"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis" />
-                </StackPanel>
+                               VerticalAlignment="Top"
+                               Margin="0,2,6,0" />
+                    <ScrollViewer Grid.Column="1"
+                                  MaxHeight="52"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding CheckedModelNames}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Border Background="{DynamicResource Bg2Brush}"
+                                            BorderBrush="{DynamicResource Bg3Brush}"
+                                            BorderThickness="1"
+                                            CornerRadius="3"
+                                            Padding="6,1"
+                                            Margin="0,0,4,4">
+                                        <TextBlock Text="{Binding}"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
 
-                <!-- ===== Ensemble stem-overlap guidance (issue #69) =====
+                <!-- ===== Ensemble stem-overlap guidance (issues #69, #80) =====
                      Advisory: audio-separator averages stem names emitted by 2+ models and passes
-                     through names emitted by a single model. Shown only for a multi-model ensemble. -->
+                     through names emitted by a single model. Shown from the first checked model,
+                     because what one model produces is what informs adding a second. -->
                 <StackPanel Grid.Row="2"
                             IsVisible="{Binding ShowOverlapGuidance}"
                             Spacing="6"
@@ -436,7 +463,11 @@
                                    FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    VerticalAlignment="Center"
-                                   ToolTip.Tip="Stem names produced by only one selected model pass through unchanged — an ensemble does not blend them." />
+                                   ToolTip.Tip="Stem names produced by only one selected model. They are written unchanged rather than averaged, which is what every stem does until a second model produces the same name." />
+                        <!-- Bordered and in secondary text, not the placeholder grey it used to
+                             carry: these stems are kept and written, and a faded chip read as
+                             unselected or disabled. Blended and passed-through are two kinds of
+                             included, so the distinction is the accent, not the opacity. -->
                         <ItemsControl ItemsSource="{Binding PassthroughStems}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -446,12 +477,14 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:StemOverlap">
                                     <Border Background="{DynamicResource Bg2Brush}"
+                                            BorderBrush="{DynamicResource Bg3Brush}"
+                                            BorderThickness="1"
                                             CornerRadius="3"
                                             Padding="6,1"
                                             Margin="0,0,6,0">
                                         <TextBlock Text="{Binding Name}"
                                                    FontSize="10"
-                                                   Foreground="{DynamicResource TextPlaceholderBrush}" />
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

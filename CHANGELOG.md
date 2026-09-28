@@ -2,6 +2,33 @@
 
 All notable changes to StemForge are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-09-28
+
+### Added
+
+- **Drums-only and source-only runs in the app.** A run now writes any combination of preset stems, a drum stem and the source audio, so a drum stem or a plain download no longer needs a preset beside it. "Keep source file" moved to the footer as **Source audio** and is remembered between sessions. The footer says what the run will write and how many model runs it costs before you press Run, and a source-only run's button reads **Download**. Dropping several files with only Drum stem ticked queues a drums-only job for each.
+- **Single-model runs from the CLI.** `separate --model <file>` runs any model audio-separator knows by its file name, alongside any presets, which reaches models no preset uses. `--keep <stem>` keeps only the named stems and discards the rest, for example `--model MDX23C-DrumSep-aufr33-jarredou.ckpt --keep kick --keep snare`. An input fails if none of the kept stems is written.
+- **`--extract-drums` runs on its own**, without a `--preset`, for a source that only needs its drum stem.
+- **Update audio-separator from Settings.** Settings shows the installed version against the latest release and offers to update when a newer one exists, keeping your CUDA, DirectML or CPU variant.
+- `download --list-formats --json` reports the name the downloaded file will get, and `presets --json` reports each preset's display name, category and description.
+
+### Changed
+
+- **The bundled ffmpeg now comes from [nomercy-ffmpeg](https://github.com/NoMercy-Entertainment/nomercy-ffmpeg)** (ffmpeg 9.0), on every platform. It carries the `beatdetect` and `keydetect` audio filters. The first-run download is larger: about 265 MB on Windows, against about 100 MB before. An existing install keeps the ffmpeg it already has.
+- **macOS gets native ffmpeg builds** for Apple Silicon and Intel, with `ffprobe`, in place of an Intel-only binary without it.
+- Fresh installs get audio-separator 0.47.0. Every built-in preset resolves to the same models and stems as on 0.44.
+- A drums-only run writes its drum stem beside the outputs even when drum stems are set to go to the cache, since the stem is the whole result.
+- The queue's column reads **Output**, with summaries such as "Drums only" and "Balanced + Source".
+- Checked models show as separate chips instead of one comma-joined line.
+
+### Fixed
+
+- **Artists no longer repeat in file names.** YouTube Music credits a contributor once per role, and every repeat landed in the name. An artist the title already credits as featured is also left out of the name (the ARTIST tag keeps every credit).
+- Two-stem models could be shown as producing only one stem when that stem was inferred from the file name.
+- A drums-only run whose drum step fails is reported as failed, rather than as done with nothing written.
+- On Linux and macOS, bundled ffmpeg, yt-dlp and deno are now installed executable.
+- File names leave out the same characters on every OS. On Linux and macOS a name could keep `:` or `?`, so the same video got a different name than on Windows.
+
 ## [0.3.1] - 2026-07-31
 
 Bug-fix release. No new features.
@@ -108,6 +135,7 @@ Bug-fix release. No new features.
 
 Initial release.
 
+[0.4.0]: https://github.com/Bamo16/StemForge/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Bamo16/StemForge/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Bamo16/StemForge/compare/v0.2.1.1...v0.3.0
 [0.2.1.1]: https://github.com/Bamo16/StemForge/compare/v0.2.1...v0.2.1.1

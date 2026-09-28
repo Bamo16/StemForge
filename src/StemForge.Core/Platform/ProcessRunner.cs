@@ -34,57 +34,61 @@ public sealed class ProcessRunner : IProcessRunner
 
     // ── Exception ───────────────────────────────────────────────────────────────
 
-    public sealed class ProcessFailedException(string exe, int exitCode, string stderr)
-        : Exception(
-            string.IsNullOrWhiteSpace(stderr)
-                ? $"'{Path.GetFileName(exe)}' exited with code {exitCode}"
-                : $"'{Path.GetFileName(exe)}' exited with code {exitCode}:\n{stderr}"
-        )
+    public sealed class ProcessFailedException(string filePath, int exitCode, string stderr)
+        : Exception(GetExceptionMessage(filePath, exitCode, stderr))
     {
         public int ExitCode { get; } = exitCode;
         public string Stderr { get; } = stderr;
+
+        private static string GetExceptionMessage(string filePath, int exitCode, string stderr) =>
+            string.Format(
+                "'{0}' exited with code {1}{2}",
+                Path.GetFileName(filePath),
+                exitCode,
+                string.IsNullOrWhiteSpace(stderr) ? string.Empty : $":\n{stderr}"
+            );
     }
 
     // ── Public API ──────────────────────────────────────────────────────────────
 
     /// Run to completion and capture output. Returns the result regardless of exit code.
     public Task<Result> RunAsync(
-        string exe,
+        string filePath,
         IEnumerable<string> args,
         bool logRawLines = true,
         CancellationToken ct = default
-    ) => CoreAsync(exe, args, progress: null, throwOnFailure: false, logRawLines, ct);
+    ) => CoreAsync(filePath, args, progress: null, throwOnFailure: false, logRawLines, ct);
 
     /// Run to completion and capture output. Throws <see cref="ProcessFailedException"/>
     /// if the process exits with a non-zero code.
     public Task<Result> RunCheckedAsync(
-        string exe,
+        string filePath,
         IEnumerable<string> args,
         bool logRawLines = true,
         CancellationToken ct = default
-    ) => CoreAsync(exe, args, progress: null, throwOnFailure: true, logRawLines, ct);
+    ) => CoreAsync(filePath, args, progress: null, throwOnFailure: true, logRawLines, ct);
 
     /// Run and stream each line (stdout + stderr) to <paramref name="progress"/> as it arrives.
     /// Throws <see cref="ProcessFailedException"/> on non-zero exit.
     public async Task RunStreamingAsync(
-        string exe,
+        string filePath,
         IEnumerable<string> args,
         IProgress<string>? progress = null,
         bool logRawLines = true,
         CancellationToken ct = default
-    ) => await CoreAsync(exe, args, progress, throwOnFailure: true, logRawLines, ct);
+    ) => await CoreAsync(filePath, args, progress, throwOnFailure: true, logRawLines, ct);
 
     /// Captures stdout into the returned <see cref="Result"/> while streaming stderr lines live
     /// to <paramref name="stderrProgress"/>. Throws <see cref="ProcessFailedException"/> on non-zero exit.
     public Task<Result> RunStreamingStderrAsync(
-        string exe,
+        string filePath,
         IEnumerable<string> args,
         IProgress<string>? stderrProgress = null,
         bool logRawLines = true,
         CancellationToken ct = default
     ) =>
         CoreAsync(
-            exe,
+            filePath,
             args,
             stderrProgress,
             throwOnFailure: true,
@@ -95,8 +99,8 @@ public sealed class ProcessRunner : IProcessRunner
 
     // ── Core ────────────────────────────────────────────────────────────────────
 
-    private async Task<Result> CoreAsync(
-        string exe,
+    private static async Task<Result> CoreAsync(
+        string filePath,
         IEnumerable<string> args,
         IProgress<string>? progress,
         bool throwOnFailure,
@@ -106,11 +110,11 @@ public sealed class ProcessRunner : IProcessRunner
     )
     {
         var argList = args as IReadOnlyList<string> ?? [.. args];
-        var exeName = Path.GetFileName(exe);
+        var binaryName = Path.GetFileName(filePath);
 
-        AppLogger.Debug("Process", $"→ {exeName} {string.Join(' ', argList)}");
+        AppLogger.Debug("Process", $"→ {binaryName} {string.Join(' ', argList)}");
 
-        var startInfo = new ProcessStartInfo(exe, argList)
+        var startInfo = new ProcessStartInfo(filePath, argList)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -132,7 +136,7 @@ public sealed class ProcessRunner : IProcessRunner
 
         using var p =
             Process.Start(startInfo)
-            ?? throw new InvalidOperationException($"Failed to start '{exeName}'");
+            ?? throw new InvalidOperationException($"Failed to start '{binaryName}'");
 
         // Kill the entire tree when the token fires; reads below complete once streams close.
         using var _ = ct.Register(() =>
@@ -159,7 +163,7 @@ public sealed class ProcessRunner : IProcessRunner
                     {
                         progress.Report(line.Content);
                         if (logRawLines)
-                            AppLogger.Debug($"{exeName}.err", line.Content);
+                            AppLogger.Debug($"{binaryName}.err", line.Content);
                     }
                     else
                     {
@@ -177,7 +181,7 @@ public sealed class ProcessRunner : IProcessRunner
                     progress.Report(line.Content);
                     if (logRawLines)
                         AppLogger.Debug(
-                            line.StandardError ? $"{exeName}.err" : $"{exeName}.out",
+                            line.StandardError ? $"{binaryName}.err" : $"{binaryName}.out",
                             line.Content
                         );
                 }
@@ -201,14 +205,14 @@ public sealed class ProcessRunner : IProcessRunner
                             StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
                         )
                     )
-                        AppLogger.Debug($"{exeName}.out", line);
+                        AppLogger.Debug($"{binaryName}.out", line);
                 foreach (
                     var line in stderr.Split(
                         '\n',
                         StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
                     )
                 )
-                    AppLogger.Debug($"{exeName}.err", line);
+                    AppLogger.Debug($"{binaryName}.err", line);
             }
         }
 
@@ -219,14 +223,14 @@ public sealed class ProcessRunner : IProcessRunner
         if (!result.Success)
             AppLogger.Error(
                 "Process",
-                $"← {exeName} exit {p.ExitCode}"
+                $"← {binaryName} exit {p.ExitCode}"
                     + (string.IsNullOrWhiteSpace(stderr) ? "" : $"\n{stderr}")
             );
         else
-            AppLogger.Info("Process", $"← {exeName} exit 0");
+            AppLogger.Info("Process", $"← {binaryName} exit 0");
 
         if (throwOnFailure && !result.Success)
-            throw new ProcessFailedException(exe, p.ExitCode, stderr);
+            throw new ProcessFailedException(filePath, p.ExitCode, stderr);
 
         return result;
     }

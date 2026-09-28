@@ -87,6 +87,27 @@ public sealed class ToolInstaller(
         return _runner.RunStreamingAsync(_paths.Uv, args, AsLineProgress(progress), ct: ct);
     }
 
+    /// <summary>
+    /// Upgrades a uv-tool install in place. uv keeps the extras and index it was installed with, so
+    /// the GPU variant carries over.
+    /// </summary>
+    public Task UpgradeAsync(
+        Tool tool,
+        IProgress<InstallProgress>? progress = null,
+        CancellationToken ct = default
+    )
+    {
+        if (tool.InstallStrategy is not UvToolInstall u)
+            throw new NotSupportedException($"{tool.CliName} cannot be upgraded via uv.");
+
+        return _runner.RunStreamingAsync(
+            _paths.Uv,
+            ["tool", "upgrade", u.Package],
+            AsLineProgress(progress),
+            ct: ct
+        );
+    }
+
     public Task UninstallAsync(
         Tool tool,
         IProgress<InstallProgress>? progress = null,

@@ -83,13 +83,23 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
         bool IsAutoSelected
     );
 
-    /// <summary>One input's full candidate list, as reported by <c>--list-formats --json</c>.</summary>
+    /// <summary>
+    /// One input's full candidate list, as reported by <c>--list-formats --json</c>.
+    ///
+    /// <c>Title</c> and <c>Artist</c> are the raw resolved facts. The two name fields answer a
+    /// different question: what StemForge will call the files. <c>DisplayTitle</c> is the human
+    /// name; <c>BaseName</c> is that name with filesystem-invalid characters removed, which is
+    /// exactly what the downloaded source file is called. Both are reported rather than left to the
+    /// caller because the rules that produce them live here and would drift if mirrored elsewhere.
+    /// </summary>
     private sealed record FormatListResult(
         string Input,
         bool Succeeded,
         string? Error,
         string? Title = null,
         string? Artist = null,
+        string? DisplayTitle = null,
+        string? BaseName = null,
         double? DurationSeconds = null,
         bool? PremiumShortfall = null,
         IReadOnlyList<FormatCandidate>? Formats = null
@@ -419,6 +429,8 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
                     null,
                     meta.Title,
                     meta.Artist,
+                    meta.DisplayTitle,
+                    meta.BaseName,
                     meta.DurationSeconds,
                     status is not (PremiumStatus.NotApplicable or PremiumStatus.Premium),
                     candidates

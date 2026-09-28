@@ -119,6 +119,189 @@ public sealed class SeparationPipelineTests : IDisposable
             Traceback: null
         );
 
+    // ── Drums-only ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task RunAsync_DrumsOnlyNoPresets_RunsTheDrumStepAlone()
+    {
+        // A source that is already an instrumental wants a drum stem and nothing else. The weight
+        // arithmetic is the part worth pinning: with no presets the model-weight total would be
+        // zero but for its Math.Max(1, ...) floor, and every OverallPercent divides by it.
+        var input = CreateFlacFile("instrumental.flac");
+        var drums = CreateFlacFile("raw_drums.flac");
+
+        var job = MakeJob(input, [], extractDrums: true);
+        _driver.EnqueueRun(
+            new JobResult(
+                Succeeded: true,
+                Outputs: [new JobOutput(Stem: "Drums", Path: drums)],
+                Discarded: [],
+                DurationSeconds: 1.0,
+                ErrorMessage: null,
+                Traceback: null
+            )
+        );
+
+        var progress = new List<JobUpdate>();
+        var outputs = await _pipeline.RunAsync(
+            job,
+            new Progress<JobUpdate>(progress.Add),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(1, _driver.CallCount);
+        Assert.Equal(Path.Combine(_tempDir, "instrumental (Drums).flac"), Assert.Single(outputs));
+    }
+
+    [Fact]
+    public async Task RunAsync_DrumsOnlyWithCacheOnly_WritesBesideTheOutputs()
+    {
+        // The cache is for a drum stem kept alongside preset stems; on its own the stem is the result.
+        _settings.DrumStemLocation = DrumStemLocation.CacheOnly;
+        var input = CreateFlacFile("instrumental.flac");
+        var drums = CreateFlacFile("raw_drums.flac");
+        _driver.EnqueueRun(
+            new JobResult(
+                Succeeded: true,
+                Outputs: [new JobOutput(Stem: "Drums", Path: drums)],
+                Discarded: [],
+                DurationSeconds: 1.0,
+                ErrorMessage: null,
+                Traceback: null
+            )
+        );
+
+        var outputs = await _pipeline.RunAsync(
+            MakeJob(input, [], extractDrums: true),
+            progress: null,
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(_tempDir, Assert.Single(_driver.ReceivedRequests).OutputDir);
+        Assert.Equal(Path.Combine(_tempDir, "instrumental (Drums).flac"), Assert.Single(outputs));
+    }
+
+    [Fact]
+    public async Task RunAsync_DrumsOnlyDriverFails_FailsTheJob()
+    {
+        var input = CreateFlacFile("instrumental.flac");
+        _driver.EnqueueRun(FailureResult("CUDA out of memory"));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _pipeline.RunAsync(
+                MakeJob(input, [], extractDrums: true),
+                progress: null,
+                ct: TestContext.Current.CancellationToken
+            )
+        );
+
+        Assert.Contains("CUDA out of memory", ex.Message);
+    }
+
+    [Fact]
+    public async Task RunAsync_DrumsBesidePresetFails_KeepsThePresetStems()
+    {
+        var input = CreateFlacFile("song.flac");
+        var vocals = CreateFlacFile("raw_vocals.flac");
+        _driver.EnqueueRun(SuccessResult(vocals));
+        _driver.EnqueueRun(FailureResult());
+
+        var outputs = await _pipeline.RunAsync(
+            MakeJob(input, [MakeSingleModelPreset("v", "Vocals")], extractDrums: true),
+            progress: null,
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.Single(outputs);
+    }
+
+    // ── Keep set ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void BuildRequest_SingleModelKeepSet_BecomesStemsToKeep()
+    {
+        var request = SeparationPipeline.BuildRequest(
+            Preset.SingleModel("drumsep.ckpt", ["kick", "snare"]),
+            "/tmp/song.flac",
+            "/tmp/out",
+            "FLAC"
+        );
+
+        Assert.Equal(["kick", "snare"], request.StemsToKeep!);
+    }
+
+    [Fact]
+    public void BuildRequest_SingleModelWithoutKeepSet_KeepsEverything() =>
+        Assert.Null(
+            SeparationPipeline
+                .BuildRequest(MakeSingleModelPreset("p", "P"), "/tmp/song.flac", "/tmp/out", "FLAC")
+                .StemsToKeep
+        );
+
+    [Fact]
+    public async Task RunAsync_KeepSetMatchedNothing_FailsNamingWhatWasWritten()
+    {
+        // The driver deletes every stem outside the keep set, so a typo would otherwise succeed
+        // with no files at all.
+        var input = CreateFlacFile("drums.flac");
+        _driver.EnqueueRun(
+            new JobResult(
+                Succeeded: true,
+                Outputs: [],
+                Discarded:
+                [
+                    new JobOutput(Stem: "Kick", Path: Path.Combine(_tempDir, "k.flac")),
+                    new JobOutput(Stem: "Snare", Path: Path.Combine(_tempDir, "s.flac")),
+                ],
+                DurationSeconds: 1.0,
+                ErrorMessage: null,
+                Traceback: null
+            )
+        );
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _pipeline.RunAsync(
+                MakeJob(input, [Preset.SingleModel("drumsep.ckpt", ["cowbell"])]),
+                progress: null,
+                TestContext.Current.CancellationToken
+            )
+        );
+
+        Assert.Contains("Kick, Snare", ex.Message);
+    }
+
+    [Fact]
+    public async Task RunAsync_DrumsOnly_ReportsOneStepAndCompletes()
+    {
+        var input = CreateFlacFile("instrumental.flac");
+        var drums = CreateFlacFile("raw_drums.flac");
+
+        var job = MakeJob(input, [], extractDrums: true);
+        _driver.EnqueueRun(
+            new JobResult(
+                Succeeded: true,
+                Outputs: [new JobOutput(Stem: "Drums", Path: drums)],
+                Discarded: [],
+                DurationSeconds: 1.0,
+                ErrorMessage: null,
+                Traceback: null
+            )
+        );
+
+        var progress = new List<JobUpdate>();
+        await _pipeline.RunAsync(
+            job,
+            new Progress<JobUpdate>(progress.Add),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        // The drum step is the whole job, so it is step 1 of 1 and finishes at 100.
+        var runCounts = progress.Where(u => u.RunCount > 0).Select(u => u.RunCount).Distinct();
+        Assert.Equal([1], runCounts);
+        Assert.All(progress, u => Assert.InRange(u.OverallPercent, 0, 100));
+        Assert.Contains(progress, u => u.Phase == "run_complete" && u.OverallPercent == 100);
+    }
+
     // ── Test 1: Sequence of runs ──────────────────────────────────────────────
 
     [Fact]

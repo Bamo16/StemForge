@@ -128,10 +128,11 @@ public sealed class ModelProfileResolverTests
     // ── Tier 3: filename-derived target (last resort) ──────────────────────────
 
     [Fact]
-    public async Task Resolve_UnknownArchWithFilenameTarget_UsesFilenameTargetOnly()
+    public async Task Resolve_UnknownArchWithNonSplitTarget_UsesFilenameTargetOnly()
     {
-        // An architecture with no default but a recognisable filename target: a single stem tagged
-        // FilenameTarget, no complement (lowest non-unknown confidence).
+        // A target that is not one half of a vocals/instrumental split gets no complement: the
+        // residual of a drums model is not a stem name a user would recognise, and the filename
+        // says nothing about how many stems the model emits.
         var resolver = new ModelProfileResolver();
         var model = Model("mystery_drums_model.bin", "Unknown");
 
@@ -140,6 +141,59 @@ public sealed class ModelProfileResolverTests
         Assert.Equal(["drums"], profile.Stems.Select(s => s.Name));
         Assert.Equal(StemSource.FilenameTarget, profile.Stems.Single().Source);
         Assert.Equal(StemSource.FilenameTarget, profile.Confidence);
+    }
+
+    [Theory]
+    [InlineData("mel_band_roformer_vocals_becruily.ckpt", "vocals", "instrumental")]
+    [InlineData("mel_band_roformer_instrumental_becruily.ckpt", "instrumental", "vocals")]
+    public async Task Resolve_SplitTargetFromFilename_AlsoNamesTheComplement(
+        string filename,
+        string target,
+        string complement
+    )
+    {
+        // The case that made two-stem roformer models report one stem. MDXC is absent from the
+        // tier-2 two-stem list on purpose, since that family also contains genuine multi-stem
+        // models, so a roformer with no bundled stems falls all the way to the filename tier.
+        // Vocals and instrumental are two halves of one split, so each guarantees the other.
+        var resolver = new ModelProfileResolver();
+        var model = Model(filename, "MDXC");
+
+        var profile = await resolver.ResolveAsync(model, TestContext.Current.CancellationToken);
+
+        Assert.Equal([target, complement], profile.Stems.Select(s => s.Name));
+        Assert.All(profile.Stems, s => Assert.Equal(StemSource.FilenameTarget, s.Source));
+    }
+
+    [Fact]
+    public async Task Resolve_ConfigFetchUnavailable_FallsToFilenameTierWithComplement()
+    {
+        // Offline, or any config the source cannot retrieve. This is the ordinary path for a
+        // roformer model rather than an exceptional one, which is why the filename tier has to
+        // report both stems rather than treat the shortfall as rare.
+        var config = new FakeModelConfigSource(null);
+        var resolver = new ModelProfileResolver(config);
+        var model = Model("bs_roformer_vocals_gabox.ckpt", "MDXC");
+
+        var profile = await resolver.ResolveAsync(model, TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, config.CallCount);
+        Assert.Equal(["vocals", "instrumental"], profile.Stems.Select(s => s.Name));
+        Assert.All(profile.Stems, s => Assert.Equal(StemSource.FilenameTarget, s.Source));
+    }
+
+    [Fact]
+    public async Task Resolve_ComplementNeverOutranksTheGuessItCameFrom()
+    {
+        // ADR 0010 keeps the profile advisory. The complement is inferred from a filename guess, so
+        // it must not be reported at a confidence that suggests it was read from a config.
+        var resolver = new ModelProfileResolver();
+        var model = Model("some_vocal_model.bin", "Unknown");
+
+        var profile = await resolver.ResolveAsync(model, TestContext.Current.CancellationToken);
+
+        Assert.Equal(StemSource.FilenameTarget, profile.Confidence);
+        Assert.DoesNotContain(profile.Stems, s => s.Source > StemSource.FilenameTarget);
     }
 
     // ── Unknown ────────────────────────────────────────────────────────────────
@@ -162,15 +216,16 @@ public sealed class ModelProfileResolverTests
     [Fact]
     public async Task Resolve_ConfigDrivenNoStemsNoConfigSource_FallsThroughToFilename()
     {
-        // No config source wired (the default DI state in v0.3.0): a config-driven model with no
-        // benchmark stems must still resolve via the cheaper tiers rather than throwing.
+        // No config source wired at all, as distinct from one that fails to answer: a config-driven
+        // model with no benchmark stems must still resolve via the cheaper tiers rather than
+        // throwing. There is no two-stem default for MDXC, so it lands on the filename tier, which
+        // names the complement as well as the target.
         var resolver = new ModelProfileResolver();
         var model = Model("bs_roformer_vocals_unwa.ckpt", "MDXC");
 
         var profile = await resolver.ResolveAsync(model, TestContext.Current.CancellationToken);
 
-        // No two-stem default for MDXC, so it lands on the filename target tier.
-        Assert.Equal(["vocals"], profile.Stems.Select(s => s.Name));
+        Assert.Equal(["vocals", "instrumental"], profile.Stems.Select(s => s.Name));
         Assert.Equal(StemSource.FilenameTarget, profile.Confidence);
     }
 

@@ -230,6 +230,148 @@ public sealed class SeparateCommandTests : IDisposable
         Assert.Equal(customDir, result.ResolvedOutputDir);
     }
 
+    // ── What counts as work ────────────────────────────────────────────────────
+
+    [Fact]
+    public void HasWorkToDo_PresetGiven_IsTrue() =>
+        Assert.True(SeparateCommand.HasWorkToDo(["vocal_full"], model: null, extractDrums: false));
+
+    [Fact]
+    public void HasWorkToDo_ExtractDrumsAlone_IsTrue() =>
+        // The case this exists for: an already-instrumental source needs only a drum stem, and
+        // requiring a preset alongside meant running a separation just to discard its output.
+        Assert.True(SeparateCommand.HasWorkToDo([], model: null, extractDrums: true));
+
+    [Fact]
+    public void HasWorkToDo_PresetAndExtractDrums_IsTrue() =>
+        Assert.True(SeparateCommand.HasWorkToDo(["vocal_full"], model: null, extractDrums: true));
+
+    [Fact]
+    public void HasWorkToDo_NoPresetsAndNoDrums_IsFalse() =>
+        Assert.False(SeparateCommand.HasWorkToDo([], model: null, extractDrums: false));
+
+    [Fact]
+    public void HasWorkToDo_NullPresetsAndNoDrums_IsFalse() =>
+        // Spectre leaves the array null when the option never appears, so the guard has to accept
+        // null rather than only an empty array.
+        Assert.False(SeparateCommand.HasWorkToDo(null, model: null, extractDrums: false));
+
+    [Fact]
+    public void ValidatePresets_EmptyList_SucceedsWithNoPresets()
+    {
+        // Reachable now that --extract-drums can stand alone; the drum step is not a preset.
+        var result = SeparateCommand.ValidatePresets([]);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Empty(result.Presets!);
+    }
+
+    // ── --model and --keep ─────────────────────────────────────────────────────
+
+    private static readonly ModelInfo DrumSep = new(
+        "MDX23C-DrumSep-aufr33-jarredou.ckpt",
+        "MDXC",
+        "MDX23C Model: MDX23C DrumSep by aufr33-jarredou",
+        [
+            new StemSdr("kick", null),
+            new StemSdr("snare", null),
+            new StemSdr("toms", null),
+            new StemSdr("hh", null),
+            new StemSdr("ride", null),
+            new StemSdr("crash", null),
+        ]
+    );
+
+    [Fact]
+    public void HasWorkToDo_ModelAlone_IsTrue() =>
+        Assert.True(SeparateCommand.HasWorkToDo(null, model: "x.ckpt", extractDrums: false));
+
+    [Fact]
+    public void ValidateModel_NoModelNoKeep_AddsNoRun()
+    {
+        var result = SeparateCommand.ValidateModel(null, null, [DrumSep]);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Null(result.Preset);
+    }
+
+    [Fact]
+    public void ValidateModel_KeepWithoutModel_Fails() =>
+        Assert.Equal(1, SeparateCommand.ValidateModel(null, ["kick"], [DrumSep]).ExitCode);
+
+    [Fact]
+    public void ValidateModel_KnownModel_TakesCatalogCasingAndKeepSet()
+    {
+        var result = SeparateCommand.ValidateModel(
+            "mdx23c-drumsep-aufr33-jarredou.CKPT",
+            ["kick", "snare", "Kick"],
+            [DrumSep]
+        );
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Same(DrumSep, result.Info);
+        Assert.Equal(DrumSep.Filename, result.Preset!.PrimaryModel);
+        Assert.Equal(["kick", "snare"], Assert.Single(result.Preset.Steps).KeepSet!);
+    }
+
+    [Fact]
+    public void ValidateModel_UnknownModel_FailsAndSuggestsNearNames()
+    {
+        var result = SeparateCommand.ValidateModel("DrumSep", [], [DrumSep]);
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains(DrumSep.Filename, result.ErrorMessage);
+    }
+
+    [Fact]
+    public void ValidateModel_UnreadableCatalog_RunsTheNameUnchecked()
+    {
+        // A broken toolchain must not refuse the run; the driver reports an unknown name itself.
+        var result = SeparateCommand.ValidateModel("anything.ckpt", ["kick"], []);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Null(result.Info);
+        Assert.Equal("anything.ckpt", result.Preset!.PrimaryModel);
+    }
+
+    [Fact]
+    public void ValidateModel_KeepStemTheCatalogDoesNotList_IsNotRefused()
+    {
+        // The model profile is advisory (ADR 0010): audio-separator decides what a model writes.
+        var result = SeparateCommand.ValidateModel(DrumSep.Filename, ["cowbell"], [DrumSep]);
+
+        Assert.Equal(0, result.ExitCode);
+    }
+
+    [Fact]
+    public void KeepStemWarning_NamesTheUnexpectedStems()
+    {
+        var profile = new ModelProfile(
+            DrumSep.Filename,
+            "MDXC",
+            [
+                new ProfileStem("kick", StemSource.Config),
+                new ProfileStem("snare", StemSource.Config),
+            ],
+            IsComposite: false
+        );
+
+        var warning = SeparateCommand.KeepStemWarning(profile, ["Kick", "cowbell"]);
+
+        Assert.NotNull(warning);
+        Assert.Contains("not cowbell", warning);
+        Assert.Null(SeparateCommand.KeepStemWarning(profile, ["KICK", "snare"]));
+    }
+
+    [Fact]
+    public void KeepStemWarning_UnknownProfile_SaysNothing() =>
+        Assert.Null(
+            SeparateCommand.KeepStemWarning(
+                new ModelProfile("x.ckpt", "MDXC", [], IsComposite: false),
+                ["kick"]
+            )
+        );
+
     // ── Pipeline invocation shape ──────────────────────────────────────────────
 
     [Fact]

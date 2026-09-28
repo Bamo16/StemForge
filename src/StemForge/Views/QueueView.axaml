@@ -110,7 +110,7 @@
                 <Grid ColumnDefinitions="2.4*,1.5*,3*,80" Height="32">
                     <TextBlock Grid.Column="0" Classes="colHeader" Text="FILE"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1" Classes="colHeader" Text="PRESET"
+                    <TextBlock Grid.Column="1" Classes="colHeader" Text="OUTPUT"
                                VerticalAlignment="Center" />
                     <TextBlock Grid.Column="2" Classes="colHeader" Text="PROGRESS"
                                VerticalAlignment="Center" />
@@ -152,9 +152,9 @@
                                                    VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis" />
 
-                                        <!-- Preset -->
+                                        <!-- Output -->
                                         <TextBlock Grid.Column="1" Classes="mono"
-                                                   Text="{Binding PresetSummary}"
+                                                   Text="{Binding OutputSummary}"
                                                    FontSize="11"
                                                    Foreground="{DynamicResource TextPlaceholderBrush}"
                                                    VerticalAlignment="Center"
