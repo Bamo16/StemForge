@@ -44,13 +44,107 @@ public partial class SeparateViewModel : PageViewModelBase
     [ObservableProperty]
     public partial int SelectedCount { get; set; }
 
-    public string SelectedCountLabel =>
-        SelectedCount == 0
-            ? "No presets selected"
-            // The count is rendered separately in the view, so pluralize the noun without it.
-            : $" {"preset".ToQuantity(SelectedCount, ShowQuantityAs.None)} selected";
+    private int _selectedModelCount;
 
-    public bool HasSelection => SelectedCount > 0;
+    /// <summary>What the run as set up now would write; drives the footer and whether Run is enabled.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RunWritesTip))]
+    public partial RunSummary Summary { get; set; } =
+        new(0, 0, DrumStemTicked: false, SourceTicked: false, RunInput.None, CanSeparate: false);
+
+    private RunInput CurrentInput =>
+        !string.IsNullOrWhiteSpace(UrlInput) ? RunInput.Url
+        : HasInputFile ? RunInput.File
+        : RunInput.None;
+
+    public bool IsDrumStemEnabled => _toolState.IsAudioSeparatorAvailable;
+
+    public bool IsSourceAudioEnabled => CurrentInput is not RunInput.File;
+
+    public string DrumStemTip =>
+        IsDrumStemEnabled
+            ? $"Writes a drum-only stem with the drum model set in Settings ({Path.GetFileNameWithoutExtension(_settings.DrumExtractionModel)}). "
+                + "Works on its own, no preset needed. Handy as a transient reference for warp markers."
+            : "Needs audio-separator. Re-run the setup wizard to install it.";
+
+    public string SourceAudioTip =>
+        IsSourceAudioEnabled
+            ? "Saves the downloaded audio, in the format chosen beside it. On its own, this just fetches the track, with no separation."
+            : "Only for URL inputs: a local file is already the source.";
+
+    /// <summary>The files this run will create, named the way the pipeline will name them.</summary>
+    public string? RunWritesTip
+    {
+        get
+        {
+            if (!Summary.HasOutput)
+                return null;
+
+            var ext = FfmpegArgs.Extension(StemOutputFormat);
+            var title = CurrentInput switch
+            {
+                RunInput.Url when _cachedUrlMeta is { } meta => meta.BaseName,
+                RunInput.File when InputFilePath is { } file => Path.GetFileNameWithoutExtension(
+                    file
+                ),
+                _ => "{title}",
+            };
+
+            var lines = new List<string>();
+            if (Summary.Source)
+                lines.Add($"Source audio: {title}.{ext}{SourceFormatNote(ext)}");
+            if (Summary.Drums)
+                lines.Add(
+                    $"Drum stem: {OutputNamer.CleanName(title, "Drums")}.{ext}, with \" (2)\" added if the name is taken"
+                );
+            if (Summary.Presets > 0)
+                foreach (var preset in SelectedPresets())
+                    lines.Add($"{preset.Label}: {PresetStemName(preset, title)}.{ext}");
+
+            lines.Add($"to {ExpandPath(OutputPath)}");
+            return string.Join('\n', lines);
+        }
+    }
+
+    // " (AAC LC 258 kb/s, written as FLAC)", from the chips for whichever format will be fetched.
+    private string SourceFormatNote(string ext) =>
+        (UrlCodec, UrlBitrate) switch
+        {
+            ({ } codec, { } kbps) => $" ({codec} {kbps}, written as {ext.ToUpperInvariant()})",
+            ({ } codec, null) => $" ({codec}, written as {ext.ToUpperInvariant()})",
+            _ => string.Empty,
+        };
+
+    // A built-in preset's file is named for its target stem; any other preset names each stem.
+    private static string PresetStemName(Preset preset, string title) =>
+        preset switch
+        {
+            { Mode: SeparationMode.BuiltinPreset, Category: PresetCategory.Vocals } =>
+                SeparationPipeline.DesiredBaseName(preset, "Vocals", title),
+            { Mode: SeparationMode.BuiltinPreset } => SeparationPipeline.DesiredBaseName(
+                preset,
+                "Instrumental",
+                title
+            ),
+            _ => SeparationPipeline.DesiredBaseName(preset, "{stem}", title),
+        };
+
+    private void RefreshSummary()
+    {
+        Summary = new RunSummary(
+            SelectedCount,
+            _selectedModelCount,
+            ExtractDrums,
+            KeepSourceFile,
+            CurrentInput,
+            _toolState.IsAudioSeparatorAvailable
+        );
+        OnPropertyChanged(nameof(IsDrumStemEnabled));
+        OnPropertyChanged(nameof(IsSourceAudioEnabled));
+        OnPropertyChanged(nameof(DrumStemTip));
+        OnPropertyChanged(nameof(SourceAudioTip));
+        NotifyCanRunChanged();
+    }
 
     private readonly JobQueueService _queue;
     private readonly AppSettings _settings;
@@ -115,9 +209,8 @@ public partial class SeparateViewModel : PageViewModelBase
     {
         get
         {
-            var missing = new List<string>(3);
-            if (!_toolState.IsAudioSeparatorAvailable)
-                missing.Add("audio-separator");
+            // No audio-separator here: a source-only run needs only yt-dlp and ffmpeg.
+            var missing = new List<string>(2);
             if (!_toolState.IsFfmpegAvailable)
                 missing.Add("ffmpeg");
             if (!_toolState.IsYtdlpAvailable)
@@ -257,6 +350,20 @@ public partial class SeparateViewModel : PageViewModelBase
     [ObservableProperty]
     public partial bool ExtractDrums { get; set; }
 
+    partial void OnStemOutputFormatChanged(AudioFormat value) =>
+        OnPropertyChanged(nameof(RunWritesTip));
+
+    partial void OnKeepSourceFileChanged(bool value)
+    {
+        RefreshSummary();
+        if (_settings.KeepSourceFile == value)
+            return;
+        _settings.KeepSourceFile = value;
+        _ = _settings.SaveAsync();
+    }
+
+    partial void OnExtractDrumsChanged(bool value) => RefreshSummary();
+
     public IReadOnlyList<AudioFormat> AudioFormatOptions { get; } =
     [AudioFormat.Flac, AudioFormat.Wav, AudioFormat.Mp3];
 
@@ -342,7 +449,7 @@ public partial class SeparateViewModel : PageViewModelBase
     }
 
     public bool CanStartRun =>
-        SelectedCount > 0
+        Summary.HasOutput
         && (
             !string.IsNullOrWhiteSpace(InputFilePath)
             || (IsUrlInputEnabled && _cachedUrlMeta is not null)
@@ -374,6 +481,7 @@ public partial class SeparateViewModel : PageViewModelBase
         _presetCatalog = presetCatalog;
         OutputPath = paths.OutputDirectory;
         StemOutputFormat = settings.DefaultAudioFormat;
+        KeepSourceFile = settings.KeepSourceFile;
         IsUrlInputEnabled = _toolState.CanDownloadFromUrl;
         IsLocalInputEnabled = _toolState.IsAudioSeparatorAvailable && _toolState.IsFfmpegAvailable;
         HasCompletedSetup = _settings.FirstRunComplete;
@@ -386,6 +494,7 @@ public partial class SeparateViewModel : PageViewModelBase
             // bindings re-evaluate the text and visibility flags.
             OnPropertyChanged(nameof(LocalInputBlockedMessage));
             OnPropertyChanged(nameof(UrlInputBlockedMessage));
+            RefreshSummary();
         };
         Categories = new ObservableCollection<PresetCategoryGroup>(
             BuildGroups(PresetCatalog.BuiltIn)
@@ -555,23 +664,17 @@ public partial class SeparateViewModel : PageViewModelBase
 
     private void RecomputeSelectedCount()
     {
-        SelectedCount =
-            Categories.Sum(g => g.Items.Count(i => i.IsSelected))
-            + UserPresetItems.Count(i => i.IsSelected);
-    }
-
-    partial void OnSelectedCountChanged(int value)
-    {
-        OnPropertyChanged(nameof(SelectedCountLabel));
-        OnPropertyChanged(nameof(HasSelection));
-        NotifyCanRunChanged();
+        var selected = SelectedPresets();
+        _selectedModelCount = selected.Sum(preset => preset.ModelCount);
+        SelectedCount = selected.Count;
+        RefreshSummary();
     }
 
     partial void OnInputFilePathChanged(string? value)
     {
         OnPropertyChanged(nameof(HasInputFile));
         OnPropertyChanged(nameof(InputFileName));
-        NotifyCanRunChanged();
+        RefreshSummary();
 
         if (value is not null)
         {
@@ -600,7 +703,7 @@ public partial class SeparateViewModel : PageViewModelBase
 
     partial void OnUrlInputChanged(string value)
     {
-        NotifyCanRunChanged();
+        RefreshSummary();
 
         _urlCheckCts?.Cancel();
         _urlCheckCts = null;
@@ -656,6 +759,7 @@ public partial class SeparateViewModel : PageViewModelBase
     private void NotifyCanRunChanged()
     {
         OnPropertyChanged(nameof(CanStartRun));
+        OnPropertyChanged(nameof(RunWritesTip));
         RunCommand.NotifyCanExecuteChanged();
         AddToQueueCommand.NotifyCanExecuteChanged();
     }
@@ -819,7 +923,8 @@ public partial class SeparateViewModel : PageViewModelBase
         if (string.IsNullOrWhiteSpace(InputFilePath) && string.IsNullOrWhiteSpace(UrlInput))
             return false;
 
-        var selectedPresets = SelectedPresets();
+        // Effective values: a preset or drum stem that cannot run (no audio-separator) is left out.
+        List<Preset> selectedPresets = Summary.Presets > 0 ? SelectedPresets() : [];
         var hasUrl = !string.IsNullOrWhiteSpace(UrlInput);
 
         if (hasUrl)
@@ -857,9 +962,9 @@ public partial class SeparateViewModel : PageViewModelBase
                     ExpandPath(OutputPath),
                     _paths.ModelsDirectory,
                     StemOutputFormat,
-                    KeepSourceFile,
+                    Summary.Source,
                     PreResolvedMeta: preResolvedMeta,
-                    ExtractDrums: ExtractDrums
+                    ExtractDrums: Summary.Drums
                 )
             );
 
@@ -879,7 +984,7 @@ public partial class SeparateViewModel : PageViewModelBase
                     ExpandPath(OutputPath),
                     _paths.ModelsDirectory,
                     StemOutputFormat,
-                    ExtractDrums: ExtractDrums
+                    ExtractDrums: Summary.Drums
                 )
             );
 
@@ -890,8 +995,8 @@ public partial class SeparateViewModel : PageViewModelBase
     }
 
     /// <summary>
-    /// Queues one job per path. If only one path and no presets are selected, just sets
-    /// <see cref="InputFilePath"/> so the user can pick presets before queuing manually.
+    /// Queues one job per path. With one path, or nothing that separates ticked, it just sets
+    /// <see cref="InputFilePath"/> so the user can choose outputs before queuing manually.
     /// </summary>
     public void AddFilesToQueue(IEnumerable<string> filePaths)
     {
@@ -899,13 +1004,13 @@ public partial class SeparateViewModel : PageViewModelBase
         if (paths.Count == 0)
             return;
 
-        if (paths.Count == 1 || SelectedCount == 0)
+        if (paths.Count == 1 || Summary is { Presets: 0, Drums: false })
         {
             InputFilePath = paths[0];
             return;
         }
 
-        var presets = SelectedPresets();
+        List<Preset> presets = Summary.Presets > 0 ? SelectedPresets() : [];
         foreach (var path in paths)
         {
             _queue.Enqueue(
@@ -917,7 +1022,7 @@ public partial class SeparateViewModel : PageViewModelBase
                     ExpandPath(OutputPath),
                     _paths.ModelsDirectory,
                     StemOutputFormat,
-                    ExtractDrums: ExtractDrums
+                    ExtractDrums: Summary.Drums
                 )
             );
         }

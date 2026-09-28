@@ -376,15 +376,6 @@
                                FontSize="11"
                                Foreground="{DynamicResource ErrorBrush}" />
 
-                    <!-- Job options (URL-only) -->
-                    <StackPanel Orientation="Horizontal" Spacing="12"
-                                IsVisible="{Binding IsUrlInputEnabled}">
-                        <CheckBox IsChecked="{Binding KeepSourceFile, Mode=TwoWay}"
-                                  Content="Keep source file"
-                                  FontSize="11"
-                                  ToolTip.Tip="Save the downloaded source audio alongside the separation outputs." />
-                    </StackPanel>
-
                     <!-- Format status row -->
                     <Panel IsVisible="{Binding ShowUrlFormatRow}">
                         <!-- Checking state: spinner arc + label -->
@@ -895,10 +886,10 @@
                 <Border Grid.Column="3" Width="1" Height="24"
                         Background="{DynamicResource Bg3Brush}"
                         VerticalAlignment="Center" />
-                <!-- Output configuration: stem format + extra drum stem option -->
+                <!-- Output configuration: format, then the two outputs besides preset stems -->
                 <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <TextBlock Text="Stems:"
+                        <TextBlock Text="Format:"
                                    FontSize="11"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    VerticalAlignment="Center" />
@@ -908,10 +899,27 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                         <CheckBox IsChecked="{Binding ExtractDrums, Mode=TwoWay}"
-                                  Content="Add drum stem to output"
+                                  IsEnabled="{Binding IsDrumStemEnabled}"
+                                  Content="Drum stem"
                                   FontSize="11" />
-                        <Border Classes="infoIcon"
-                                ToolTip.Tip="Saves a separate drum-only file alongside your selected stems. Useful as a transient reference when warping audio in DAWs — drum hits give clearer warp-marker hints than vocal or instrumental clips alone.">
+                        <Border Classes="infoIcon" Background="Transparent"
+                                ToolTip.Tip="{Binding DrumStemTip}">
+                            <TextBlock Text="i"
+                                       FontSize="9"
+                                       FontStyle="Italic"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                        <CheckBox IsChecked="{Binding KeepSourceFile, Mode=TwoWay}"
+                                  IsEnabled="{Binding IsSourceAudioEnabled}"
+                                  Content="Source audio"
+                                  FontSize="11" />
+                        <Border Classes="infoIcon" Background="Transparent"
+                                ToolTip.Tip="{Binding SourceAudioTip}">
                             <TextBlock Text="i"
                                        FontSize="9"
                                        FontStyle="Italic"
@@ -925,16 +933,39 @@
                 <Border Grid.Column="5" Width="1" Height="24"
                         Background="{DynamicResource Bg3Brush}"
                         VerticalAlignment="Center" />
-                <!-- Preset count -->
-                <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding SelectedCount}"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource AccentBrush}"
-                               IsVisible="{Binding HasSelection}" />
-                    <TextBlock Text="{Binding SelectedCountLabel}"
-                               FontSize="12"
-                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                <!-- Run summary: what the run writes, then what it costs. The minimum width covers
+                every usual state, so ticking a box does not shift the footer as the text changes. -->
+                <StackPanel Grid.Column="6" MinWidth="165" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Summary.Presets}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AccentBrush}"
+                                   IsVisible="{Binding Summary.ShowsPresetCount}" />
+                        <TextBlock Text="{Binding Summary.Headline}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   IsVisible="{Binding !Summary.IsHeadlineStandalone}" />
+                        <TextBlock Text="{Binding Summary.Headline}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   IsVisible="{Binding Summary.IsHeadlineStandalone}" />
+                        <Border Classes="infoIcon" Background="Transparent"
+                                Margin="6,0,0,0"
+                                IsVisible="{Binding Summary.HasOutput}"
+                                ToolTip.Tip="{Binding RunWritesTip}">
+                            <TextBlock Text="i"
+                                       FontSize="9"
+                                       FontStyle="Italic"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="{Binding Summary.Detail}"
+                               FontSize="10"
+                               Foreground="{DynamicResource TextPlaceholderBrush}" />
                 </StackPanel>
                 <!-- Action buttons -->
                 <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
@@ -942,7 +973,9 @@
                             Content="Add to Queue"
                             Command="{Binding AddToQueueCommand}" />
                     <Button Classes="accent"
-                            Content="▶  Run"
+                            MinWidth="118"
+                            HorizontalContentAlignment="Center"
+                            Content="{Binding Summary.PrimaryActionLabel}"
                             Command="{Binding RunCommand}" />
                 </StackPanel>
             </Grid>

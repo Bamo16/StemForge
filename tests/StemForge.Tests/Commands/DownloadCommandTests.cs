@@ -201,6 +201,25 @@ public sealed class DownloadCommandTests : IDisposable
     // ── No separation is performed ────────────────────────────────────────────
 
     [Fact]
+    public async Task RunAsync_SourceOnlyJob_WritesWhatTheDownloadCommandWrites()
+    {
+        var (pipeline, driver, _) = BuildPipeline(_tempDir);
+        var job = MakeJob(_tempDir) with { KeepSourceFile = true };
+
+        var outputs = await pipeline.RunAsync(
+            job,
+            progress: null,
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(0, driver.CallCount);
+        Assert.Equal(
+            Path.Combine(_tempDir, $"{job.PreResolvedMeta!.BaseName}.flac"),
+            Assert.Single(outputs)
+        );
+    }
+
+    [Fact]
     public async Task DownloadOnlyAsync_DoesNotInvokeSeparatorDriver()
     {
         var (pipeline, driver, _) = BuildPipeline(_tempDir);

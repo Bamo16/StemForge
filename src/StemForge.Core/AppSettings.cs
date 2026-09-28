@@ -74,6 +74,9 @@ public sealed class AppSettings
     /// <summary>Default download format for URL-sourced audio (yt-dlp + ffmpeg).</summary>
     public AudioFormat DefaultAudioFormat { get; set; } = AudioFormat.Flac;
 
+    /// <summary>The Separate view's "Source audio" tick, remembered from the last session.</summary>
+    public bool KeepSourceFile { get; set; }
+
     // ── Drum extraction ───────────────────────────────────────────────────────
 
     /// <summary>audio-separator model used for per-job drum stem extraction.</summary>

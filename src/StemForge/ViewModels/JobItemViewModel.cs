@@ -8,7 +8,7 @@ public partial class JobItemViewModel : ObservableObject
 {
     public JobRecord Job { get; }
 
-    public string PresetSummary => Job.PresetSummary;
+    public string OutputSummary => Job.OutputSummary;
 
     [ObservableProperty]
     public partial string InputFileName { get; set; }

@@ -153,6 +153,68 @@ public sealed class SeparationPipelineTests : IDisposable
         Assert.Equal(Path.Combine(_tempDir, "instrumental (Drums).flac"), Assert.Single(outputs));
     }
 
+    [Fact]
+    public async Task RunAsync_DrumsOnlyWithCacheOnly_WritesBesideTheOutputs()
+    {
+        // The cache is for a drum stem kept alongside preset stems; on its own the stem is the result.
+        _settings.DrumStemLocation = DrumStemLocation.CacheOnly;
+        var input = CreateFlacFile("instrumental.flac");
+        var drums = CreateFlacFile("raw_drums.flac");
+        _driver.EnqueueRun(
+            new JobResult(
+                Succeeded: true,
+                Outputs: [new JobOutput(Stem: "Drums", Path: drums)],
+                Discarded: [],
+                DurationSeconds: 1.0,
+                ErrorMessage: null,
+                Traceback: null
+            )
+        );
+
+        var outputs = await _pipeline.RunAsync(
+            MakeJob(input, [], extractDrums: true),
+            progress: null,
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(_tempDir, Assert.Single(_driver.ReceivedRequests).OutputDir);
+        Assert.Equal(Path.Combine(_tempDir, "instrumental (Drums).flac"), Assert.Single(outputs));
+    }
+
+    [Fact]
+    public async Task RunAsync_DrumsOnlyDriverFails_FailsTheJob()
+    {
+        var input = CreateFlacFile("instrumental.flac");
+        _driver.EnqueueRun(FailureResult("CUDA out of memory"));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _pipeline.RunAsync(
+                MakeJob(input, [], extractDrums: true),
+                progress: null,
+                ct: TestContext.Current.CancellationToken
+            )
+        );
+
+        Assert.Contains("CUDA out of memory", ex.Message);
+    }
+
+    [Fact]
+    public async Task RunAsync_DrumsBesidePresetFails_KeepsThePresetStems()
+    {
+        var input = CreateFlacFile("song.flac");
+        var vocals = CreateFlacFile("raw_vocals.flac");
+        _driver.EnqueueRun(SuccessResult(vocals));
+        _driver.EnqueueRun(FailureResult());
+
+        var outputs = await _pipeline.RunAsync(
+            MakeJob(input, [MakeSingleModelPreset("v", "Vocals")], extractDrums: true),
+            progress: null,
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.Single(outputs);
+    }
+
     // ── Keep set ──────────────────────────────────────────────────────────────
 
     [Fact]

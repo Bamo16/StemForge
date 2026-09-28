@@ -37,6 +37,11 @@ public sealed class SeparationPipeline(
         CancellationToken ct
     )
     {
+        // A job that asks only for the source is a download, and goes the way
+        // `stemforge-cli download` does: named, tagged and given cover art identically.
+        if (job.IsSourceOnly)
+            return [await DownloadOnlyAsync(job, progress, ct)];
+
         var allOutputFiles = new List<string>();
         SourceTagInfo? sourceInfo = null;
         var version = _appInfo.FullVersion;
@@ -253,10 +258,12 @@ public sealed class SeparationPipeline(
                 }
             );
 
-            var drumOutDir =
-                _settings.DrumStemLocation == DrumStemLocation.WithStems
-                    ? job.OutputDir
-                    : _paths.DrumCacheDirectory;
+            // The cache is for a drum stem kept alongside preset stems. In a drums-only run the
+            // stem is the whole result, so it goes beside the outputs whatever the setting says.
+            var drumsOnly = presets.Count == 0;
+            var drumsBesideOutputs =
+                drumsOnly || _settings.DrumStemLocation == DrumStemLocation.WithStems;
+            var drumOutDir = drumsBesideOutputs ? job.OutputDir : _paths.DrumCacheDirectory;
 
             Directory.CreateDirectory(drumOutDir);
 
@@ -376,10 +383,19 @@ public sealed class SeparationPipeline(
                         drumPreset.DisplayName,
                         version
                     );
-                    if (_settings.DrumStemLocation == DrumStemLocation.WithStems)
+                    if (drumsBesideOutputs)
                         allOutputFiles.Add(renamedPath);
                 }
+                else if (drumsOnly)
+                    throw new InvalidOperationException(
+                        $"{_settings.DrumExtractionModel} wrote no drum stem."
+                    );
             }
+            // Beside presets a failed drum stem is a missing extra; on its own it is the job failing.
+            else if (drumsOnly)
+                throw new InvalidOperationException(
+                    drumResult.ErrorMessage ?? "Drum extraction failed"
+                );
             else
             {
                 AppLogger.Warning("job", $"Drum extraction failed: {drumResult.ErrorMessage}");
@@ -570,7 +586,7 @@ public sealed class SeparationPipeline(
     /// their <em>target</em> stem (e.g. "Title (Vocal - Balanced)") and the clean default for any
     /// residual stem, matching the convention the built-in catalog has always emitted.
     /// </summary>
-    internal static string DesiredBaseName(Preset preset, string stem, string title)
+    public static string DesiredBaseName(Preset preset, string stem, string title)
     {
         if (preset.Mode == SeparationMode.BuiltinPreset)
         {
