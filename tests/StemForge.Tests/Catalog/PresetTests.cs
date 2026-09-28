@@ -90,6 +90,18 @@ public sealed class PresetTests
         Assert.Equal("Drums - htdemucs_ft", preset.DisplayName);
     }
 
+    [Fact]
+    public void SingleModel_CarriesTheModelAndKeepSetOnOneStep()
+    {
+        var preset = Preset.SingleModel("MDX23C-DrumSep-aufr33-jarredou.ckpt", ["kick", "snare"]);
+
+        var step = Assert.Single(preset.Steps);
+        Assert.Equal(["MDX23C-DrumSep-aufr33-jarredou.ckpt"], step.Models);
+        Assert.Equal(["kick", "snare"], step.KeepSet!);
+        Assert.Equal("MDX23C-DrumSep-aufr33-jarredou.ckpt", preset.PrimaryModel);
+        Assert.Equal("MDX23C-DrumSep-aufr33-jarredou", preset.DisplayName);
+    }
+
     private static Preset BuiltinPreset(string id, string label, PresetCategory category) =>
         new(
             Id: id,

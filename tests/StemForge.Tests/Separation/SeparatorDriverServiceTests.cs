@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 
 namespace StemForge.Tests.Separation;
 
@@ -101,6 +102,31 @@ public sealed class SeparatorDriverServiceTests
         BufferClear(buffer);
 
         Assert.Empty(BufferSnapshot(buffer));
+    }
+
+    // ── BuildRunCommand ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void BuildRunCommand_ModelRun_SendsTheKeepSet()
+    {
+        var request = new JobRequest(
+            "/tmp/song.flac",
+            "/tmp/out",
+            "FLAC",
+            PresetId: null,
+            Models: ["drumsep.ckpt"],
+            Algorithm: null,
+            StemsToKeep: ["kick", "snare"]
+        );
+
+        var json = JsonSerializer.SerializeToElement(
+            SeparatorDriverService.BuildRunCommand("job_1", request)
+        );
+
+        Assert.Equal(
+            ["kick", "snare"],
+            json.GetProperty("stems_to_keep").EnumerateArray().Select(stem => stem.GetString())
+        );
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

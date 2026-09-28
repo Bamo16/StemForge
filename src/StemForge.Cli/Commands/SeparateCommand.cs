@@ -24,6 +24,12 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
         [CommandOption("--preset")]
         public string[] PresetIds { get; set; } = [];
 
+        [CommandOption("--model")]
+        public string? Model { get; set; }
+
+        [CommandOption("--keep")]
+        public string[] KeepStems { get; set; } = [];
+
         [CommandOption("--output")]
         public string? OutputDir { get; set; }
 
@@ -70,9 +76,11 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
         if (!string.IsNullOrWhiteSpace(settings.CookiesFromBrowser))
             appSettings.YtdlpCookiesFromBrowser = settings.CookiesFromBrowser;
 
-        if (!HasWorkToDo(settings.PresetIds, settings.ExtractDrums))
+        if (!HasWorkToDo(settings.PresetIds, settings.Model, settings.ExtractDrums))
         {
-            Console.Error.WriteLine("Error: --preset is required unless --extract-drums is given.");
+            Console.Error.WriteLine(
+                "Error: give at least one of --preset, --model or --extract-drums."
+            );
             return 1;
         }
 
@@ -97,7 +105,32 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
             return presetValidation.ExitCode;
         }
 
-        var resolvedPresets = presetValidation.Presets!;
+        // Only a --model run pays for listing the model catalog.
+        var models = settings.Model is { Length: > 0 }
+            ? await ResolveModelsAsync(
+                provider.GetRequiredService<ModelCatalogService>(),
+                cts.Token
+            )
+            : [];
+
+        var modelValidation = ValidateModel(settings.Model, settings.KeepStems, models);
+        if (modelValidation.ExitCode != 0)
+        {
+            Console.Error.WriteLine($"Error: {modelValidation.ErrorMessage}");
+            return modelValidation.ExitCode;
+        }
+
+        if (modelValidation is { Info: { } modelInfo } && settings.KeepStems is { Length: > 0 })
+            await WarnOnUnexpectedKeepStemsAsync(
+                provider.GetRequiredService<ModelProfileResolver>(),
+                modelInfo,
+                settings.KeepStems,
+                cts.Token
+            );
+
+        IReadOnlyList<Preset> resolvedPresets = modelValidation.Preset is { } modelRun
+            ? [.. presetValidation.Presets!, modelRun]
+            : presetValidation.Presets!;
 
         // Resolve format.
         var formatValidation = ValidateFormat(settings.Format, appSettings);
@@ -305,16 +338,115 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
     }
 
     /// <summary>
-    /// Whether the invocation asks for any separation at all.
-    ///
-    /// <c>--extract-drums</c> is a run in its own right, not a modifier on a preset. A source that
-    /// is already an instrumental needs a drum stem and nothing else, and requiring a preset
-    /// alongside it meant running a separation purely to satisfy the flag and deleting its output
-    /// afterwards. The pipeline has always supported this shape: with no presets it reports one
-    /// step, and its model-weight total is already floored at 1.
+    /// Whether the invocation asks for any separation at all; <c>--model</c> and
+    /// <c>--extract-drums</c> are runs in their own right, not modifiers on a preset.
     /// </summary>
-    internal static bool HasWorkToDo(string[]? presetIds, bool extractDrums) =>
-        presetIds is { Length: > 0 } || extractDrums;
+    internal static bool HasWorkToDo(string[]? presetIds, string? model, bool extractDrums) =>
+        presetIds is { Length: > 0 } || !string.IsNullOrWhiteSpace(model) || extractDrums;
+
+    /// <summary>
+    /// Resolves <c>--model</c> and <c>--keep</c> into a single-model run, checking the file name
+    /// against <paramref name="catalog"/> unless it is empty (unreadable). Kept stems are not checked.
+    /// </summary>
+    internal static ModelValidationOutcome ValidateModel(
+        string? model,
+        string[]? keepStems,
+        IReadOnlyList<ModelInfo> catalog
+    )
+    {
+        IReadOnlyList<string> keep =
+        [
+            .. (keepStems ?? []).Distinct(StringComparer.OrdinalIgnoreCase),
+        ];
+
+        if (string.IsNullOrWhiteSpace(model))
+            return keep.Count == 0
+                ? ModelValidationOutcome.Ok(null, null)
+                : ModelValidationOutcome.Fail(
+                    "--keep applies to a --model run; a built-in preset keeps a fixed stem."
+                );
+
+        if (catalog.Count == 0)
+            return ModelValidationOutcome.Ok(Preset.SingleModel(model, keep), null);
+
+        if (
+            catalog.FirstOrDefault(info =>
+                info.Filename.Equals(model, StringComparison.OrdinalIgnoreCase)
+            )
+            is not { } match
+        )
+            return ModelValidationOutcome.Fail(UnknownModelMessage(model, catalog));
+
+        return ModelValidationOutcome.Ok(Preset.SingleModel(match.Filename, keep), match);
+    }
+
+    /// <summary>
+    /// The warning for kept stems the model profile does not predict, or null when there are none
+    /// or the profile names no stems. Advisory only (ADR 0010), so it never stops the run.
+    /// </summary>
+    internal static string? KeepStemWarning(ModelProfile profile, IReadOnlyList<string> keepStems)
+    {
+        var unexpected = keepStems
+            .Where(kept =>
+                !profile.Stems.Any(stem =>
+                    stem.Name.Equals(kept, StringComparison.OrdinalIgnoreCase)
+                )
+            )
+            .ToList();
+
+        return profile.IsUnknown || unexpected is []
+            ? null
+            : $"{profile.Filename} is expected to write {string.Join(", ", profile.Stems.Select(stem => stem.Name))}, "
+                + $"not {string.Join(", ", unexpected)}. Running anyway; the input fails if no kept stem is written.";
+    }
+
+    private static string UnknownModelMessage(string model, IReadOnlyList<ModelInfo> catalog)
+    {
+        var name = Path.GetFileNameWithoutExtension(model);
+        var near = catalog
+            .Where(info => info.Filename.Contains(name, StringComparison.OrdinalIgnoreCase))
+            .Select(info => info.Filename)
+            .Take(5)
+            .ToList();
+
+        return near is []
+            ? $"Unknown model '{model}'. Give the model's file name, for example MDX23C-DrumSep-aufr33-jarredou.ckpt."
+            : $"Unknown model '{model}'. Did you mean {string.Join(", ", near)}?";
+    }
+
+    private static async Task WarnOnUnexpectedKeepStemsAsync(
+        ModelProfileResolver resolver,
+        ModelInfo model,
+        string[] keepStems,
+        CancellationToken ct
+    )
+    {
+        if (KeepStemWarning(await resolver.ResolveAsync(model, ct), keepStems) is { } warning)
+            Console.Error.WriteLine($"Warning: {warning}");
+    }
+
+    /// <summary>
+    /// The audio-separator model catalog, or empty when it cannot be read, in which case
+    /// <c>--model</c> goes unchecked and the driver reports an unknown name.
+    /// </summary>
+    private static async Task<IReadOnlyList<ModelInfo>> ResolveModelsAsync(
+        ModelCatalogService catalog,
+        CancellationToken ct
+    )
+    {
+        try
+        {
+            return await catalog.ListModelsAsync(ct: ct);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning(
+                "model",
+                $"Model catalog unavailable ({ex.Message}); --model is not checked."
+            );
+            return [];
+        }
+    }
 
     /// <summary>
     /// Resolves the catalog to validate against: the live audio-separator catalog where
@@ -457,6 +589,20 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
 
         internal static PresetValidationOutcome Ok(IReadOnlyList<Preset> presets) =>
             new(0, null, presets);
+    }
+
+    /// <summary>Result of <see cref="ValidateModel"/>; <see cref="Info"/> is null when the catalog was unreadable.</summary>
+    internal sealed record ModelValidationOutcome(
+        int ExitCode,
+        string? ErrorMessage,
+        Preset? Preset,
+        ModelInfo? Info
+    )
+    {
+        internal static ModelValidationOutcome Fail(string message) => new(1, message, null, null);
+
+        internal static ModelValidationOutcome Ok(Preset? preset, ModelInfo? info) =>
+            new(0, null, preset, info);
     }
 
     /// <summary>Result of <see cref="ValidateFormat"/>.</summary>

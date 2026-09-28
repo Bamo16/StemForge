@@ -131,4 +131,21 @@ public sealed record Preset(
             Mode: SeparationMode.SingleModel,
             PrimaryModel: modelFilename
         );
+
+    /// <summary>
+    /// A run of one named model outside any saved preset, as the CLI's <c>--model</c> asks for. A
+    /// null or empty <paramref name="keepSet"/> keeps every stem the model writes.
+    /// </summary>
+    public static Preset SingleModel(string modelFilename, IReadOnlyList<string>? keepSet = null) =>
+        new(
+            Id: modelFilename,
+            Label: Path.GetFileNameWithoutExtension(modelFilename),
+            Category: PresetCategory.Other,
+            Description: "Single-model run",
+            ModelCount: 1,
+            Vram: string.Empty,
+            Mode: SeparationMode.SingleModel,
+            PrimaryModel: modelFilename,
+            Steps: [new PresetStep(StepInput.Source, [modelFilename], KeepSet: keepSet)]
+        );
 }

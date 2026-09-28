@@ -153,6 +153,61 @@ public sealed class SeparationPipelineTests : IDisposable
         Assert.Equal(Path.Combine(_tempDir, "instrumental (Drums).flac"), Assert.Single(outputs));
     }
 
+    // ── Keep set ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void BuildRequest_SingleModelKeepSet_BecomesStemsToKeep()
+    {
+        var request = SeparationPipeline.BuildRequest(
+            Preset.SingleModel("drumsep.ckpt", ["kick", "snare"]),
+            "/tmp/song.flac",
+            "/tmp/out",
+            "FLAC"
+        );
+
+        Assert.Equal(["kick", "snare"], request.StemsToKeep!);
+    }
+
+    [Fact]
+    public void BuildRequest_SingleModelWithoutKeepSet_KeepsEverything() =>
+        Assert.Null(
+            SeparationPipeline
+                .BuildRequest(MakeSingleModelPreset("p", "P"), "/tmp/song.flac", "/tmp/out", "FLAC")
+                .StemsToKeep
+        );
+
+    [Fact]
+    public async Task RunAsync_KeepSetMatchedNothing_FailsNamingWhatWasWritten()
+    {
+        // The driver deletes every stem outside the keep set, so a typo would otherwise succeed
+        // with no files at all.
+        var input = CreateFlacFile("drums.flac");
+        _driver.EnqueueRun(
+            new JobResult(
+                Succeeded: true,
+                Outputs: [],
+                Discarded:
+                [
+                    new JobOutput(Stem: "Kick", Path: Path.Combine(_tempDir, "k.flac")),
+                    new JobOutput(Stem: "Snare", Path: Path.Combine(_tempDir, "s.flac")),
+                ],
+                DurationSeconds: 1.0,
+                ErrorMessage: null,
+                Traceback: null
+            )
+        );
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _pipeline.RunAsync(
+                MakeJob(input, [Preset.SingleModel("drumsep.ckpt", ["cowbell"])]),
+                progress: null,
+                TestContext.Current.CancellationToken
+            )
+        );
+
+        Assert.Contains("Kick, Snare", ex.Message);
+    }
+
     [Fact]
     public async Task RunAsync_DrumsOnly_ReportsOneStepAndCompletes()
     {

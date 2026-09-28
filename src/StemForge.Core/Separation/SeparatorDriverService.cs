@@ -505,7 +505,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
         }
     }
 
-    private static object BuildRunCommand(string jobId, JobRequest req) =>
+    internal static object BuildRunCommand(string jobId, JobRequest req) =>
         req switch
         {
             { PresetId: { } preset } => new
@@ -528,6 +528,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 models = req.Models,
                 algorithm = req.Algorithm ?? "avg_wave",
                 weights,
+                stems_to_keep = req.StemsToKeep,
             },
             _ => new
             {
@@ -538,6 +539,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 output_format = req.OutputFormat,
                 models = req.Models,
                 algorithm = req.Algorithm ?? "avg_wave",
+                stems_to_keep = req.StemsToKeep,
             },
         };
 

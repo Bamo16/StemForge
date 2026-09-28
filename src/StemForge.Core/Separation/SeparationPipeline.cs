@@ -201,6 +201,9 @@ public sealed class SeparationPipeline(
             if (!result.Succeeded)
                 throw new InvalidOperationException(result.ErrorMessage ?? "Separation failed");
 
+            if (preset.Steps[0].KeepSet is { Count: > 0 } keepSet)
+                CheckKeepSet(keepSet, result, preset);
+
             var title = Path.GetFileNameWithoutExtension(inputFile);
             var runPaths = new List<string>();
             foreach (var o in result.Outputs)
@@ -586,6 +589,43 @@ public sealed class SeparationPipeline(
             ? "Karaoke"
             : $"{(preset.Category == PresetCategory.Vocals ? "Vocal" : "Instrumental")} - {SanitizeLabel(preset.Label)}";
 
+    // ── Keep set ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Throws when a keep set matched none of the stems written (the driver already deleted the rest,
+    /// so the run would read as success with no files), and warns for each kept name that matched nothing.
+    /// </summary>
+    internal static void CheckKeepSet(
+        IReadOnlyList<string> keepSet,
+        JobResult result,
+        Preset preset
+    )
+    {
+        var written = result
+            .Outputs.Concat(result.Discarded)
+            .Select(output => output.Stem)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var wrote = written is [] ? "nothing" : string.Join(", ", written);
+
+        if (result.Outputs.Count == 0)
+            throw new InvalidOperationException(
+                $"No stem matched the keep set ({string.Join(", ", keepSet)}); {preset.Label} wrote {wrote}."
+            );
+
+        foreach (
+            var stem in keepSet.Where(kept =>
+                !result.Outputs.Any(output =>
+                    output.Stem.Equals(kept, StringComparison.OrdinalIgnoreCase)
+                )
+            )
+        )
+            AppLogger.Warning(
+                "job",
+                $"Kept stem '{stem}' matched nothing; {preset.Label} wrote {wrote}."
+            );
+    }
+
     // ── Request builder ───────────────────────────────────────────────────────
 
     internal static JobRequest BuildRequest(
@@ -608,7 +648,8 @@ public sealed class SeparationPipeline(
                             $"Preset '{preset.Id}' has no PrimaryModel"
                         ),
                 ],
-                Algorithm: null
+                Algorithm: null,
+                StemsToKeep: preset.Steps[0].KeepSet
             ),
 
             SeparationMode.CustomEnsemble => new JobRequest(
@@ -624,7 +665,8 @@ public sealed class SeparationPipeline(
                         ),
                     .. preset.ExtraModels ?? [],
                 ],
-                Algorithm: preset.EnsembleAlgorithm ?? "avg_wave"
+                Algorithm: preset.EnsembleAlgorithm ?? "avg_wave",
+                StemsToKeep: preset.Steps[0].KeepSet
             ),
 
             _ => new JobRequest( // BuiltinPreset

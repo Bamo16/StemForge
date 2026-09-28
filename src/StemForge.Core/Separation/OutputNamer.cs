@@ -165,6 +165,7 @@ public sealed class OutputNamer
     /// </summary>
     private HashSet<string> ClaimsFor(string directory)
     {
+        directory = KeyFor(directory);
         if (_claimedByDirectory.TryGetValue(directory, out var existing))
             return existing;
 
@@ -182,6 +183,23 @@ public sealed class OutputNamer
 
         _claimedByDirectory[directory] = claimed;
         return claimed;
+    }
+
+    /// <summary>
+    /// One key per directory however it is spelled (separators, trailing slash, relative), so the
+    /// seed taken from <c>--output</c> and a reservation made from a written file's path meet.
+    /// </summary>
+    private static string KeyFor(string directory)
+    {
+        try
+        {
+            return Path.TrimEndingDirectorySeparator(Path.GetFullPath(directory));
+        }
+        catch (Exception)
+        {
+            // An unnormalizable path keeps its spelling; naming must never fail a job.
+            return directory;
+        }
     }
 
     internal static string Sanitize(string name) =>

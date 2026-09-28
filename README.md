@@ -95,7 +95,9 @@ Both commands take multiple inputs and process them as a batch, continuing past 
 
 | Option | Applies to | Effect |
 |---|---|---|
-| `--preset <id>` | separate | Built-in preset to run; repeat to run several presets as independent stem sets in one call. Required unless `--extract-drums` is given |
+| `--preset <id>` | separate | Built-in preset to run; repeat to run several presets as independent stem sets in one call. Give at least one of `--preset`, `--model` or `--extract-drums` |
+| `--model <file>` | separate | Run one model by its file name (for example `MDX23C-DrumSep-aufr33-jarredou.ckpt`), alongside any presets |
+| `--keep <stem>` | separate | With `--model`: keep only this stem and discard the rest; repeat to keep several. The input fails if none of them is written |
 | `--output <dir>` | both | Output directory (defaults to the configured Stems folder) |
 | `--format <flac\|wav\|mp3\|...>` | both | Output audio format (defaults to the saved setting) |
 | `--keep-source` | separate | Keep the source audio alongside the stems |
@@ -110,6 +112,12 @@ Both commands take multiple inputs and process them as a batch, continuing past 
 
 ```
 stemforge-cli separate track.flac --extract-drums --format flac
+```
+
+`--model` runs any single model audio-separator knows, which is how to reach models no preset uses. Splitting a drum stem into kick and snare:
+
+```
+stemforge-cli separate "track (Drums).flac" --model MDX23C-DrumSep-aufr33-jarredou.ckpt --keep kick --keep snare
 ```
 
 Note that `--format` and `--format-id` sit at opposite ends of the pipeline: `--format` is what the file gets written as, `--format-id` is which source format gets fetched.
