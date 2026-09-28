@@ -17,11 +17,6 @@ public sealed record YtDlpMetadata(
     string? Extractor = null
 )
 {
-    private static readonly HashSet<char> _invalidFileNameChars =
-    [
-        .. Path.GetInvalidFileNameChars(),
-    ];
-
     /// <summary>
     /// Every credited artist as one string, in first-seen order. The only place the credit list is
     /// flattened, and what reaches the file's ARTIST tag and the CLI's JSON row. Null when the
@@ -58,7 +53,7 @@ public sealed record YtDlpMetadata(
     /// collision suffix may reshape them, so only the source file's name is promised.
     /// </summary>
     public string BaseName =>
-        string.Concat(DisplayTitle.Where(c => !_invalidFileNameChars.Contains(c)));
+        string.Concat(DisplayTitle.Where(c => !PortableFileName.InvalidChars.Contains(c)));
 
     /// <summary>
     /// True when this came from YouTube. Format ids mean different things per extractor, so every

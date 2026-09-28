@@ -726,10 +726,9 @@ public sealed class SeparationPipeline(
             _ => category.ToString(),
         };
 
-    private static readonly char[] _invalidFileNameChars = Path.GetInvalidFileNameChars();
-
     internal static string SanitizeLabel(string label) =>
-        string.Concat(label.Select(c => _invalidFileNameChars.Contains(c) ? '-' : c)).Trim();
+        string.Concat(label.Select(c => PortableFileName.InvalidChars.Contains(c) ? '-' : c))
+            .Trim();
 
     // ── Keep-source helper ────────────────────────────────────────────────────
 

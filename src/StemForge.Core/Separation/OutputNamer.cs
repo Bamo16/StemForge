@@ -45,8 +45,6 @@ public sealed class OutputNamer
         StringComparer.OrdinalIgnoreCase
     );
 
-    private static readonly char[] _invalidFileNameChars = Path.GetInvalidFileNameChars();
-
     /// <summary>
     /// The clean default base name for a stem: <c>"{title} ({stem})"</c>. This is the convention the
     /// built-in presets emit, reused verbatim so user presets default to the same shape.
@@ -203,5 +201,5 @@ public sealed class OutputNamer
     }
 
     internal static string Sanitize(string name) =>
-        string.Concat(name.Select(c => _invalidFileNameChars.Contains(c) ? '-' : c)).Trim();
+        string.Concat(name.Select(c => PortableFileName.InvalidChars.Contains(c) ? '-' : c)).Trim();
 }

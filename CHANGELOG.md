@@ -27,6 +27,7 @@ All notable changes to StemForge are documented here. The format is based on [Ke
 - Two-stem models could be shown as producing only one stem when that stem was inferred from the file name.
 - A drums-only run whose drum step fails is reported as failed, rather than as done with nothing written.
 - On Linux and macOS, bundled ffmpeg, yt-dlp and deno are now installed executable.
+- File names leave out the same characters on every OS. On Linux and macOS a name could keep `:` or `?`, so the same video got a different name than on Windows.
 
 ## [0.3.1] - 2026-07-31
 
