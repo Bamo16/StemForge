@@ -26,7 +26,7 @@ https://github.com/user-attachments/assets/660daf67-0953-405d-a6ef-1c71e59f6a7b
 
 ## What it does
 
-Drop in an audio file (or paste a YouTube URL) and StemForge runs one of dozens of separation models, or an ensemble of them, to split the track into stems: vocals, instrumentals, drums, bass, and so on. Pick from the curated built-in presets, or browse the full model catalogue and roll your own.
+Drop in an audio file (or paste a YouTube URL) and StemForge runs one of dozens of separation models, or an ensemble of them, to split the track into stems: vocals, instrumentals, drums, bass, and so on. Pick from the curated built-in presets, or browse the full model catalogue and roll your own. A drum stem can come alongside a preset's stems or on its own.
 
 <p align="center">
   <img src="docs/images/screenshot-separate-presets.png" alt="Separate page with presets" width="900" />
@@ -35,6 +35,8 @@ Drop in an audio file (or paste a YouTube URL) and StemForge runs one of dozens 
 ### URL ingestion with format selection
 
 Paste a YouTube link and StemForge resolves the available audio formats via `yt-dlp`, picks the best one automatically, and surfaces a picker if you want to override. Any URL `yt-dlp` supports works in principle; YouTube is the most common case, but the same flow handles other sources. Premium audio formats (higher-bitrate opus and AAC) show up when available. See [YouTube authentication](#youtube-authentication-cookies-premium-formats) below if you want StemForge to use them.
+
+Tick **Source audio** to keep the downloaded audio beside the stems. With nothing else ticked, StemForge just downloads it, named and tagged the same way `stemforge-cli download` does.
 
 <p align="center">
   <img src="docs/images/screenshot-separate-url.png" alt="URL pasted with format picker expanded" width="900" />
@@ -58,7 +60,7 @@ Browse hundreds of community models from the audio-separator catalogue. Save any
 
 ### Settings
 
-Configure the output directory, default audio format, tool-path overrides, YouTube cookie source, and the GPU variant audio-separator runs on.
+Configure the output directory, default audio format, tool-path overrides, YouTube cookie source, and the GPU variant audio-separator runs on. When a newer audio-separator is out, Settings offers to update it in place, keeping the GPU variant.
 
 <p align="center">
   <img src="docs/images/screenshot-settings.png" alt="Settings page" width="900" />
@@ -250,7 +252,7 @@ Three VS Code tasks together produce the shippable zip:
 Bumping the release version is one edit in `Directory.Build.props`, the single source of truth shared by all projects:
 
 ```xml
-<Version>0.3.1</Version>
+<Version>0.4.0</Version>
 ```
 
 The package script reads the version from there, so the next run names the zip automatically.
