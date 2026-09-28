@@ -110,42 +110,33 @@ public sealed class CatalogWellFormednessTests
         Assert.Equal([GpuVariant.Cpu], mac);
     }
 
-    // FFmpeg-Builds prunes daily builds after ~2 weeks; only the last-day-of-month autobuild-*
-    // tag is retained long-term. Pinning a mid-month tag causes 404s within weeks (the original
-    // v0.2.1 bug). This test enforces the month-end rule statically so CI catches it before
-    // any live-download check runs.
+    // nomercy-ffmpeg is pinned to one release, never releases/latest, so the beatdetect and
+    // keydetect filters change only when the pin moves (ADR 0015). Every platform takes the same
+    // tag, and ffprobe comes along because audio-separator needs it beside ffmpeg.
     [Fact]
-    public void FfmpegBuildsUrls_UseRetainedMonthEndTag()
+    public void FfmpegAssets_PinOneNoMercyRelease_AndBringFfprobe()
     {
-        var ffmpeg = ToolCatalog.Get(ToolKind.Ffmpeg);
-        var strategy = Assert.IsType<BundledFetch>(ffmpeg.InstallStrategy);
+        var strategy = Assert.IsType<BundledFetch>(
+            ToolCatalog.Get(ToolKind.Ffmpeg).InstallStrategy
+        );
+        var tagPattern = new Regex(
+            @"^https://github\.com/NoMercy-Entertainment/nomercy-ffmpeg/releases/download/"
+                + @"(?<Tag>v\d+\.\d+\.\d+)/ffmpeg-[\d.]+-[\w-]+-(?<FileTag>v\d+\.\d+\.\d+)\.(zip|tar\.gz)$",
+            RegexOptions.ExplicitCapture
+        );
 
-        var ffmpegBuildsUrls = strategy
-            .Assets.Values.Where(a => a.Url.Contains("yt-dlp/FFmpeg-Builds"))
-            .Select(a => a.Url)
+        var tags = strategy
+            .Assets.Values.Select(asset =>
+            {
+                var match = tagPattern.Match(asset.Url);
+                Assert.True(match.Success, $"not a pinned nomercy-ffmpeg asset: {asset.Url}");
+                Assert.Equal(match.Groups["Tag"].Value, match.Groups["FileTag"].Value);
+                Assert.Equal(["ffprobe"], asset.Companions);
+                return match.Groups["Tag"].Value;
+            })
+            .Distinct()
             .ToList();
 
-        Assert.NotEmpty(ffmpegBuildsUrls);
-
-        var tagPattern = new Regex(@"/autobuild-(\d{4})-(\d{2})-(\d{2})-");
-
-        foreach (var url in ffmpegBuildsUrls)
-        {
-            var match = tagPattern.Match(url);
-            Assert.True(match.Success, $"FFmpeg-Builds URL has unexpected tag format: {url}");
-
-            var year = int.Parse(match.Groups[1].Value);
-            var month = int.Parse(match.Groups[2].Value);
-            var day = int.Parse(match.Groups[3].Value);
-            var date = new DateOnly(year, month, day);
-            var lastDay = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
-
-            Assert.True(
-                date == lastDay,
-                $"FFmpeg-Builds URL must use a month-end tag (daily builds are pruned after "
-                    + $"~2 weeks). Found day {day} in {year}-{month:D2} "
-                    + $"(last day is {lastDay.Day}): {url}"
-            );
-        }
+        Assert.Single(tags);
     }
 }

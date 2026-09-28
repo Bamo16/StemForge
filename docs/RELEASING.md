@@ -60,7 +60,7 @@ On pushes to `main`, and on pull requests targeting `main`.
 | --- | --- | --- |
 | Restore, Build (Release) | The source compiles on Linux with the pinned SDK | no |
 | Test (offline suite) | The full test suite, minus the two env-gated classes below | no |
-| Verify bundled assets | Downloads the linux-x64 yt-dlp, ffmpeg, and deno binaries and checks their pinned SHA-256, exercising the ffmpeg `tar.xz` extraction path. Gated by `STEMFORGE_LIVE_ASSETS=1` | yes |
+| Verify bundled assets | Downloads the linux-x64 yt-dlp, ffmpeg, and deno binaries and checks their pinned SHA-256, exercising the ffmpeg `tar.gz` extraction path and running the extracted ffmpeg once. Gated by `STEMFORGE_LIVE_ASSETS=1` | yes |
 | Download integration test | Fetches a small public-domain clip and verifies the file and its metadata. Gated by `STEMFORGE_INTEGRATION=1`, and `continue-on-error` so a flaky remote host cannot block a release | yes |
 
 The bundled-asset step is the one that earns its keep: it catches a pinned download URL going dead upstream, which is the failure that forced the v0.2.1.1 hotfix. It is worth understanding that it can pass vacuously if its `--filter-class` argument stops matching. It did exactly that after the test project was reorganised by domain, and went unnoticed because a build failure was ending the job first. A run that matches no tests exits 8, so the step fails rather than reporting success, but the class name in `ci.yml` still has to be kept in step with the code.

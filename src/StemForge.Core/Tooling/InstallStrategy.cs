@@ -70,16 +70,16 @@ public sealed record ToolVariant(
 public sealed record VariantProbe(string ScriptRelativePath);
 
 /// <summary>
-/// A pinned downloadable asset for one platform. Extraction is described by two orthogonal axes:
-/// the <see cref="Format"/> of the download (how to decompress it) and the <see cref="Layout"/>
-/// (where the target binary lives inside it). This avoids combinatorial enum cases like a
-/// "tar.xz-flatten-from-bin" mode. See docs/adr/0005-bundle-ffmpeg-everywhere-via-tar-xz.md.
+/// A pinned downloadable asset for one platform, extracted along two orthogonal axes: its
+/// <see cref="Format"/> and its <see cref="Layout"/>. <see cref="Companions"/> are further
+/// executables installed beside the target, named without the platform suffix (ffprobe).
 /// </summary>
 public sealed record BundledAsset(
     string Url,
     string Sha256,
     ArchiveFormat Format,
-    BundledLayout Layout
+    BundledLayout Layout,
+    IReadOnlyList<string>? Companions = null
 );
 
 /// <summary>The container format of a downloaded <see cref="BundledAsset"/>.</summary>
@@ -91,8 +91,8 @@ public enum ArchiveFormat
     /// <summary>A zip archive (e.g. deno, Windows ffmpeg).</summary>
     Zip,
 
-    /// <summary>An xz-compressed tar archive (e.g. Linux ffmpeg). Decoded via SharpCompress.</summary>
-    TarXz,
+    /// <summary>A gzip-compressed tar archive (e.g. Linux and macOS ffmpeg).</summary>
+    TarGz,
 }
 
 /// <summary>Where the target binary lives inside a downloaded <see cref="BundledAsset"/>.</summary>
@@ -104,12 +104,6 @@ public enum BundledLayout
     /// </summary>
     DownloadIsBinary,
 
-    /// <summary>The target binary sits at the archive root (e.g. deno).</summary>
-    SingleFileAtRoot,
-
-    /// <summary>
-    /// Flatten every file under any <c>/bin/</c> subpath into the bundle dir (e.g. ffmpeg shared
-    /// builds, whose runtime DLLs/.so files live alongside the exe under <c>bin/</c>).
-    /// </summary>
-    FlattenFromBinSubdir,
+    /// <summary>The target binary and its companions sit at the archive root; nothing else is taken.</summary>
+    FilesAtRoot,
 }

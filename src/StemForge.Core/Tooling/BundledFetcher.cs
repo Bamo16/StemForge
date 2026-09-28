@@ -1,6 +1,6 @@
+using System.Formats.Tar;
 using System.IO.Compression;
 using System.Security.Cryptography;
-using SharpCompress.Compressors.Xz;
 
 namespace StemForge.Core.Tooling;
 
@@ -60,7 +60,7 @@ public sealed class BundledFetcher(
         {
             ArchiveFormat.RawBinary => _platform.ExecutableSuffix,
             ArchiveFormat.Zip => ".zip",
-            ArchiveFormat.TarXz => ".tar.xz",
+            ArchiveFormat.TarGz => ".tar.gz",
             _ => throw new ArgumentOutOfRangeException(nameof(asset)),
         };
         var temp = Path.Combine(
@@ -135,6 +135,12 @@ public sealed class BundledFetcher(
         );
 
         var binaryName = tool.BundledBinaryFileName(_platform);
+        IReadOnlyList<string> fileNames =
+        [
+            binaryName,
+            .. (asset.Companions ?? []).Select(companion => companion + _platform.ExecutableSuffix),
+        ];
+
         switch (asset.Layout)
         {
             case BundledLayout.DownloadIsBinary:
@@ -144,92 +150,73 @@ public sealed class BundledFetcher(
                     overwrite: true
                 );
                 break;
-            case BundledLayout.SingleFileAtRoot:
-                ExtractToDirectory(asset, downloaded, binaryName, _paths.BundledBinDir);
-                break;
-            case BundledLayout.FlattenFromBinSubdir:
-                ExtractToDirectory(asset, downloaded, binaryName, _paths.BundledBinDir);
+            case BundledLayout.FilesAtRoot:
+                ExtractToDirectory(asset, downloaded, fileNames, _paths.BundledBinDir);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(asset), asset.Layout, null);
         }
+
+        MarkExecutable(fileNames.Select(name => Path.Combine(_paths.BundledBinDir, name)));
     }
 
     /// <summary>
-    /// Extracts the target binary (and, for <see cref="BundledLayout.FlattenFromBinSubdir"/>, its
-    /// sibling runtime files) from a zip or tar.xz archive into <paramref name="targetDir"/>.
-    /// Exposed internally so the extraction logic is testable against a temp directory without
-    /// hitting the real <see cref="AppPaths.BundledBinDir"/>.
+    /// Extracts <paramref name="fileNames"/> from the root of a zip or tar.gz archive into
+    /// <paramref name="targetDir"/>, failing if any is missing.
     /// </summary>
     internal static void ExtractToDirectory(
         BundledAsset asset,
         string archivePath,
-        string binaryName,
+        IReadOnlyList<string> fileNames,
         string targetDir
     )
     {
-        switch (asset.Layout)
-        {
-            case BundledLayout.SingleFileAtRoot:
-                ExtractSingleFile(asset.Format, archivePath, binaryName, targetDir);
-                break;
-            case BundledLayout.FlattenFromBinSubdir:
-                ExtractBinDir(asset.Format, archivePath, targetDir);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(asset), asset.Layout, null);
-        }
-    }
+        if (asset.Layout is not BundledLayout.FilesAtRoot)
+            throw new ArgumentOutOfRangeException(nameof(asset), asset.Layout, null);
 
-    private static void ExtractSingleFile(
-        ArchiveFormat format,
-        string archivePath,
-        string binaryName,
-        string targetDir
-    )
-    {
-        var found = false;
+        var missing = new HashSet<string>(fileNames, StringComparer.OrdinalIgnoreCase);
         ForEachEntry(
-            format,
+            asset.Format,
             archivePath,
             (name, copyTo) =>
             {
-                var leaf = name[(name.LastIndexOf('/') + 1)..];
-                if (!found && leaf.Equals(binaryName, StringComparison.OrdinalIgnoreCase))
-                {
-                    using var dest = File.Create(Path.Combine(targetDir, binaryName));
-                    copyTo(dest);
-                    found = true;
-                }
-            }
-        );
-
-        if (!found)
-            throw new InvalidDataException($"{binaryName} not found in downloaded archive.");
-    }
-
-    private static void ExtractBinDir(ArchiveFormat format, string archivePath, string targetDir) =>
-        ForEachEntry(
-            format,
-            archivePath,
-            (name, copyTo) =>
-            {
-                // Match any entry under a 'bin/' subpath at any depth; flatten into targetDir.
-                var idx = name.IndexOf("/bin/", StringComparison.OrdinalIgnoreCase);
-                if (idx < 0)
+                // Tar entries are spelled "./ffmpeg"; zip entries plain "ffmpeg".
+                var relative = name.StartsWith("./", StringComparison.Ordinal) ? name[2..] : name;
+                if (relative.Contains('/') || !missing.Remove(relative))
                     return;
 
-                var relativeName = name[(idx + "/bin/".Length)..];
-                if (relativeName.Length == 0 || relativeName.Contains('/'))
-                    return; // skip directory entries and nested subdirs under bin/ (none expected)
-
-                using var dest = File.Create(Path.Combine(targetDir, relativeName));
+                using var dest = File.Create(Path.Combine(targetDir, relative));
                 copyTo(dest);
             }
         );
 
+        if (missing.Count > 0)
+            throw new InvalidDataException(
+                $"{string.Join(", ", missing)} not found at the root of the downloaded archive."
+            );
+    }
+
     /// <summary>
-    /// Iterates the file entries of a zip or tar.xz archive, invoking <paramref name="onEntry"/>
+    /// Sets the execute bits an extracted or downloaded file does not carry on Linux and macOS,
+    /// where it would otherwise land as 0644 and fail to start.
+    /// </summary>
+    internal static void MarkExecutable(IEnumerable<string> paths)
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+
+        foreach (var path in paths)
+            File.SetUnixFileMode(
+                path,
+                File.GetUnixFileMode(path)
+                    | UnixFileMode.UserExecute
+                    | UnixFileMode.GroupExecute
+                    | UnixFileMode.OtherExecute
+            );
+    }
+
+    /// <summary>
+    /// Iterates the file entries of a zip or tar.gz archive, invoking <paramref name="onEntry"/>
     /// with the entry's full path (always forward-slash separated) and a callback that copies the
     /// entry's bytes into a destination stream. Directory entries are skipped.
     /// </summary>
@@ -260,17 +247,17 @@ public sealed class BundledFetcher(
                 }
                 break;
 
-            case ArchiveFormat.TarXz:
-                // .NET 11 ships a tar reader (System.Formats.Tar) but no xz/LZMA decoder, so the
-                // xz layer is peeled by SharpCompress and the resulting tar stream is read by the
-                // BCL tar reader.
+            case ArchiveFormat.TarGz:
                 using (var file = File.OpenRead(archivePath))
-                using (var xz = new XZStream(file))
-                using (var tar = new System.Formats.Tar.TarReader(xz))
+                using (var gzip = new GZipStream(file, CompressionMode.Decompress))
+                using (var tar = new TarReader(gzip))
                 {
                     while (tar.GetNextEntry() is { } entry)
                     {
-                        if (entry.EntryType is not System.Formats.Tar.TarEntryType.RegularFile)
+                        if (
+                            entry.EntryType
+                            is not (TarEntryType.RegularFile or TarEntryType.V7RegularFile)
+                        )
                             continue;
                         onEntry(
                             entry.Name.Replace('\\', '/'),

@@ -12,6 +12,9 @@ namespace StemForge.Core.Tooling;
 /// </summary>
 public static class ToolCatalog
 {
+    private const string NoMercyFfmpegTag = "v1.0.42";
+    private const string NoMercyFfmpegVersion = "9.0";
+
     private static readonly PlatformInfo WinX64 = new(OSKind.Windows, Architecture.X64);
     private static readonly PlatformInfo LinuxX64 = new(OSKind.Linux, Architecture.X64);
 
@@ -93,50 +96,34 @@ public static class ToolCatalog
             ToolKind.Ffmpeg,
             CliName: "ffmpeg",
             Description: "required by audio-separator",
-            DownloadSize: "~100 MB download",
+            DownloadSize: "~160 to 265 MB download",
             VersionArg: "-version",
             VersionPattern: Pattern(@"ffmpeg version\s+(\S+)"),
             IsRequired: true,
+            // Static builds with every binary at the archive root. ffprobe comes along because
+            // audio-separator's pydub finds it on the PATH the driver builds from ffmpeg's folder.
             new BundledFetch(
                 new Dictionary<PlatformInfo, BundledAsset>
                 {
-                    // FFmpeg-Builds retains exactly one build per calendar month (the last-day
-                    // autobuild-YYYY-MM-DD tag). Daily builds are pruned after ~2 weeks. Always
-                    // pin to a month-end tag here; mid-month tags will 404 within weeks.
-                    [WinX64] = new(
-                        Url: "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/"
-                            + "autobuild-2026-05-31-15-28/"
-                            + "ffmpeg-N-124716-g054dffd133-win64-gpl-shared.zip",
-                        Sha256: "1718fdeaaade345f92115319e0852cfd78551c67f24bc5deff76ab4fd1d85faa",
-                        Format: ArchiveFormat.Zip,
-                        Layout: BundledLayout.FlattenFromBinSubdir
+                    [WinX64] = NoMercyFfmpeg(
+                        "windows-x86_64",
+                        ArchiveFormat.Zip,
+                        "d9006407f8df796ec75cbb6d223ef22e969871f650b7879df1f56cc2aa9e23ef"
                     ),
-                    // Same BtbN build/version as Windows. Nightly autobuilds publish only a
-                    // static linux64-gpl tar.xz (no -shared variant), but its bin/ layout matches
-                    // so FlattenFromBinSubdir extracts ffmpeg/ffprobe/ffplay identically.
-                    [LinuxX64] = new(
-                        Url: "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/"
-                            + "autobuild-2026-05-31-15-28/"
-                            + "ffmpeg-N-124716-g054dffd133-linux64-gpl.tar.xz",
-                        Sha256: "64b6f4b1e68c54f6c0bc90d0f0f684dd8c3f68e95fe817ef8849d8a0d6a81c59",
-                        Format: ArchiveFormat.TarXz,
-                        Layout: BundledLayout.FlattenFromBinSubdir
+                    [LinuxX64] = NoMercyFfmpeg(
+                        "linux-x86_64",
+                        ArchiveFormat.TarGz,
+                        "f5de4879bebf91987df02c2e9c0bd4a8d8cffb9476723fcf6193f06017333c85"
                     ),
-                    // macOS (best-effort, unverified at runtime). evermeet.cx ships a single
-                    // x86_64 ffmpeg binary at the zip root (no bin/ subdir, no bundled ffprobe).
-                    // It runs natively on Intel and under Rosetta 2 on Apple Silicon, so the same
-                    // asset backs both arches. SingleFileAtRoot, not FlattenFromBinSubdir.
-                    [MacArm64] = new(
-                        Url: "https://evermeet.cx/ffmpeg/ffmpeg-8.1.1.zip",
-                        Sha256: "4610988e2f54c243c50da73a09e4e2c36d9bb77546f9aa6c84cb328dcb1a98c1",
-                        Format: ArchiveFormat.Zip,
-                        Layout: BundledLayout.SingleFileAtRoot
+                    [MacArm64] = NoMercyFfmpeg(
+                        "darwin-arm64",
+                        ArchiveFormat.TarGz,
+                        "b34f27dc400adf9d02e47191852c7c15abcbde6cdf5e7472298b2286e3a91974"
                     ),
-                    [MacX64] = new(
-                        Url: "https://evermeet.cx/ffmpeg/ffmpeg-8.1.1.zip",
-                        Sha256: "4610988e2f54c243c50da73a09e4e2c36d9bb77546f9aa6c84cb328dcb1a98c1",
-                        Format: ArchiveFormat.Zip,
-                        Layout: BundledLayout.SingleFileAtRoot
+                    [MacX64] = NoMercyFfmpeg(
+                        "darwin-x86_64",
+                        ArchiveFormat.TarGz,
+                        "3fd219e0138fca2534a20e840425fec60e7d16a295ad37734e9c991d9941bc9c"
                     ),
                 }
             )
@@ -199,14 +186,14 @@ public static class ToolCatalog
                             + "deno-x86_64-pc-windows-msvc.zip",
                         Sha256: "9b98d1f456878c8ac5caa55779a04f2f1f91f8e942d6ef3f887681698f634adf",
                         Format: ArchiveFormat.Zip,
-                        Layout: BundledLayout.SingleFileAtRoot
+                        Layout: BundledLayout.FilesAtRoot
                     ),
                     [LinuxX64] = new(
                         Url: "https://github.com/denoland/deno/releases/download/v2.8.0/"
                             + "deno-x86_64-unknown-linux-gnu.zip",
                         Sha256: "be2c8b53c8ca1d66be76feb9b1a524419da708b00d4ca074cf5c633c81c1627b",
                         Format: ArchiveFormat.Zip,
-                        Layout: BundledLayout.SingleFileAtRoot
+                        Layout: BundledLayout.FilesAtRoot
                     ),
                     // macOS (best-effort, unverified at runtime). Separate per-arch zips, each a
                     // single deno binary at the root. Version matches the Windows/Linux v2.8.0 pin.
@@ -215,14 +202,14 @@ public static class ToolCatalog
                             + "deno-aarch64-apple-darwin.zip",
                         Sha256: "dba813b8b69d6218cffb11252b9e4e6036ca2c9d79843cde367b4b369aaf9634",
                         Format: ArchiveFormat.Zip,
-                        Layout: BundledLayout.SingleFileAtRoot
+                        Layout: BundledLayout.FilesAtRoot
                     ),
                     [MacX64] = new(
                         Url: "https://github.com/denoland/deno/releases/download/v2.8.0/"
                             + "deno-x86_64-apple-darwin.zip",
                         Sha256: "d6eb643b7f1afb22139f4aa17c4d97bf7ddab4e01e1820edcb30b9ae5c3a7391",
                         Format: ArchiveFormat.Zip,
-                        Layout: BundledLayout.SingleFileAtRoot
+                        Layout: BundledLayout.FilesAtRoot
                     ),
                 }
             )
@@ -234,6 +221,25 @@ public static class ToolCatalog
     /// <summary>Tools that can be installed on the given platform (have a viable strategy there).</summary>
     public static IReadOnlyList<Tool> AvailableFor(PlatformInfo platform) =>
         [.. All.Where(t => t.IsInstallableOn(platform))];
+
+    /// <summary>
+    /// A pinned nomercy-ffmpeg asset: pinned by tag and SHA-256 rather than following latest,
+    /// so the beatdetect and keydetect filters change only when someone moves the pin (ADR 0015).
+    /// </summary>
+    private static BundledAsset NoMercyFfmpeg(
+        string platform,
+        ArchiveFormat format,
+        string sha256
+    ) =>
+        new(
+            Url: "https://github.com/NoMercy-Entertainment/nomercy-ffmpeg/releases/download/"
+                + $"{NoMercyFfmpegTag}/ffmpeg-{NoMercyFfmpegVersion}-{platform}-{NoMercyFfmpegTag}"
+                + (format is ArchiveFormat.Zip ? ".zip" : ".tar.gz"),
+            Sha256: sha256,
+            Format: format,
+            Layout: BundledLayout.FilesAtRoot,
+            Companions: ["ffprobe"]
+        );
 
     private static Regex Pattern([StringSyntax("Regex")] string pattern) =>
         new(pattern, RegexOptions.Multiline);

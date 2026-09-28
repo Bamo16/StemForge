@@ -158,7 +158,7 @@ Live progress shows a per-input bar with the current activity. Press Ctrl+C once
 3. **First-run wizard** offers to install everything you need:
    - `uv`: Python tool manager, ~25 MB, installed via [Astral's official installer](https://astral.sh/uv).
    - `audio-separator`: the separation engine, ~250 MB to 2 GB depending on GPU variant, installed as a uv tool.
-   - `ffmpeg`: ~100 MB, bundled binary from [`yt-dlp/FFmpeg-Builds`](https://github.com/yt-dlp/FFmpeg-Builds), dropped into `%LOCALAPPDATA%\StemForge\bin`.
+   - `ffmpeg`: ~265 MB, bundled binary from [`nomercy-ffmpeg`](https://github.com/NoMercy-Entertainment/nomercy-ffmpeg), dropped into `%LOCALAPPDATA%\StemForge\bin`.
    - `yt-dlp` *(optional, ~17 MB)*: only needed for URL downloads. Bundled binary, not added to your system PATH so it never shadows a yt-dlp you already have installed elsewhere.
    - `deno` *(optional, ~42 MB)*: JS runtime, needed for some YouTube URL workflows. Also bundled, not on PATH. See [YouTube authentication](#youtube-authentication-cookies-premium-formats) for when this matters.
 4. Pick your GPU variant: **CPU**, **CUDA** (NVIDIA), or **DirectML** (any modern Windows GPU). The wizard auto-detects what you have.

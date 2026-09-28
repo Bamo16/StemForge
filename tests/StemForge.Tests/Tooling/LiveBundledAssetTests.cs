@@ -5,7 +5,7 @@ namespace StemForge.Tests.Tooling;
 
 /// <summary>
 /// Network-dependent tests that actually download the linux-x64 bundled binaries (yt-dlp, ffmpeg,
-/// deno) and verify their pinned SHA-256, plus exercise the tar.xz extraction path for ffmpeg.
+/// deno) and verify their pinned SHA-256, plus exercise the tar.gz extraction path for ffmpeg.
 /// These are SKIPPED by default so the normal <c>dotnet test</c> suite stays offline and fast;
 /// they run only when <c>STEMFORGE_LIVE_ASSETS=1</c> is set (the dedicated CI step does so). This
 /// is what proves the pinned URLs and hashes are still live and correct.
@@ -49,12 +49,12 @@ public sealed class LiveBundledAssetTests
     }
 
     [Fact(SkipUnless = nameof(LiveAssetsEnabled), Skip = "Set STEMFORGE_LIVE_ASSETS=1 to run.")]
-    public async Task LinuxFfmpeg_TarXz_ExtractsBinaryViaTarXzPath()
+    public async Task LinuxFfmpeg_TarGz_ExtractsFfmpegAndFfprobe_WithTheReworkedBeatdetect()
     {
         var tool = ToolCatalog.Get(ToolKind.Ffmpeg);
         var asset = Assert.IsType<BundledFetch>(tool.InstallStrategy).AssetFor(LinuxX64);
         Assert.NotNull(asset);
-        Assert.Equal(ArchiveFormat.TarXz, asset.Format);
+        Assert.Equal(ArchiveFormat.TarGz, asset.Format);
 
         var ct = TestContext.Current.CancellationToken;
         var archive = await DownloadToTempAsync(asset.Url, ct);
@@ -65,18 +65,31 @@ public sealed class LiveBundledAssetTests
             var actual = await ComputeSha256Async(archive, ct);
             Assert.Equal(asset.Sha256.ToLowerInvariant(), actual);
 
-            // Linux ffmpeg binary has no extension; exercise the real tar.xz extraction path.
+            // Linux binaries have no extension; exercise the real tar.gz extraction path.
             var binaryName = tool.BundledBinaryFileName(LinuxX64);
             Assert.Equal("ffmpeg", binaryName);
 
-            BundledFetcher.ExtractToDirectory(asset, archive, binaryName, targetDir);
+            BundledFetcher.ExtractToDirectory(asset, archive, ["ffmpeg", "ffprobe"], targetDir);
 
-            var landed = Path.Combine(targetDir, binaryName);
+            var ffmpeg = Path.Combine(targetDir, "ffmpeg");
+            Assert.True(new FileInfo(ffmpeg).Length > 0, "extracted ffmpeg should be non-empty");
             Assert.True(
-                File.Exists(landed),
-                $"{binaryName} should be flattened into the bundle dir"
+                File.Exists(Path.Combine(targetDir, "ffprobe")),
+                "ffprobe should come along"
             );
-            Assert.True(new FileInfo(landed).Length > 0, "extracted ffmpeg should be non-empty");
+
+            // Only a Linux runner can start the binary; there it proves the static build runs
+            // and carries the reworked filter (hop_ms replaced hop_size).
+            if (!OperatingSystem.IsLinux())
+                return;
+
+            BundledFetcher.MarkExecutable([ffmpeg]);
+            var help = await new ProcessRunner().RunAsync(
+                ffmpeg,
+                ["-hide_banner", "-h", "filter=beatdetect"],
+                ct: ct
+            );
+            Assert.Contains("hop_ms", help.Output);
         }
         finally
         {

@@ -1,41 +1,44 @@
+using System.IO.Compression;
 using System.Net;
 
 namespace StemForge.Tests.Tooling;
 
 public sealed class BundledFetcherTests
 {
-    // sample-bin.tar.xz contains: pkg/bin/dummy, pkg/bin/extra.so, pkg/doc/README.
+    // sample-root.tar.gz contains: ./dummy, ./dummy-probe, ./dummy-play, ./nested/dummy.
     private static readonly string FixturePath = Path.Combine(
         AppContext.BaseDirectory,
         "Fixtures",
-        "sample-bin.tar.xz"
+        "sample-root.tar.gz"
+    );
+
+    private static readonly BundledAsset TarGzAtRoot = new(
+        Url: "unused",
+        Sha256: "unused",
+        Format: ArchiveFormat.TarGz,
+        Layout: BundledLayout.FilesAtRoot
     );
 
     [Fact]
-    public void ExtractToDirectory_TarXz_FlattenFromBin_LandsTargetInBundleDir()
+    public void ExtractToDirectory_TarGz_TakesOnlyTheNamedRootFiles()
     {
         var targetDir = CreateTempDir();
         try
         {
-            var asset = new BundledAsset(
-                Url: "unused",
-                Sha256: "unused",
-                Format: ArchiveFormat.TarXz,
-                Layout: BundledLayout.FlattenFromBinSubdir
+            BundledFetcher.ExtractToDirectory(
+                TarGzAtRoot,
+                FixturePath,
+                ["dummy", "dummy-probe"],
+                targetDir
             );
 
-            BundledFetcher.ExtractToDirectory(asset, FixturePath, "dummy", targetDir);
-
-            var landed = Path.Combine(targetDir, "dummy");
-            Assert.True(
-                File.Exists(landed),
-                "target binary should land flattened in the bundle dir"
+            Assert.Equal(
+                "dummy-binary-contents\n",
+                File.ReadAllText(Path.Combine(targetDir, "dummy")).Replace("\r\n", "\n")
             );
-            Assert.Equal("dummy-binary-contents\n", File.ReadAllText(landed).Replace("\r\n", "\n"));
-
-            // Siblings under bin/ come along; files outside bin/ do not.
-            Assert.True(File.Exists(Path.Combine(targetDir, "extra.so")));
-            Assert.False(File.Exists(Path.Combine(targetDir, "README")));
+            Assert.True(File.Exists(Path.Combine(targetDir, "dummy-probe")));
+            Assert.False(File.Exists(Path.Combine(targetDir, "dummy-play")));
+            Assert.Equal(["dummy", "dummy-probe"], FileNamesIn(targetDir));
         }
         finally
         {
@@ -44,10 +47,93 @@ public sealed class BundledFetcherTests
     }
 
     [Fact]
-    public void ExtractToDirectory_TarXz_FixtureExists()
+    public void ExtractToDirectory_MissingCompanion_Throws()
     {
-        Assert.True(File.Exists(FixturePath), $"missing test fixture: {FixturePath}");
+        var targetDir = CreateTempDir();
+        try
+        {
+            var ex = Assert.Throws<InvalidDataException>(() =>
+                BundledFetcher.ExtractToDirectory(
+                    TarGzAtRoot,
+                    FixturePath,
+                    ["dummy", "dummy-missing"],
+                    targetDir
+                )
+            );
+            Assert.Contains("dummy-missing", ex.Message);
+        }
+        finally
+        {
+            Directory.Delete(targetDir, recursive: true);
+        }
     }
+
+    [Fact]
+    public void ExtractToDirectory_Zip_MatchesRootEntriesOnly()
+    {
+        var targetDir = CreateTempDir();
+        var zipPath = Path.Combine(targetDir, "sample.zip");
+        using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+        {
+            WriteEntry(zip, "nested/tool.exe", "nested");
+            WriteEntry(zip, "tool.exe", "root");
+        }
+
+        var outDir = Path.Combine(targetDir, "out");
+        Directory.CreateDirectory(outDir);
+        try
+        {
+            BundledFetcher.ExtractToDirectory(
+                TarGzAtRoot with
+                {
+                    Format = ArchiveFormat.Zip,
+                },
+                zipPath,
+                ["tool.exe"],
+                outDir
+            );
+
+            Assert.Equal("root", File.ReadAllText(Path.Combine(outDir, "tool.exe")));
+        }
+        finally
+        {
+            Directory.Delete(targetDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void MarkExecutable_OnUnix_SetsExecuteBits()
+    {
+        // The return is for the platform analyzer, which does not know Skip throws.
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Skip("Execute bits exist only on Linux and macOS.");
+            return;
+        }
+
+        var targetDir = CreateTempDir();
+        var file = Path.Combine(targetDir, "tool");
+        File.WriteAllText(file, "#!/bin/sh\n");
+        try
+        {
+            BundledFetcher.MarkExecutable([file]);
+
+            Assert.True(File.GetUnixFileMode(file).HasFlag(UnixFileMode.UserExecute));
+        }
+        finally
+        {
+            Directory.Delete(targetDir, recursive: true);
+        }
+    }
+
+    private static void WriteEntry(ZipArchive zip, string name, string contents)
+    {
+        using var writer = new StreamWriter(zip.CreateEntry(name).Open());
+        writer.Write(contents);
+    }
+
+    private static List<string> FileNamesIn(string dir) =>
+        [.. Directory.GetFiles(dir).Select(Path.GetFileName).OfType<string>().Order()];
 
     [Fact]
     public async Task FileDownloader_DownloadAsync_SendsUserAgent_AndReportsProgress()
