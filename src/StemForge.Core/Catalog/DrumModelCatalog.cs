@@ -57,9 +57,13 @@ public sealed class DrumModelCatalog(ModelCatalogService catalog, ModelProfileRe
             if (!EmitsDrums(profile))
                 continue;
 
-            var isLocal = File.Exists(Path.Combine(modelsDirectory, model.Filename));
             options.Add(
-                new DrumModelOption(model.Filename, model.FriendlyName, model.Architecture, isLocal)
+                new DrumModelOption(
+                    model.Filename,
+                    model.FriendlyName,
+                    model.Architecture,
+                    model.IsDownloadedIn(modelsDirectory)
+                )
             );
         }
 
