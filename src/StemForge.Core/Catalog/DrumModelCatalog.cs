@@ -1,13 +1,13 @@
 namespace StemForge.Core.Catalog;
 
-/// <summary>A drum-extraction model offered in Settings: identity plus whether it is already
-/// downloaded. <see cref="IsLocal"/> distinguishes a model present on disk from one that will be
-/// fetched on first use.</summary>
+/// <summary>A drum-extraction model offered in Settings: identity, whether it is already
+/// downloaded or fetched on first use, and its hand-written note when it has one.</summary>
 public sealed record DrumModelOption(
     string Filename,
     string FriendlyName,
     string Architecture,
-    bool IsLocal
+    bool IsLocal,
+    string? Note
 );
 
 /// <summary>
@@ -62,7 +62,8 @@ public sealed class DrumModelCatalog(ModelCatalogService catalog, ModelProfileRe
                     model.Filename,
                     model.FriendlyName,
                     model.Architecture,
-                    model.IsDownloadedIn(modelsDirectory)
+                    model.IsDownloadedIn(modelsDirectory),
+                    ModelNotes.For(model.Filename)?.Summary
                 )
             );
         }

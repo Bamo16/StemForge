@@ -426,7 +426,37 @@
                                           IsEnabled="{Binding !DrumModelsLoading}"
                                           PlaceholderText="Loading drum-capable models…"
                                           HorizontalAlignment="Stretch">
+                                    <!-- The open list adds each model's note under its name;
+                                         the closed box shows the name alone. -->
                                     <ComboBox.ItemTemplate>
+                                        <DataTemplate DataType="vm:DrumModelOptionViewModel">
+                                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto"
+                                                  ColumnSpacing="8" RowSpacing="2" Margin="0,2">
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding FriendlyName}"
+                                                           FontSize="12"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                <Border Grid.Column="1"
+                                                        VerticalAlignment="Center"
+                                                        CornerRadius="3" Padding="5,1"
+                                                        Background="{DynamicResource Bg2Brush}">
+                                                    <TextBlock Text="{Binding StateLabel}"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                </Border>
+                                                <TextBlock Grid.Row="1" Grid.ColumnSpan="2"
+                                                           Text="{Binding Note}"
+                                                           IsVisible="{Binding Note, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                           FontSize="11"
+                                                           MaxWidth="560"
+                                                           HorizontalAlignment="Left"
+                                                           TextWrapping="Wrap"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                    <ComboBox.SelectionBoxItemTemplate>
                                         <DataTemplate DataType="vm:DrumModelOptionViewModel">
                                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                                                 <TextBlock Grid.Column="0"
@@ -444,7 +474,7 @@
                                                 </Border>
                                             </Grid>
                                         </DataTemplate>
-                                    </ComboBox.ItemTemplate>
+                                    </ComboBox.SelectionBoxItemTemplate>
                                 </ComboBox>
                                 <TextBlock FontSize="11" TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
