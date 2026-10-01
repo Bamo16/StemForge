@@ -273,7 +273,7 @@
                                    Foreground="{DynamicResource TextPrimaryBrush}" />
                         <TextBlock FontSize="12" TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
-                                   Text="Everything not yet installed is ticked. Untick an optional tool to skip it, then press Install." />
+                                   Text="Everything not yet installed is ticked. Untick an optional tool to skip it." />
 
                         <!-- One row per tool (catalog order: required first, then optional) -->
                         <ItemsControl ItemsSource="{Binding InstallRows}">
