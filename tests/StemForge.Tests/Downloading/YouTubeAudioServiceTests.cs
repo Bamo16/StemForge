@@ -364,6 +364,82 @@ public sealed class YouTubeAudioServiceTests
         Assert.Equal("https://media.example.com/140-44khz", meta.MediaUrl);
     }
 
+    // ── Cookies ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ResolveAsync_CookiesUnreadable_RetriesWithoutThem()
+    {
+        var runner = new CookieFailingRunner(ValidJson);
+        var settings = new AppSettings { YtdlpCookiesFromBrowser = "chrome" };
+        settings.SetToolPathOverride(ToolKind.Ytdlp, "yt-dlp");
+        var paths = new AppPaths(settings);
+        var svc = new YouTubeAudioService(
+            runner,
+            paths,
+            new YtdlpUpdater(runner, paths, TimeProvider.System)
+        );
+
+        var meta = await svc.ResolveAsync(
+            "https://youtu.be/test",
+            settings,
+            null,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.NotNull(meta);
+        Assert.Equal(2, runner.Calls.Count);
+        Assert.Contains("--cookies-from-browser", runner.Calls[0]);
+        Assert.DoesNotContain("--cookies-from-browser", runner.Calls[1]);
+    }
+
+    // yt-dlp fails with a cookie error whenever cookies are passed, and succeeds without them.
+    private sealed class CookieFailingRunner(string json) : IProcessRunner
+    {
+        public List<IReadOnlyList<string>> Calls { get; } = [];
+
+        public Task<ProcessRunner.Result> RunStreamingStderrAsync(
+            string exe,
+            IEnumerable<string> args,
+            IProgress<string>? stderrProgress = null,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        )
+        {
+            var argList = args.ToList();
+            Calls.Add(argList);
+
+            return argList.Contains("--cookies-from-browser")
+                ? throw new ProcessRunner.ProcessFailedException(
+                    exe,
+                    1,
+                    "ERROR: Could not copy Chrome cookie database."
+                )
+                : Task.FromResult(new ProcessRunner.Result(0, json, string.Empty));
+        }
+
+        public Task<ProcessRunner.Result> RunAsync(
+            string exe,
+            IEnumerable<string> args,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
+
+        public Task<ProcessRunner.Result> RunCheckedAsync(
+            string exe,
+            IEnumerable<string> args,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
+
+        public Task RunStreamingAsync(
+            string exe,
+            IEnumerable<string> args,
+            IProgress<string>? progress = null,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
+    }
+
     // ── DownloadAsync ────────────────────────────────────────────────────────
 
     [Fact]

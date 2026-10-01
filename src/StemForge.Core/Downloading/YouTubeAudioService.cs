@@ -40,18 +40,6 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths, Y
             "ejs:github",
         };
 
-        var cookies = settings.YtdlpCookiesFromBrowser;
-        if (!string.IsNullOrWhiteSpace(cookies))
-        {
-            var flag =
-                cookies.Contains(Path.DirectorySeparatorChar)
-                || cookies.Contains(Path.AltDirectorySeparatorChar)
-                || cookies.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
-                    ? "--cookies"
-                    : "--cookies-from-browser";
-            args.AddRange([flag, cookies]);
-        }
-
         // Point yt-dlp at StemForge's deno when it exists; a bare-name override leaves yt-dlp to
         // find deno on PATH itself. ArgumentList handles OS-level quoting; no embedded quotes needed.
         if (File.Exists(_paths.Deno))
@@ -59,7 +47,35 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths, Y
         args.Add(url);
 
         // Stderr streams live (yt-dlp info lines); stdout (the JSON blob) is captured silently.
-        var result = await _runner.RunStreamingStderrAsync(_paths.Ytdlp, args, log, ct: ct);
+        ProcessRunner.Result result;
+        if (CookieArgs(settings.YtdlpCookiesFromBrowser) is not { } cookieArgs)
+            result = await _runner.RunStreamingStderrAsync(_paths.Ytdlp, args, log, ct: ct);
+        else
+        {
+            try
+            {
+                result = await _runner.RunStreamingStderrAsync(
+                    _paths.Ytdlp,
+                    [.. cookieArgs, .. args],
+                    log,
+                    ct: ct
+                );
+            }
+            catch (ProcessRunner.ProcessFailedException ex)
+                when (ex.Stderr.Contains("cookie", StringComparison.OrdinalIgnoreCase))
+            {
+                // Unreadable cookies (Chrome locks its database and, on Windows, encrypts it so
+                // only Chrome can read it) shouldn't cost the download; premium formats are what
+                // they bought, and the premium check reports their absence.
+                var message =
+                    $"Could not read cookies from \"{settings.YtdlpCookiesFromBrowser}\"; "
+                    + "continuing without them, so premium formats are unavailable.";
+                AppLogger.Warning("yt-dlp", message);
+                log?.Report($"WARNING: {message}");
+
+                result = await _runner.RunStreamingStderrAsync(_paths.Ytdlp, args, log, ct: ct);
+            }
+        }
 
         var info = DeserializeVideoInfo(result.Stdout);
 
@@ -97,6 +113,21 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths, Y
             Extractor: info.Extractor,
             InfoJson: result.Stdout
         );
+    }
+
+    /// <summary>yt-dlp's cookie arguments for a browser name or a cookies.txt path, or null for none.</summary>
+    private static string[]? CookieArgs(string? cookies)
+    {
+        if (string.IsNullOrWhiteSpace(cookies))
+            return null;
+
+        // A path, or a name ending .txt, is an exported cookies file; anything else is a browser.
+        var isFile =
+            cookies.Contains(Path.DirectorySeparatorChar)
+            || cookies.Contains(Path.AltDirectorySeparatorChar)
+            || cookies.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
+
+        return [isFile ? "--cookies" : "--cookies-from-browser", cookies];
     }
 
     /// Resolves metadata for a URL and returns it, or null if the URL is invalid or yt-dlp fails.

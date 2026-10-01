@@ -140,7 +140,12 @@ public partial class SettingsViewModel : PageViewModelBase
     public partial string ModelsDirectory { get; set; } = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCookieBrowserLikelyUnreadable))]
     public partial string YtdlpCookiesFromBrowser { get; set; } = string.Empty;
+
+    /// <summary>Shows a warning that yt-dlp usually can't read this browser's cookies on Windows.</summary>
+    public bool IsCookieBrowserLikelyUnreadable =>
+        CookieSource.IsLikelyUnreadable(YtdlpCookiesFromBrowser, PlatformInfo.Current);
 
     // ── Default audio format ───────────────────────────────────────────────────
 

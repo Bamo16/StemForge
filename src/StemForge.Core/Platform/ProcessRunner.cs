@@ -155,13 +155,16 @@ public sealed class ProcessRunner : IProcessRunner
         {
             if (captureStdout)
             {
-                // Mixed mode: capture stdout silently, stream stderr live.
-                var stdoutLines = new List<string>();
+                // Mixed mode: capture stdout silently, stream stderr live. Stderr is kept as well,
+                // so a failure carries the tool's own explanation rather than only an exit code.
+                List<string> stdoutLines = [];
+                List<string> stderrLines = [];
                 await foreach (var line in p.ReadAllLinesAsync(CancellationToken.None))
                 {
                     if (line.StandardError)
                     {
                         progress.Report(line.Content);
+                        stderrLines.Add(line.Content);
                         if (logRawLines)
                             AppLogger.Debug($"{binaryName}.err", line.Content);
                     }
@@ -171,21 +174,26 @@ public sealed class ProcessRunner : IProcessRunner
                     }
                 }
                 stdout = string.Join('\n', stdoutLines).Trim();
-                stderr = string.Empty;
+                stderr = string.Join('\n', stderrLines).Trim();
             }
             else
             {
-                // Stream mode: report all lines (stdout + stderr) as they arrive.
+                // Stream mode: report all lines (stdout + stderr) as they arrive, keeping stderr for
+                // a failure's message.
+                List<string> stderrLines = [];
                 await foreach (var line in p.ReadAllLinesAsync(CancellationToken.None))
                 {
                     progress.Report(line.Content);
+                    if (line.StandardError)
+                        stderrLines.Add(line.Content);
                     if (logRawLines)
                         AppLogger.Debug(
                             line.StandardError ? $"{binaryName}.err" : $"{binaryName}.out",
                             line.Content
                         );
                 }
-                stdout = stderr = string.Empty;
+                stdout = string.Empty;
+                stderr = string.Join('\n', stderrLines).Trim();
             }
         }
         else

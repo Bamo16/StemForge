@@ -206,7 +206,7 @@ YouTube's audio-only formats fall into two tiers:
 - **Public**: ~128 kbps is the ceiling without authentication.
 - **Premium-only**: ~256 kbps opus or AAC, requires a YouTube Premium account *and* authenticated requests.
 
-To unlock the premium tier, StemForge passes browser cookies to `yt-dlp`. Open **Settings → yt-dlp → Cookies from browser** and put your browser name there (`firefox`, `chrome`, `edge`, etc.). yt-dlp reads the cookies straight from the browser's storage at extraction time, so you stay signed in normally with no separate export step. [yt-dlp's cookie documentation](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp) covers caveats and alternative cookie sources.
+To unlock the premium tier, StemForge passes browser cookies to `yt-dlp`. Open **Settings → yt-dlp → Cookies from browser** and put your browser name there, usually `firefox`. yt-dlp reads the cookies straight from the browser's storage at extraction time, so you stay signed in normally with no separate export step. On Windows it usually can't read Chrome's or another Chromium-based browser's cookies, since Chrome encrypts them with a key only Chrome can use; use Firefox or an exported cookies.txt instead. If the cookies can't be read, StemForge says so and downloads without them. [yt-dlp's cookie documentation](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp) covers caveats and alternative cookie sources.
 
 ### Why deno
 
