@@ -504,6 +504,17 @@ def _canon(name: str) -> str:
     return name.strip().title()
 
 
+def _untracked_stems(new_files, output_format):
+    """The new files in the output directory that can be stems the library left untracked.
+
+    Only files in the job's output format qualify. Anything else appeared there from outside the
+    separation, such as the .asd analysis file Ableton writes beside audio it has scanned, and
+    must not be treated, renamed or tagged as a stem.
+    """
+    ext = "." + output_format.lower()
+    return {p for p in new_files if os.path.splitext(p)[1].lower() == ext}
+
+
 def _trim_stems_to_source_length(
     source_path: str, stem_paths: list[str], job_id: str | None
 ):
@@ -798,7 +809,8 @@ class Driver:
             )
             for p in outputs
         }
-        _orphans = _after_files - _before_files - _known_paths
+        _orphans = _untracked_stems(
+            _after_files - _before_files - _known_paths, output_format)
         if _orphans:
             outputs = list(outputs) + sorted(_orphans)
             emit("log", id=job_id, level="debug", module="driver",
