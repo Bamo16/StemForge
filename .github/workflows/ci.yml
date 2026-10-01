@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main, v0.2.0]
+    branches: [main, "integration/**"]
   pull_request:
-    branches: [main, v0.2.0]
+    branches: [main, "integration/**"]
+  # Weekly, so a YouTube change that breaks downloads fails here before it reaches users.
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
 
 jobs:
   linux-smoke:
@@ -55,3 +59,54 @@ jobs:
         run: >-
           dotnet test StemForge.slnx --configuration Release --no-build
           -- --filter-class StemForge.Tests.Integration.NetworkedDownloadIntegrationTests
+
+      # A fresh install: setup's bundled fetch into an empty bin folder, then detection finds
+      # every tool. Catches a pin whose URL, hash or archive layout no longer works.
+      - name: Fresh install (live)
+        env:
+          STEMFORGE_LIVE_ASSETS: "1"
+        run: >-
+          dotnet test StemForge.slnx --configuration Release --no-build
+          -- --filter-class StemForge.Tests.Integration.FreshInstallTests
+
+  windows:
+    name: Windows tests and fresh install (win-x64)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore StemForge.slnx
+
+      - name: Build
+        run: dotnet build StemForge.slnx --configuration Release --no-restore
+
+      - name: Test (offline suite)
+        run: dotnet test StemForge.slnx --configuration Release --no-build
+
+      # The platform StemForge ships: install ffmpeg, yt-dlp and deno exactly as setup does, and
+      # check each one runs.
+      - name: Fresh install (live)
+        env:
+          STEMFORGE_LIVE_ASSETS: "1"
+        run: >-
+          dotnet test StemForge.slnx --configuration Release --no-build
+          -- --filter-class StemForge.Tests.Integration.FreshInstallTests
+
+      # Resolves and downloads a real YouTube video on that fresh install, the way the app does.
+      # Allowed to fail: YouTube sometimes asks CI machines to sign in. A failure here is still
+      # worth reading, because it is how a stale yt-dlp or a changed YouTube shows up.
+      - name: YouTube download on a fresh install (live)
+        continue-on-error: true
+        env:
+          STEMFORGE_LIVE_ASSETS: "1"
+          STEMFORGE_LIVE_YOUTUBE: "1"
+        run: >-
+          dotnet test StemForge.slnx --configuration Release --no-build
+          -- --filter-class StemForge.Tests.Integration.FreshInstallTests
