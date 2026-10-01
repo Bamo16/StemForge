@@ -19,5 +19,5 @@ public sealed class PresetCategoryGroup(
             _ => category.ToString().ToUpperInvariant(),
         };
     public IBrush AccentBrush { get; } = accentBrush;
-    public ObservableCollection<PresetItemViewModel> Items { get; } = [with(items)];
+    public ObservableCollection<PresetItemViewModel> Items { get; } = [.. items];
 }

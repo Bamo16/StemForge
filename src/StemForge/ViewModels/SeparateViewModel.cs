@@ -496,7 +496,7 @@ public partial class SeparateViewModel : PageViewModelBase
             OnPropertyChanged(nameof(UrlInputBlockedMessage));
             RefreshSummary();
         };
-        Categories = [with(BuildGroups(PresetCatalog.BuiltIn))];
+        Categories = [.. BuildGroups(PresetCatalog.BuiltIn)];
         _ = LoadBuiltInPresetsAsync();
 
         foreach (var g in Categories)

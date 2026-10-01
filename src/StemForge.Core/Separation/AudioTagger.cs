@@ -79,7 +79,7 @@ public static class AudioTagger
         {
             using var f = TFile.Create(path);
             var pic = BestPicture(f.Tag.Pictures);
-            var (SourceUrl, SourceCodec, SourceBitrateKbps, SourceFormatId) = ParseProvenance(
+            var (sourceUrl, sourceCodec, sourceBitrateKbps, sourceFormatId) = ParseProvenance(
                 f.Tag.Comment
             );
             return new SourceTagInfo
@@ -90,10 +90,10 @@ public static class AudioTagger
                 Year = f.Tag.Year,
                 CoverArtBytes = pic?.Data.Data,
                 CoverArtMimeType = NullIfEmpty(pic?.MimeType) ?? "image/jpeg",
-                SourceUrl = SourceUrl,
-                SourceCodec = SourceCodec,
-                SourceBitrateKbps = SourceBitrateKbps,
-                SourceFormatId = SourceFormatId,
+                SourceUrl = sourceUrl,
+                SourceCodec = sourceCodec,
+                SourceBitrateKbps = sourceBitrateKbps,
+                SourceFormatId = sourceFormatId,
             };
         }
         catch (Exception ex)
