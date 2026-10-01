@@ -175,7 +175,7 @@ public sealed class AudioDubFilteringTests
             FormatNote = drc ? "medium, DRC" : "medium",
         };
 
-    private static YtDlpMetadata Meta(IReadOnlyList<YtDlpFormat> formats) =>
+    private static YtDlpMetadata Meta(List<YtDlpFormat> formats) =>
         new(
             SourceUrl: "https://www.youtube.com/watch?v=x",
             Title: "T",

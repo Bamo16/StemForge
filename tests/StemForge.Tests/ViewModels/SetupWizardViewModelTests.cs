@@ -262,7 +262,7 @@ public sealed class SetupWizardViewModelTests
     [Fact]
     public void VariantPicker_OffersOnlyCurrentOsVariants()
     {
-        IVariantPicker vm = Build();
+        var vm = Build();
 
         var install = (UvToolInstall)ToolCatalog.Get(ToolKind.AudioSeparator).InstallStrategy;
         var expected = install.VariantsFor(PlatformInfo.Current.Os).Select(v => v.Variant).ToList();

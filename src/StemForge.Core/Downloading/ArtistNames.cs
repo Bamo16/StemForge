@@ -26,7 +26,7 @@ internal static partial class ArtistNames
     {
         var source = artists is { Count: > 0 } ? artists : Split(flattened);
         List<string> unique = [];
-        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> seen = [with(StringComparer.OrdinalIgnoreCase)];
 
         foreach (var name in source)
             if (name.Trim() is { Length: > 0 } trimmed && seen.Add(trimmed))
@@ -67,7 +67,7 @@ internal static partial class ArtistNames
     /// </summary>
     private static HashSet<string> FeaturedNames(string title)
     {
-        HashSet<string> names = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> names = [with(StringComparer.OrdinalIgnoreCase)];
 
         foreach (Match match in FeaturedSegment.Matches(title))
         {

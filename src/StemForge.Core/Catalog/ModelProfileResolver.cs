@@ -107,9 +107,7 @@ public sealed class ModelProfileResolver(IModelConfigSource? configSource = null
     {
         if (IsDemucs(model.Architecture))
         {
-            return DemucsStems
-                .Select(n => new ProfileStem(n, StemSource.ArchitectureDefault))
-                .ToList();
+            return [.. DemucsStems.Select(n => new ProfileStem(n, StemSource.ArchitectureDefault))];
         }
 
         // MDX / VR (and any other two-stem architecture): a target plus its complement.

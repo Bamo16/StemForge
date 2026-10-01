@@ -4,11 +4,9 @@ namespace StemForge.Tests.TestDoubles;
 /// Returns a canned thumbnail path (or null) without performing any HTTP work. Records the
 /// directory it was asked to write into so tests can assert the fetch target.
 /// </summary>
-internal sealed class StubThumbnailFetcher : IThumbnailFetcher
+internal sealed class StubThumbnailFetcher(string? result = null) : IThumbnailFetcher
 {
-    private readonly string? _result;
-
-    public StubThumbnailFetcher(string? result = null) => _result = result;
+    private readonly string? _result = result;
 
     public string? LastOutDir { get; private set; }
 

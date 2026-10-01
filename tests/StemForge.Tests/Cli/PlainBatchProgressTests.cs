@@ -12,10 +12,7 @@ public sealed class PlainBatchProgressTests
 {
     // Drives a single input through a sequence of (percent, activity) reports and returns the
     // standard-out lines it produced.
-    private static IReadOnlyList<string> Run(
-        bool verbose,
-        params (int Percent, string? Activity)[] reports
-    )
+    private static string[] Run(bool verbose, params (int Percent, string? Activity)[] reports)
     {
         var stdout = new StringWriter();
         var stderr = new StringWriter();

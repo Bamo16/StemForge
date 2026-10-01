@@ -14,7 +14,7 @@ public sealed class ModelProfileResolverTests
         string filename,
         string arch,
         params (string Name, double? Sdr)[] stems
-    ) => new(filename, arch, filename, stems.Select(s => new StemSdr(s.Name, s.Sdr)).ToList());
+    ) => new(filename, arch, filename, [.. stems.Select(s => new StemSdr(s.Name, s.Sdr))]);
 
     // ── Tier 1: config / benchmark instrument list ─────────────────────────────
 

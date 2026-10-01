@@ -21,7 +21,7 @@ public partial class App : Application
 
         // Resolve the sink before Initialize so it is registered before the file opens.
         provider.GetRequiredService<AppLoggerSink>();
-        AppLogger.Initialize(provider.GetRequiredService<AppSettings>().MaxLogEntries);
+        AppLogger.Initialize();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

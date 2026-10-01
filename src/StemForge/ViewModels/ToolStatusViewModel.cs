@@ -1,21 +1,12 @@
 namespace StemForge.ViewModels;
 
-public sealed class ToolStatusViewModel
+public sealed class ToolStatusViewModel(ToolState info, string? variantTag = null)
 {
-    public string Name { get; }
-    public bool Found { get; }
-    public string Version { get; }
-    public bool IsRequired { get; }
+    public string Name { get; } = info.Name;
+    public bool Found { get; } = info.Found;
+    public string Version { get; } = info.Version ?? string.Empty;
+    public bool IsRequired { get; } = info.IsRequired;
     public string StatusLine =>
         Found ? Version : (IsRequired ? "Not found" : "Not found (optional)");
-    public string? VariantTag { get; }
-
-    public ToolStatusViewModel(ToolState info, string? variantTag = null)
-    {
-        Name = info.Name;
-        Found = info.Found;
-        Version = info.Version ?? string.Empty;
-        IsRequired = info.IsRequired;
-        VariantTag = variantTag;
-    }
+    public string? VariantTag { get; } = variantTag;
 }
