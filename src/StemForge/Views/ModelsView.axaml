@@ -299,11 +299,12 @@
                                                        VerticalAlignment="Center" />
 
                                             <!-- Stems + SDR -->
-                                            <StackPanel Grid.Column="3"
-                                                        Orientation="Horizontal"
-                                                        Spacing="6"
-                                                        VerticalAlignment="Center"
-                                                        Margin="0,0,8,0">
+                                            <!-- A Grid, not a horizontal StackPanel: a StackPanel gives the
+                                                 text unlimited width, so it would never trim. -->
+                                            <Grid Grid.Column="3"
+                                                  ColumnDefinitions="*,Auto"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,8,0">
                                                 <TextBlock Text="{Binding StemNames}"
                                                            ToolTip.Tip="{Binding StemNames}"
                                                            FontSize="11"
@@ -313,7 +314,9 @@
                                                 <!-- Marks stems guessed from the architecture or
                                                      filename, not read from the benchmark or the
                                                      model's config. Advisory only. -->
-                                                <Border IsVisible="{Binding StemsAreInferred}"
+                                                <Border Grid.Column="1"
+                                                        Margin="6,0,0,0"
+                                                        IsVisible="{Binding StemsAreInferred}"
                                                         Background="{DynamicResource Bg2Brush}"
                                                         CornerRadius="3"
                                                         Padding="4,1"
@@ -323,7 +326,7 @@
                                                                Foreground="{DynamicResource TextPlaceholderBrush}"
                                                                ToolTip.Tip="Stems resolved without running the model. Advisory; audio-separator decides the actual output." />
                                                 </Border>
-                                            </StackPanel>
+                                            </Grid>
 
                                             <!-- Local badge -->
                                             <Border Grid.Column="4"
