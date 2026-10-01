@@ -288,21 +288,25 @@ public partial class ModelsViewModel : PageViewModelBase
         NewPresetName = string.Empty;
     }
 
-    // ── Delete local model file ───────────────────────────────────────────────
+    // ── Delete local model files ──────────────────────────────────────────────
 
     [RelayCommand]
     private void DeleteModel(ModelItemViewModel item)
     {
-        var path = Path.Combine(_paths.ModelsDirectory, item.Filename);
+        // A config can be shared by several models, so keep any file another downloaded model needs.
+        var stillNeeded = _all.Where(other => other != item && other.IsLocal)
+            .SelectMany(other => other.Model.Files)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
         try
         {
-            if (File.Exists(path))
-                File.Delete(path);
+            foreach (var file in item.Model.Files.Where(file => !stillNeeded.Contains(file)))
+                File.Delete(Path.Combine(_paths.ModelsDirectory, file));
+
             item.IsLocal = false;
             item.FileSizeBytes = 0;
             AppLogger.Info(nameof(ModelsViewModel), $"Deleted local model: {item.Filename}");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             AppLogger.Error(
                 nameof(ModelsViewModel),
@@ -355,13 +359,11 @@ public partial class ModelsViewModel : PageViewModelBase
 
             foreach (var (m, profile) in models.Zip(profiles))
             {
-                var fullPath = Path.Combine(modelsDir, m.Filename);
-                var exists = File.Exists(fullPath);
-
+                var downloaded = m.IsDownloadedIn(modelsDir);
                 var vm = new ModelItemViewModel(m, profile)
                 {
-                    IsLocal = exists,
-                    FileSizeBytes = exists ? new FileInfo(fullPath).Length : 0,
+                    IsLocal = downloaded,
+                    FileSizeBytes = downloaded ? m.SizeIn(modelsDir) : 0,
                 };
                 vm.PropertyChanged += OnItemPropertyChanged;
                 _all.Add(vm);

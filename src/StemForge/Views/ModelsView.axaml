@@ -310,9 +310,9 @@
                                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                                            VerticalAlignment="Center"
                                                            TextTrimming="CharacterEllipsis" />
-                                                <!-- Marks stems resolved without running the model
-                                                     (architecture default / filename / config),
-                                                     not benchmark-measured. Advisory only. -->
+                                                <!-- Marks stems guessed from the architecture or
+                                                     filename, not read from the benchmark or the
+                                                     model's config. Advisory only. -->
                                                 <Border IsVisible="{Binding StemsAreInferred}"
                                                         Background="{DynamicResource Bg2Brush}"
                                                         CornerRadius="3"
