@@ -1,0 +1,37 @@
+{
+  "BS-Roformer-SW.ckpt": {
+    "author": "jarredou",
+    "summary": "The cleanest drums of any model here. Pick it when the drum stem goes into a song. A 6-stem model, about 700 MB.",
+    "links": [{ "label": "BS Roformer SW on MVSEP", "url": "https://mvsep.com/algorithms/77" }]
+  },
+  "htdemucs_ft.yaml": {
+    "author": "Meta AI",
+    "summary": "Fine-tuned Demucs v4, the best Demucs on drums. Good enough when the drum stem is only for analysis, such as BPM detection.",
+    "links": [{ "label": "Demucs on GitHub", "url": "https://github.com/facebookresearch/demucs" }]
+  },
+  "htdemucs.yaml": {
+    "author": "Meta AI",
+    "summary": "Demucs v4 before fine-tuning. Weaker on drums than htdemucs_ft.",
+    "links": [{ "label": "Demucs on GitHub", "url": "https://github.com/facebookresearch/demucs" }]
+  },
+  "hdemucs_mmi.yaml": {
+    "author": "Meta AI",
+    "summary": "Hybrid Demucs v3 trained on extra data. Weaker on drums than htdemucs_ft.",
+    "links": [{ "label": "Demucs on GitHub", "url": "https://github.com/facebookresearch/demucs" }]
+  },
+  "htdemucs_6s.yaml": {
+    "author": "Meta AI",
+    "summary": "Demucs v4 with guitar and piano stems added. The weakest drums of the Demucs models.",
+    "links": [{ "label": "Demucs on GitHub", "url": "https://github.com/facebookresearch/demucs" }]
+  },
+  "kuielab_a_drums.onnx": {
+    "author": "KUIELab",
+    "summary": "MDX-Net drums model from the 2021 Music Demixing Challenge. Far weaker than the Demucs and Roformer models.",
+    "links": [{ "label": "MDX-Net on GitHub", "url": "https://github.com/kuielab/mdx-net" }]
+  },
+  "kuielab_b_drums.onnx": {
+    "author": "KUIELab",
+    "summary": "MDX-Net drums model from the 2021 Music Demixing Challenge. Far weaker than the Demucs and Roformer models.",
+    "links": [{ "label": "MDX-Net on GitHub", "url": "https://github.com/kuielab/mdx-net" }]
+  }
+}
