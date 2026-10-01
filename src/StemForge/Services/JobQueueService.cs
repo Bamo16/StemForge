@@ -125,6 +125,10 @@ public sealed class JobQueueService(SeparationPipeline pipeline, AppSettings set
                 vm.StatusText = "Downloading…";
                 break;
 
+            case "resolved" when update.SourceName is { Length: > 0 } name:
+                vm.InputFileName = name;
+                break;
+
             case "starting":
                 var presetIndex = update.RunIndex;
                 vm.PresetCounter = totalSteps > 1 ? $"{presetIndex + 1}/{totalSteps}" : "";

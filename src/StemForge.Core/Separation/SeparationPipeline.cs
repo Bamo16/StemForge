@@ -78,6 +78,7 @@ public sealed class SeparationPipeline(
                     url,
                     dlTempDir,
                     dlLog,
+                    progress,
                     ct,
                     job.PreResolvedMeta
                 );
@@ -471,14 +472,7 @@ public sealed class SeparationPipeline(
         // Resolve metadata + thumbnail, then stream directly to the output directory in the
         // requested format. Unlike the separation pipeline, there is no intermediate FLAC: the
         // download IS the deliverable, so it is written once in its final format.
-        var meta =
-            job.PreResolvedMeta
-            ?? await _youTubeAudio.ResolveAsync(
-                YtUrlHelper.TryNormalize(url, out var normalized) ? normalized : url,
-                _settings,
-                log,
-                ct
-            );
+        var meta = job.PreResolvedMeta ?? await ResolveAsync(url, log, progress, ct);
 
         // The thumbnail is fetched to a temp directory and embedded as cover art; the standalone
         // image file is not part of the deliverable, so it is removed after tagging rather than
@@ -774,21 +768,37 @@ public sealed class SeparationPipeline(
         string url,
         string dlDir,
         IProgress<string> log,
+        IProgress<JobUpdate>? progress,
         CancellationToken ct,
         YtDlpMetadata? preResolved = null
     )
     {
-        var meta =
-            preResolved
-            ?? await _youTubeAudio.ResolveAsync(
-                YtUrlHelper.TryNormalize(url, out var n) ? n : url,
-                _settings,
-                log,
-                ct
-            );
+        var meta = preResolved ?? await ResolveAsync(url, log, progress, ct);
         var thumbPath = await _thumbnailFetcher.DownloadAsync(meta.ThumbnailUrl, dlDir, ct);
         var sourceInfo = AudioTagger.FromYtDlpMetadata(meta, thumbPath);
         var audioPath = await _youTubeAudio.DownloadAsync(meta, AudioFormat.Flac, dlDir, log, ct);
         return (audioPath, sourceInfo);
+    }
+
+    /// <summary>
+    /// Resolves a job's URL and reports the name its source will be given, so a job queued before
+    /// its URL was resolved stops showing the URL as soon as the name is known (ADR 0014).
+    /// </summary>
+    private async Task<YtDlpMetadata> ResolveAsync(
+        string url,
+        IProgress<string> log,
+        IProgress<JobUpdate>? progress,
+        CancellationToken ct
+    )
+    {
+        var meta = await _youTubeAudio.ResolveAsync(
+            YtUrlHelper.TryNormalize(url, out var normalized) ? normalized : url,
+            _settings,
+            log,
+            ct
+        );
+        progress?.Report(new JobUpdate { Phase = "resolved", SourceName = meta.BaseName });
+
+        return meta;
     }
 }
