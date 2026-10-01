@@ -78,12 +78,10 @@ public sealed class ModelProfileResolver(IModelConfigSource? configSource = null
         {
             // A vocals/instrumental target implies its complement: a model separating one of those
             // writes the residual too, by construction. Naming it matters because this tier is where
-            // roformer models land, and they land here routinely rather than exceptionally. MDXC is
-            // not in the tier-2 two-stem list (that family does contain genuine multi-stem models),
-            // and the config fetch above needs the network, so offline every roformer without
-            // bundled stems arrives here. Reporting the target alone understated those models as
-            // one-stem, which also fed the ensemble overlap guidance a contributor count that was
-            // too low.
+            // a roformer lands when its config is neither on disk nor reachable. MDXC is not in the
+            // tier-2 two-stem list (that family does contain genuine multi-stem models). Reporting
+            // the target alone understated those models as one-stem, which also fed the ensemble
+            // overlap guidance a contributor count that was too low.
             //
             // The complement carries the same low confidence as the target it was derived from, so
             // this stays advisory (ADR 0010) rather than asserting a stem the model may not emit.

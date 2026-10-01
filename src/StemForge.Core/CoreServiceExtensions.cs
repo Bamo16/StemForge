@@ -28,6 +28,8 @@ public static class CoreServiceExtensions
         services.AddSingleton<IFileDownloader, FileDownloader>();
         services.AddHttpClient("pypi");
         services.AddSingleton<IPackageIndex, PyPiPackageIndex>();
+        services.AddHttpClient("model-config");
+        services.AddSingleton<IModelConfigSource, ModelConfigSource>();
 
         // Update check
         services.AddSingleton<UpdateCheckService>();

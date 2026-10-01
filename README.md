@@ -185,6 +185,7 @@ If you already have any of these tools on your PATH, the wizard detects them and
 | App settings | `%APPDATA%\StemForge\settings.json` |
 | User presets | `%APPDATA%\StemForge\user_presets.json` |
 | Drum-stem cache | `%LOCALAPPDATA%\StemForge\drum-cache` |
+| Model configs read for their stems | `%LOCALAPPDATA%\StemForge\model-configs` |
 
 ### Updating yt-dlp between StemForge releases
 

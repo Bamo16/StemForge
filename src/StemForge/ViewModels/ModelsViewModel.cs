@@ -347,15 +347,16 @@ public partial class ModelsViewModel : PageViewModelBase
             var models = await _catalog.ListModelsAsync(forceRefresh);
             var modelsDir = _paths.ModelsDirectory;
 
-            foreach (var m in models)
+            // Resolve the advisory profiles so models the benchmark lists no stems for still show
+            // their resolved stems. Only a config-driven model with no benchmark stems and no
+            // config on disk reaches the network, and resolving them together keeps a first load
+            // from waiting on each fetch in turn.
+            var profiles = await Task.WhenAll(models.Select(m => _profiles.ResolveAsync(m)));
+
+            foreach (var (m, profile) in models.Zip(profiles))
             {
                 var fullPath = Path.Combine(modelsDir, m.Filename);
                 var exists = File.Exists(fullPath);
-
-                // Resolve the advisory profile so models the benchmark lists no stems for still
-                // show their resolved stems. The resolver only reaches the network when a
-                // config-driven model has no benchmark stems; for everything else this is local.
-                var profile = await _profiles.ResolveAsync(m);
 
                 var vm = new ModelItemViewModel(m, profile)
                 {
