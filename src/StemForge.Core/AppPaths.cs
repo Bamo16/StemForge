@@ -29,18 +29,14 @@ public sealed class AppPaths(AppSettings settings, PlatformInfo? platform = null
     /// so callers work even when uv was just installed and its directory is not yet on PATH.</summary>
     public string Uv => OverrideFor(ToolKind.Uv) ?? (File.Exists(KnownUvPath) ? KnownUvPath : "uv");
 
-    /// <summary>Path or PATH-resolvable name of the yt-dlp binary. Prefers user override, then the
-    /// bundled binary downloaded on first run, and finally bare 'yt-dlp' on PATH.</summary>
-    public string Ytdlp =>
-        OverrideFor(ToolKind.Ytdlp) ?? (File.Exists(BundledYtdlp) ? BundledYtdlp : "yt-dlp");
+    // ffmpeg, yt-dlp and deno resolve to StemForge's own copies, never to whatever is on PATH: an
+    // old copy there broke URL downloads (#95). A Settings override is the only way to use another.
 
-    /// <summary>
-    /// Path or PATH-resolvable name of the ffmpeg binary. Prefers the user's explicit
-    /// override, then the bundled binary downloaded on first run, and finally falls back
-    /// to bare 'ffmpeg' on PATH for users who already have a system install.
-    /// </summary>
-    public string Ffmpeg =>
-        OverrideFor(ToolKind.Ffmpeg) ?? (File.Exists(BundledFfmpeg) ? BundledFfmpeg : "ffmpeg");
+    /// <summary>The yt-dlp StemForge runs: the user's override, else the bundled binary.</summary>
+    public string Ytdlp => OverrideFor(ToolKind.Ytdlp) ?? BundledYtdlp;
+
+    /// <summary>The ffmpeg StemForge runs: the user's override, else the bundled binary.</summary>
+    public string Ffmpeg => OverrideFor(ToolKind.Ffmpeg) ?? BundledFfmpeg;
 
     /// <summary>
     /// Path or PATH-resolvable name of the audio-separator binary. If no user
@@ -75,13 +71,8 @@ public sealed class AppPaths(AppSettings settings, PlatformInfo? platform = null
     public string BundledFfmpeg =>
         Path.Combine(BundledBinDir, $"ffmpeg{_platform.ExecutableSuffix}");
 
-    /// <summary>
-    /// Path or PATH-resolvable name of the deno binary. yt-dlp auto-discovers deno on PATH
-    /// to solve YouTube's n-challenges; we bundle it so users don't have to install a JS
-    /// runtime themselves.
-    /// </summary>
-    public string Deno =>
-        OverrideFor(ToolKind.Deno) ?? (File.Exists(BundledDeno) ? BundledDeno : "deno");
+    /// <summary>The deno yt-dlp uses for YouTube's challenges: the user's override, else the bundled binary.</summary>
+    public string Deno => OverrideFor(ToolKind.Deno) ?? BundledDeno;
 
     /// <summary>Path to the bundled deno binary inside <see cref="BundledBinDir"/>.</summary>
     public string BundledDeno => Path.Combine(BundledBinDir, $"deno{_platform.ExecutableSuffix}");

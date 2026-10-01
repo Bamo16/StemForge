@@ -50,9 +50,9 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             args.AddRange([flag, cookies]);
         }
 
-        // Pass bundled deno explicitly so yt-dlp finds it without deno on PATH.
-        // ArgumentList handles OS-level quoting automatically; no embedded quotes needed.
-        if (Path.IsPathRooted(_paths.Deno))
+        // Point yt-dlp at StemForge's deno when it exists; a bare-name override leaves yt-dlp to
+        // find deno on PATH itself. ArgumentList handles OS-level quoting; no embedded quotes needed.
+        if (File.Exists(_paths.Deno))
             args.AddRange(["--js-runtimes", $"deno:{_paths.Deno}"]);
         args.Add(url);
 

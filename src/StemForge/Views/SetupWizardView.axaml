@@ -273,7 +273,7 @@
                                    Foreground="{DynamicResource TextPrimaryBrush}" />
                         <TextBlock FontSize="12" TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
-                                   Text="Choose what to install. Already-installed tools are checked off — uncheck anything you'd like to skip." />
+                                   Text="Everything not yet installed is ticked. Untick an optional tool to skip it, then press Install." />
 
                         <!-- One row per tool (catalog order: required first, then optional) -->
                         <ItemsControl ItemsSource="{Binding InstallRows}">
@@ -392,14 +392,6 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!-- Install button — hides entirely when nothing's selected for install -->
-                        <Button Classes="accent"
-                                Content="Install selected"
-                                Command="{Binding InstallSelectedCommand}"
-                                IsEnabled="{Binding !IsInstalling}"
-                                IsVisible="{Binding HasAnythingToInstall}"
-                                HorizontalAlignment="Left" />
-
                         <!-- Shared install log -->
                         <ScrollViewer MaxHeight="120"
                                       HorizontalScrollBarVisibility="Disabled"
@@ -474,7 +466,7 @@
                             Command="{Binding StartCommand}"
                             IsVisible="{Binding IsWelcomeStep}" />
 
-                    <!-- Detect / Directories / Install: Next -->
+                    <!-- Detect / Directories, and Install once nothing ticked is missing: Next -->
                     <Button Grid.Column="2"
                             Classes="accent"
                             Content="Next"
@@ -484,9 +476,18 @@
                             <MultiBinding Converter="{x:Static BoolConverters.And}">
                                 <Binding Path="!IsWelcomeStep" />
                                 <Binding Path="!IsFinishStep" />
+                                <Binding Path="!IsInstallPending" />
                             </MultiBinding>
                         </Button.IsVisible>
                     </Button>
+
+                    <!-- Install with anything ticked still missing: one button installs it all and moves on -->
+                    <Button Grid.Column="2"
+                            Classes="accent"
+                            Content="Install"
+                            Command="{Binding InstallAndContinueCommand}"
+                            IsEnabled="{Binding !IsInstalling}"
+                            IsVisible="{Binding IsInstallPending}" />
 
                     <!-- Finish: Start using StemForge -->
                     <Button Grid.Column="2"

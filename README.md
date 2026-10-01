@@ -157,7 +157,7 @@ Live progress shows a per-input bar with the current activity. Press Ctrl+C once
 
 1. Open the [Releases](../../releases) page and download the latest `StemForge-vX.Y.Z-win-x64.zip`.
 2. Extract anywhere. You'll get a `StemForge/` folder; double-click `StemForge.exe` inside it. No .NET install required.
-3. **First-run wizard** offers to install everything you need:
+3. **First-run wizard** installs everything you need with one click (untick an optional tool to skip it):
    - `uv`: Python tool manager, ~25 MB, installed via [Astral's official installer](https://astral.sh/uv).
    - `audio-separator`: the separation engine, ~250 MB to 2 GB depending on GPU variant, installed as a uv tool.
    - `ffmpeg`: ~265 MB, bundled binary from [`nomercy-ffmpeg`](https://github.com/NoMercy-Entertainment/nomercy-ffmpeg), dropped into `%LOCALAPPDATA%\StemForge\bin`.
@@ -167,7 +167,7 @@ Live progress shows a per-input bar with the current activity. Press Ctrl+C once
 
 > **Windows SmartScreen on first launch.** Because `StemForge.exe` isn't code-signed yet, Windows will probably show a *"Windows protected your PC"* prompt the first time you run it. Click **More info** and then **Run anyway** to proceed. This is the standard warning for any unsigned executable; nothing in StemForge needs admin rights or alters system settings.
 
-If you already have any of these tools on your PATH, the wizard detects them and skips re-installing.
+A `uv` or `audio-separator` already on your PATH is used as it is. `ffmpeg`, `yt-dlp` and `deno` are always StemForge's own copies, even when you have others on PATH, so an old copy can't break downloads or separation; **Settings → Tool paths** can point StemForge at a different binary. If a required tool goes missing, the wizard opens again at startup.
 
 > **Linux and macOS.** There's no published Linux or macOS build yet. The app is cross-platform (see [Status](#status)) and you can build and run it from source today (see [For developers](#for-developers)); a packaged download for those platforms may follow.
 
