@@ -438,20 +438,27 @@ public sealed class YouTubeAudioServiceTests
             bool logRawLines = true,
             CancellationToken ct = default
         ) => throw new NotSupportedException();
+
+        public Task RunPipedAsync(
+            string producer,
+            IEnumerable<string> producerArgs,
+            string consumer,
+            IEnumerable<string> consumerArgs,
+            IProgress<string>? progress = null,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
     }
 
     // ── DownloadAsync ────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task DownloadAsync_YtdlpFetchesFromTheResolvedJson_FfmpegConvertsTheLocalFile()
+    public async Task DownloadAsync_YtdlpStreamsFromTheResolvedJson_IntoFfmpeg()
     {
-        var downloaded = Path.Combine(Path.GetTempPath(), $"sf-source-{Guid.NewGuid():N}.m4a");
-        File.WriteAllText(downloaded, string.Empty);
         var outDir = Path.Combine(Path.GetTempPath(), $"sf-out-{Guid.NewGuid():N}");
         try
         {
             var fake = new FakeProcessRunner();
-            fake.Setup("yt-dlp", downloaded);
+            fake.Setup("yt-dlp", string.Empty);
             fake.Setup("ffmpeg", string.Empty);
             var meta = Meta() with { FormatId = "140", InfoJson = """{"id":"abc"}""" };
 
@@ -467,34 +474,38 @@ public sealed class YouTubeAudioServiceTests
             var (ytdlpExe, ytdlpArgs) = fake.Calls[0];
             Assert.Equal("yt-dlp", ytdlpExe);
             Assert.Equal("140", After(ytdlpArgs, "--format"));
+            Assert.Equal("-", After(ytdlpArgs, "--output"));
             Assert.Contains("--load-info-json", ytdlpArgs);
             Assert.DoesNotContain(meta.SourceUrl, ytdlpArgs);
 
             var (ffmpegExe, ffmpegArgs) = fake.Calls[1];
             Assert.Equal("ffmpeg", ffmpegExe);
-            Assert.Equal(downloaded, After(ffmpegArgs, "-i"));
+            Assert.Equal("pipe:0", After(ffmpegArgs, "-i"));
+            Assert.Equal("44100", After(ffmpegArgs, "-ar"));
             Assert.Equal(Path.Combine(outDir, $"{meta.BaseName}.flac"), output);
             Assert.Equal(output, ffmpegArgs[^1]);
         }
         finally
         {
-            File.Delete(downloaded);
             if (Directory.Exists(outDir))
                 Directory.Delete(outDir, recursive: true);
         }
     }
 
     [Fact]
-    public async Task DownloadAsync_YtdlpReportsNoFile_Throws()
+    public async Task DownloadAsync_YtdlpFails_ThrowsItsError()
     {
         var outDir = Path.Combine(Path.GetTempPath(), $"sf-out-{Guid.NewGuid():N}");
         try
         {
             var fake = new FakeProcessRunner();
-            fake.Setup("yt-dlp", string.Empty);
+            fake.Setup(
+                "yt-dlp",
+                new FakeProcessRunner.FakeResult(1, Stderr: "ERROR: HTTP Error 403")
+            );
             fake.Setup("ffmpeg", string.Empty);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            var ex = await Assert.ThrowsAsync<ProcessRunner.ProcessFailedException>(() =>
                 BuildService(fake)
                     .DownloadAsync(
                         Meta(),
@@ -504,7 +515,7 @@ public sealed class YouTubeAudioServiceTests
                         TestContext.Current.CancellationToken
                     )
             );
-            Assert.Single(fake.Calls);
+            Assert.Contains("403", ex.Message);
         }
         finally
         {

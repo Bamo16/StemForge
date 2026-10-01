@@ -150,5 +150,14 @@ public sealed class UrlInputResolverTests
             bool logRawLines = true,
             CancellationToken ct = default
         ) => throw new OperationCanceledException();
+
+        public Task RunPipedAsync(
+            string producer,
+            IEnumerable<string> producerArgs,
+            string consumer,
+            IEnumerable<string> consumerArgs,
+            IProgress<string>? progress = null,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
     }
 }
