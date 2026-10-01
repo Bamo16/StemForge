@@ -15,7 +15,14 @@ public sealed class DrumModelCatalogTests
         string filename,
         string arch,
         params (string Name, double? Sdr)[] stems
-    ) => new(filename, arch, filename, [.. stems.Select(s => new StemSdr(s.Name, s.Sdr))]);
+    ) =>
+        new(
+            filename,
+            arch,
+            filename,
+            [.. stems.Select(s => new StemSdr(s.Name, s.Sdr))],
+            [filename]
+        );
 
     private static async Task<ModelProfile> ResolveAsync(ModelInfo model) =>
         await new ModelProfileResolver().ResolveAsync(model, TestContext.Current.CancellationToken);

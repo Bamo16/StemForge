@@ -48,12 +48,12 @@ public sealed class DrumModelCatalog(ModelCatalogService catalog, ModelProfileRe
     )
     {
         var models = await _catalog.ListModelsAsync(forceRefresh, ct).ConfigureAwait(false);
+        var profiles = await Task.WhenAll(models.Select(model => _profiles.ResolveAsync(model, ct)))
+            .ConfigureAwait(false);
         var options = new List<DrumModelOption>();
 
-        foreach (var model in models)
+        foreach (var (model, profile) in models.Zip(profiles))
         {
-            ct.ThrowIfCancellationRequested();
-            var profile = await _profiles.ResolveAsync(model, ct).ConfigureAwait(false);
             if (!EmitsDrums(profile))
                 continue;
 

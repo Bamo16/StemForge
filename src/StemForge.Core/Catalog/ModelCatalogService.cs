@@ -91,7 +91,15 @@ public sealed class ModelCatalogService(IProcessRunner runner, AppPaths paths)
                 if (string.IsNullOrWhiteSpace(filename) || !seen.Add(filename))
                     continue;
 
-                list.Add(new ModelInfo(filename, arch, friendlyName, MapStems(entry)));
+                list.Add(
+                    new ModelInfo(
+                        filename,
+                        arch,
+                        friendlyName,
+                        MapStems(entry),
+                        LocalFiles(entry, filename)
+                    )
+                );
             }
         }
 
@@ -101,6 +109,20 @@ public sealed class ModelCatalogService(IProcessRunner runner, AppPaths paths)
     /// <summary>Pairs each stem name with its SDR from the entry's score map (null when absent).</summary>
     private static IReadOnlyList<StemSdr> MapStems(ModelEntryDto entry) =>
         [.. entry.Stems.Select(stem => new StemSdr(stem, SdrFor(entry.Scores, stem)))];
+
+    /// <summary>
+    /// The local file names an entry needs. Demucs lists download URLs, which land in the models
+    /// directory under their last path segment; an entry listing nothing needs only its filename.
+    /// </summary>
+    private static IReadOnlyList<string> LocalFiles(ModelEntryDto entry, string filename) =>
+        entry.DownloadFiles is { Count: > 0 } files
+            ?
+            [
+                .. files.Select(file =>
+                    file.StartsWith("http") ? file[(file.LastIndexOf('/') + 1)..] : file
+                ),
+            ]
+            : [filename];
 
     /// <summary>
     /// Reads a stem's SDR from the entry's score map. Upstream mixes per-stem score objects with
@@ -119,12 +141,13 @@ public sealed class ModelCatalogService(IProcessRunner runner, AppPaths paths)
 
 // ── JSON DTOs ─────────────────────────────────────────────────────────────────
 
-/// <summary>One model entry from list_models.py: { filename, stems, scores: { stem: { SDR } } }.
-/// The script's "target_stem" field is unused and intentionally not modelled.</summary>
+/// <summary>One model entry from list_models.py: { filename, stems, scores: { stem: { SDR } },
+/// download_files }. The script's "target_stem" field is unused and intentionally not modelled.</summary>
 internal sealed record ModelEntryDto
 {
     public string? Filename { get; init; }
     public List<string> Stems { get; init; } = [];
+    public List<string> DownloadFiles { get; init; } = [];
 
     /// <summary>
     /// Raw per-stem score map. Held as <see cref="JsonElement"/> values because upstream mixes
@@ -134,11 +157,8 @@ internal sealed record ModelEntryDto
     public Dictionary<string, JsonElement>? Scores { get; init; }
 }
 
-/// <summary>
-/// Source-generated serializer context for the list_models.py catalog. The camelCase policy maps
-/// the DTO properties onto the script's lowercase JSON keys; "SDR" is pinned explicitly.
-/// </summary>
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+/// <summary>Source-generated serializer context for the list_models.py catalog, which writes snake_case keys.</summary>
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
 [JsonSerializable(
     typeof(Dictionary<string, Dictionary<string, ModelEntryDto>>),
     TypeInfoPropertyName = "ModelCatalog"

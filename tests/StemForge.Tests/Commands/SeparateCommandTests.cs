@@ -279,7 +279,8 @@ public sealed class SeparateCommandTests : IDisposable
             new StemSdr("hh", null),
             new StemSdr("ride", null),
             new StemSdr("crash", null),
-        ]
+        ],
+        ["MDX23C-DrumSep-aufr33-jarredou.ckpt", "config_drumsep_mdx23c.yaml"]
     );
 
     [Fact]

@@ -63,6 +63,10 @@ public sealed class AppPaths(AppSettings settings, PlatformInfo? platform = null
     public string DrumCacheDirectory =>
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "drum-cache");
 
+    /// <summary>Model configs StemForge downloaded to read their stems, for models not yet downloaded.</summary>
+    public string ModelConfigCacheDirectory =>
+        Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "model-configs");
+
     /// <summary>Directory holding bundled binaries that StemForge downloads on first run.</summary>
     public string BundledBinDir =>
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "bin");
