@@ -4,10 +4,8 @@ using System.Text.Json;
 namespace StemForge.Core.Downloading;
 
 /// <summary>
-/// Two-stage YouTube audio download:
-///   1. yt-dlp --dump-single-json resolves metadata + selects best audio format URL
-///   2. ffmpeg streams that URL to disk in the chosen format with provenance tags
-/// No temp file, no double-encoding, full visibility into yt-dlp and ffmpeg progress.
+/// Downloads a URL's audio in three steps: yt-dlp resolves the metadata and picks a format, yt-dlp
+/// downloads that format to a temp file, and ffmpeg converts it to the output format at 44.1 kHz.
 /// </summary>
 public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths, YtdlpUpdater updater)
 {
@@ -96,7 +94,8 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths, Y
             AudioFormats: info.AudioFormatsByPreference() is { Count: > 0 } ranked
                 ? ranked
                 : [selected],
-            Extractor: info.Extractor
+            Extractor: info.Extractor,
+            InfoJson: result.Stdout
         );
     }
 
@@ -132,21 +131,90 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths, Y
     )
     {
         Directory.CreateDirectory(outDir);
-        var fileName = $"{meta.BaseName}.{FfmpegArgs.Extension(format)}";
-        var outputPath = Path.Combine(outDir, fileName);
+        var outputPath = Path.Combine(outDir, $"{meta.BaseName}.{FfmpegArgs.Extension(format)}");
 
-        var args = new List<string>();
-        args.AddRange(FfmpegArgs.Baseline);
-        args.AddRange(["-i", meta.MediaUrl]);
-        // Normalise to 44.1 kHz: audio-separator uses this internally, so keeping 48 kHz
-        // sources at their native rate only introduces a resampling step at separation time.
-        args.AddRange(["-ar", "44100"]);
-        args.AddRange(FfmpegArgs.Codec(format));
-        args.Add(outputPath);
+        var work = Path.Combine(Path.GetTempPath(), $"stemforge-source-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(work);
+        try
+        {
+            var source = await FetchSourceAsync(meta, work, log, ct);
 
-        await _runner.RunStreamingAsync(_paths.Ffmpeg, args, log, ct: ct);
+            List<string> args =
+            [
+                .. FfmpegArgs.Baseline,
+                "-i",
+                source,
+                // Normalise to 44.1 kHz: audio-separator uses this internally, so keeping 48 kHz
+                // sources at their native rate only introduces a resampling step at separation time.
+                "-ar",
+                "44100",
+                .. FfmpegArgs.Codec(format),
+                outputPath,
+            ];
+            await _runner.RunStreamingAsync(_paths.Ffmpeg, args, log, ct: ct);
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(work, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                AppLogger.Debug("yt-dlp", $"Could not remove {work}: {ex.Message}");
+            }
+        }
 
         return outputPath;
+    }
+
+    /// <summary>
+    /// Has yt-dlp download the chosen format into <paramref name="work"/> and returns its path.
+    /// ffmpeg used to fetch the media URL itself, but YouTube refuses a client that skips what
+    /// yt-dlp does for each request, sometimes partway through a long download (#95).
+    /// </summary>
+    private async Task<string> FetchSourceAsync(
+        YtDlpMetadata meta,
+        string work,
+        IProgress<string>? log,
+        CancellationToken ct
+    )
+    {
+        List<string> args =
+        [
+            "--format",
+            meta.FormatId ?? "bestaudio/best",
+            "--output",
+            Path.Combine(work, "source.%(ext)s"),
+            // yt-dlp repairs some containers with ffmpeg after downloading.
+            "--ffmpeg-location",
+            _paths.Ffmpeg,
+            // Prints the finished file's path on stdout, and implies --quiet, so stdout is only that.
+            "--print",
+            "after_move:filepath",
+            "--no-playlist",
+        ];
+
+        // Reuse the resolve's own JSON rather than resolving again: it carries the formats, the
+        // headers and any cookies, so the download needs no second extraction or challenge.
+        if (meta.InfoJson is { } infoJson)
+        {
+            var infoPath = Path.Combine(work, "info.json");
+            await File.WriteAllTextAsync(infoPath, infoJson, ct);
+            args.AddRange(["--load-info-json", infoPath]);
+        }
+        else
+        {
+            args.Add(meta.SourceUrl);
+        }
+
+        var result = await _runner.RunStreamingStderrAsync(_paths.Ytdlp, args, log, ct: ct);
+
+        return result.Stdout.Trim() is { Length: > 0 } path && File.Exists(path)
+            ? path
+            : throw new InvalidOperationException(
+                $"yt-dlp finished without reporting the file it downloaded for {meta.SourceUrl}."
+            );
     }
 
     // ── Logging ───────────────────────────────────────────────────────────────

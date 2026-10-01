@@ -14,7 +14,8 @@ public sealed record YtDlpMetadata(
     string MediaUrl,
     string? ThumbnailUrl = null,
     IReadOnlyList<YtDlpFormat>? AudioFormats = null,
-    string? Extractor = null
+    string? Extractor = null,
+    string? InfoJson = null
 )
 {
     /// <summary>

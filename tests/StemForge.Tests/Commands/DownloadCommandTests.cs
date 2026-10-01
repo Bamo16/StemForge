@@ -44,8 +44,9 @@ public sealed class DownloadCommandTests : IDisposable
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    // A process runner whose ffmpeg "download" writes a real (minimal) FLAC to the output path
-    // so that the subsequent tagging step has a file to open. The output path is the last arg.
+    // A process runner that stands in for both download tools: yt-dlp writes a source file where
+    // its --output template points and prints that path, and ffmpeg writes a real (minimal) FLAC
+    // to its output path, the last arg, so the tagging step has a file to open.
     private sealed class FfmpegFileWritingRunner : IProcessRunner
     {
         public List<string> StreamedExes { get; } = [];
@@ -84,7 +85,15 @@ public sealed class DownloadCommandTests : IDisposable
             IProgress<string>? stderrProgress = null,
             bool logRawLines = true,
             CancellationToken ct = default
-        ) => Task.FromResult(new ProcessRunner.Result(0, "", ""));
+        )
+        {
+            var argList = args.ToList();
+            var template = argList[argList.IndexOf("--output") + 1];
+            var source = template.Replace("%(ext)s", "m4a");
+            File.WriteAllBytes(source, []);
+
+            return Task.FromResult(new ProcessRunner.Result(0, source, ""));
+        }
     }
 
     private static YtDlpMetadata MakeMeta(

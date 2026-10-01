@@ -364,6 +364,95 @@ public sealed class YouTubeAudioServiceTests
         Assert.Equal("https://media.example.com/140-44khz", meta.MediaUrl);
     }
 
+    // ── DownloadAsync ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task DownloadAsync_YtdlpFetchesFromTheResolvedJson_FfmpegConvertsTheLocalFile()
+    {
+        var downloaded = Path.Combine(Path.GetTempPath(), $"sf-source-{Guid.NewGuid():N}.m4a");
+        File.WriteAllText(downloaded, string.Empty);
+        var outDir = Path.Combine(Path.GetTempPath(), $"sf-out-{Guid.NewGuid():N}");
+        try
+        {
+            var fake = new FakeProcessRunner();
+            fake.Setup("yt-dlp", downloaded);
+            fake.Setup("ffmpeg", string.Empty);
+            var meta = Meta() with { FormatId = "140", InfoJson = """{"id":"abc"}""" };
+
+            var output = await BuildService(fake)
+                .DownloadAsync(
+                    meta,
+                    AudioFormat.Flac,
+                    outDir,
+                    null,
+                    TestContext.Current.CancellationToken
+                );
+
+            var (ytdlpExe, ytdlpArgs) = fake.Calls[0];
+            Assert.Equal("yt-dlp", ytdlpExe);
+            Assert.Equal("140", After(ytdlpArgs, "--format"));
+            Assert.Contains("--load-info-json", ytdlpArgs);
+            Assert.DoesNotContain(meta.SourceUrl, ytdlpArgs);
+
+            var (ffmpegExe, ffmpegArgs) = fake.Calls[1];
+            Assert.Equal("ffmpeg", ffmpegExe);
+            Assert.Equal(downloaded, After(ffmpegArgs, "-i"));
+            Assert.Equal(Path.Combine(outDir, $"{meta.BaseName}.flac"), output);
+            Assert.Equal(output, ffmpegArgs[^1]);
+        }
+        finally
+        {
+            File.Delete(downloaded);
+            if (Directory.Exists(outDir))
+                Directory.Delete(outDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task DownloadAsync_YtdlpReportsNoFile_Throws()
+    {
+        var outDir = Path.Combine(Path.GetTempPath(), $"sf-out-{Guid.NewGuid():N}");
+        try
+        {
+            var fake = new FakeProcessRunner();
+            fake.Setup("yt-dlp", string.Empty);
+            fake.Setup("ffmpeg", string.Empty);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                BuildService(fake)
+                    .DownloadAsync(
+                        Meta(),
+                        AudioFormat.Flac,
+                        outDir,
+                        null,
+                        TestContext.Current.CancellationToken
+                    )
+            );
+            Assert.Single(fake.Calls);
+        }
+        finally
+        {
+            if (Directory.Exists(outDir))
+                Directory.Delete(outDir, recursive: true);
+        }
+    }
+
+    private static YtDlpMetadata Meta() =>
+        new(
+            SourceUrl: "https://www.youtube.com/watch?v=abc",
+            Title: "Song",
+            Artists: ["Artist"],
+            Uploader: null,
+            SourceCodec: "mp4a.40.2",
+            SourceBitrateKbps: 130,
+            DurationSeconds: 200,
+            FormatId: "140",
+            MediaUrl: "https://media.example.com/140"
+        );
+
+    private static string After(IReadOnlyList<string> args, string flag) =>
+        args[args.ToList().IndexOf(flag) + 1];
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static YouTubeAudioService BuildService(FakeProcessRunner fake)
@@ -372,6 +461,7 @@ public sealed class YouTubeAudioServiceTests
         // Pin yt-dlp's resolved path to the bare CLI name so tests are independent of whether
         // the host machine happens to have a bundled yt-dlp at %LOCALAPPDATA%\StemForge\bin.
         settings.SetToolPathOverride(ToolKind.Ytdlp, "yt-dlp");
+        settings.SetToolPathOverride(ToolKind.Ffmpeg, "ffmpeg");
         var paths = new AppPaths(settings);
         return new YouTubeAudioService(
             fake,
