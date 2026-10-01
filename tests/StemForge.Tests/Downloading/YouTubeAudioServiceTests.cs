@@ -373,7 +373,11 @@ public sealed class YouTubeAudioServiceTests
         // the host machine happens to have a bundled yt-dlp at %LOCALAPPDATA%\StemForge\bin.
         settings.SetToolPathOverride(ToolKind.Ytdlp, "yt-dlp");
         var paths = new AppPaths(settings);
-        return new YouTubeAudioService(fake, paths);
+        return new YouTubeAudioService(
+            fake,
+            paths,
+            new YtdlpUpdater(fake, paths, TimeProvider.System)
+        );
     }
 
     private static YtDlpFormat MakeAudioFormat(string id, string acodec, double abr, int asr) =>

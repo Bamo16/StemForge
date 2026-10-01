@@ -6,10 +6,15 @@ namespace StemForge.Core;
 /// and falls back to a sensible default — discovered shim path, bare exe name on PATH,
 /// or a user-profile directory — so callers don't need to repeat the coalesce logic.
 /// </summary>
-public sealed class AppPaths(AppSettings settings, PlatformInfo? platform = null)
+public sealed class AppPaths(
+    AppSettings settings,
+    PlatformInfo? platform = null,
+    string? bundledBinDir = null
+)
 {
     private readonly AppSettings _settings = settings;
     private readonly PlatformInfo _platform = platform ?? PlatformInfo.Current;
+    private readonly string? _bundledBinDir = bundledBinDir;
 
     // ── Tool executables ──────────────────────────────────────────────────────
 
@@ -65,7 +70,8 @@ public sealed class AppPaths(AppSettings settings, PlatformInfo? platform = null
 
     /// <summary>Directory holding bundled binaries that StemForge downloads on first run.</summary>
     public string BundledBinDir =>
-        Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "bin");
+        _bundledBinDir
+        ?? Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "bin");
 
     /// <summary>Path to the bundled ffmpeg binary inside <see cref="BundledBinDir"/>.</summary>
     public string BundledFfmpeg =>

@@ -187,15 +187,15 @@ A `uv` or `audio-separator` already on your PATH is used as it is. `ffmpeg`, `yt
 | Drum-stem cache | `%LOCALAPPDATA%\StemForge\drum-cache` |
 | Model configs read for their stems | `%LOCALAPPDATA%\StemForge\model-configs` |
 
-### Updating yt-dlp between StemForge releases
+### yt-dlp keeps itself current
 
-YouTube occasionally changes its extraction logic and yt-dlp moves fast to keep up. StemForge ships a pinned yt-dlp; if YouTube breaks downloads in between releases, you can self-update the bundled binary in place:
+YouTube changes often, and an out-of-date yt-dlp soon gets download links YouTube refuses. So StemForge runs yt-dlp's own update once a day, at launch and before resolving a URL, and stays on whichever channel your copy is on. If YouTube breaks downloads before a stable fix lands, switch the bundled copy to nightly builds and StemForge keeps it on nightly from then on:
 
 ```pwsh
-& "$env:LOCALAPPDATA\StemForge\bin\yt-dlp.exe" --update-to master
+& "$env:LOCALAPPDATA\StemForge\bin\yt-dlp.exe" --update-to nightly
 ```
 
-Switch back to a stable build with `--update-to stable`, or pick a specific version with `--update-to <tag>`. The next StemForge release will reset yt-dlp to whatever it pins.
+`--update-to stable` switches back. A yt-dlp set under **Settings → Tool paths** is yours to update; StemForge leaves it alone.
 
 ---
 

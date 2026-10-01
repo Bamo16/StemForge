@@ -117,7 +117,11 @@ public sealed class DownloadCommandTests : IDisposable
         var paths = new AppPaths(settings);
 
         var runner = new FfmpegFileWritingRunner();
-        var youTube = new YouTubeAudioService(runner, paths);
+        var youTube = new YouTubeAudioService(
+            runner,
+            paths,
+            new YtdlpUpdater(runner, paths, TimeProvider.System)
+        );
         var thumbs = new StubThumbnailFetcher();
         var driver = new SpySeparatorDriverService();
 

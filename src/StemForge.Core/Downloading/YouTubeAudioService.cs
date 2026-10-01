@@ -9,10 +9,11 @@ namespace StemForge.Core.Downloading;
 ///   2. ffmpeg streams that URL to disk in the chosen format with provenance tags
 /// No temp file, no double-encoding, full visibility into yt-dlp and ffmpeg progress.
 /// </summary>
-public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
+public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths, YtdlpUpdater updater)
 {
     private readonly IProcessRunner _runner = runner;
     private readonly AppPaths _paths = paths;
+    private readonly YtdlpUpdater _updater = updater;
 
     public async Task<YtDlpMetadata> ResolveAsync(
         string url,
@@ -21,6 +22,9 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         CancellationToken ct = default
     )
     {
+        // A stale yt-dlp gets media URLs YouTube refuses (#95), so bring it current first.
+        await _updater.EnsureCurrentAsync(ct);
+
         var args = new List<string>
         {
             "--dump-single-json",

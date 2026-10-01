@@ -129,7 +129,8 @@ public static class ToolCatalog
             )
         ),
         // Bundled rather than uv-tool-installed so it does not shadow a user's own yt-dlp on
-        // PATH. Self-updates in place via `yt-dlp.exe --update-to <channel>` between releases.
+        // PATH. The pin is only the starting version: YtdlpUpdater keeps it current, because
+        // YouTube stops serving an old yt-dlp within months (#95).
         new(
             ToolKind.Ytdlp,
             CliName: "yt-dlp",
@@ -142,28 +143,28 @@ public static class ToolCatalog
                 new Dictionary<PlatformInfo, BundledAsset>
                 {
                     [WinX64] = new(
-                        Url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp.exe",
-                        Sha256: "3db811b366b2da47337d2fcfdfe5bbd9a258dad3f350c54974f005df115a1545",
+                        Url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe",
+                        Sha256: "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a",
                         Format: ArchiveFormat.RawBinary,
                         Layout: BundledLayout.DownloadIsBinary
                     ),
                     [LinuxX64] = new(
-                        Url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp_linux",
-                        Sha256: "c2b0189f581fe4a2ddd41954f1bcb7d327db04b07ed0dea97e4f1b3e09b5dd8e",
+                        Url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_linux",
+                        Sha256: "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
                         Format: ArchiveFormat.RawBinary,
                         Layout: BundledLayout.DownloadIsBinary
                     ),
                     // macOS (best-effort, unverified at runtime). yt-dlp_macos is a universal
                     // Mach-O binary (x86_64 + arm64), so the one asset backs both arches.
                     [MacArm64] = new(
-                        Url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp_macos",
-                        Sha256: "e80c47b3ce712acee51d5e3d4eace2d181b44d38f1942c3a32e3c7ff53cd9ed5",
+                        Url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_macos",
+                        Sha256: "0f192b7ec147ab6288885d6351d9ab67367640029b4377576ef46dd79cf7b202",
                         Format: ArchiveFormat.RawBinary,
                         Layout: BundledLayout.DownloadIsBinary
                     ),
                     [MacX64] = new(
-                        Url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp_macos",
-                        Sha256: "e80c47b3ce712acee51d5e3d4eace2d181b44d38f1942c3a32e3c7ff53cd9ed5",
+                        Url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_macos",
+                        Sha256: "0f192b7ec147ab6288885d6351d9ab67367640029b4377576ef46dd79cf7b202",
                         Format: ArchiveFormat.RawBinary,
                         Layout: BundledLayout.DownloadIsBinary
                     ),
