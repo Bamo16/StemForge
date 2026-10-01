@@ -430,7 +430,7 @@ public sealed class SeparateCommandTests : IDisposable
     [Fact]
     public async Task RunAsync_InvalidPreset_NoDriverCallMade()
     {
-        var fakeDriver = new FakeSeparatorDriverService();
+        _ = new FakeSeparatorDriverService();
         var callCount = 0;
 
         // Validate returns an error, so the pipeline is never reached.

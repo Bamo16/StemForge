@@ -165,7 +165,7 @@ public sealed partial class UserPresetService
             new()
             {
                 Input = s.Input.ToString(),
-                Models = s.Models.ToList(),
+                Models = [.. s.Models],
                 Algorithm = s.Algorithm,
                 KeepSet = s.KeepSet?.ToList(),
                 NameTemplate = s.NameTemplate,
@@ -272,7 +272,7 @@ public sealed partial class UserPresetService
                 Description = p.Description,
                 ModelCount = p.ModelCount,
                 Vram = p.Vram,
-                Steps = p.Steps.Select(StepDto.FromStep).ToList(),
+                Steps = [.. p.Steps.Select(StepDto.FromStep)],
                 EnsembleWeights = p.EnsembleWeights?.ToList(),
             };
     }

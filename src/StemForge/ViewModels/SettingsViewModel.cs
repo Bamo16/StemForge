@@ -207,7 +207,6 @@ public partial class SettingsViewModel : PageViewModelBase
     public SettingsViewModel(
         AppSettings settings,
         AppPaths paths,
-        SetupDetector setupDetector,
         GpuDetector gpuDetector,
         ToolInstaller toolInstaller,
         ToolStateService toolState,

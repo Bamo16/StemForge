@@ -496,9 +496,7 @@ public partial class SeparateViewModel : PageViewModelBase
             OnPropertyChanged(nameof(UrlInputBlockedMessage));
             RefreshSummary();
         };
-        Categories = new ObservableCollection<PresetCategoryGroup>(
-            BuildGroups(PresetCatalog.BuiltIn)
-        );
+        Categories = [.. BuildGroups(PresetCatalog.BuiltIn)];
         _ = LoadBuiltInPresetsAsync();
 
         foreach (var g in Categories)
@@ -896,7 +894,7 @@ public partial class SeparateViewModel : PageViewModelBase
     }
 
     [RelayCommand]
-    private void TogglePreset(PresetItemViewModel item)
+    private static void TogglePreset(PresetItemViewModel item)
     {
         item.IsSelected = !item.IsSelected;
     }
@@ -1031,10 +1029,11 @@ public partial class SeparateViewModel : PageViewModelBase
     }
 
     private List<Preset> SelectedPresets() =>
-        Categories
-            .SelectMany(g => g.Items)
-            .Concat(UserPresetItems)
-            .Where(i => i.IsSelected)
-            .Select(i => i.Preset)
-            .ToList();
+        [
+            .. Categories
+                .SelectMany(g => g.Items)
+                .Concat(UserPresetItems)
+                .Where(i => i.IsSelected)
+                .Select(i => i.Preset),
+        ];
 }

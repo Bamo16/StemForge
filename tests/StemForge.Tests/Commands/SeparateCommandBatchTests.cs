@@ -341,8 +341,7 @@ public sealed class SeparateCommandBatchTests : IDisposable
     [InlineData("brave")]
     public void CookiesFromBrowser_AcceptsKnownBrowserNames(string browser)
     {
-        var settings = new AppSettings();
-        settings.YtdlpCookiesFromBrowser = browser;
+        var settings = new AppSettings { YtdlpCookiesFromBrowser = browser };
         Assert.Equal(browser, settings.YtdlpCookiesFromBrowser);
     }
 

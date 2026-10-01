@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO.Compression;
 using System.Security.Cryptography;
@@ -61,7 +62,7 @@ public sealed class BundledFetcher(
             ArchiveFormat.RawBinary => _platform.ExecutableSuffix,
             ArchiveFormat.Zip => ".zip",
             ArchiveFormat.TarGz => ".tar.gz",
-            _ => throw new ArgumentOutOfRangeException(nameof(asset)),
+            _ => throw new UnreachableException(),
         };
         var temp = Path.Combine(
             Path.GetTempPath(),

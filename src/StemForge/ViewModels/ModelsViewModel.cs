@@ -227,9 +227,13 @@ public partial class ModelsViewModel : PageViewModelBase
         SavePresetCommand.NotifyCanExecuteChanged();
 
     public IReadOnlyList<EnsembleOption> EnsembleAlgorithmOptions { get; } =
-        EnsembleAlgorithmCatalog
-            .Known.Select(a => new EnsembleOption(a.Key, a.Label, a.Description))
-            .ToList();
+    [
+        .. EnsembleAlgorithmCatalog.Known.Select(a => new EnsembleOption(
+            a.Key,
+            a.Label,
+            a.Description
+        )),
+    ];
 
     private bool CanSavePreset => HasChecked && !string.IsNullOrWhiteSpace(NewPresetName);
 
@@ -272,7 +276,7 @@ public partial class ModelsViewModel : PageViewModelBase
                 Mode: SeparationMode.CustomEnsemble,
                 PrimaryModel: checked_[0].Filename,
                 EnsembleAlgorithm: EnsembleAlgorithm.Key,
-                ExtraModels: checked_.Skip(1).Select(m => m.Filename).ToList()
+                ExtraModels: [.. checked_.Skip(1).Select(m => m.Filename)]
             );
         }
 
@@ -422,5 +426,5 @@ public partial class ModelsViewModel : PageViewModelBase
     }
 
     private static string SanitizeId(string name) =>
-        new(name.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '_').ToArray());
+        new([.. name.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '_')]);
 }

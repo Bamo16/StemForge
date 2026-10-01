@@ -57,7 +57,7 @@ public static partial class AppLogger
     }
 
     /// Call once at startup. Creates a new dated log file and prunes old ones.
-    public static void Initialize(int maxEntries = 2000)
+    public static void Initialize()
     {
         var dir = Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "logs");
         try

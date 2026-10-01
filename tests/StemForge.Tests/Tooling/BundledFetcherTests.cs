@@ -176,7 +176,7 @@ public sealed class BundledFetcherTests
         }
     }
 
-    private static FileDownloader NewDownloader(IAppInfo appInfo) =>
+    private static FileDownloader NewDownloader(AppInfo appInfo) =>
         new(
             new TestHttpClientFactory(
                 new HttpClient
