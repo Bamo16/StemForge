@@ -21,7 +21,7 @@ Because of that second one, the bump must happen **before** publishing. Publish 
 
 ## Branching
 
-Work lands on a per-release `integration/vX.Y.Z` branch. Feature branches merge into it directly. The only pull request is `integration/vX.Y.Z` into `main`, at release time, and that PR is what runs CI.
+Work lands on a per-release `integration/vX.Y.Z` branch. Feature branches merge into it directly. The only pull request is `integration/vX.Y.Z` into `main`, at release time. CI runs on every push to the integration branch and again on that PR.
 
 Issues are closed at the integration-to-main merge as one event, not when their code lands, so an issue staying open while its code is on the integration branch is correct.
 
@@ -46,37 +46,39 @@ There is no release automation. `.github/workflows/ci.yml` is CI only, and every
 
 ## Continuous integration
 
-One workflow, `.github/workflows/ci.yml`, with a single job: **Linux smoke test (linux-x64)** on `ubuntu-latest`.
+One workflow, `.github/workflows/ci.yml`, with two jobs: **Linux smoke test (linux-x64)** on `ubuntu-latest` and **Windows tests and fresh install (win-x64)** on `windows-latest`.
 
 ### When it runs
 
-On pushes to `main`, and on pull requests targeting `main`.
+On pushes and pull requests to `main` and `integration/**`, weekly (Monday 06:00 UTC), and on demand from the Actions tab. The weekly run is there for the YouTube step: YouTube changes without StemForge changing, and that run is how a break shows up before users hit it.
 
-**It does not run on `integration/*` branches.** Pushing an integration branch produces no CI signal at all; the first and only signal arrives when the release PR is opened. That is the check to wait for at step 6, and it is the one that was ignored when v0.3.0 was merged and tagged with a failing build.
+The check to wait for at step 6 is the run on the release PR. v0.3.0 was merged and tagged with a failing build because that check was ignored.
 
 ### What it covers
 
-| Step | What it proves | Network |
-| --- | --- | --- |
-| Restore, Build (Release) | The source compiles on Linux with the pinned SDK | no |
-| Test (offline suite) | The full test suite, minus the two env-gated classes below | no |
-| Verify bundled assets | Downloads the linux-x64 yt-dlp, ffmpeg, and deno binaries and checks their pinned SHA-256, exercising the ffmpeg `tar.gz` extraction path and running the extracted ffmpeg once. Gated by `STEMFORGE_LIVE_ASSETS=1` | yes |
-| Download integration test | Fetches a small public-domain clip and verifies the file and its metadata. Gated by `STEMFORGE_INTEGRATION=1`, and `continue-on-error` so a flaky remote host cannot block a release | yes |
+| Step | Job | What it proves | Network |
+| --- | --- | --- | --- |
+| Restore, Build (Release) | both | The source compiles with the pinned SDK | no |
+| Test (offline suite) | both | The full test suite, minus the env-gated classes below | no |
+| Verify bundled assets | Linux | Downloads the linux-x64 yt-dlp, ffmpeg and deno binaries and checks their pinned SHA-256, exercising the ffmpeg `tar.gz` extraction path. Gated by `STEMFORGE_LIVE_ASSETS=1` | yes |
+| Fresh install | both | `FreshInstallTests`: installs ffmpeg, yt-dlp and deno as setup does, into an empty bin folder, and checks detection finds each one. Gated by `STEMFORGE_LIVE_ASSETS=1` | yes |
+| YouTube download on a fresh install | Windows | Resolves and downloads a real video through `YouTubeAudioService` on that install, yt-dlp update included. Also needs `STEMFORGE_LIVE_YOUTUBE=1`, and is `continue-on-error`, since YouTube sometimes refuses CI machines; read a failure anyway | yes |
+| Download integration test | Linux | Fetches a small public-domain clip and verifies the file and its metadata. Gated by `STEMFORGE_INTEGRATION=1`, and `continue-on-error` | yes |
 
-The bundled-asset step is the one that earns its keep: it catches a pinned download URL going dead upstream, which is the failure that forced the v0.2.1.1 hotfix. It is worth understanding that it can pass vacuously if its `--filter-class` argument stops matching. It did exactly that after the test project was reorganised by domain, and went unnoticed because a build failure was ending the job first. A run that matches no tests exits 8, so the step fails rather than reporting success, but the class name in `ci.yml` still has to be kept in step with the code.
+The asset and fresh-install steps catch a pinned download going dead upstream, the failure behind the v0.2.1.1 hotfix. They can pass vacuously if their `--filter-class` stops matching, as happened once after the test project was reorganised by domain. A run that matches no tests exits 8, so the step fails rather than reporting success, but the class names in `ci.yml` still have to be kept in step with the code.
 
 ### What it does not cover
 
-- **Windows and macOS are never built or tested.** The published artifact is Windows, and it is built and verified locally. A green CI run says nothing about it.
+- **macOS is never built or tested.**
 - **The GUI is not exercised.** Headless view-model tests run; nothing renders.
 - **Separation itself never runs.** No `uv`, no `audio-separator`, no models, no GPU.
 
-So CI is a compile-and-unit gate plus a check that the pinned external downloads are still good. Anything about how the app actually behaves is verified by running it.
+So CI is a compile-and-unit gate on Linux and Windows, plus a check that a fresh install's downloads work. How separation behaves is verified by running the app.
 
 ### Local versus CI
 
-`dotnet test StemForge.slnx` locally runs the same offline suite CI does, and skips the same two env-gated classes. Set `STEMFORGE_LIVE_ASSETS=1` or `STEMFORGE_INTEGRATION=1` to run those.
+`dotnet test StemForge.slnx` locally runs the same offline suite CI does, and skips the same env-gated classes. Set `STEMFORGE_LIVE_ASSETS=1` (plus `STEMFORGE_LIVE_YOUTUBE=1` for the YouTube download) or `STEMFORGE_INTEGRATION=1` to run those.
 
-A local run is Windows and CI is Linux, so the two can still disagree on platform-conditional code. `ProcessRunner`'s `KillOnParentExit` guard is the standing example. It is correct on both and warns on neither today, because the API is attributed for Windows and Linux (and Android) as of the pinned SDK. It did warn once: the property landed Windows-only in .NET 11 preview 4, so the Linux leg of the guard tripped `CA1416` on CI while a local build stayed clean. macOS is not supported and is not expected to be, since the platform has neither of the primitives this is built on.
+CI builds on both Linux and Windows, so platform-conditional code that disagrees between them now shows up there rather than after release. `ProcessRunner`'s `KillOnParentExit` guard is the standing example. It is correct on both and warns on neither today, because the API is attributed for Windows and Linux (and Android) as of the pinned SDK. It did warn once: the property landed Windows-only in .NET 11 preview 4, so the Linux leg of the guard tripped `CA1416` on CI while a local build stayed clean. macOS is not supported and is not expected to be, since the platform has neither of the primitives this is built on.
 
 The general shape is worth remembering when bumping the SDK pin: platform attributes move between previews, and a `CA1416` that appears on one OS only will not show up until the other one builds.
