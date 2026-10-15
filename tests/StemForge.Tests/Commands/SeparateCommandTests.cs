@@ -279,7 +279,8 @@ public sealed class SeparateCommandTests : IDisposable
             new StemSdr("hh", null),
             new StemSdr("ride", null),
             new StemSdr("crash", null),
-        ]
+        ],
+        ["MDX23C-DrumSep-aufr33-jarredou.ckpt", "config_drumsep_mdx23c.yaml"]
     );
 
     [Fact]
@@ -430,7 +431,7 @@ public sealed class SeparateCommandTests : IDisposable
     [Fact]
     public async Task RunAsync_InvalidPreset_NoDriverCallMade()
     {
-        var fakeDriver = new FakeSeparatorDriverService();
+        _ = new FakeSeparatorDriverService();
         var callCount = 0;
 
         // Validate returns an error, so the pipeline is never reached.

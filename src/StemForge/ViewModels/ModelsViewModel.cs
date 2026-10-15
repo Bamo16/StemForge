@@ -227,9 +227,13 @@ public partial class ModelsViewModel : PageViewModelBase
         SavePresetCommand.NotifyCanExecuteChanged();
 
     public IReadOnlyList<EnsembleOption> EnsembleAlgorithmOptions { get; } =
-        EnsembleAlgorithmCatalog
-            .Known.Select(a => new EnsembleOption(a.Key, a.Label, a.Description))
-            .ToList();
+    [
+        .. EnsembleAlgorithmCatalog.Known.Select(a => new EnsembleOption(
+            a.Key,
+            a.Label,
+            a.Description
+        )),
+    ];
 
     private bool CanSavePreset => HasChecked && !string.IsNullOrWhiteSpace(NewPresetName);
 
@@ -272,7 +276,7 @@ public partial class ModelsViewModel : PageViewModelBase
                 Mode: SeparationMode.CustomEnsemble,
                 PrimaryModel: checked_[0].Filename,
                 EnsembleAlgorithm: EnsembleAlgorithm.Key,
-                ExtraModels: checked_.Skip(1).Select(m => m.Filename).ToList()
+                ExtraModels: [.. checked_.Skip(1).Select(m => m.Filename)]
             );
         }
 
@@ -284,21 +288,25 @@ public partial class ModelsViewModel : PageViewModelBase
         NewPresetName = string.Empty;
     }
 
-    // ── Delete local model file ───────────────────────────────────────────────
+    // ── Delete local model files ──────────────────────────────────────────────
 
     [RelayCommand]
     private void DeleteModel(ModelItemViewModel item)
     {
-        var path = Path.Combine(_paths.ModelsDirectory, item.Filename);
+        // A config can be shared by several models, so keep any file another downloaded model needs.
+        var stillNeeded = _all.Where(other => other != item && other.IsLocal)
+            .SelectMany(other => other.Model.Files)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
         try
         {
-            if (File.Exists(path))
-                File.Delete(path);
+            foreach (var file in item.Model.Files.Where(file => !stillNeeded.Contains(file)))
+                File.Delete(Path.Combine(_paths.ModelsDirectory, file));
+
             item.IsLocal = false;
             item.FileSizeBytes = 0;
             AppLogger.Info(nameof(ModelsViewModel), $"Deleted local model: {item.Filename}");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             AppLogger.Error(
                 nameof(ModelsViewModel),
@@ -343,20 +351,19 @@ public partial class ModelsViewModel : PageViewModelBase
             var models = await _catalog.ListModelsAsync(forceRefresh);
             var modelsDir = _paths.ModelsDirectory;
 
-            foreach (var m in models)
+            // Resolve the advisory profiles so models the benchmark lists no stems for still show
+            // their resolved stems. Only a config-driven model with no benchmark stems and no
+            // config on disk reaches the network, and resolving them together keeps a first load
+            // from waiting on each fetch in turn.
+            var profiles = await Task.WhenAll(models.Select(m => _profiles.ResolveAsync(m)));
+
+            foreach (var (m, profile) in models.Zip(profiles))
             {
-                var fullPath = Path.Combine(modelsDir, m.Filename);
-                var exists = File.Exists(fullPath);
-
-                // Resolve the advisory profile so models the benchmark lists no stems for still
-                // show their resolved stems. The resolver only reaches the network when a
-                // config-driven model has no benchmark stems; for everything else this is local.
-                var profile = await _profiles.ResolveAsync(m);
-
+                var downloaded = m.IsDownloadedIn(modelsDir);
                 var vm = new ModelItemViewModel(m, profile)
                 {
-                    IsLocal = exists,
-                    FileSizeBytes = exists ? new FileInfo(fullPath).Length : 0,
+                    IsLocal = downloaded,
+                    FileSizeBytes = downloaded ? m.SizeIn(modelsDir) : 0,
                 };
                 vm.PropertyChanged += OnItemPropertyChanged;
                 _all.Add(vm);
@@ -422,5 +429,5 @@ public partial class ModelsViewModel : PageViewModelBase
     }
 
     private static string SanitizeId(string name) =>
-        new(name.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '_').ToArray());
+        new([.. name.Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : '_')]);
 }

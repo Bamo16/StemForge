@@ -2,6 +2,31 @@
 
 All notable changes to StemForge are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-15
+
+### Added
+
+- **Notes on drum models.** The drum-extraction picker in Settings says what each model is good for. BS Roformer SW gives the cleanest drums for using in a song; htdemucs_ft is the lighter choice for analysis such as BPM detection.
+- **A warning for browsers yt-dlp can't read.** On Windows, naming Chrome or another Chromium-based browser as the cookie source shows a warning in Settings, since their cookies can't be read from outside the browser. Firefox works.
+
+### Changed
+
+- **yt-dlp keeps itself current.** StemForge runs yt-dlp's own update once a day, at launch and before resolving a URL, so YouTube changes no longer leave downloads broken until the next StemForge release. New installs start from yt-dlp 2026.08.19. A yt-dlp you set under Settings → Tool paths is left alone.
+- **StemForge always uses its own ffmpeg, yt-dlp and deno.** A copy on your PATH is no longer used in their place, so an old one can't break downloads or separation. Settings → Tool paths still points StemForge at another binary. If a required tool is missing at launch, setup opens again.
+- **Setup installs everything with one button.** The Install step's **Install** button installs every ticked tool, optional ones included, and moves on; untick an optional tool to skip it.
+- **URL downloads go through yt-dlp.** yt-dlp fetches the audio and streams it into ffmpeg, which encodes it as it arrives. There is still a single encode and nothing written to disk before the output.
+- **The queue shows the name the file will get**, such as "TLC - No Scrubs (Official Audio)", rather than the bare title. A job queued before its URL was resolved switches from the URL to that name once it is.
+- **Roformer models list their real stems.** The Models view reads a model's stems from its config instead of guessing them from its file name, and BS Roformer SW now appears in the drum-extraction picker.
+
+### Fixed
+
+- **YouTube downloads failing on a new install.** The yt-dlp a new install shipped with was months old, and YouTube refused its download links, so a URL failed with "ffmpeg.exe exited with code -858797304".
+- **Unreadable browser cookies no longer fail a download.** When yt-dlp can't read the cookies (Chrome on Windows, for one), StemForge downloads without them and says so.
+- **Errors from yt-dlp and ffmpeg include the tool's own message**, not only an exit code.
+- **Files that appear in the output folder during a run are no longer treated as stems.** Ableton's `.asd` analysis files, written while a batch ran into a folder Ableton was watching, were renamed and tagged as stems.
+- **A Demucs model's size and status count all of its files.** htdemucs_ft showed as 149 B, and deleting it left its 321 MB of weights behind.
+- Long stem lists in the Models view are cut short instead of running into the Status column.
+
 ## [0.4.0] - 2026-09-28
 
 ### Added
@@ -135,6 +160,7 @@ Bug-fix release. No new features.
 
 Initial release.
 
+[0.5.0]: https://github.com/Bamo16/StemForge/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Bamo16/StemForge/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Bamo16/StemForge/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Bamo16/StemForge/compare/v0.2.1.1...v0.3.0

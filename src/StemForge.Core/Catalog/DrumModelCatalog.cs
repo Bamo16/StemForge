@@ -1,13 +1,13 @@
 namespace StemForge.Core.Catalog;
 
-/// <summary>A drum-extraction model offered in Settings: identity plus whether it is already
-/// downloaded. <see cref="IsLocal"/> distinguishes a model present on disk from one that will be
-/// fetched on first use.</summary>
+/// <summary>A drum-extraction model offered in Settings: identity, whether it is already
+/// downloaded or fetched on first use, and its hand-written note when it has one.</summary>
 public sealed record DrumModelOption(
     string Filename,
     string FriendlyName,
     string Architecture,
-    bool IsLocal
+    bool IsLocal,
+    string? Note
 );
 
 /// <summary>
@@ -48,18 +48,23 @@ public sealed class DrumModelCatalog(ModelCatalogService catalog, ModelProfileRe
     )
     {
         var models = await _catalog.ListModelsAsync(forceRefresh, ct).ConfigureAwait(false);
+        var profiles = await Task.WhenAll(models.Select(model => _profiles.ResolveAsync(model, ct)))
+            .ConfigureAwait(false);
         var options = new List<DrumModelOption>();
 
-        foreach (var model in models)
+        foreach (var (model, profile) in models.Zip(profiles))
         {
-            ct.ThrowIfCancellationRequested();
-            var profile = await _profiles.ResolveAsync(model, ct).ConfigureAwait(false);
             if (!EmitsDrums(profile))
                 continue;
 
-            var isLocal = File.Exists(Path.Combine(modelsDirectory, model.Filename));
             options.Add(
-                new DrumModelOption(model.Filename, model.FriendlyName, model.Architecture, isLocal)
+                new DrumModelOption(
+                    model.Filename,
+                    model.FriendlyName,
+                    model.Architecture,
+                    model.IsDownloadedIn(modelsDirectory),
+                    ModelNotes.For(model.Filename)?.Summary
+                )
             );
         }
 

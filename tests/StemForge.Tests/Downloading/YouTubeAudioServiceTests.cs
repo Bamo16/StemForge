@@ -364,6 +364,182 @@ public sealed class YouTubeAudioServiceTests
         Assert.Equal("https://media.example.com/140-44khz", meta.MediaUrl);
     }
 
+    // ── Cookies ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ResolveAsync_CookiesUnreadable_RetriesWithoutThem()
+    {
+        var runner = new CookieFailingRunner(ValidJson);
+        var settings = new AppSettings { YtdlpCookiesFromBrowser = "chrome" };
+        settings.SetToolPathOverride(ToolKind.Ytdlp, "yt-dlp");
+        var paths = new AppPaths(settings);
+        var svc = new YouTubeAudioService(
+            runner,
+            paths,
+            new YtdlpUpdater(runner, paths, TimeProvider.System)
+        );
+
+        var meta = await svc.ResolveAsync(
+            "https://youtu.be/test",
+            settings,
+            null,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.NotNull(meta);
+        Assert.Equal(2, runner.Calls.Count);
+        Assert.Contains("--cookies-from-browser", runner.Calls[0]);
+        Assert.DoesNotContain("--cookies-from-browser", runner.Calls[1]);
+    }
+
+    // yt-dlp fails with a cookie error whenever cookies are passed, and succeeds without them.
+    private sealed class CookieFailingRunner(string json) : IProcessRunner
+    {
+        public List<IReadOnlyList<string>> Calls { get; } = [];
+
+        public Task<ProcessRunner.Result> RunStreamingStderrAsync(
+            string exe,
+            IEnumerable<string> args,
+            IProgress<string>? stderrProgress = null,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        )
+        {
+            var argList = args.ToList();
+            Calls.Add(argList);
+
+            return argList.Contains("--cookies-from-browser")
+                ? throw new ProcessRunner.ProcessFailedException(
+                    exe,
+                    1,
+                    "ERROR: Could not copy Chrome cookie database."
+                )
+                : Task.FromResult(new ProcessRunner.Result(0, json, string.Empty));
+        }
+
+        public Task<ProcessRunner.Result> RunAsync(
+            string exe,
+            IEnumerable<string> args,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
+
+        public Task<ProcessRunner.Result> RunCheckedAsync(
+            string exe,
+            IEnumerable<string> args,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
+
+        public Task RunStreamingAsync(
+            string exe,
+            IEnumerable<string> args,
+            IProgress<string>? progress = null,
+            bool logRawLines = true,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
+
+        public Task RunPipedAsync(
+            string producer,
+            IEnumerable<string> producerArgs,
+            string consumer,
+            IEnumerable<string> consumerArgs,
+            IProgress<string>? progress = null,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
+    }
+
+    // ── DownloadAsync ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task DownloadAsync_YtdlpStreamsFromTheResolvedJson_IntoFfmpeg()
+    {
+        var outDir = Path.Combine(Path.GetTempPath(), $"sf-out-{Guid.NewGuid():N}");
+        try
+        {
+            var fake = new FakeProcessRunner();
+            fake.Setup("yt-dlp", string.Empty);
+            fake.Setup("ffmpeg", string.Empty);
+            var meta = Meta() with { FormatId = "140", InfoJson = """{"id":"abc"}""" };
+
+            var output = await BuildService(fake)
+                .DownloadAsync(
+                    meta,
+                    AudioFormat.Flac,
+                    outDir,
+                    null,
+                    TestContext.Current.CancellationToken
+                );
+
+            var (ytdlpExe, ytdlpArgs) = fake.Calls[0];
+            Assert.Equal("yt-dlp", ytdlpExe);
+            Assert.Equal("140", After(ytdlpArgs, "--format"));
+            Assert.Equal("-", After(ytdlpArgs, "--output"));
+            Assert.Contains("--load-info-json", ytdlpArgs);
+            Assert.DoesNotContain(meta.SourceUrl, ytdlpArgs);
+
+            var (ffmpegExe, ffmpegArgs) = fake.Calls[1];
+            Assert.Equal("ffmpeg", ffmpegExe);
+            Assert.Equal("pipe:0", After(ffmpegArgs, "-i"));
+            Assert.Equal("44100", After(ffmpegArgs, "-ar"));
+            Assert.Equal(Path.Combine(outDir, $"{meta.BaseName}.flac"), output);
+            Assert.Equal(output, ffmpegArgs[^1]);
+        }
+        finally
+        {
+            if (Directory.Exists(outDir))
+                Directory.Delete(outDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task DownloadAsync_YtdlpFails_ThrowsItsError()
+    {
+        var outDir = Path.Combine(Path.GetTempPath(), $"sf-out-{Guid.NewGuid():N}");
+        try
+        {
+            var fake = new FakeProcessRunner();
+            fake.Setup(
+                "yt-dlp",
+                new FakeProcessRunner.FakeResult(1, Stderr: "ERROR: HTTP Error 403")
+            );
+            fake.Setup("ffmpeg", string.Empty);
+
+            var ex = await Assert.ThrowsAsync<ProcessRunner.ProcessFailedException>(() =>
+                BuildService(fake)
+                    .DownloadAsync(
+                        Meta(),
+                        AudioFormat.Flac,
+                        outDir,
+                        null,
+                        TestContext.Current.CancellationToken
+                    )
+            );
+            Assert.Contains("403", ex.Message);
+        }
+        finally
+        {
+            if (Directory.Exists(outDir))
+                Directory.Delete(outDir, recursive: true);
+        }
+    }
+
+    private static YtDlpMetadata Meta() =>
+        new(
+            SourceUrl: "https://www.youtube.com/watch?v=abc",
+            Title: "Song",
+            Artists: ["Artist"],
+            Uploader: null,
+            SourceCodec: "mp4a.40.2",
+            SourceBitrateKbps: 130,
+            DurationSeconds: 200,
+            FormatId: "140",
+            MediaUrl: "https://media.example.com/140"
+        );
+
+    private static string After(IReadOnlyList<string> args, string flag) =>
+        args[args.ToList().IndexOf(flag) + 1];
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static YouTubeAudioService BuildService(FakeProcessRunner fake)
@@ -372,8 +548,13 @@ public sealed class YouTubeAudioServiceTests
         // Pin yt-dlp's resolved path to the bare CLI name so tests are independent of whether
         // the host machine happens to have a bundled yt-dlp at %LOCALAPPDATA%\StemForge\bin.
         settings.SetToolPathOverride(ToolKind.Ytdlp, "yt-dlp");
+        settings.SetToolPathOverride(ToolKind.Ffmpeg, "ffmpeg");
         var paths = new AppPaths(settings);
-        return new YouTubeAudioService(fake, paths);
+        return new YouTubeAudioService(
+            fake,
+            paths,
+            new YtdlpUpdater(fake, paths, TimeProvider.System)
+        );
     }
 
     private static YtDlpFormat MakeAudioFormat(string id, string acodec, double abr, int asr) =>

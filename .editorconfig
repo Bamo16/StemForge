@@ -9,3 +9,17 @@ insert_final_newline = true
 [*.{cs,axaml,xaml,csproj,slnx,json,md}]
 indent_style = space
 indent_size = 4
+
+[*.cs]
+# Braces are optional on a single-statement body, a multiline condition included. A loop whose
+# body is itself an if, a loop or another control statement takes braces anyway; no option
+# expresses that.
+csharp_prefer_braces = false:silent
+# Public members of a service stay instance members, so they can be injected.
+dotnet_code_quality.CA1822.api_surface = private, internal
+# FirstOrDefault() reads better than its indexed replacement, and LINQ already indexes a list.
+dotnet_code_quality.CA1826.exclude_ordefault_methods = true
+
+[tests/**.cs]
+# Inline arrays in test data are clearer than hoisting each into a static field.
+dotnet_diagnostic.CA1861.severity = none

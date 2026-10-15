@@ -16,7 +16,7 @@ public sealed class EnsembleOverlapTests
         new(
             filename,
             "MDXC",
-            stems.Select(s => new ProfileStem(s, StemSource.Config)).ToList(),
+            [.. stems.Select(s => new ProfileStem(s, StemSource.Config))],
             IsComposite: false
         );
 

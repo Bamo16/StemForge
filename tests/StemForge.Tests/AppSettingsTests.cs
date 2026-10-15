@@ -78,25 +78,15 @@ public sealed class AppSettingsTests
                 path,
                 System.Text.Json.JsonSerializer.Serialize(
                     original,
-                    new System.Text.Json.JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        Converters =
-                        {
-                            new System.Text.Json.Serialization.JsonStringEnumConverter(),
-                        },
-                    }
+                    AppSettingsJsonContext.Default.AppSettings
                 ),
                 TestContext.Current.CancellationToken
             );
 
             var json = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
-            var loaded = System.Text.Json.JsonSerializer.Deserialize<AppSettings>(
+            var loaded = System.Text.Json.JsonSerializer.Deserialize(
                 json,
-                new System.Text.Json.JsonSerializerOptions
-                {
-                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
-                }
+                AppSettingsJsonContext.Default.AppSettings
             )!;
 
             Assert.Equal(GpuVariant.Cuda, loaded.GpuVariant);

@@ -8,9 +8,10 @@ public sealed class FakeProcessRunner : IProcessRunner
 {
     public record FakeResult(int ExitCode = 0, string Stdout = "", string Stderr = "");
 
-    private readonly Dictionary<string, FakeResult> _responses = new(
-        StringComparer.OrdinalIgnoreCase
-    );
+    private readonly Dictionary<string, FakeResult> _responses =
+    [
+        with(StringComparer.OrdinalIgnoreCase),
+    ];
     private readonly List<(string Exe, IReadOnlyList<string> Args)> _calls = [];
 
     public IReadOnlyList<(string Exe, IReadOnlyList<string> Args)> Calls => _calls;
@@ -90,6 +91,29 @@ public sealed class FakeProcessRunner : IProcessRunner
             throw new ProcessRunner.ProcessFailedException(exe, fake.ExitCode, fake.Stderr);
 
         return Task.FromResult(new ProcessRunner.Result(fake.ExitCode, fake.Stdout, fake.Stderr));
+    }
+
+    /// <summary>Records the producer's call, then the consumer's, and fails as the producer does
+    /// first, as the real runner does.</summary>
+    public Task RunPipedAsync(
+        string producer,
+        IEnumerable<string> producerArgs,
+        string consumer,
+        IEnumerable<string> consumerArgs,
+        IProgress<string>? progress = null,
+        CancellationToken ct = default
+    )
+    {
+        _calls.Add((producer, producerArgs.ToList()));
+        _calls.Add((consumer, consumerArgs.ToList()));
+
+        foreach (var exe in (string[])[producer, consumer])
+        {
+            if (Resolve(exe) is { ExitCode: not 0 } fake)
+                throw new ProcessRunner.ProcessFailedException(exe, fake.ExitCode, fake.Stderr);
+        }
+
+        return Task.CompletedTask;
     }
 
     private FakeResult Resolve(string exe)

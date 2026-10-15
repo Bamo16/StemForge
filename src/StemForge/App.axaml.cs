@@ -21,7 +21,7 @@ public partial class App : Application
 
         // Resolve the sink before Initialize so it is registered before the file opens.
         provider.GetRequiredService<AppLoggerSink>();
-        AppLogger.Initialize(provider.GetRequiredService<AppSettings>().MaxLogEntries);
+        AppLogger.Initialize();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -33,8 +33,18 @@ public partial class App : Application
         }
 
         // Initial tool detection — was previously kicked off in the VM ctor.
-        _ = provider.GetRequiredService<ToolStateService>().RefreshAsync();
+        var toolState = provider.GetRequiredService<ToolStateService>();
+        _ = toolState.RefreshAsync();
+        _ = UpdateYtdlpAsync(provider.GetRequiredService<YtdlpUpdater>(), toolState);
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    // Started at launch so a URL pasted later finds yt-dlp already current; a resolve waits for it
+    // if it is still running. The refresh shows the new version in Settings.
+    private static async Task UpdateYtdlpAsync(YtdlpUpdater updater, ToolStateService toolState)
+    {
+        if (await updater.EnsureCurrentAsync())
+            await toolState.RefreshAsync(ToolKind.Ytdlp);
     }
 }

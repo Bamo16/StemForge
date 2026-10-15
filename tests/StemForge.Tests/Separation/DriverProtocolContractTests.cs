@@ -31,22 +31,24 @@ public sealed class DriverProtocolContractTests
 
     // The polymorphic discriminators declared on the DriverEvent base via [JsonDerivedType].
     private static HashSet<string> CSharpEventDiscriminators() =>
-        typeof(DriverEvent)
-            .GetCustomAttributes<JsonDerivedTypeAttribute>()
-            .Select(a => (string)a.TypeDiscriminator!)
-            .ToHashSet();
+        [
+            .. typeof(DriverEvent)
+                .GetCustomAttributes<JsonDerivedTypeAttribute>()
+                .Select(a => (string)a.TypeDiscriminator!),
+        ];
 
     // The wire names declared on the DriverPhase enum members via [JsonStringEnumMemberName].
     private static HashSet<string> CSharpPhaseNames() =>
-        typeof(DriverPhase)
-            .GetFields(BindingFlags.Public | BindingFlags.Static)
-            .Select(f =>
-                f.GetCustomAttribute<JsonStringEnumMemberNameAttribute>()?.Name
-                ?? throw new InvalidOperationException(
-                    $"DriverPhase.{f.Name} is missing [JsonStringEnumMemberName]"
-                )
-            )
-            .ToHashSet();
+        [
+            .. typeof(DriverPhase)
+                .GetFields(BindingFlags.Public | BindingFlags.Static)
+                .Select(f =>
+                    f.GetCustomAttribute<JsonStringEnumMemberNameAttribute>()?.Name
+                    ?? throw new InvalidOperationException(
+                        $"DriverPhase.{f.Name} is missing [JsonStringEnumMemberName]"
+                    )
+                ),
+        ];
 
     [Fact]
     public void EventDiscriminators_MatchManifest()

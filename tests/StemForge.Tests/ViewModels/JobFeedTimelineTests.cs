@@ -84,6 +84,22 @@ public sealed class JobFeedTimelineTests
         JobQueueService.ApplyUpdate(vm, update, state);
     }
 
+    // ── resolved names the row ──────────────────────────────────────────────
+
+    [Fact]
+    public void Resolved_RenamesTheRowToTheSourceName()
+    {
+        var vm = MakeVm();
+
+        JobQueueService.ApplyUpdate(
+            vm,
+            new JobUpdate { Phase = "resolved", SourceName = "TLC - No Scrubs (Official Audio)" },
+            new JobQueueService.RunProgressState()
+        );
+
+        Assert.Equal("TLC - No Scrubs (Official Audio)", vm.InputFileName);
+    }
+
     // ── loading_model emits a feed entry ────────────────────────────────────
 
     [Fact]

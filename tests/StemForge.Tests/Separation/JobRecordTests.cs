@@ -76,4 +76,37 @@ public sealed class JobRecordTests
             ModelCount: 1,
             Vram: ""
         );
+
+    private static JobRecord UrlJob(YtDlpMetadata? meta) =>
+        new(
+            Guid.NewGuid(),
+            InputFilePath: null,
+            SourceUrl: "https://www.youtube.com/watch?v=rmOd7z8Edrg",
+            Presets: [],
+            OutputDir: "/tmp/out",
+            ModelsDir: "/tmp/models",
+            PreResolvedMeta: meta
+        );
+
+    [Fact]
+    public void InputFileName_ResolvedUrl_IsTheNameTheSourceFileGets()
+    {
+        var meta = new YtDlpMetadata(
+            SourceUrl: "https://www.youtube.com/watch?v=rmOd7z8Edrg",
+            Title: "No Scrubs (Official Audio)",
+            Artists: ["TLC"],
+            Uploader: null,
+            SourceCodec: null,
+            SourceBitrateKbps: null,
+            DurationSeconds: null,
+            FormatId: "140",
+            MediaUrl: "https://media.example.com/140"
+        );
+
+        Assert.Equal("TLC - No Scrubs (Official Audio)", UrlJob(meta).InputFileName);
+    }
+
+    [Fact]
+    public void InputFileName_UnresolvedUrl_IsTheUrl() =>
+        Assert.Equal("https://www.youtube.com/watch?v=rmOd7z8Edrg", UrlJob(null).InputFileName);
 }

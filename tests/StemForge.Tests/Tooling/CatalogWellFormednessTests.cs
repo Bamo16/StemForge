@@ -9,16 +9,22 @@ namespace StemForge.Tests.Tooling;
 /// bin/ with no .exe suffix, per-OS variant sets present) without touching the network, so they
 /// run as part of the normal <c>dotnet test</c> suite and gate the cross-platform CI job.
 /// </summary>
-public sealed class CatalogWellFormednessTests
+public sealed partial class CatalogWellFormednessTests
 {
     private static readonly PlatformInfo LinuxX64 = new(OSKind.Linux, Architecture.X64);
 
-    private static readonly Regex Sha256Hex = new("^[0-9a-fA-F]{64}$");
+    [GeneratedRegex("^[0-9a-fA-F]{64}$")]
+    private static partial Regex Sha256Hex { get; }
 
-    public static IEnumerable<object[]> LinuxBundledTools =>
-        ToolCatalog
-            .All.Where(t => t.InstallStrategy is BundledFetch)
-            .Select(t => new object[] { t.Kind });
+    [GeneratedRegex(
+        @"^https://github\.com/NoMercy-Entertainment/nomercy-ffmpeg/releases/download/"
+            + @"(?<Tag>v\d+\.\d+\.\d+)/ffmpeg-[\d.]+-[\w-]+-(?<FileTag>v\d+\.\d+\.\d+)\.(zip|tar\.gz)$",
+        RegexOptions.ExplicitCapture
+    )]
+    private static partial Regex TagPattern { get; }
+
+    public static TheoryData<ToolKind> LinuxBundledTools =>
+        [.. ToolCatalog.All.Where(t => t.InstallStrategy is BundledFetch).Select(t => t.Kind)];
 
     [Theory]
     [MemberData(nameof(LinuxBundledTools))]
@@ -119,16 +125,11 @@ public sealed class CatalogWellFormednessTests
         var strategy = Assert.IsType<BundledFetch>(
             ToolCatalog.Get(ToolKind.Ffmpeg).InstallStrategy
         );
-        var tagPattern = new Regex(
-            @"^https://github\.com/NoMercy-Entertainment/nomercy-ffmpeg/releases/download/"
-                + @"(?<Tag>v\d+\.\d+\.\d+)/ffmpeg-[\d.]+-[\w-]+-(?<FileTag>v\d+\.\d+\.\d+)\.(zip|tar\.gz)$",
-            RegexOptions.ExplicitCapture
-        );
 
         var tags = strategy
             .Assets.Values.Select(asset =>
             {
-                var match = tagPattern.Match(asset.Url);
+                var match = TagPattern.Match(asset.Url);
                 Assert.True(match.Success, $"not a pinned nomercy-ffmpeg asset: {asset.Url}");
                 Assert.Equal(match.Groups["Tag"].Value, match.Groups["FileTag"].Value);
                 Assert.Equal(["ffprobe"], asset.Companions);

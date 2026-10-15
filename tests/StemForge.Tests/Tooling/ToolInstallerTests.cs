@@ -34,9 +34,9 @@ public sealed class ToolInstallerTests
             ct: TestContext.Current.CancellationToken
         );
 
-        var call = Assert.Single(fake.Calls);
-        Assert.Equal("powershell", call.Exe);
-        Assert.Contains("irm https://astral.sh/uv/install.ps1 | iex", call.Args);
+        var (Exe, Args) = Assert.Single(fake.Calls);
+        Assert.Equal("powershell", Exe);
+        Assert.Contains("irm https://astral.sh/uv/install.ps1 | iex", Args);
     }
 
     [Fact]
@@ -50,9 +50,9 @@ public sealed class ToolInstallerTests
             ct: TestContext.Current.CancellationToken
         );
 
-        var call = Assert.Single(fake.Calls);
-        Assert.Equal(paths.Uv, call.Exe);
-        Assert.Equal(["tool", "upgrade", "audio-separator"], call.Args);
+        var (Exe, Args) = Assert.Single(fake.Calls);
+        Assert.Equal(paths.Uv, Exe);
+        Assert.Equal(["tool", "upgrade", "audio-separator"], Args);
     }
 
     [Fact]
@@ -80,9 +80,9 @@ public sealed class ToolInstallerTests
             ct: TestContext.Current.CancellationToken
         );
 
-        var call = Assert.Single(fake.Calls);
-        Assert.Equal("sh", call.Exe);
-        Assert.Contains("curl -LsSf https://astral.sh/uv/install.sh | sh", call.Args);
+        var (Exe, Args) = Assert.Single(fake.Calls);
+        Assert.Equal("sh", Exe);
+        Assert.Contains("curl -LsSf https://astral.sh/uv/install.sh | sh", Args);
     }
 
     [Theory]
@@ -104,8 +104,8 @@ public sealed class ToolInstallerTests
             ct: TestContext.Current.CancellationToken
         );
 
-        var call = Assert.Single(fake.Calls);
-        Assert.Equal(paths.Uv, call.Exe);
+        var (Exe, Args) = Assert.Single(fake.Calls);
+        Assert.Equal(paths.Uv, Exe);
 
         string[] expected = expectsCudaIndex
             ?
@@ -120,7 +120,7 @@ public sealed class ToolInstallerTests
                 "https://download.pytorch.org/whl/cu121",
             ]
             : ["tool", "install", "--python", "3.10", "--force", expectedPackage];
-        Assert.Equal(expected, call.Args);
+        Assert.Equal(expected, Args);
     }
 
     [Fact]

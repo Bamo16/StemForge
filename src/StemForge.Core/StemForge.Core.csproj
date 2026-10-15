@@ -38,6 +38,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <EmbeddedResource
+            Include="Catalog\model-notes.json"
+            LogicalName="StemForge.Core.Catalog.model-notes.json"
+        />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
         <PackageReference Include="Humanizer.Core" Version="3.0.10" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />

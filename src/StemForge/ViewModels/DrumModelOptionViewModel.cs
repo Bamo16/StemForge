@@ -12,6 +12,7 @@ public sealed class DrumModelOptionViewModel(DrumModelOption option)
     public string FriendlyName => Option.FriendlyName;
     public string Architecture => Option.Architecture;
     public bool IsLocal => Option.IsLocal;
+    public string? Note => Option.Note;
 
     /// <summary>"Downloaded" for a model on disk, "Fetched on use" for one downloaded on first run.</summary>
     public string StateLabel => IsLocal ? "Downloaded" : "Fetched on use";

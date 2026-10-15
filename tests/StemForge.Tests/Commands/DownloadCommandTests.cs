@@ -44,8 +44,8 @@ public sealed class DownloadCommandTests : IDisposable
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    // A process runner whose ffmpeg "download" writes a real (minimal) FLAC to the output path
-    // so that the subsequent tagging step has a file to open. The output path is the last arg.
+    // A process runner whose ffmpeg writes a real (minimal) FLAC to its output path, the last arg,
+    // so the tagging step has a file to open, whether ffmpeg runs alone or fed by yt-dlp.
     private sealed class FfmpegFileWritingRunner : IProcessRunner
     {
         public List<string> StreamedExes { get; } = [];
@@ -85,6 +85,22 @@ public sealed class DownloadCommandTests : IDisposable
             bool logRawLines = true,
             CancellationToken ct = default
         ) => Task.FromResult(new ProcessRunner.Result(0, "", ""));
+
+        // yt-dlp streaming into ffmpeg: ffmpeg's output path is its last argument.
+        public Task RunPipedAsync(
+            string producer,
+            IEnumerable<string> producerArgs,
+            string consumer,
+            IEnumerable<string> consumerArgs,
+            IProgress<string>? progress = null,
+            CancellationToken ct = default
+        )
+        {
+            StreamedExes.Add(consumer);
+            File.WriteAllBytes(consumerArgs.Last(), _minimalFlac);
+
+            return Task.CompletedTask;
+        }
     }
 
     private static YtDlpMetadata MakeMeta(
@@ -106,18 +122,22 @@ public sealed class DownloadCommandTests : IDisposable
 
     // Builds a pipeline wired with the real YouTubeAudioService (backed by a file-writing
     // ffmpeg) and a spy driver so a separation call can be detected.
-    private (
+    private static (
         SeparationPipeline Pipeline,
         SpySeparatorDriverService Driver,
         StubThumbnailFetcher Thumbs
-    ) BuildPipeline(string outputDir)
+    ) BuildPipeline()
     {
         var settings = new AppSettings();
         settings.SetToolPathOverride(ToolKind.Ffmpeg, "ffmpeg");
         var paths = new AppPaths(settings);
 
         var runner = new FfmpegFileWritingRunner();
-        var youTube = new YouTubeAudioService(runner, paths);
+        var youTube = new YouTubeAudioService(
+            runner,
+            paths,
+            new YtdlpUpdater(runner, paths, TimeProvider.System)
+        );
         var thumbs = new StubThumbnailFetcher();
         var driver = new SpySeparatorDriverService();
 
@@ -150,7 +170,7 @@ public sealed class DownloadCommandTests : IDisposable
     [Fact]
     public async Task DownloadOnlyAsync_WritesFileIntoOutputDirectory()
     {
-        var (pipeline, _, _) = BuildPipeline(_tempDir);
+        var (pipeline, _, _) = BuildPipeline();
         var job = MakeJob(_tempDir);
 
         var path = await pipeline.DownloadOnlyAsync(
@@ -167,7 +187,7 @@ public sealed class DownloadCommandTests : IDisposable
     [Fact]
     public async Task DownloadOnlyAsync_HonorsRequestedFormatExtension()
     {
-        var (pipeline, _, _) = BuildPipeline(_tempDir);
+        var (pipeline, _, _) = BuildPipeline();
         var job = MakeJob(_tempDir, AudioFormat.Mp3);
 
         var path = await pipeline.DownloadOnlyAsync(
@@ -182,7 +202,7 @@ public sealed class DownloadCommandTests : IDisposable
     [Fact]
     public async Task DownloadOnlyAsync_AppliesMetadataTitleToFile()
     {
-        var (pipeline, _, _) = BuildPipeline(_tempDir);
+        var (pipeline, _, _) = BuildPipeline();
         var job = MakeJob(_tempDir);
 
         var path = await pipeline.DownloadOnlyAsync(
@@ -203,7 +223,7 @@ public sealed class DownloadCommandTests : IDisposable
     [Fact]
     public async Task RunAsync_SourceOnlyJob_WritesWhatTheDownloadCommandWrites()
     {
-        var (pipeline, driver, _) = BuildPipeline(_tempDir);
+        var (pipeline, driver, _) = BuildPipeline();
         var job = MakeJob(_tempDir) with { KeepSourceFile = true };
 
         var outputs = await pipeline.RunAsync(
@@ -222,7 +242,7 @@ public sealed class DownloadCommandTests : IDisposable
     [Fact]
     public async Task DownloadOnlyAsync_DoesNotInvokeSeparatorDriver()
     {
-        var (pipeline, driver, _) = BuildPipeline(_tempDir);
+        var (pipeline, driver, _) = BuildPipeline();
         var job = MakeJob(_tempDir);
 
         await pipeline.DownloadOnlyAsync(
@@ -237,7 +257,7 @@ public sealed class DownloadCommandTests : IDisposable
     [Fact]
     public async Task DownloadOnlyAsync_ReportsRunCompleteWithWrittenPath()
     {
-        var (pipeline, _, _) = BuildPipeline(_tempDir);
+        var (pipeline, _, _) = BuildPipeline();
         var job = MakeJob(_tempDir);
 
         var updates = new System.Collections.Concurrent.ConcurrentBag<JobUpdate>();
@@ -261,7 +281,7 @@ public sealed class DownloadCommandTests : IDisposable
     [Fact]
     public async Task DownloadOnlyAsync_FileInputJob_Throws()
     {
-        var (pipeline, _, _) = BuildPipeline(_tempDir);
+        var (pipeline, _, _) = BuildPipeline();
         var job = new JobRecord(
             Id: Guid.NewGuid(),
             InputFilePath: Path.Combine(_tempDir, "local.flac"),
@@ -285,7 +305,7 @@ public sealed class DownloadCommandTests : IDisposable
     [Fact]
     public async Task DownloadOnlyAsync_DoesNotFetchThumbnailIntoOutputDirectory()
     {
-        var (pipeline, _, thumbs) = BuildPipeline(_tempDir);
+        var (pipeline, _, thumbs) = BuildPipeline();
         var job = MakeJob(_tempDir);
 
         await pipeline.DownloadOnlyAsync(

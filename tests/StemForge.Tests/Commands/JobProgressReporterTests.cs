@@ -41,7 +41,7 @@ public sealed class JobProgressReporterTests
             }
         );
 
-        Assert.Equal(new[] { 40, 40, 55 }, spy.Reports.Select(r => r.Percent));
+        Assert.Equal([40, 40, 55], spy.Reports.Select(r => r.Percent));
     }
 
     [Fact]

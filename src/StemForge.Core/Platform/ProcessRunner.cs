@@ -1,14 +1,16 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 
 namespace StemForge.Core.Platform;
 
 /// <summary>
-/// Unified helper for spawning external processes. Four entry points:
+/// Unified helper for spawning external processes. Five entry points:
 ///   RunAsync              — capture stdout+stderr, no throw on non-zero exit
 ///   RunCheckedAsync       — same, but throws ProcessFailedException on non-zero exit
 ///   RunStreamingAsync     — stream all lines live via IProgress, throws on non-zero exit
 ///   RunStreamingStderrAsync — capture stdout silently, stream stderr live, throws on non-zero exit
+///   RunPipedAsync         — feed one process's stdout into another's stdin, throws on failure
 /// All overloads drain both stdout and stderr to prevent OS pipe-buffer deadlocks.
 /// Cancellation kills the entire process tree; the token is checked after exit.
 ///
@@ -97,6 +99,122 @@ public sealed class ProcessRunner : IProcessRunner
             captureStdout: true
         );
 
+    /// <summary>
+    /// Runs <paramref name="producer"/> with its stdout feeding <paramref name="consumer"/>'s stdin,
+    /// streaming both stderrs to <paramref name="progress"/>. Throws for the producer's failure
+    /// first, since a consumer that loses its input fails only as a consequence.
+    /// </summary>
+    public async Task RunPipedAsync(
+        string producer,
+        IEnumerable<string> producerArgs,
+        string consumer,
+        IEnumerable<string> consumerArgs,
+        IProgress<string>? progress = null,
+        CancellationToken ct = default
+    )
+    {
+        List<string> producerArgList = [.. producerArgs];
+        List<string> consumerArgList = [.. consumerArgs];
+        AppLogger.Debug(
+            "Process",
+            $"→ {Path.GetFileName(producer)} {string.Join(' ', producerArgList)} | "
+                + $"{Path.GetFileName(consumer)} {string.Join(' ', consumerArgList)}"
+        );
+
+        using var to = StartPiped(consumer, consumerArgList, redirectInput: true);
+        using var from = StartPiped(producer, producerArgList, redirectInput: false);
+        using var _ = ct.Register(() =>
+        {
+            Kill(from);
+            Kill(to);
+        });
+
+        var fromErrors = DrainStderrAsync(from, progress);
+        var toErrors = DrainStderrAsync(to, progress);
+
+        try
+        {
+            await from.StandardOutput.BaseStream.CopyToAsync(to.StandardInput.BaseStream, ct);
+        }
+        catch (IOException)
+        {
+            // The consumer stopped reading, so it has failed; its exit code says how.
+            Kill(from);
+        }
+        finally
+        {
+            try
+            {
+                to.StandardInput.Close();
+            }
+            catch (IOException) { }
+        }
+
+        await Task.WhenAll(
+            from.WaitForExitAsync(CancellationToken.None),
+            to.WaitForExitAsync(CancellationToken.None)
+        );
+        ct.ThrowIfCancellationRequested();
+
+        ThrowIfFailed(from, producer, await fromErrors);
+        ThrowIfFailed(to, consumer, await toErrors);
+    }
+
+    private static void ThrowIfFailed(Process process, string filePath, string stderr)
+    {
+        AppLogger.Info("Process", $"← {Path.GetFileName(filePath)} exit {process.ExitCode}");
+        if (process.ExitCode != 0)
+            throw new ProcessFailedException(filePath, process.ExitCode, stderr);
+    }
+
+    private static Process StartPiped(
+        string filePath,
+        IReadOnlyList<string> args,
+        bool redirectInput
+    )
+    {
+        // Stdout stays bytes (no encoding): it is audio for the producer, unused for the consumer.
+        var startInfo = new ProcessStartInfo(filePath, args)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = redirectInput,
+            RedirectStandardOutput = !redirectInput,
+            RedirectStandardError = true,
+            StandardErrorEncoding = Encoding.UTF8,
+        }.WithEnvironmentVariables(("PYTHONIOENCODING", "utf-8"), ("PYTHONUTF8", "1"));
+
+        // Same orphan handling as CoreAsync; see the class summary.
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
+            startInfo.KillOnParentExit = true;
+
+        return Process.Start(startInfo)
+            ?? throw new InvalidOperationException(
+                $"Failed to start '{Path.GetFileName(filePath)}'"
+            );
+    }
+
+    private static async Task<string> DrainStderrAsync(Process process, IProgress<string>? progress)
+    {
+        List<string> lines = [];
+        while (await process.StandardError.ReadLineAsync() is { } line)
+        {
+            progress?.Report(line);
+            lines.Add(line);
+        }
+
+        return string.Join('\n', lines).Trim();
+    }
+
+    private static void Kill(Process process)
+    {
+        try
+        {
+            process.Kill(entireProcessTree: true);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or Win32Exception) { }
+    }
+
     // ── Core ────────────────────────────────────────────────────────────────────
 
     private static async Task<Result> CoreAsync(
@@ -155,13 +273,16 @@ public sealed class ProcessRunner : IProcessRunner
         {
             if (captureStdout)
             {
-                // Mixed mode: capture stdout silently, stream stderr live.
-                var stdoutLines = new List<string>();
+                // Mixed mode: capture stdout silently, stream stderr live. Stderr is kept as well,
+                // so a failure carries the tool's own explanation rather than only an exit code.
+                List<string> stdoutLines = [];
+                List<string> stderrLines = [];
                 await foreach (var line in p.ReadAllLinesAsync(CancellationToken.None))
                 {
                     if (line.StandardError)
                     {
                         progress.Report(line.Content);
+                        stderrLines.Add(line.Content);
                         if (logRawLines)
                             AppLogger.Debug($"{binaryName}.err", line.Content);
                     }
@@ -171,21 +292,26 @@ public sealed class ProcessRunner : IProcessRunner
                     }
                 }
                 stdout = string.Join('\n', stdoutLines).Trim();
-                stderr = string.Empty;
+                stderr = string.Join('\n', stderrLines).Trim();
             }
             else
             {
-                // Stream mode: report all lines (stdout + stderr) as they arrive.
+                // Stream mode: report all lines (stdout + stderr) as they arrive, keeping stderr for
+                // a failure's message.
+                List<string> stderrLines = [];
                 await foreach (var line in p.ReadAllLinesAsync(CancellationToken.None))
                 {
                     progress.Report(line.Content);
+                    if (line.StandardError)
+                        stderrLines.Add(line.Content);
                     if (logRawLines)
                         AppLogger.Debug(
                             line.StandardError ? $"{binaryName}.err" : $"{binaryName}.out",
                             line.Content
                         );
                 }
-                stdout = stderr = string.Empty;
+                stdout = string.Empty;
+                stderr = string.Join('\n', stderrLines).Trim();
             }
         }
         else

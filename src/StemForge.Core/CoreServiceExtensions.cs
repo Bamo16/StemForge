@@ -12,6 +12,7 @@ public static class CoreServiceExtensions
         services.AddSingleton(UserPresetService.Load());
         services.AddSingleton(PlatformInfo.Current);
         services.AddSingleton<IAppInfo>(AppInfo.Current);
+        services.AddSingleton(TimeProvider.System);
         services.AddSingleton<AppPaths>();
 
         // HTTP clients
@@ -28,6 +29,8 @@ public static class CoreServiceExtensions
         services.AddSingleton<IFileDownloader, FileDownloader>();
         services.AddHttpClient("pypi");
         services.AddSingleton<IPackageIndex, PyPiPackageIndex>();
+        services.AddHttpClient("model-config");
+        services.AddSingleton<IModelConfigSource, ModelConfigSource>();
 
         // Update check
         services.AddSingleton<UpdateCheckService>();
@@ -42,6 +45,7 @@ public static class CoreServiceExtensions
         services.AddSingleton<DrumModelCatalog>();
         services.AddSingleton<PresetCatalogService>();
         services.AddSingleton<ToolStateService>();
+        services.AddSingleton<YtdlpUpdater>();
         services.AddSingleton<YouTubeAudioService>();
         services.AddSingleton<ISeparatorDriverService, SeparatorDriverService>();
         services.AddSingleton<SeparationPipeline>();

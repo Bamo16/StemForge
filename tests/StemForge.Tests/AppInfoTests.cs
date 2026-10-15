@@ -38,7 +38,7 @@ public sealed class AppInfoTests
     [Fact]
     public void Current_ResolvesProductAndVersionFromAssembly()
     {
-        IAppInfo info = AppInfo.Current;
+        var info = AppInfo.Current;
 
         Assert.Equal("StemForge", info.ProductName);
         Assert.False(string.IsNullOrWhiteSpace(info.ShortVersion));

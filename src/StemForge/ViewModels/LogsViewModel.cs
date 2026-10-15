@@ -58,7 +58,7 @@ public partial class LogsViewModel : PageViewModelBase
     private void Clear() => _sink.Entries.Clear();
 
     [RelayCommand]
-    private void OpenLogsFolder()
+    private static void OpenLogsFolder()
     {
         if (AppLogger.LogDirectory is { Length: > 0 } dir && Directory.Exists(dir))
             Process.Start(new ProcessStartInfo { FileName = dir, UseShellExecute = true });

@@ -167,7 +167,7 @@ public sealed class ToolInstaller(
     // Adapts an InstallProgress sink to the IProgress<string> that streaming process runs report
     // to, wrapping each raw line as a message-only InstallProgress. Synchronous so log ordering
     // is preserved (unlike Progress<T>, which marshals through a SynchronizationContext).
-    private static IProgress<string>? AsLineProgress(IProgress<InstallProgress>? progress) =>
+    private static LineProgress? AsLineProgress(IProgress<InstallProgress>? progress) =>
         progress is null ? null : new LineProgress(progress);
 
     private sealed class LineProgress(IProgress<InstallProgress> inner) : IProgress<string>

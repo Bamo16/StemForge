@@ -444,7 +444,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
     // Maps the typed wire phase (DriverPhase, internal to the protocol layer) onto the public
     // PhaseProgress sub-state. The record type is the event-kind discriminator, so the kind and the
     // phase are never conflated in a single field.
-    private static JobProgress MapPhase(PhaseEvent evt) =>
+    private static PhaseProgress MapPhase(PhaseEvent evt) =>
         evt.Phase switch
         {
             DriverPhase.DownloadingModel => new PhaseProgress(JobPhase.DownloadingModel)

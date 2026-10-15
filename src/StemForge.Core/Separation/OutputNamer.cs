@@ -41,9 +41,10 @@ public sealed class OutputNamer
 {
     // Claimed base names per directory, both keys case-folded: paths and file names are
     // case-insensitive on Windows and macOS, and treating them otherwise would miss collisions.
-    private readonly Dictionary<string, HashSet<string>> _claimedByDirectory = new(
-        StringComparer.OrdinalIgnoreCase
-    );
+    private readonly Dictionary<string, HashSet<string>> _claimedByDirectory =
+    [
+        with(StringComparer.OrdinalIgnoreCase),
+    ];
 
     /// <summary>
     /// The clean default base name for a stem: <c>"{title} ({stem})"</c>. This is the convention the

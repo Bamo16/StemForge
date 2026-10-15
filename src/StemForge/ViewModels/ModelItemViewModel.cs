@@ -46,10 +46,12 @@ public partial class ModelItemViewModel(ModelInfo model, ModelProfile? profile =
     }
 
     /// <summary>
-    /// True when the displayed stems are advisory (resolved from the profile, not measured), so the
-    /// UI can mark them as inferred rather than benchmark-backed.
+    /// True when the displayed stems are guessed from the architecture or filename rather than read
+    /// from the benchmark or the model's config, so the UI can mark them as inferred.
     /// </summary>
-    public bool StemsAreInferred => Model.Stems.Count == 0 && Profile is { IsUnknown: false };
+    public bool StemsAreInferred =>
+        Model.Stems.Count == 0
+        && Profile is { Confidence: StemSource.FilenameTarget or StemSource.ArchitectureDefault };
 
     [ObservableProperty]
     public partial bool IsChecked { get; set; }

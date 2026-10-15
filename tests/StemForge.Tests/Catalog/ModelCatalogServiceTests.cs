@@ -48,6 +48,51 @@ public sealed class ModelCatalogServiceTests
         Assert.All(ht.Stems, s => Assert.Null(s.Sdr));
     }
 
+    [Fact]
+    public void ParseModels_DownloadFiles_AreLocalFileNames()
+    {
+        const string json = """
+            {
+              "Demucs": {
+                "Demucs v4: htdemucs_ft": {
+                  "filename": "htdemucs_ft.yaml",
+                  "download_files": [
+                    "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th",
+                    "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/htdemucs_ft.yaml"
+                  ]
+                }
+              },
+              "MDXC": {
+                "Roformer Model: BS Roformer SW by jarredou": {
+                  "filename": "BS-Roformer-SW.ckpt",
+                  "download_files": ["BS-Roformer-SW.ckpt", "BS-Roformer-SW.yaml"]
+                }
+              }
+            }
+            """;
+
+        var models = ModelCatalogService.ParseModels(json);
+
+        Assert.Equal(
+            ["f7e0c4bc-ba3fe64a.th", "htdemucs_ft.yaml"],
+            models.Single(m => m.Architecture == "Demucs").Files
+        );
+        Assert.Equal(
+            ["BS-Roformer-SW.ckpt", "BS-Roformer-SW.yaml"],
+            models.Single(m => m.Architecture == "MDXC").Files
+        );
+    }
+
+    [Fact]
+    public void ParseModels_NoDownloadFiles_NeedsOnlyTheFilename()
+    {
+        var kim = ModelCatalogService
+            .ParseModels(ValidJson)
+            .Single(m => m.Filename == "Kim_Vocal_2.onnx");
+
+        Assert.Equal(["Kim_Vocal_2.onnx"], kim.Files);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]

@@ -22,10 +22,8 @@ public sealed class LiveBundledAssetTests
 
     private static HttpClient NewHttpClient() => new() { Timeout = TimeSpan.FromMinutes(15) };
 
-    public static IEnumerable<object[]> LinuxBundledTools =>
-        ToolCatalog
-            .All.Where(t => t.InstallStrategy is BundledFetch)
-            .Select(t => new object[] { t.Kind });
+    public static TheoryData<ToolKind> LinuxBundledTools =>
+        [.. ToolCatalog.All.Where(t => t.InstallStrategy is BundledFetch).Select(t => t.Kind)];
 
     [Theory(SkipUnless = nameof(LiveAssetsEnabled), Skip = "Set STEMFORGE_LIVE_ASSETS=1 to run.")]
     [MemberData(nameof(LinuxBundledTools))]

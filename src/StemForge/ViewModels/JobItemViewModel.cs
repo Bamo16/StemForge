@@ -4,23 +4,16 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace StemForge.ViewModels;
 
-public partial class JobItemViewModel : ObservableObject
+public partial class JobItemViewModel(JobRecord job, int maxLogLines = 500) : ObservableObject
 {
-    public JobRecord Job { get; }
+    public JobRecord Job { get; } = job;
 
     public string OutputSummary => Job.OutputSummary;
 
     [ObservableProperty]
-    public partial string InputFileName { get; set; }
+    public partial string InputFileName { get; set; } = job.InputFileName;
 
-    private readonly int _maxLogLines;
-
-    public JobItemViewModel(JobRecord job, int maxLogLines = 500)
-    {
-        Job = job;
-        InputFileName = job.InputFileName;
-        _maxLogLines = Math.Max(50, maxLogLines);
-    }
+    private readonly int _maxLogLines = Math.Max(50, maxLogLines);
 
     [ObservableProperty]
     public partial JobStatus Status { get; set; } = JobStatus.Queued;

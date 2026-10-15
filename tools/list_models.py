@@ -15,7 +15,8 @@ Usage: list_models.py <models_dir>
 
 Prints the model catalog as JSON to stdout, grouped by architecture, in the same shape
 the C# ModelCatalogService parses: { "<arch>": { "<friendly name>": { "filename", "stems",
-"scores": { "<stem>": { "SDR": ... } } } } }.
+"scores": { "<stem>": { "SDR": ... } }, "download_files": [...] } } }. download_files matches
+upstream: every file the model needs, as a filename or (for Demucs) a URL.
 
 Exit code 1 if the bundled package data cannot be located.
 """
@@ -46,7 +47,7 @@ def _load_bundled(name):
         return json.load(fh)
 
 
-def _entry(filename, scores):
+def _entry(filename, scores, download_files):
     """Build a single model entry matching list_supported_model_files() output."""
     score_data = scores.get(filename, {})
     # median_scores mixes per-stem score objects ({"SDR": ...}) with scalar metrics such as
@@ -59,6 +60,7 @@ def _entry(filename, scores):
         "scores": stem_scores,
         "stems": score_data.get("stems", []),
         "target_stem": score_data.get("target_stem"),
+        "download_files": download_files,
     }
 
 
@@ -85,11 +87,11 @@ def build_catalog(models_dir):
 
     # VR and MDX models map friendly name -> single filename string.
     vr = {
-        name: _entry(filename, scores)
+        name: _entry(filename, scores, [filename])
         for name, filename in merged("vr_download_list").items()
     }
     mdx = {
-        name: _entry(filename, scores)
+        name: _entry(filename, scores, [filename])
         for name, filename in merged(
             "mdx_download_list", "mdx_download_vip_list"
         ).items()
@@ -104,16 +106,19 @@ def build_catalog(models_dir):
             (fn for fn in files.keys() if fn.endswith(".yaml")), None
         )
         if yaml_file:
-            demucs[name] = _entry(yaml_file, scores)
+            demucs[name] = _entry(yaml_file, scores, list(files.values()))
 
-    # MDXC (MDX23C + RoFormer) models map friendly name -> { filename: config }; first key is the id.
+    # MDXC (MDX23C + RoFormer) models map friendly name -> { filename: config }; first key is the id,
+    # and the values are the yaml configs.
     mdxc = {}
     for name, files in merged(
         "mdx23c_download_list", "mdx23c_download_vip_list", "roformer_download_list"
     ).items():
         first = next(iter(files.keys()), None)
         if first:
-            mdxc[name] = _entry(first, scores)
+            mdxc[name] = _entry(
+                first, scores, list(files.keys()) + list(files.values())
+            )
 
     return {"VR": vr, "MDX": mdx, "Demucs": demucs, "MDXC": mdxc}
 
