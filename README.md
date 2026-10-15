@@ -250,6 +250,8 @@ Three VS Code tasks together produce the shippable zip:
 1. **"publish: win-x64 GUI"** and **"publish: win-x64 CLI"** each run `dotnet publish` (self-contained, single-file, ReadyToRun) into `publish/win-x64/`, producing `StemForge.exe` and `stemforge-cli.exe` plus the `tools/` scripts.
 2. **"package: win-x64"** depends on the CLI publish. It runs `scripts/package-win-x64.ps1`, which stages that output under a `StemForge/` subfolder and produces `publish/StemForge-vX.Y.Z-win-x64.zip`.
 
+To use a build yourself rather than ship it, **"install: win-x64"** publishes the same way, then copies both executables and `tools/` into the folder named by the `STEMFORGE_INSTALL_DIR` environment variable (set it once, for example `setx STEMFORGE_INSTALL_DIR "C:\Tools\StemForge"`). Put that folder on your PATH to run `stemforge-cli` from anywhere. Close StemForge first: a running copy locks its executables.
+
 Bumping the release version is one edit in `Directory.Build.props`, the single source of truth shared by all projects:
 
 ```xml

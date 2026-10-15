@@ -182,6 +182,26 @@
                 "clear": true
             },
             "problemMatcher": []
+        },
+        {
+            "label": "install: win-x64",
+            "detail": "Publish both executables, then copy them with tools/ into the folder named by the STEMFORGE_INSTALL_DIR environment variable.",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/install-win-x64.ps1"
+            ],
+            "dependsOn": "publish: win-x64 CLI",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
         }
     ]
 }
