@@ -218,7 +218,7 @@ Bundling deno via the setup wizard is the safe default. If you already have deno
 
 ## Status
 
-StemForge is at v0.5.0, an early release shared mostly with friends and testers. **User presets work but aren't fully fleshed-out yet.** Expect rough edges in the editor and minimal validation. The built-in preset library is the recommended starting point.
+StemForge is at v0.5.1, an early release shared mostly with friends and testers. **User presets work but aren't fully fleshed-out yet.** Expect rough edges in the editor and minimal validation. The built-in preset library is the recommended starting point.
 
 **Cross-platform, with Windows the most tested.** v0.2.0 made the codebase genuinely cross-platform: per-OS path resolution, bundled ffmpeg / yt-dlp / deno for Linux and macOS, and per-OS GPU variants. A Linux CI job builds the app, runs the test suite, and downloads and verifies the Linux bundled binaries on every push. That said, the published binary below is still Windows (win-x64), Windows is where the app runs day to day, and **it has not yet been run end to end on real Linux or macOS hardware**, so expect rough edges there. Linux and macOS users can build and run from source today (see [For developers](#for-developers)); native packaged builds may follow. Patches and reports welcome.
 
@@ -255,7 +255,7 @@ To use a build yourself rather than ship it, **"install: win-x64"** publishes th
 Bumping the release version is one edit in `Directory.Build.props`, the single source of truth shared by all projects:
 
 ```xml
-<Version>0.4.0</Version>
+<Version>0.5.1</Version>
 ```
 
 The package script reads the version from there, so the next run names the zip automatically.
