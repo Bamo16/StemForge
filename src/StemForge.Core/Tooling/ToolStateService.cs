@@ -13,6 +13,10 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
 {
     private readonly SetupDetector _detector = detector;
 
+    // One refresh at a time. Overlapping ones applied in whatever order they finished, so the
+    // setup wizard's slow full refresh could land after a tool's install and mark it missing again.
+    private readonly SemaphoreSlim _refreshing = new(1, 1);
+
     // Authoritative store keyed by ToolKind. Tools is a projection of this, in catalog order.
     private Dictionary<ToolKind, ToolState> _byKind = [];
 
@@ -40,6 +44,7 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
     /// </summary>
     public async Task RefreshAsync(params ToolKind[] kinds)
     {
+        await _refreshing.WaitAsync();
         IsLoading = true;
         try
         {
@@ -58,6 +63,7 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
         finally
         {
             IsLoading = false;
+            _refreshing.Release();
         }
     }
 

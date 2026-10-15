@@ -2,6 +2,14 @@
 
 All notable changes to StemForge are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-10-15
+
+Bug-fix release.
+
+### Fixed
+
+- **A tool installed during first-run setup could still show as missing until StemForge was restarted.** The URL box said "Install yt-dlp to enable URL downloads" right after setup had installed it. A slow check of every tool, started when setup reached its Install step, could finish after a tool was installed and overwrite its newer result. Checks now run one at a time.
+
 ## [0.5.0] - 2026-10-15
 
 ### Added
@@ -160,6 +168,7 @@ Bug-fix release. No new features.
 
 Initial release.
 
+[0.5.1]: https://github.com/Bamo16/StemForge/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Bamo16/StemForge/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Bamo16/StemForge/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Bamo16/StemForge/compare/v0.3.0...v0.3.1
