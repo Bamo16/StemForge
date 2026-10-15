@@ -237,5 +237,14 @@ public sealed class PresetCatalogServiceTests
             bool logRawLines = true,
             CancellationToken ct = default
         ) => RunAsync(exe, args, logRawLines, ct);
+
+        public Task RunPipedAsync(
+            string producer,
+            IEnumerable<string> producerArgs,
+            string consumer,
+            IEnumerable<string> consumerArgs,
+            IProgress<string>? progress = null,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
     }
 }

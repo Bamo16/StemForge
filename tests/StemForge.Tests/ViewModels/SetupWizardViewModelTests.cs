@@ -101,6 +101,44 @@ public sealed class SetupWizardViewModelTests
     }
 
     [Fact]
+    public void IsInstallPending_WhileATickedToolIsMissing()
+    {
+        var vm = Build();
+        vm.CurrentStep = WizardStep.Install;
+        foreach (var row in vm.InstallRows)
+            row.Found = true;
+
+        Assert.False(vm.IsInstallPending);
+
+        var ytdlp = Row(vm, ToolKind.Ytdlp);
+        ytdlp.Found = false;
+        ytdlp.WantInstall = true;
+        Assert.True(vm.IsInstallPending);
+
+        ytdlp.WantInstall = false;
+        Assert.False(vm.IsInstallPending);
+    }
+
+    [Fact]
+    public async Task InstallAndContinue_OptionalInstallFails_StaysOnInstallWithTheError()
+    {
+        var vm = Build();
+        vm.CurrentStep = WizardStep.Install;
+        foreach (var row in vm.InstallRows)
+            row.Found = true;
+        var ytdlp = Row(vm, ToolKind.Ytdlp);
+        ytdlp.Found = false;
+        ytdlp.WantInstall = true;
+
+        // NullFileDownloader fails every download, so the yt-dlp fetch fails.
+        await vm.InstallAndContinueCommand.ExecuteAsync(null);
+
+        Assert.Equal(WizardStep.Install, vm.CurrentStep);
+        Assert.False(string.IsNullOrEmpty(ytdlp.InstallError));
+        Assert.True(vm.IsInstallPending);
+    }
+
+    [Fact]
     public void CanGoNext_OnWelcomeStep_AlwaysTrue()
     {
         var vm = Build();

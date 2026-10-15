@@ -4,15 +4,14 @@ using System.Text.Json;
 namespace StemForge.Core.Downloading;
 
 /// <summary>
-/// Two-stage YouTube audio download:
-///   1. yt-dlp --dump-single-json resolves metadata + selects best audio format URL
-///   2. ffmpeg streams that URL to disk in the chosen format with provenance tags
-/// No temp file, no double-encoding, full visibility into yt-dlp and ffmpeg progress.
+/// Downloads a URL's audio: yt-dlp resolves the metadata and picks a format, then streams that
+/// format into ffmpeg, which encodes it to the output format at 44.1 kHz as it arrives.
 /// </summary>
-public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
+public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths, YtdlpUpdater updater)
 {
     private readonly IProcessRunner _runner = runner;
     private readonly AppPaths _paths = paths;
+    private readonly YtdlpUpdater _updater = updater;
 
     public async Task<YtDlpMetadata> ResolveAsync(
         string url,
@@ -21,6 +20,9 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
         CancellationToken ct = default
     )
     {
+        // A stale yt-dlp gets media URLs YouTube refuses (#95), so bring it current first.
+        await _updater.EnsureCurrentAsync(ct);
+
         var args = new List<string>
         {
             "--dump-single-json",
@@ -38,26 +40,42 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             "ejs:github",
         };
 
-        var cookies = settings.YtdlpCookiesFromBrowser;
-        if (!string.IsNullOrWhiteSpace(cookies))
-        {
-            var flag =
-                cookies.Contains(Path.DirectorySeparatorChar)
-                || cookies.Contains(Path.AltDirectorySeparatorChar)
-                || cookies.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
-                    ? "--cookies"
-                    : "--cookies-from-browser";
-            args.AddRange([flag, cookies]);
-        }
-
-        // Pass bundled deno explicitly so yt-dlp finds it without deno on PATH.
-        // ArgumentList handles OS-level quoting automatically; no embedded quotes needed.
-        if (Path.IsPathRooted(_paths.Deno))
+        // Point yt-dlp at StemForge's deno when it exists; a bare-name override leaves yt-dlp to
+        // find deno on PATH itself. ArgumentList handles OS-level quoting; no embedded quotes needed.
+        if (File.Exists(_paths.Deno))
             args.AddRange(["--js-runtimes", $"deno:{_paths.Deno}"]);
         args.Add(url);
 
         // Stderr streams live (yt-dlp info lines); stdout (the JSON blob) is captured silently.
-        var result = await _runner.RunStreamingStderrAsync(_paths.Ytdlp, args, log, ct: ct);
+        ProcessRunner.Result result;
+        if (CookieArgs(settings.YtdlpCookiesFromBrowser) is not { } cookieArgs)
+            result = await _runner.RunStreamingStderrAsync(_paths.Ytdlp, args, log, ct: ct);
+        else
+        {
+            try
+            {
+                result = await _runner.RunStreamingStderrAsync(
+                    _paths.Ytdlp,
+                    [.. cookieArgs, .. args],
+                    log,
+                    ct: ct
+                );
+            }
+            catch (ProcessRunner.ProcessFailedException ex)
+                when (ex.Stderr.Contains("cookie", StringComparison.OrdinalIgnoreCase))
+            {
+                // Unreadable cookies (Chrome locks its database and, on Windows, encrypts it so
+                // only Chrome can read it) shouldn't cost the download; premium formats are what
+                // they bought, and the premium check reports their absence.
+                var message =
+                    $"Could not read cookies from \"{settings.YtdlpCookiesFromBrowser}\"; "
+                    + "continuing without them, so premium formats are unavailable.";
+                AppLogger.Warning("yt-dlp", message);
+                log?.Report($"WARNING: {message}");
+
+                result = await _runner.RunStreamingStderrAsync(_paths.Ytdlp, args, log, ct: ct);
+            }
+        }
 
         var info = DeserializeVideoInfo(result.Stdout);
 
@@ -92,8 +110,24 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
             AudioFormats: info.AudioFormatsByPreference() is { Count: > 0 } ranked
                 ? ranked
                 : [selected],
-            Extractor: info.Extractor
+            Extractor: info.Extractor,
+            InfoJson: result.Stdout
         );
+    }
+
+    /// <summary>yt-dlp's cookie arguments for a browser name or a cookies.txt path, or null for none.</summary>
+    private static string[]? CookieArgs(string? cookies)
+    {
+        if (string.IsNullOrWhiteSpace(cookies))
+            return null;
+
+        // A path, or a name ending .txt, is an exported cookies file; anything else is a browser.
+        var isFile =
+            cookies.Contains(Path.DirectorySeparatorChar)
+            || cookies.Contains(Path.AltDirectorySeparatorChar)
+            || cookies.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
+
+        return [isFile ? "--cookies" : "--cookies-from-browser", cookies];
     }
 
     /// Resolves metadata for a URL and returns it, or null if the URL is invalid or yt-dlp fails.
@@ -128,24 +162,84 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths)
     )
     {
         Directory.CreateDirectory(outDir);
-        var fileName = $"{meta.BaseName}.{FfmpegArgs.Extension(format)}";
-        var outputPath = Path.Combine(outDir, fileName);
+        var outputPath = Path.Combine(outDir, $"{meta.BaseName}.{FfmpegArgs.Extension(format)}");
 
-        var args = new List<string>();
-        args.AddRange(FfmpegArgs.Baseline);
-        args.AddRange(["-i", meta.MediaUrl]);
-        // Normalise to 44.1 kHz: audio-separator uses this internally, so keeping 48 kHz
-        // sources at their native rate only introduces a resampling step at separation time.
-        args.AddRange(["-ar", "44100"]);
-        args.AddRange(FfmpegArgs.Codec(format));
-        args.Add(outputPath);
-
-        await _runner.RunStreamingAsync(_paths.Ffmpeg, args, log, ct: ct);
+        // yt-dlp fetches the stream and ffmpeg encodes it as it arrives, so the audio is never
+        // written anywhere but the output. ffmpeg used to fetch the media URL itself, but YouTube
+        // refuses a client that skips what yt-dlp does for each request, sometimes partway (#95).
+        // Only the resolve's JSON goes to a temp file, for --load-info-json.
+        var work = Path.Combine(Path.GetTempPath(), $"stemforge-source-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(work);
+        try
+        {
+            List<string> ffmpegArgs =
+            [
+                .. FfmpegArgs.Baseline,
+                "-i",
+                "pipe:0",
+                // Normalise to 44.1 kHz: audio-separator uses this internally, so keeping 48 kHz
+                // sources at their native rate only introduces a resampling step at separation time.
+                "-ar",
+                "44100",
+                .. FfmpegArgs.Codec(format),
+                outputPath,
+            ];
+            await _runner.RunPipedAsync(
+                _paths.Ytdlp,
+                await YtdlpStreamArgsAsync(meta, work, ct),
+                _paths.Ffmpeg,
+                ffmpegArgs,
+                log,
+                ct
+            );
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(work, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                AppLogger.Debug("yt-dlp", $"Could not remove {work}: {ex.Message}");
+            }
+        }
 
         return outputPath;
     }
 
-    // ── Logging ───────────────────────────────────────────────────────────────
+    /// <summary>yt-dlp's arguments to write the chosen format's stream, untouched, to stdout.</summary>
+    private static async Task<List<string>> YtdlpStreamArgsAsync(
+        YtDlpMetadata meta,
+        string work,
+        CancellationToken ct
+    )
+    {
+        List<string> args =
+        [
+            "--format",
+            meta.FormatId ?? "bestaudio/best",
+            "--output",
+            "-",
+            "--no-progress",
+            "--no-playlist",
+        ];
+
+        // Reuse the resolve's own JSON rather than resolving again: it carries the formats, the
+        // headers and any cookies, so the download needs no second extraction or challenge.
+        if (meta.InfoJson is { } infoJson)
+        {
+            var infoPath = Path.Combine(work, "info.json");
+            await File.WriteAllTextAsync(infoPath, infoJson, ct);
+            args.AddRange(["--load-info-json", infoPath]);
+        }
+        else
+        {
+            args.Add(meta.SourceUrl);
+        }
+
+        return args;
+    }
 
     private static void LogAudioFormats(List<YtDlpFormat> formats, string? selectedFormatId)
     {

@@ -39,7 +39,11 @@ public sealed class UrlInputResolverTests
         var settings = new AppSettings();
         settings.SetToolPathOverride(ToolKind.Ytdlp, "yt-dlp");
         var paths = new AppPaths(settings);
-        return new YouTubeAudioService(fake, paths);
+        return new YouTubeAudioService(
+            fake,
+            paths,
+            new YtdlpUpdater(fake, paths, TimeProvider.System)
+        );
     }
 
     [Fact]
@@ -146,5 +150,14 @@ public sealed class UrlInputResolverTests
             bool logRawLines = true,
             CancellationToken ct = default
         ) => throw new OperationCanceledException();
+
+        public Task RunPipedAsync(
+            string producer,
+            IEnumerable<string> producerArgs,
+            string consumer,
+            IEnumerable<string> consumerArgs,
+            IProgress<string>? progress = null,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
     }
 }

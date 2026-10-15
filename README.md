@@ -157,7 +157,7 @@ Live progress shows a per-input bar with the current activity. Press Ctrl+C once
 
 1. Open the [Releases](../../releases) page and download the latest `StemForge-vX.Y.Z-win-x64.zip`.
 2. Extract anywhere. You'll get a `StemForge/` folder; double-click `StemForge.exe` inside it. No .NET install required.
-3. **First-run wizard** offers to install everything you need:
+3. **First-run wizard** installs everything you need with one click (untick an optional tool to skip it):
    - `uv`: Python tool manager, ~25 MB, installed via [Astral's official installer](https://astral.sh/uv).
    - `audio-separator`: the separation engine, ~250 MB to 2 GB depending on GPU variant, installed as a uv tool.
    - `ffmpeg`: ~265 MB, bundled binary from [`nomercy-ffmpeg`](https://github.com/NoMercy-Entertainment/nomercy-ffmpeg), dropped into `%LOCALAPPDATA%\StemForge\bin`.
@@ -167,7 +167,7 @@ Live progress shows a per-input bar with the current activity. Press Ctrl+C once
 
 > **Windows SmartScreen on first launch.** Because `StemForge.exe` isn't code-signed yet, Windows will probably show a *"Windows protected your PC"* prompt the first time you run it. Click **More info** and then **Run anyway** to proceed. This is the standard warning for any unsigned executable; nothing in StemForge needs admin rights or alters system settings.
 
-If you already have any of these tools on your PATH, the wizard detects them and skips re-installing.
+A `uv` or `audio-separator` already on your PATH is used as it is. `ffmpeg`, `yt-dlp` and `deno` are always StemForge's own copies, even when you have others on PATH, so an old copy can't break downloads or separation; **Settings → Tool paths** can point StemForge at a different binary. If a required tool goes missing, the wizard opens again at startup.
 
 > **Linux and macOS.** There's no published Linux or macOS build yet. The app is cross-platform (see [Status](#status)) and you can build and run it from source today (see [For developers](#for-developers)); a packaged download for those platforms may follow.
 
@@ -187,15 +187,15 @@ If you already have any of these tools on your PATH, the wizard detects them and
 | Drum-stem cache | `%LOCALAPPDATA%\StemForge\drum-cache` |
 | Model configs read for their stems | `%LOCALAPPDATA%\StemForge\model-configs` |
 
-### Updating yt-dlp between StemForge releases
+### yt-dlp keeps itself current
 
-YouTube occasionally changes its extraction logic and yt-dlp moves fast to keep up. StemForge ships a pinned yt-dlp; if YouTube breaks downloads in between releases, you can self-update the bundled binary in place:
+YouTube changes often, and an out-of-date yt-dlp soon gets download links YouTube refuses. So StemForge runs yt-dlp's own update once a day, at launch and before resolving a URL, and stays on whichever channel your copy is on. If YouTube breaks downloads before a stable fix lands, switch the bundled copy to nightly builds and StemForge keeps it on nightly from then on:
 
 ```pwsh
-& "$env:LOCALAPPDATA\StemForge\bin\yt-dlp.exe" --update-to master
+& "$env:LOCALAPPDATA\StemForge\bin\yt-dlp.exe" --update-to nightly
 ```
 
-Switch back to a stable build with `--update-to stable`, or pick a specific version with `--update-to <tag>`. The next StemForge release will reset yt-dlp to whatever it pins.
+`--update-to stable` switches back. A yt-dlp set under **Settings → Tool paths** is yours to update; StemForge leaves it alone.
 
 ---
 
@@ -206,7 +206,7 @@ YouTube's audio-only formats fall into two tiers:
 - **Public**: ~128 kbps is the ceiling without authentication.
 - **Premium-only**: ~256 kbps opus or AAC, requires a YouTube Premium account *and* authenticated requests.
 
-To unlock the premium tier, StemForge passes browser cookies to `yt-dlp`. Open **Settings → yt-dlp → Cookies from browser** and put your browser name there (`firefox`, `chrome`, `edge`, etc.). yt-dlp reads the cookies straight from the browser's storage at extraction time, so you stay signed in normally with no separate export step. [yt-dlp's cookie documentation](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp) covers caveats and alternative cookie sources.
+To unlock the premium tier, StemForge passes browser cookies to `yt-dlp`. Open **Settings → yt-dlp → Cookies from browser** and put your browser name there, usually `firefox`. yt-dlp reads the cookies straight from the browser's storage at extraction time, so you stay signed in normally with no separate export step. On Windows it usually can't read Chrome's or another Chromium-based browser's cookies, since Chrome encrypts them with a key only Chrome can use; use Firefox or an exported cookies.txt instead. If the cookies can't be read, StemForge says so and downloads without them. [yt-dlp's cookie documentation](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp) covers caveats and alternative cookie sources.
 
 ### Why deno
 

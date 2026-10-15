@@ -93,6 +93,29 @@ public sealed class FakeProcessRunner : IProcessRunner
         return Task.FromResult(new ProcessRunner.Result(fake.ExitCode, fake.Stdout, fake.Stderr));
     }
 
+    /// <summary>Records the producer's call, then the consumer's, and fails as the producer does
+    /// first, as the real runner does.</summary>
+    public Task RunPipedAsync(
+        string producer,
+        IEnumerable<string> producerArgs,
+        string consumer,
+        IEnumerable<string> consumerArgs,
+        IProgress<string>? progress = null,
+        CancellationToken ct = default
+    )
+    {
+        _calls.Add((producer, producerArgs.ToList()));
+        _calls.Add((consumer, consumerArgs.ToList()));
+
+        foreach (var exe in (string[])[producer, consumer])
+        {
+            if (Resolve(exe) is { ExitCode: not 0 } fake)
+                throw new ProcessRunner.ProcessFailedException(exe, fake.ExitCode, fake.Stderr);
+        }
+
+        return Task.CompletedTask;
+    }
+
     private FakeResult Resolve(string exe)
     {
         if (_responses.TryGetValue(exe, out var r))

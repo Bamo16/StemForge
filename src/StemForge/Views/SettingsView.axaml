@@ -354,16 +354,20 @@
                         <StackPanel Spacing="14">
                             <StackPanel Spacing="6">
                                 <TextBlock Classes="settingLabel"
-                                           Text="Cookies from browser (e.g. firefox, chrome, edge)" />
+                                           Text="Cookies from browser (e.g. firefox)" />
                                 <TextBox Classes="settingInput"
                                          Text="{Binding YtdlpCookiesFromBrowser, Mode=TwoWay}"
                                          PlaceholderText="Leave blank to skip" />
+                                <TextBlock FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource WarningBrush}"
+                                           IsVisible="{Binding IsCookieBrowserLikelyUnreadable}"
+                                           Text="On Windows, yt-dlp usually can't read cookies from Chrome or other Chromium-based browsers such as Edge, Brave and Opera. Downloads still work, but without premium formats. Use Firefox or a cookies.txt file instead." />
                                 <TextBlock FontSize="11" TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
                                            Text="Needed for YouTube Premium audio (up to 264 kbps opus vs ~135 kbps without). Alternatively, export a cookies.txt file from your browser using the &quot;Get cookies.txt LOCALLY&quot; extension and enter its path instead." />
                                 <TextBlock FontSize="11" TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextPlaceholderBrush}"
-                                           Text="A browser name on its own follows whichever profile you used most recently, so on a machine with several profiles it can quietly switch accounts. Name one to be certain: firefox:0gx213hv.default-release, using the directory name from about:profiles, or firefox::container for a Multi-Account Container. Firefox is the most reliable choice; Chrome locks its cookie database while running." />
+                                           Text="A browser name on its own follows whichever profile you used most recently, so on a machine with several profiles it can quietly switch accounts. Name one to be certain: firefox:0gx213hv.default-release, using the directory name from about:profiles, or firefox::container for a Multi-Account Container. Firefox is the most reliable choice." />
                                 <HyperlinkButton Padding="0" FontSize="11"
                                                  NavigateUri="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
                                                  Foreground="{DynamicResource AccentBrush}"

@@ -124,6 +124,9 @@ public partial class SetupWizardViewModel(
 
     public bool HasAnythingToInstall => InstallRows.Any(r => r.WantInstall && !r.Found);
 
+    /// <summary>The Install step shows "Install" while anything ticked is missing, else "Next".</summary>
+    public bool IsInstallPending => IsInstallStep && HasAnythingToInstall;
+
     // ── Partial hooks ─────────────────────────────────────────────────────────
 
     partial void OnCurrentStepChanged(WizardStep value)
@@ -139,6 +142,7 @@ public partial class SetupWizardViewModel(
         OnPropertyChanged(nameof(IsStep4Active));
         OnPropertyChanged(nameof(IsBackVisible));
         OnPropertyChanged(nameof(CanGoNext));
+        OnPropertyChanged(nameof(IsInstallPending));
 
         if (value == WizardStep.Detect)
             _ = RunDetectionAsync();
@@ -212,6 +216,16 @@ public partial class SetupWizardViewModel(
         }
     }
 
+    /// <summary>The Install step's one primary action: install everything ticked, then move on
+    /// unless something failed, so a failure stays on screen with its error.</summary>
+    [RelayCommand]
+    private async Task InstallAndContinueAsync()
+    {
+        await InstallSelectedAsync();
+        if (CurrentStep == WizardStep.Install && CanGoNext && !HasAnythingToInstall)
+            Next();
+    }
+
     [RelayCommand]
     private async Task FinishAsync()
     {
@@ -247,6 +261,7 @@ public partial class SetupWizardViewModel(
         ModelsDirectory = _paths.ModelsDirectory;
         GpuVariant = _settings.GpuVariant;
         OnPropertyChanged(nameof(HasAnythingToInstall));
+        OnPropertyChanged(nameof(IsInstallPending));
         OnPropertyChanged(nameof(CanGoNext));
     }
 
@@ -321,9 +336,10 @@ public partial class SetupWizardViewModel(
         // The initial Found/WantInstall sets above happen before the row's PropertyChanged
         // subscription is wired, and the subsequent RecheckToolsAsync re-set with the same
         // values is suppressed by the observable-property change check — so neither path
-        // raises the wizard-level aggregates. Raise them here so the Install Selected button
-        // and Next gate reflect the freshly-built rows.
+        // raises the wizard-level aggregates. Raise them here so the Install button and the
+        // Next gate reflect the freshly-built rows.
         OnPropertyChanged(nameof(HasAnythingToInstall));
+        OnPropertyChanged(nameof(IsInstallPending));
         OnPropertyChanged(nameof(CanGoNext));
     }
 
@@ -334,6 +350,7 @@ public partial class SetupWizardViewModel(
         )
         {
             OnPropertyChanged(nameof(HasAnythingToInstall));
+            OnPropertyChanged(nameof(IsInstallPending));
             OnPropertyChanged(nameof(CanGoNext));
         }
     }

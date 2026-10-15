@@ -33,6 +33,34 @@ public sealed class AppPathsTests
         Assert.Equal(UserProfile(".local", "bin", "uv"), paths.KnownUvPath);
     }
 
+    // ── Bundled tools never fall back to PATH ──────────────────────────────────
+
+    [Theory]
+    [InlineData(ToolKind.Ffmpeg)]
+    [InlineData(ToolKind.Ytdlp)]
+    [InlineData(ToolKind.Deno)]
+    public void BundledTool_WithoutOverride_IsStemForgesOwnCopyEvenWhenMissing(ToolKind kind)
+    {
+        var paths = Build(OSKind.Windows);
+
+        Assert.Equal(
+            Path.Combine(
+                paths.BundledBinDir,
+                ToolCatalog.Get(kind).BundledBinaryFileName(new(OSKind.Windows, Architecture.X64))
+            ),
+            paths.PathFor(kind)
+        );
+    }
+
+    [Fact]
+    public void BundledTool_WithOverride_UsesTheOverride()
+    {
+        var settings = new AppSettings();
+        settings.SetToolPathOverride(ToolKind.Ffmpeg, @"C:\Toolsfmpeg.exe");
+
+        Assert.Equal(@"C:\Toolsfmpeg.exe", new AppPaths(settings).Ffmpeg);
+    }
+
     // ── uv-installed audio-separator shim ───────────────────────────────────────
 
     [Fact]

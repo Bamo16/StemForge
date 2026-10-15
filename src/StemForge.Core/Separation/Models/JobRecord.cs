@@ -16,8 +16,9 @@ public sealed record JobRecord(
     bool ExtractDrums = false
 )
 {
+    /// <summary>The name the queue shows: for a resolved URL, the name its source file will get (ADR 0014).</summary>
     public string InputFileName =>
-        PreResolvedMeta?.Title
+        PreResolvedMeta?.BaseName
         ?? (
             InputFilePath is not null ? Path.GetFileName(InputFilePath) : SourceUrl ?? string.Empty
         );

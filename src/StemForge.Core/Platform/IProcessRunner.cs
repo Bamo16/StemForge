@@ -33,4 +33,15 @@ public interface IProcessRunner
         bool logRawLines = true,
         CancellationToken ct = default
     );
+
+    /// Feeds <paramref name="producer"/>'s stdout into <paramref name="consumer"/>'s stdin,
+    /// streaming both stderrs to <paramref name="progress"/>. Throws if either fails.
+    Task RunPipedAsync(
+        string producer,
+        IEnumerable<string> producerArgs,
+        string consumer,
+        IEnumerable<string> consumerArgs,
+        IProgress<string>? progress = null,
+        CancellationToken ct = default
+    );
 }

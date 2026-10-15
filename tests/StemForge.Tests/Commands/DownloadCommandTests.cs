@@ -44,8 +44,8 @@ public sealed class DownloadCommandTests : IDisposable
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    // A process runner whose ffmpeg "download" writes a real (minimal) FLAC to the output path
-    // so that the subsequent tagging step has a file to open. The output path is the last arg.
+    // A process runner whose ffmpeg writes a real (minimal) FLAC to its output path, the last arg,
+    // so the tagging step has a file to open, whether ffmpeg runs alone or fed by yt-dlp.
     private sealed class FfmpegFileWritingRunner : IProcessRunner
     {
         public List<string> StreamedExes { get; } = [];
@@ -85,6 +85,22 @@ public sealed class DownloadCommandTests : IDisposable
             bool logRawLines = true,
             CancellationToken ct = default
         ) => Task.FromResult(new ProcessRunner.Result(0, "", ""));
+
+        // yt-dlp streaming into ffmpeg: ffmpeg's output path is its last argument.
+        public Task RunPipedAsync(
+            string producer,
+            IEnumerable<string> producerArgs,
+            string consumer,
+            IEnumerable<string> consumerArgs,
+            IProgress<string>? progress = null,
+            CancellationToken ct = default
+        )
+        {
+            StreamedExes.Add(consumer);
+            File.WriteAllBytes(consumerArgs.Last(), _minimalFlac);
+
+            return Task.CompletedTask;
+        }
     }
 
     private static YtDlpMetadata MakeMeta(
@@ -117,7 +133,11 @@ public sealed class DownloadCommandTests : IDisposable
         var paths = new AppPaths(settings);
 
         var runner = new FfmpegFileWritingRunner();
-        var youTube = new YouTubeAudioService(runner, paths);
+        var youTube = new YouTubeAudioService(
+            runner,
+            paths,
+            new YtdlpUpdater(runner, paths, TimeProvider.System)
+        );
         var thumbs = new StubThumbnailFetcher();
         var driver = new SpySeparatorDriverService();
 

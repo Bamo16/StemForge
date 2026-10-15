@@ -17,6 +17,9 @@ public sealed record JobUpdate
     /// </summary>
     public string Phase { get; init; } = "";
 
+    /// <summary>The name a URL job's source will be given, reported once it is resolved (phase "resolved").</summary>
+    public string? SourceName { get; init; }
+
     /// <summary>Zero-based index of the separation run this update belongs to.</summary>
     public int RunIndex { get; init; }
 

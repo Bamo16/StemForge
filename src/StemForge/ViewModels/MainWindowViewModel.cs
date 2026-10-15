@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -43,7 +44,8 @@ public partial class MainWindowViewModel : ViewModelBase
         SetupWizardViewModel wizard,
         LogsViewModel logs,
         AppSettings appSettings,
-        UpdateCheckService updateCheckService
+        UpdateCheckService updateCheckService,
+        ToolStateService toolState
     )
     {
         Wizard = wizard;
@@ -106,6 +108,23 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         settings.ShowWizardRequested += OpenWizard;
         separate.ShowWizardRequested += OpenWizard;
+
+        // Setup finished once is not setup finished for good: a required tool can go missing
+        // later, or an older version may have relied on a copy on PATH that StemForge no longer
+        // uses. The first detection after launch reopens the wizard when that happens.
+        void OnFirstDetection(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(ToolStateService.Tools) || toolState.Tools.Count == 0)
+                return;
+
+            toolState.PropertyChanged -= OnFirstDetection;
+            if (
+                !IsSetupRequired
+                && toolState.Tools.Any(t => t is { IsRequired: true, Found: false })
+            )
+                OpenWizard();
+        }
+        toolState.PropertyChanged += OnFirstDetection;
 
         // Fire-and-forget: check for a newer release on startup. Failures are swallowed inside
         // UpdateCheckService, so this never blocks startup or raises an unhandled exception.
