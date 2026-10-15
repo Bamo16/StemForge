@@ -5,7 +5,7 @@ namespace StemForge.Tests.Integration;
 /// <summary>
 /// Installs ffmpeg, yt-dlp and deno the way setup does, into a temp bin folder, then uses them the
 /// way StemForge does. Runs with STEMFORGE_LIVE_ASSETS=1; the YouTube download also needs
-/// STEMFORGE_LIVE_YOUTUBE=1, since YouTube sometimes refuses CI machines.
+/// STEMFORGE_LIVE_YOUTUBE=1, and skips when YouTube asks the machine to sign in, as it does CI runners.
 /// </summary>
 public sealed class FreshInstallTests(FreshInstallTests.Install install)
     : IClassFixture<FreshInstallTests.Install>
@@ -46,7 +46,20 @@ public sealed class FreshInstallTests(FreshInstallTests.Install install)
         var ct = TestContext.Current.CancellationToken;
         var youTube = install.Services.GetRequiredService<YouTubeAudioService>();
 
-        var meta = await youTube.ResolveAsync(Video, new AppSettings(), null, ct);
+        YtDlpMetadata meta;
+        try
+        {
+            meta = await youTube.ResolveAsync(Video, new AppSettings(), null, ct);
+        }
+        catch (ProcessRunner.ProcessFailedException ex)
+            when (ex.Stderr.Contains("not a bot", StringComparison.OrdinalIgnoreCase))
+        {
+            // YouTube asks datacenter machines such as CI runners to sign in. That says nothing
+            // about StemForge, so it skips rather than fails; any other failure still fails.
+            Assert.Skip($"YouTube refused this machine: {ex.Stderr.ReplaceLineEndings(" ")}");
+
+            return;
+        }
         var path = await youTube.DownloadAsync(meta, AudioFormat.Flac, install.Output, null, ct);
 
         Assert.True(new FileInfo(path).Length > 1_000_000, $"{path} is too small to be the song");

@@ -100,8 +100,9 @@ jobs:
           -- --filter-class StemForge.Tests.Integration.FreshInstallTests
 
       # Resolves and downloads a real YouTube video on that fresh install, the way the app does.
-      # Allowed to fail: YouTube sometimes asks CI machines to sign in. A failure here is still
-      # worth reading, because it is how a stale yt-dlp or a changed YouTube shows up.
+      # When YouTube asks the runner to sign in (it usually does), the test reports skipped rather
+      # than failed. Still allowed to fail, but a failure here is a stale yt-dlp or a changed
+      # YouTube, and worth reading.
       - name: YouTube download on a fresh install (live)
         continue-on-error: true
         env:
