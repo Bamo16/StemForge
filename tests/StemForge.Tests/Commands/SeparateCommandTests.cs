@@ -23,7 +23,7 @@ public sealed class SeparateCommandTests : IDisposable
         File.WriteAllBytes(_existingInputFile, [0x00]); // non-empty placeholder
 
         _settings = new AppSettings();
-        _paths = new AppPaths(_settings);
+        _paths = new AppPaths(_settings, PlatformInfo.Current);
     }
 
     public void Dispose()
@@ -381,7 +381,7 @@ public sealed class SeparateCommandTests : IDisposable
         var outputDir = Path.Combine(_tempDir, "output");
         var fakeDriver = new FakeSeparatorDriverService();
         var fakeSettings = new AppSettings { DefaultAudioFormat = AudioFormat.Wav };
-        var fakePaths = new AppPaths(fakeSettings);
+        var fakePaths = new AppPaths(fakeSettings, PlatformInfo.Current);
 
         var services = new ServiceCollection();
         services.AddSingleton<AppSettings>(fakeSettings);

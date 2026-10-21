@@ -92,7 +92,11 @@ public sealed class FreshInstallTests(FreshInstallTests.Install install)
             var services = new ServiceCollection().AddStemForgeCore();
             services.AddSingleton(settings);
             services.AddSingleton(
-                new AppPaths(settings, bundledBinDir: Path.Combine(_root, "bin"))
+                new AppPaths(
+                    settings,
+                    PlatformInfo.Current,
+                    bundledBinDir: Path.Combine(_root, "bin")
+                )
             );
             _services = services.BuildServiceProvider();
 

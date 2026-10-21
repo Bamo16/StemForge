@@ -38,7 +38,7 @@ public sealed class UrlInputResolverTests
     {
         var settings = new AppSettings();
         settings.SetToolPathOverride(ToolKind.Ytdlp, "yt-dlp");
-        var paths = new AppPaths(settings);
+        var paths = new AppPaths(settings, PlatformInfo.Current);
         return new YouTubeAudioService(
             fake,
             paths,

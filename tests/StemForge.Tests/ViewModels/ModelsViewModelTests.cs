@@ -78,7 +78,10 @@ public sealed class ModelsViewModelTests : IDisposable
 
     private async Task<ModelsViewModel> LoadAsync()
     {
-        var paths = new AppPaths(new AppSettings { ModelsDirectory = ModelsDir });
+        var paths = new AppPaths(
+            new AppSettings { ModelsDirectory = ModelsDir },
+            PlatformInfo.Current
+        );
         var runner = new FakeProcessRunner();
         runner.Setup(paths.SeparationDriverPython, Catalog);
 

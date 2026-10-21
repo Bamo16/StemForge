@@ -38,7 +38,7 @@ public sealed class SeparationPipelineTests : IDisposable
 
         _driver = new SpySeparatorDriverService();
         _settings = new AppSettings();
-        var paths = new AppPaths(_settings);
+        var paths = new AppPaths(_settings, PlatformInfo.Current);
 
         // YouTubeAudioService and IThumbnailFetcher are not exercised in local-file tests;
         // pass null — the pipeline only reaches those paths for URL-sourced jobs.

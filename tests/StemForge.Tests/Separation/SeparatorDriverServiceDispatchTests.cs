@@ -11,7 +11,8 @@ namespace StemForge.Tests.Separation;
 /// </summary>
 public sealed class SeparatorDriverServiceDispatchTests
 {
-    private static SeparatorDriverService NewService() => new(new AppPaths(new AppSettings()));
+    private static SeparatorDriverService NewService() =>
+        new(new AppPaths(new AppSettings(), PlatformInfo.Current));
 
     /// <summary>Synchronous progress sink so reports are observable without a sync context.</summary>
     private sealed class ProgressCollector : IProgress<JobProgress>

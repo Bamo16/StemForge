@@ -21,7 +21,7 @@ public sealed class SeparateCommandBatchTests : IDisposable
         _tempDir = Path.Combine(Path.GetTempPath(), $"sfcli-batch-test-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
         _settings = new AppSettings();
-        _paths = new AppPaths(_settings);
+        _paths = new AppPaths(_settings, PlatformInfo.Current);
     }
 
     public void Dispose()

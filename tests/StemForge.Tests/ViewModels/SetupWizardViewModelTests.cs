@@ -11,7 +11,7 @@ public sealed class SetupWizardViewModelTests
     {
         fake ??= new FakeProcessRunner();
         var settings = new AppSettings();
-        paths = new AppPaths(settings);
+        paths = new AppPaths(settings, PlatformInfo.Current);
         var runner = (IProcessRunner)fake;
         var setupDetector = new SetupDetector(runner, paths);
         var platform = PlatformInfo.Current;

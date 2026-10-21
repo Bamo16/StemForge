@@ -130,7 +130,7 @@ public sealed class DownloadCommandTests : IDisposable
     {
         var settings = new AppSettings();
         settings.SetToolPathOverride(ToolKind.Ffmpeg, "ffmpeg");
-        var paths = new AppPaths(settings);
+        var paths = new AppPaths(settings, PlatformInfo.Current);
 
         var runner = new FfmpegFileWritingRunner();
         var youTube = new YouTubeAudioService(

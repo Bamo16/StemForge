@@ -58,7 +58,7 @@ public sealed class AppPathsTests
         var settings = new AppSettings();
         settings.SetToolPathOverride(ToolKind.Ffmpeg, @"C:\Toolsfmpeg.exe");
 
-        Assert.Equal(@"C:\Toolsfmpeg.exe", new AppPaths(settings).Ffmpeg);
+        Assert.Equal(@"C:\Toolsfmpeg.exe", new AppPaths(settings, PlatformInfo.Current).Ffmpeg);
     }
 
     // ── uv-installed audio-separator shim ───────────────────────────────────────

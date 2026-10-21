@@ -11,7 +11,7 @@ public sealed class ToolInstallerTests
     )
     {
         var fake = new FakeProcessRunner();
-        var paths = new AppPaths(new AppSettings());
+        var paths = new AppPaths(new AppSettings(), PlatformInfo.Current);
         var platform = new PlatformInfo(os, arch);
         var installer = new ToolInstaller(
             fake,

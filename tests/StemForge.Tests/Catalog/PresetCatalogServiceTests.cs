@@ -192,7 +192,7 @@ public sealed class PresetCatalogServiceTests
         Assert.Equal(2, runner.CallCount);
     }
 
-    private static AppPaths Paths() => new(new AppSettings());
+    private static AppPaths Paths() => new(new AppSettings(), PlatformInfo.Current);
 
     /// <summary>
     /// Returns a different stdout per call, so a test can distinguish "asked again" from "served

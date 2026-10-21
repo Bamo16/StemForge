@@ -136,7 +136,7 @@ public sealed class ModelConfigSourceTests : IDisposable
     private ModelConfigSource NewSource(RecordingHandler http) =>
         new(
             new HandlerFactory(http),
-            new AppPaths(new AppSettings { ModelsDirectory = ModelsDir }),
+            new AppPaths(new AppSettings { ModelsDirectory = ModelsDir }, PlatformInfo.Current),
             CacheDir
         );
 

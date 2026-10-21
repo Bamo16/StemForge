@@ -8,7 +8,7 @@ public sealed class SetupDetectorTests
     {
         var fake = new FakeProcessRunner();
         var settings = new AppSettings();
-        var paths = new AppPaths(settings);
+        var paths = new AppPaths(settings, PlatformInfo.Current);
         return (new SetupDetector(fake, paths), fake, paths);
     }
 
@@ -76,7 +76,7 @@ public sealed class SetupDetectorTests
         var fake = new FakeProcessRunner();
         var settings = new AppSettings();
         settings.SetToolPathOverride(ToolKind.Ytdlp, @"C:\Tools\yt-dlp.exe");
-        var paths = new AppPaths(settings);
+        var paths = new AppPaths(settings, PlatformInfo.Current);
         var detector = new SetupDetector(fake, paths);
 
         fake.Setup(paths.Uv, "uv 0.4.0");

@@ -9,6 +9,7 @@ public partial class SettingsViewModel : PageViewModelBase
 {
     private readonly AppSettings _settings;
     private readonly AppPaths _paths;
+    private readonly PlatformInfo _platform;
     private readonly GpuDetector _gpuDetector;
     private readonly ToolInstaller _toolInstaller;
     private readonly ToolStateService _toolState;
@@ -145,7 +146,7 @@ public partial class SettingsViewModel : PageViewModelBase
 
     /// <summary>Shows a warning that yt-dlp usually can't read this browser's cookies on Windows.</summary>
     public bool IsCookieBrowserLikelyUnreadable =>
-        CookieSource.IsLikelyUnreadable(YtdlpCookiesFromBrowser, PlatformInfo.Current);
+        CookieSource.IsLikelyUnreadable(YtdlpCookiesFromBrowser, _platform);
 
     // ── Default audio format ───────────────────────────────────────────────────
 
@@ -212,6 +213,7 @@ public partial class SettingsViewModel : PageViewModelBase
     public SettingsViewModel(
         AppSettings settings,
         AppPaths paths,
+        PlatformInfo platform,
         GpuDetector gpuDetector,
         ToolInstaller toolInstaller,
         ToolStateService toolState,
@@ -222,6 +224,7 @@ public partial class SettingsViewModel : PageViewModelBase
     {
         _settings = settings;
         _paths = paths;
+        _platform = platform;
         _gpuDetector = gpuDetector;
         _toolInstaller = toolInstaller;
         _toolState = toolState;

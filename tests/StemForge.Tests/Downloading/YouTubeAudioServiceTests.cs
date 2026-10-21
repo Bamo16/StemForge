@@ -372,7 +372,7 @@ public sealed class YouTubeAudioServiceTests
         var runner = new CookieFailingRunner(ValidJson);
         var settings = new AppSettings { YtdlpCookiesFromBrowser = "chrome" };
         settings.SetToolPathOverride(ToolKind.Ytdlp, "yt-dlp");
-        var paths = new AppPaths(settings);
+        var paths = new AppPaths(settings, PlatformInfo.Current);
         var svc = new YouTubeAudioService(
             runner,
             paths,
@@ -549,7 +549,7 @@ public sealed class YouTubeAudioServiceTests
         // the host machine happens to have a bundled yt-dlp at %LOCALAPPDATA%\StemForge\bin.
         settings.SetToolPathOverride(ToolKind.Ytdlp, "yt-dlp");
         settings.SetToolPathOverride(ToolKind.Ffmpeg, "ffmpeg");
-        var paths = new AppPaths(settings);
+        var paths = new AppPaths(settings, PlatformInfo.Current);
         return new YouTubeAudioService(
             fake,
             paths,

@@ -97,7 +97,11 @@ public sealed class YtdlpUpdaterTests : IDisposable
         bool install = true
     )
     {
-        var paths = new AppPaths(settings ?? new AppSettings(), bundledBinDir: _bin);
+        var paths = new AppPaths(
+            settings ?? new AppSettings(),
+            PlatformInfo.Current,
+            bundledBinDir: _bin
+        );
         Directory.CreateDirectory(_bin);
         if (install)
             File.WriteAllText(paths.BundledYtdlp, string.Empty);

@@ -8,12 +8,12 @@ namespace StemForge.Core;
 /// </summary>
 public sealed class AppPaths(
     AppSettings settings,
-    PlatformInfo? platform = null,
+    PlatformInfo platform,
     string? bundledBinDir = null
 )
 {
     private readonly AppSettings _settings = settings;
-    private readonly PlatformInfo _platform = platform ?? PlatformInfo.Current;
+    private readonly PlatformInfo _platform = platform;
     private readonly string? _bundledBinDir = bundledBinDir;
 
     // ── Tool executables ──────────────────────────────────────────────────────

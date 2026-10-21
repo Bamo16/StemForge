@@ -8,7 +8,7 @@ public sealed class ToolStateServiceTests
     {
         var fake = new FakeProcessRunner();
         var settings = new AppSettings();
-        var paths = new AppPaths(settings);
+        var paths = new AppPaths(settings, PlatformInfo.Current);
         return (new ToolStateService(new SetupDetector(fake, paths)), fake, paths);
     }
 
@@ -122,7 +122,7 @@ public sealed class ToolStateServiceTests
         // slow. yt-dlp is installed and re-checked while it runs. The full refresh's older answer
         // for yt-dlp must not overwrite the newer one when it finally lands.
         var runner = new GatedRunner();
-        var paths = new AppPaths(new AppSettings());
+        var paths = new AppPaths(new AppSettings(), PlatformInfo.Current);
         var state = new ToolStateService(new SetupDetector(runner, paths));
         runner.Installed.Add(paths.AudioSeparator);
         await state.RefreshAsync(); // the launch-time detection
