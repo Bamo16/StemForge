@@ -34,7 +34,8 @@ Commands accepted on stdin
  "algorithm": "avg_wave",
  "weights": [1.0, 0.5],           // optional
  "stems_to_keep": ["Vocals"],     // optional; see "Stem filtering" below
- "custom_names": {"Vocals": "song_vbal"}  // optional, no extension
+ "custom_names": {"Vocals": "song_vbal"},  // optional, no extension
+ "title": "Artist - Title"        // optional; names stems in place of the file's name
 }
     -> phase, progress, log, stem_written,
        job_completed | job_failed | job_cancelled
@@ -103,6 +104,7 @@ extension based on `output_format`).
 
 If not, the driver synthesises predictable names:
   "{base} ({stem})"   e.g. "Song (Vocals)", "Song (Drums)"
+where base is `title` when given, else the input file's name.
 
 This makes it trivial for the host to predict where each stem will land.
 The driver also enforces the expected name after separation — if the model
@@ -602,9 +604,7 @@ def default_stems_to_keep(preset_id: str | None) -> list[str] | None:
 # Staging: audio-separator only ever sees short names
 # ---------------------------------------------------------------------------
 
-# The name the input is staged under. Library default output names start with it
-# ("source_(Drums)_htdemucs.flac"), which is how a stem with no custom name gets
-# the caller's title back.
+# The name the input is staged under.
 STAGED_BASE = "source"
 
 
@@ -618,16 +618,21 @@ def _stage_input(audio: str, work_dir: str) -> str:
     return staged
 
 
-def _final_name(library_path: str, stem: str, custom_output_names: dict, base: str) -> str:
+def _final_name(library_path: str, stem: str, custom_output_names: dict, base: str,
+                taken: set) -> str:
     """The file name a kept stem is published under: the caller's name for the stem, or
-    the library's default name with the staged base swapped back for the input's title."""
+    "{base} ({stem})", with " (2)", " (3)"... when an earlier stem of this job took it.
+
+    Never the library's own name, which appends the model's name to the title and can
+    run past the length the host shortened the title to fit.
+    """
     ext = os.path.splitext(library_path)[1].lower()
-    if stem in custom_output_names:
-        return custom_output_names[stem] + ext
-    fname = os.path.basename(library_path)
-    if fname.startswith(STAGED_BASE):
-        return base + fname[len(STAGED_BASE):]
-    return fname
+    name = custom_output_names.get(stem) or f"{base} ({stem})"
+    candidate, n = name, 2
+    while candidate.lower() in taken:
+        candidate, n = f"{name} ({n})", n + 1
+    taken.add(candidate.lower())
+    return candidate + ext
 
 
 def _publish(src: str, dst: str) -> None:
@@ -798,7 +803,9 @@ class Driver:
             sep.output_single_stem = None
 
         # ---- build custom_output_names so filenames are predictable ------
-        base = os.path.splitext(os.path.basename(audio))[0]
+        # The host sends the title, already shortened to fit, when the file's own name
+        # is too long to build stem names from.
+        base = cmd.get("title") or os.path.splitext(os.path.basename(audio))[0]
         provided_names = cmd.get("custom_names") or {}
         # Canonicalise keys
         provided_names = {_canon(k): v for k, v in provided_names.items()}
@@ -919,10 +926,11 @@ class Driver:
             staged_audio, [item["path"] for item in kept], job_id)
 
         # ---- publish each kept stem to output_dir under its final name -----
+        taken: set = set()
         for item in kept:
             target = os.path.join(
                 output_dir,
-                _final_name(item["path"], item["stem"], custom_output_names, base))
+                _final_name(item["path"], item["stem"], custom_output_names, base, taken))
             try:
                 _publish(item["path"], target)
             except OSError as e:

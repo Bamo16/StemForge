@@ -108,7 +108,8 @@ public sealed class SeparationIntegrationTests : IDisposable
     }
 
     // A real title (YouTube HbhqeBUuvwE) whose 221 characters made audio-separator's intermediate
-    // file names pass Windows' 255-character limit, failing the separation with EINVAL.
+    // file names pass Windows' 255-character limit, failing the separation with EINVAL. A local
+    // file keeps its name, so the stems are what get the shortened title.
     private const string LongJapaneseTitle =
         "Ai Maeda, Mariko Suzuki, Rumi Shishido, Kotoba no Puzzle Mojipittan, Bandai Namco Game Music, "
         + "Hiroyuki Goto (Bandai Namco Entertainment Inc.), Satoru Kosaki (Bandai Namco Entertainment Inc.) - "
@@ -146,10 +147,12 @@ public sealed class SeparationIntegrationTests : IDisposable
             ct: TestContext.Current.CancellationToken
         );
 
-        // The stem keeps the name it has always had: the full title and the preset's label.
+        // The stem is named from the title shortened to leave room for any suffix, and the
+        // preset's label.
+        var title = FileTitle.Fit(LongJapaneseTitle, paths.MaxTitleLengthIn(_outputDir));
         var expected = Path.Combine(
             _outputDir,
-            $"{SeparationPipeline.DesiredBaseName(preset, "Vocals", LongJapaneseTitle)}.flac"
+            $"{SeparationPipeline.DesiredBaseName(preset, "Vocals", title)}.flac"
         );
         Assert.Equal(expected, Assert.Single(outputs));
         Assert.True(File.Exists(expected));

@@ -162,7 +162,8 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths, Y
     )
     {
         Directory.CreateDirectory(outDir);
-        var outputPath = Path.Combine(outDir, $"{meta.BaseName}.{FfmpegArgs.Extension(format)}");
+        var baseName = FileTitle.Fit(meta.BaseName, _paths.MaxTitleLengthIn(outDir));
+        var outputPath = Path.Combine(outDir, $"{baseName}.{FfmpegArgs.Extension(format)}");
 
         // yt-dlp fetches the stream and ffmpeg encodes it as it arrives, so the audio is never
         // written anywhere but the output. ffmpeg used to fetch the media URL itself, but YouTube
