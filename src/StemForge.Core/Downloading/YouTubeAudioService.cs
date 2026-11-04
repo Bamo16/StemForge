@@ -111,7 +111,14 @@ public sealed class YouTubeAudioService(IProcessRunner runner, AppPaths paths, Y
                 ? ranked
                 : [selected],
             Extractor: info.Extractor,
-            InfoJson: result.Stdout
+            InfoJson: result.Stdout,
+            ExtractorKey: info.ExtractorKey,
+            Id: info.Id,
+            UploadDate: info.UploadDate,
+            ReleaseYear: info.ReleaseYear,
+            Album: info.Album,
+            AlbumArtist: info.AlbumArtist,
+            TrackNumber: info.TrackNumber
         );
     }
 

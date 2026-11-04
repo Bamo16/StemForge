@@ -91,6 +91,30 @@ public sealed class AudioTaggerTests : IDisposable
         Assert.DoesNotContain("format-id:", provenance);
     }
 
+    [Theory]
+    [InlineData("generic", null)]
+    [InlineData("soundcloud", "Track")]
+    public void FromYtDlpMetadata_GenericExtractor_LeavesTheFilesOwnTitleAlone(
+        string extractor,
+        string? expectedTitle
+    )
+    {
+        var meta = new YtDlpMetadata(
+            "https://example.com/a.flac",
+            "Track",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "https://example.com/a.flac",
+            Extractor: extractor
+        );
+
+        Assert.Equal(expectedTitle, AudioTagger.FromYtDlpMetadata(meta, thumbPath: null).Title);
+    }
+
     [Fact]
     public void WithSourceUrl_FileWithItsOwnSource_ReplacesIt()
     {

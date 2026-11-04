@@ -15,9 +15,24 @@ public sealed record YtDlpMetadata(
     string? ThumbnailUrl = null,
     IReadOnlyList<YtDlpFormat>? AudioFormats = null,
     string? Extractor = null,
-    string? InfoJson = null
+    string? InfoJson = null,
+    string? ExtractorKey = null,
+    string? Id = null,
+    string? UploadDate = null,
+    int? ReleaseYear = null,
+    string? Album = null,
+    string? AlbumArtist = null,
+    int? TrackNumber = null
 )
 {
+    /// <summary>
+    /// True for a direct link to a media file, which yt-dlp reads with its generic extractor: the
+    /// file's own tags are better than anything yt-dlp could say about it.
+    /// </summary>
+    public bool IsGeneric =>
+        Extractor is { } extractor
+        && extractor.Equals("generic", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>
     /// Every credited artist as one string, in first-seen order. The only place the credit list is
     /// flattened, and what reaches the file's ARTIST tag and the CLI's JSON row. Null when the

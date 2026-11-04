@@ -150,6 +150,8 @@ Note that this pins the format, not the audio. Every download is normalised to 4
 
 If you have configured `--cookies-from-browser` (or the equivalent setting) and the audio being fetched is not the Premium one, StemForge says so before downloading, and says which of the reasons applies: the source genuinely has no premium audio, your browser session is no longer signed in, the account those cookies belong to does not have Premium, or a premium format was on offer and you picked a different one. Only the middle two are yours to fix. The distinction matters because an expired cookie is otherwise silent: yt-dlp still succeeds and simply returns the lower-quality format set. With `--json`, the outcome is reported as `premiumStatus` alongside the plain `premiumShortfall` flag.
 
+With `--json`, `download` also reports what identifies the source: `extractorKey` (yt-dlp's, such as `Soundcloud` or `Generic`), `id`, `isGeneric` (a direct link to a media file, whose own `TITLE` tag is left alone), `uploader`, `uploadDate`, `releaseYear`, `album`, `albumArtist` and `trackNumber`, each null when the source does not say.
+
 Live progress shows a per-input bar with the current activity. Press Ctrl+C once to cancel the running job cleanly, or twice to force-exit. Run `stemforge-cli presets` to list the built-in presets, and `stemforge-cli --help` for the full command reference.
 
 ---

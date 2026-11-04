@@ -165,7 +165,8 @@ public static class AudioTagger
 
         return new SourceTagInfo
         {
-            Title = NullIfEmpty(meta.DisplayTitle),
+            // A direct link's title is its file name; the file's own TITLE stays.
+            Title = meta.IsGeneric ? null : NullIfEmpty(meta.DisplayTitle),
             Artist = NullIfEmpty(meta.Artist),
             CoverArtBytes = artBytes,
             CoverArtMimeType = mimeType,
