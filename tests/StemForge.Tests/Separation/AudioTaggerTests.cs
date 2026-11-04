@@ -92,6 +92,38 @@ public sealed class AudioTaggerTests : IDisposable
     }
 
     [Fact]
+    public void WithSourceUrl_FileWithItsOwnSource_ReplacesIt()
+    {
+        var info = new SourceTagInfo { Title = "Track", SourceUrl = "https://example.com/page" };
+
+        var result = AudioTagger.WithSourceUrl(info, "track:file~3fa9c0d12be84471");
+
+        Assert.Equal("track:file~3fa9c0d12be84471", result?.SourceUrl);
+        Assert.Equal("Track", result?.Title);
+    }
+
+    [Fact]
+    public void WithSourceUrl_FileWithNoTags_StillCarriesIt()
+    {
+        var provenance = AudioTagger.BuildProvenance(
+            AudioTagger.WithSourceUrl(null, "track:file~3fa9c0d12be84471"),
+            null,
+            "0.2.0"
+        );
+
+        Assert.Contains("source: track:file~3fa9c0d12be84471", provenance);
+    }
+
+    [Fact]
+    public void WithSourceUrl_NoOverride_LeavesTheInfoAlone()
+    {
+        var info = new SourceTagInfo { SourceUrl = "https://example.com/page" };
+
+        Assert.Same(info, AudioTagger.WithSourceUrl(info, null));
+        Assert.Null(AudioTagger.WithSourceUrl(null, string.Empty));
+    }
+
+    [Fact]
     public void BuildProvenance_NullSource_DoesNotThrow()
     {
         var provenance = AudioTagger.BuildProvenance(null, null, "0.2.0");

@@ -2,6 +2,12 @@
 
 All notable changes to StemForge are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`separate --source-url <value>`** sets the `source:` written on every stem of a local-file input, for a caller that keeps its own identity for the file. A URL input rejects it.
+
 ## [0.5.1] - 2026-10-15
 
 Bug-fix release.

@@ -104,6 +104,7 @@ Both commands take multiple inputs and process them as a batch, continuing past 
 | `--format <flac\|wav\|mp3\|...>` | both | Output audio format (defaults to the saved setting) |
 | `--keep-source` | separate | Keep the source audio alongside the stems |
 | `--extract-drums` | separate | Extract a drums stem. Runs alongside any presets given, or on its own when none are |
+| `--source-url <value>` | separate | For a local-file input: the `source:` written on every stem, in place of whatever the file's own provenance says. Rejected with a URL input |
 | `--cookies-from-browser <name>` | both | Browser to read YouTube cookies from (premium formats) |
 | `--list-formats` | download | Show the source formats on offer and exit without downloading |
 | `--format-id <id>` | download | Fetch a specific source format instead of the automatic pick |
