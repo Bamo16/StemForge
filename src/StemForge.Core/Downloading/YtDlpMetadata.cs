@@ -48,13 +48,16 @@ public sealed record YtDlpMetadata(
 
     /// <summary>
     /// The base name the downloaded source file will be given, without extension: the display
-    /// title with characters no filesystem accepts removed. Sole definition of that rule, so the
-    /// name a caller is told to expect and the name the download actually writes cannot drift.
+    /// title with characters no filesystem accepts removed, shortened by <see cref="FileTitle"/>
+    /// when long. Sole definition of that rule, so the name a caller is told to expect and the name
+    /// the download actually writes cannot drift (short of a folder too deep for MAX_PATH).
     /// Stems derive from this, conventionally as "{BaseName} ({stem})", but a preset template or a
     /// collision suffix may reshape them, so only the source file's name is promised.
     /// </summary>
     public string BaseName =>
-        string.Concat(DisplayTitle.Where(c => !PortableFileName.InvalidChars.Contains(c)));
+        FileTitle.Fit(
+            string.Concat(DisplayTitle.Where(c => !PortableFileName.InvalidChars.Contains(c)))
+        );
 
     /// <summary>
     /// True when this came from YouTube. Format ids mean different things per extractor, so every

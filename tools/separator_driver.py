@@ -34,7 +34,8 @@ Commands accepted on stdin
  "algorithm": "avg_wave",
  "weights": [1.0, 0.5],           // optional
  "stems_to_keep": ["Vocals"],     // optional; see "Stem filtering" below
- "custom_names": {"Vocals": "song_vbal"}  // optional, no extension
+ "custom_names": {"Vocals": "song_vbal"},  // optional, no extension
+ "title": "Artist - Title"        // optional; names stems in place of the file's name
 }
     -> phase, progress, log, stem_written,
        job_completed | job_failed | job_cancelled
@@ -103,10 +104,18 @@ extension based on `output_format`).
 
 If not, the driver synthesises predictable names:
   "{base} ({stem})"   e.g. "Song (Vocals)", "Song (Drums)"
+where base is `title` when given, else the input file's name.
 
 This makes it trivial for the host to predict where each stem will land.
 The driver also enforces the expected name after separation — if the model
-ignores custom_output_names (e.g. Demucs) the file is renamed in place.
+ignores custom_output_names (e.g. Demucs) the stem still lands under it.
+
+None of these names reach audio-separator. It names every file it writes after
+the input and the custom names, publishing each through a ".{name}.{random}"
+temp file, so a long title overflows Windows' 255-character limit on a file
+name. The library separates a copy of the input called "source" into a private
+working directory under short names, and the driver moves each kept stem to its
+final name in output_dir itself.
 """
 
 import argparse
@@ -115,7 +124,9 @@ import json
 import logging
 import os
 import re
+import shutil
 import sys
+import tempfile
 import threading
 import time
 import traceback
@@ -590,6 +601,51 @@ def default_stems_to_keep(preset_id: str | None) -> list[str] | None:
 
 
 # ---------------------------------------------------------------------------
+# Staging: audio-separator only ever sees short names
+# ---------------------------------------------------------------------------
+
+# The name the input is staged under.
+STAGED_BASE = "source"
+
+
+def _stage_input(audio: str, work_dir: str) -> str:
+    """Links (or, across volumes, copies) the input into work_dir under a short name."""
+    staged = os.path.join(work_dir, STAGED_BASE + os.path.splitext(audio)[1].lower())
+    try:
+        os.link(audio, staged)
+    except OSError:
+        shutil.copyfile(audio, staged)
+    return staged
+
+
+def _final_name(library_path: str, stem: str, custom_output_names: dict, base: str,
+                taken: set) -> str:
+    """The file name a kept stem is published under: the caller's name for the stem, or
+    "{base} ({stem})", with " (2)", " (3)"... when an earlier stem of this job took it.
+
+    Never the library's own name, which appends the model's name to the title and can
+    run past the length the host shortened the title to fit.
+    """
+    ext = os.path.splitext(library_path)[1].lower()
+    name = custom_output_names.get(stem) or f"{base} ({stem})"
+    candidate, n = name, 2
+    while candidate.lower() in taken:
+        candidate, n = f"{name} ({n})", n + 1
+    taken.add(candidate.lower())
+    return candidate + ext
+
+
+def _publish(src: str, dst: str) -> None:
+    """Moves a finished stem out of the working directory, replacing any file at dst."""
+    try:
+        os.replace(src, dst)
+    except OSError:
+        # The working directory is on another volume than the output.
+        shutil.copyfile(src, dst)
+        os.remove(src)
+
+
+# ---------------------------------------------------------------------------
 # Driver core
 # ---------------------------------------------------------------------------
 
@@ -694,9 +750,28 @@ class Driver:
         if stems_to_keep:
             stems_to_keep = [_canon(s) for s in stems_to_keep]
 
+        # ---- stage the job under short names (see "Filename rules") ------
+        # Everything the library writes lands in work_dir and is deleted with
+        # it, whether the job completes, fails or is cancelled.
+        with tempfile.TemporaryDirectory(
+            prefix="stemforge-job-", ignore_cleanup_errors=True
+        ) as work_dir:
+            staged_audio = _stage_input(audio, work_dir)
+            library_dir = os.path.join(work_dir, "out")
+            os.makedirs(library_dir)
+            self._separate_staged(
+                job_id, cmd, audio, staged_audio, library_dir, output_dir,
+                output_format, preset_id, explicit_models, algorithm, weights,
+                stems_to_keep)
+
+    def _separate_staged(
+        self, job_id, cmd, audio, staged_audio, library_dir, output_dir,
+        output_format, preset_id, explicit_models, algorithm, weights,
+        stems_to_keep,
+    ):
         # ---- prep Separator instance state -------------------------------
         sep = self._get_separator(
-            output_dir=output_dir,
+            output_dir=library_dir,
             output_format=output_format,
             ensemble_preset=preset_id,
             ensemble_algorithm=algorithm,
@@ -728,7 +803,9 @@ class Driver:
             sep.output_single_stem = None
 
         # ---- build custom_output_names so filenames are predictable ------
-        base = os.path.splitext(os.path.basename(audio))[0]
+        # The host sends the title, already shortened to fit, when the file's own name
+        # is too long to build stem names from.
+        base = cmd.get("title") or os.path.splitext(os.path.basename(audio))[0]
         provided_names = cmd.get("custom_names") or {}
         # Canonicalise keys
         provided_names = {_canon(k): v for k, v in provided_names.items()}
@@ -750,6 +827,10 @@ class Driver:
         for stem, name in provided_names.items():
             custom_output_names.setdefault(stem, name)
 
+        # The library writes each named stem under the stem's own name; the
+        # names above are applied when the stem is published to output_dir.
+        library_names = {stem: stem for stem in custom_output_names}
+
         # Reset per-job counters used by IpcLogHandler to emit
         # loading_model phase events with model_index/model_count.
         _reset_job_state(job_id, models)
@@ -767,19 +848,6 @@ class Driver:
         # ---- run the ensemble (single or multi-model) --------------------
         _check_cancelled()  # between download and load phases
 
-        # Snapshot files already present so we can detect orphans later.
-        # Some models (e.g. Demucs with output_single_stem) write all stems
-        # to disk but only return the single stem in `outputs`, leaving the
-        # others untracked and un-deletable without this snapshot.
-        try:
-            _before_files = {
-                os.path.normcase(os.path.abspath(os.path.join(output_dir, f)))
-                for f in os.listdir(output_dir)
-                if os.path.isfile(os.path.join(output_dir, f))
-            }
-        except OSError:
-            _before_files = set()
-
         t0 = time.perf_counter()
         with phase(job_id, "separating", model_count=len(models)):
             # load_model with a list (or a single name) sets up state for
@@ -791,26 +859,29 @@ class Driver:
 
             _check_cancelled()  # between load and inference
             outputs = sep.separate(
-                audio, custom_output_names=custom_output_names or None)
+                staged_audio, custom_output_names=library_names or None)
 
         # Detect files the library wrote that it didn't include in outputs.
+        # Some models (e.g. Demucs with output_single_stem) write all stems
+        # to disk but only return the single stem in `outputs`, leaving the
+        # others untracked and un-deletable without this. library_dir started
+        # empty, so everything in it came from this separation.
         try:
             _after_files = {
-                os.path.normcase(os.path.abspath(os.path.join(output_dir, f)))
-                for f in os.listdir(output_dir)
-                if os.path.isfile(os.path.join(output_dir, f))
+                os.path.normcase(os.path.abspath(os.path.join(library_dir, f)))
+                for f in os.listdir(library_dir)
+                if os.path.isfile(os.path.join(library_dir, f))
             }
         except OSError:
             _after_files = set()
 
         _known_paths = {
             os.path.normcase(
-                os.path.abspath(p if os.path.isabs(p) else os.path.join(output_dir, p))
+                os.path.abspath(p if os.path.isabs(p) else os.path.join(library_dir, p))
             )
             for p in outputs
         }
-        _orphans = _untracked_stems(
-            _after_files - _before_files - _known_paths, output_format)
+        _orphans = _untracked_stems(_after_files - _known_paths, output_format)
         if _orphans:
             outputs = list(outputs) + sorted(_orphans)
             emit("log", id=job_id, level="debug", module="driver",
@@ -818,20 +889,12 @@ class Driver:
                          + ", ".join(os.path.basename(p) for p in sorted(_orphans)))
 
         # ---- post-process: keep only the wanted stems --------------------
-        # Build a reverse map: filename_without_ext -> canonical_stem. Values
-        # in custom_output_names are already extension-free; using splitext
-        # would corrupt names that contain dots (e.g. "HUMBLE. (Instrumental)").
-        name_to_stem = {
-            os.path.basename(v): k
-            for k, v in custom_output_names.items()
-        }
-
         def identify_stem(out_path):
             fname = os.path.basename(out_path)
             stem_part = os.path.splitext(fname)[0]
-            # First try: exact match against names we sent in
-            if stem_part in name_to_stem:
-                return name_to_stem[stem_part]
+            # First try: exact match against the names we sent in
+            if stem_part in library_names:
+                return stem_part
             # Fallback: regex against library default convention
             # "..._(StemName)..." or "..._(StemName)"
             m = re.search(r"_\(([^)]+)\)(?:\.[^.]+)?$", fname)
@@ -843,9 +906,9 @@ class Driver:
         for out_path in outputs:
             # Single-model separators return just the filename; ensemble
             # paths are already absolute. Normalize to absolute against
-            # output_dir so post-processing actually finds the file.
+            # library_dir so post-processing actually finds the file.
             if not os.path.isabs(out_path):
-                out_path = os.path.join(output_dir, out_path)
+                out_path = os.path.join(library_dir, out_path)
             stem = identify_stem(out_path)
 
             if stems_to_keep and stem not in stems_to_keep:
@@ -856,24 +919,25 @@ class Driver:
                          message=f"failed to delete unwanted stem {out_path}: {e}")
                 discarded.append({"stem": stem, "path": out_path})
             else:
-                # Enforce expected name if the library didn't honour custom_output_names.
-                expected = custom_output_names.get(stem)
-                if expected:
-                    ext = os.path.splitext(out_path)[1].lower()
-                    target = os.path.join(output_dir, expected + ext)
-                    if os.path.normcase(out_path) != os.path.normcase(target):
-                        try:
-                            os.replace(out_path, target)
-                            out_path = target
-                        except OSError as e:
-                            emit("log", id=job_id, level="warning", module="driver",
-                                 message=f"rename {os.path.basename(out_path)!r} → "
-                                         f"{os.path.basename(target)!r} failed: {e}")
                 kept.append({"stem": stem, "path": out_path})
-                emit("stem_written", id=job_id, stem=stem, path=out_path)
 
         # ---- trim/pad stems to source length --------------------------------
-        _trim_stems_to_source_length(audio, [item["path"] for item in kept], job_id)
+        _trim_stems_to_source_length(
+            staged_audio, [item["path"] for item in kept], job_id)
+
+        # ---- publish each kept stem to output_dir under its final name -----
+        taken: set = set()
+        for item in kept:
+            target = os.path.join(
+                output_dir,
+                _final_name(item["path"], item["stem"], custom_output_names, base, taken))
+            try:
+                _publish(item["path"], target)
+            except OSError as e:
+                raise OSError(
+                    f"could not write the {item['stem']} stem to {target}: {e}") from e
+            item["path"] = target
+            emit("stem_written", id=job_id, stem=item["stem"], path=target)
 
         emit(
             "job_completed",

@@ -106,4 +106,57 @@ public sealed class SeparationIntegrationTests : IDisposable
             $"Stem duration {actual} should match fixture duration {expected} within 0.5s."
         );
     }
+
+    // A real title (YouTube HbhqeBUuvwE) whose 221 characters made audio-separator's intermediate
+    // file names pass Windows' 255-character limit, failing the separation with EINVAL. A local
+    // file keeps its name, so the stems are what get the shortened title.
+    private const string LongJapaneseTitle =
+        "Ai Maeda, Mariko Suzuki, Rumi Shishido, Kotoba no Puzzle Mojipittan, Bandai Namco Game Music, "
+        + "Hiroyuki Goto (Bandai Namco Entertainment Inc.), Satoru Kosaki (Bandai Namco Entertainment Inc.) - "
+        + "ふたりのぜのぴったん(『ゼノサーガフリークス』)より収録";
+
+    [Fact(SkipUnless = nameof(IntegrationGate.Enabled), Skip = IntegrationGate.SkipReason)]
+    public async Task An_ensemble_preset_separates_a_source_with_a_long_Japanese_title()
+    {
+        var input = Path.Combine(_outputDir, $"{LongJapaneseTitle}.flac");
+        File.Copy(FixturePath, input);
+
+        var services = new ServiceCollection();
+        services.AddStemForgeCore();
+        await using var provider = services.BuildServiceProvider();
+
+        var paths = provider.GetRequiredService<AppPaths>();
+        var pipeline = provider.GetRequiredService<SeparationPipeline>();
+
+        // vocal_full is the two-model ensemble the failing job ran.
+        var preset = PresetCatalog.BuiltIn.Single(p => p.Id == "vocal_full");
+
+        var job = new JobRecord(
+            Id: Guid.NewGuid(),
+            InputFilePath: input,
+            SourceUrl: null,
+            Presets: [preset],
+            OutputDir: _outputDir,
+            ModelsDir: paths.ModelsDirectory,
+            StemOutputFormat: AudioFormat.Flac
+        );
+
+        var outputs = await pipeline.RunAsync(
+            job,
+            progress: null,
+            ct: TestContext.Current.CancellationToken
+        );
+
+        // The stem is named from the title shortened to leave room for any suffix, and the
+        // preset's label.
+        var title = FileTitle.Fit(LongJapaneseTitle, paths.MaxTitleLengthIn(_outputDir));
+        var expected = Path.Combine(
+            _outputDir,
+            $"{SeparationPipeline.DesiredBaseName(preset, "Vocals", title)}.flac"
+        );
+        Assert.Equal(expected, Assert.Single(outputs));
+        Assert.True(File.Exists(expected));
+        // Nothing but the input and the stem: no intermediate is left beside them.
+        Assert.Equal(2, Directory.GetFiles(_outputDir).Length);
+    }
 }

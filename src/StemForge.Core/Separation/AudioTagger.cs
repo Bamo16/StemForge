@@ -11,6 +11,15 @@ namespace StemForge.Core.Separation;
 /// </summary>
 public static class AudioTagger
 {
+    // About four seconds in all: long enough for a reader such as a key or BPM detector to let go.
+    private static readonly TimeSpan[] ShareRetryDelays =
+    [
+        TimeSpan.FromMilliseconds(250),
+        TimeSpan.FromMilliseconds(500),
+        TimeSpan.FromSeconds(1),
+        TimeSpan.FromSeconds(2),
+    ];
+
     // ── Reading ───────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -70,33 +79,21 @@ public static class AudioTagger
         };
 
     /// <summary>
-    /// Reads standard tags and embedded cover art from a local audio file.
-    /// Returns null if the file format is unsupported or the file is unreadable.
+    /// Reads standard tags and embedded cover art from a local audio file. Returns null if the
+    /// format is unsupported; throws <see cref="AudioTagException"/> if the file cannot be opened.
     /// </summary>
-    public static SourceTagInfo? ReadFromFile(string path)
+    public static SourceTagInfo? ReadFromFile(string path) => ReadFromFile(path, ShareRetryDelays);
+
+    internal static SourceTagInfo? ReadFromFile(string path, IReadOnlyList<TimeSpan> retryDelays)
     {
         try
         {
-            using var f = TFile.Create(path);
-            var pic = BestPicture(f.Tag.Pictures);
-            var (sourceUrl, sourceCodec, sourceBitrateKbps, sourceFormatId) = ParseProvenance(
-                f.Tag.Comment
-            );
-            return new SourceTagInfo
-            {
-                Title = NullIfEmpty(f.Tag.Title),
-                Artist = NullIfEmpty(f.Tag.FirstPerformer),
-                Album = NullIfEmpty(f.Tag.Album),
-                Year = f.Tag.Year,
-                CoverArtBytes = pic?.Data.Data,
-                CoverArtMimeType = NullIfEmpty(pic?.MimeType) ?? "image/jpeg",
-                SourceUrl = sourceUrl,
-                SourceCodec = sourceCodec,
-                SourceBitrateKbps = sourceBitrateKbps,
-                SourceFormatId = sourceFormatId,
-            };
+            SourceTagInfo? info = null;
+            WithShareRetry(path, retryDelays, () => info = Read(path));
+
+            return info;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is CorruptFileException or UnsupportedFormatException)
         {
             AppLogger.Debug(
                 "tagger",
@@ -104,6 +101,35 @@ public static class AudioTagger
             );
             return null;
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new AudioTagException(
+                $"Could not read tags from {Path.GetFileName(path)}: {ex.Message}",
+                ex
+            );
+        }
+    }
+
+    private static SourceTagInfo Read(string path)
+    {
+        using var f = TFile.Create(path);
+        var pic = BestPicture(f.Tag.Pictures);
+        var (sourceUrl, sourceCodec, sourceBitrateKbps, sourceFormatId) = ParseProvenance(
+            f.Tag.Comment
+        );
+        return new SourceTagInfo
+        {
+            Title = NullIfEmpty(f.Tag.Title),
+            Artist = NullIfEmpty(f.Tag.FirstPerformer),
+            Album = NullIfEmpty(f.Tag.Album),
+            Year = f.Tag.Year,
+            CoverArtBytes = pic?.Data.Data,
+            CoverArtMimeType = NullIfEmpty(pic?.MimeType) ?? "image/jpeg",
+            SourceUrl = sourceUrl,
+            SourceCodec = sourceCodec,
+            SourceBitrateKbps = sourceBitrateKbps,
+            SourceFormatId = sourceFormatId,
+        };
     }
 
     /// <summary>
@@ -144,56 +170,117 @@ public static class AudioTagger
     // ── Writing ───────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Writes source metadata and provenance tags to <paramref name="filePath"/> in-place.
-    /// Only fields that are present in <paramref name="sourceInfo"/> are written; existing
-    /// tags in the file are not preserved (stems from the separator have none).
+    /// Writes source metadata and provenance tags to <paramref name="filePath"/> in-place, retrying
+    /// briefly while another process holds the file, then throwing <see cref="AudioTagException"/>.
     /// </summary>
     public static void ApplyToFile(
         string filePath,
         SourceTagInfo? sourceInfo,
         string? presetDescriptor,
         string toolVersion
+    ) => ApplyToFile(filePath, sourceInfo, presetDescriptor, toolVersion, ShareRetryDelays);
+
+    internal static void ApplyToFile(
+        string filePath,
+        SourceTagInfo? sourceInfo,
+        string? presetDescriptor,
+        string toolVersion,
+        IReadOnlyList<TimeSpan> retryDelays
     )
     {
         try
         {
-            using var f = TFile.Create(filePath);
-
-            if (sourceInfo is { Title: { Length: > 0 } title })
-                f.Tag.Title = title;
-            if (sourceInfo is { Artist: { Length: > 0 } artist })
-                f.Tag.Performers = [artist];
-            if (sourceInfo is { Album: { Length: > 0 } album })
-                f.Tag.Album = album;
-            if (sourceInfo is { Year: > 0 and var year })
-                f.Tag.Year = year;
-
-            if (sourceInfo is { CoverArtBytes: { Length: > 0 } art })
-            {
-                f.Tag.Pictures =
-                [
-                    new Picture([.. art])
-                    {
-                        Type = PictureType.FrontCover,
-                        MimeType = sourceInfo.CoverArtMimeType,
-                        Description = "Cover",
-                    },
-                ];
-            }
-
-            // Provenance in the Comment field — human-readable, survives all formats.
-            // Exact-source fields (URL/codec/bitrate/format-id) are appended for URL jobs;
-            // local-file jobs carry none of them and degrade to the tool/model/date prefix.
-            f.Tag.Comment = BuildProvenance(sourceInfo, presetDescriptor, toolVersion);
-
-            f.Save();
+            WithShareRetry(
+                filePath,
+                retryDelays,
+                () => Write(filePath, sourceInfo, presetDescriptor, toolVersion)
+            );
         }
         catch (Exception ex)
+            when (ex
+                    is IOException
+                        or UnauthorizedAccessException
+                        or CorruptFileException
+                        or UnsupportedFormatException
+            )
         {
-            AppLogger.Warning(
-                "tagger",
-                $"Failed to tag {Path.GetFileName(filePath)}: {ex.Message}"
+            throw new AudioTagException(
+                $"Could not write tags to {Path.GetFileName(filePath)}: {ex.Message}",
+                ex
             );
+        }
+    }
+
+    // Only fields present in sourceInfo are written; the files tagged here (fresh stems and
+    // downloads) carry no tags of their own to preserve.
+    private static void Write(
+        string filePath,
+        SourceTagInfo? sourceInfo,
+        string? presetDescriptor,
+        string toolVersion
+    )
+    {
+        using var f = TFile.Create(filePath);
+
+        if (sourceInfo is { Title: { Length: > 0 } title })
+            f.Tag.Title = title;
+        if (sourceInfo is { Artist: { Length: > 0 } artist })
+            f.Tag.Performers = [artist];
+        if (sourceInfo is { Album: { Length: > 0 } album })
+            f.Tag.Album = album;
+        if (sourceInfo is { Year: > 0 and var year })
+            f.Tag.Year = year;
+
+        if (sourceInfo is { CoverArtBytes: { Length: > 0 } art })
+        {
+            f.Tag.Pictures =
+            [
+                new Picture([.. art])
+                {
+                    Type = PictureType.FrontCover,
+                    MimeType = sourceInfo.CoverArtMimeType,
+                    Description = "Cover",
+                },
+            ];
+        }
+
+        // Provenance in the Comment field — human-readable, survives all formats.
+        // Exact-source fields (URL/codec/bitrate/format-id) are appended for URL jobs;
+        // local-file jobs carry none of them and degrade to the tool/model/date prefix.
+        f.Tag.Comment = BuildProvenance(sourceInfo, presetDescriptor, toolVersion);
+
+        f.Save();
+    }
+
+    /// <summary>
+    /// Runs <paramref name="action"/>, retrying after each delay while it fails with an
+    /// <see cref="IOException"/>, which is how a file another process holds open fails.
+    /// </summary>
+    private static void WithShareRetry(
+        string path,
+        IReadOnlyList<TimeSpan> retryDelays,
+        Action action
+    )
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                action();
+
+                return;
+            }
+            catch (IOException ex)
+                when (attempt < retryDelays.Count
+                    && ex is not (FileNotFoundException or DirectoryNotFoundException)
+                )
+            {
+                AppLogger.Debug(
+                    "tagger",
+                    $"{Path.GetFileName(path)} is busy, retrying in {retryDelays[attempt].TotalMilliseconds:0} ms: {ex.Message}"
+                );
+                Thread.Sleep(retryDelays[attempt]);
+            }
         }
     }
 
@@ -303,3 +390,7 @@ public static class AudioTagger
     private static string? NullIfEmpty(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;
 }
+
+/// <summary>Tags could not be read from or written to an audio file, even after retrying.</summary>
+public sealed class AudioTagException(string message, Exception innerException)
+    : IOException(message, innerException);

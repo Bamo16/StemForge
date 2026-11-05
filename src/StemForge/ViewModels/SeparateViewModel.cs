@@ -81,11 +81,16 @@ public partial class SeparateViewModel : PageViewModelBase
                 return null;
 
             var ext = FfmpegArgs.Extension(StemOutputFormat);
+            var outputDir = ExpandPath(OutputPath);
             var title = CurrentInput switch
             {
-                RunInput.Url when _cachedUrlMeta is { } meta => meta.BaseName,
-                RunInput.File when InputFilePath is { } file => Path.GetFileNameWithoutExtension(
-                    file
+                RunInput.Url when _cachedUrlMeta is { } meta => FileTitle.Fit(
+                    meta.BaseName,
+                    _paths.MaxTitleLengthIn(outputDir)
+                ),
+                RunInput.File when InputFilePath is { } file => FileTitle.Fit(
+                    Path.GetFileNameWithoutExtension(file),
+                    _paths.MaxTitleLengthIn(outputDir)
                 ),
                 _ => "{title}",
             };
@@ -101,7 +106,7 @@ public partial class SeparateViewModel : PageViewModelBase
                 foreach (var preset in SelectedPresets())
                     lines.Add($"{preset.Label}: {PresetStemName(preset, title)}.{ext}");
 
-            lines.Add($"to {ExpandPath(OutputPath)}");
+            lines.Add($"to {outputDir}");
             return string.Join('\n', lines);
         }
     }

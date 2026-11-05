@@ -27,6 +27,21 @@ public sealed class DownloadCommandTests : IDisposable
         .. new byte[34],
     ];
 
+    // Two silent MPEG-1 Layer III frames (128 kb/s, 44.1 kHz, 417 bytes each): enough for TagLib.
+    private static readonly byte[] _minimalMp3 =
+    [
+        .. (byte[])[0xFF, 0xFB, 0x90, 0x00],
+        .. new byte[413],
+        .. (byte[])[0xFF, 0xFB, 0x90, 0x00],
+        .. new byte[413],
+    ];
+
+    // A file TagLib can tag in the format its extension names, as ffmpeg would have written it.
+    private static byte[] MinimalAudio(string path) =>
+        Path.GetExtension(path).Equals(".mp3", StringComparison.OrdinalIgnoreCase)
+            ? _minimalMp3
+            : _minimalFlac;
+
     public DownloadCommandTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), $"sfdl-test-{Guid.NewGuid():N}");
@@ -50,6 +65,9 @@ public sealed class DownloadCommandTests : IDisposable
     {
         public List<string> StreamedExes { get; } = [];
 
+        /// <summary>When set, each written file stays open with no sharing, as a busy reader would hold it.</summary>
+        public List<FileStream>? Held { get; init; }
+
         public Task RunStreamingAsync(
             string exe,
             IEnumerable<string> args,
@@ -60,7 +78,9 @@ public sealed class DownloadCommandTests : IDisposable
         {
             StreamedExes.Add(exe);
             var outputPath = args.Last();
-            File.WriteAllBytes(outputPath, _minimalFlac);
+            File.WriteAllBytes(outputPath, MinimalAudio(outputPath));
+            Held?.Add(new FileStream(outputPath, FileMode.Open, FileAccess.Read, FileShare.None));
+
             return Task.CompletedTask;
         }
 
@@ -97,7 +117,9 @@ public sealed class DownloadCommandTests : IDisposable
         )
         {
             StreamedExes.Add(consumer);
-            File.WriteAllBytes(consumerArgs.Last(), _minimalFlac);
+            var outputPath = consumerArgs.Last();
+            File.WriteAllBytes(outputPath, MinimalAudio(outputPath));
+            Held?.Add(new FileStream(outputPath, FileMode.Open, FileAccess.Read, FileShare.None));
 
             return Task.CompletedTask;
         }
@@ -126,13 +148,13 @@ public sealed class DownloadCommandTests : IDisposable
         SeparationPipeline Pipeline,
         SpySeparatorDriverService Driver,
         StubThumbnailFetcher Thumbs
-    ) BuildPipeline()
+    ) BuildPipeline(List<FileStream>? held = null)
     {
         var settings = new AppSettings();
         settings.SetToolPathOverride(ToolKind.Ffmpeg, "ffmpeg");
         var paths = new AppPaths(settings, PlatformInfo.Current);
 
-        var runner = new FfmpegFileWritingRunner();
+        var runner = new FfmpegFileWritingRunner { Held = held };
         var youTube = new YouTubeAudioService(
             runner,
             paths,
@@ -216,6 +238,30 @@ public sealed class DownloadCommandTests : IDisposable
         // Title is written as the display title ("Artist - Title") and the artist is preserved.
         Assert.Equal("Artist - Sample Track", tags!.Title);
         Assert.Equal("Artist", tags.Artist);
+    }
+
+    [Fact]
+    public async Task A_download_that_cannot_be_tagged_fails_instead_of_leaving_an_untagged_file()
+    {
+        List<FileStream> held = [];
+        var (pipeline, _, _) = BuildPipeline(held);
+        try
+        {
+            var failure = await Assert.ThrowsAsync<AudioTagException>(() =>
+                pipeline.DownloadOnlyAsync(
+                    MakeJob(_tempDir),
+                    progress: null,
+                    ct: TestContext.Current.CancellationToken
+                )
+            );
+
+            Assert.Contains("Could not write tags", failure.Message);
+        }
+        finally
+        {
+            foreach (var stream in held)
+                stream.Dispose();
+        }
     }
 
     // ── No separation is performed ────────────────────────────────────────────
