@@ -57,6 +57,41 @@ public sealed class DownloadCommandTests : IDisposable
         catch { }
     }
 
+    [Fact]
+    public void SucceededRow_CarriesWhatTheCallerNeedsToKeyATrack()
+    {
+        var meta = new YtDlpMetadata(
+            "https://soundcloud.com/a/b",
+            "Track",
+            null,
+            "Uploader",
+            "mp3",
+            128,
+            180,
+            "http_mp3_128",
+            "https://media.example.com/x",
+            Extractor: "soundcloud",
+            ExtractorKey: "Soundcloud",
+            Id: "242136202",
+            UploadDate: "20160601",
+            ReleaseYear: 2016
+        );
+
+        var row = DownloadCommand.SucceededRow(
+            "https://soundcloud.com/a/b",
+            "out/Track.flac",
+            meta,
+            PremiumStatus.NotApplicable
+        );
+
+        Assert.Equal("Soundcloud", row.ExtractorKey);
+        Assert.Equal("242136202", row.Id);
+        Assert.False(row.IsGeneric);
+        Assert.Equal("Uploader", row.Uploader);
+        Assert.Equal("20160601", row.UploadDate);
+        Assert.Equal(2016, row.ReleaseYear);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     // A process runner whose ffmpeg writes a real (minimal) FLAC to its output path, the last arg,

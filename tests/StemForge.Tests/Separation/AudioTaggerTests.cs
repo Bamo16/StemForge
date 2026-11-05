@@ -91,6 +91,62 @@ public sealed class AudioTaggerTests : IDisposable
         Assert.DoesNotContain("format-id:", provenance);
     }
 
+    [Theory]
+    [InlineData("generic", null)]
+    [InlineData("soundcloud", "Track")]
+    public void FromYtDlpMetadata_GenericExtractor_LeavesTheFilesOwnTitleAlone(
+        string extractor,
+        string? expectedTitle
+    )
+    {
+        var meta = new YtDlpMetadata(
+            "https://example.com/a.flac",
+            "Track",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "https://example.com/a.flac",
+            Extractor: extractor
+        );
+
+        Assert.Equal(expectedTitle, AudioTagger.FromYtDlpMetadata(meta, thumbPath: null).Title);
+    }
+
+    [Fact]
+    public void WithSourceUrl_FileWithItsOwnSource_ReplacesIt()
+    {
+        var info = new SourceTagInfo { Title = "Track", SourceUrl = "https://example.com/page" };
+
+        var result = AudioTagger.WithSourceUrl(info, "track:file~3fa9c0d12be84471");
+
+        Assert.Equal("track:file~3fa9c0d12be84471", result?.SourceUrl);
+        Assert.Equal("Track", result?.Title);
+    }
+
+    [Fact]
+    public void WithSourceUrl_FileWithNoTags_StillCarriesIt()
+    {
+        var provenance = AudioTagger.BuildProvenance(
+            AudioTagger.WithSourceUrl(null, "track:file~3fa9c0d12be84471"),
+            null,
+            "0.2.0"
+        );
+
+        Assert.Contains("source: track:file~3fa9c0d12be84471", provenance);
+    }
+
+    [Fact]
+    public void WithSourceUrl_NoOverride_LeavesTheInfoAlone()
+    {
+        var info = new SourceTagInfo { SourceUrl = "https://example.com/page" };
+
+        Assert.Same(info, AudioTagger.WithSourceUrl(info, null));
+        Assert.Null(AudioTagger.WithSourceUrl(null, string.Empty));
+    }
+
     [Fact]
     public void BuildProvenance_NullSource_DoesNotThrow()
     {

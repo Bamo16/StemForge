@@ -84,6 +84,15 @@ public static class AudioTagger
     /// </summary>
     public static SourceTagInfo? ReadFromFile(string path) => ReadFromFile(path, ShareRetryDelays);
 
+    /// <summary>Sets the source written on every stem, replacing whatever the file's own provenance said.</summary>
+    internal static SourceTagInfo? WithSourceUrl(SourceTagInfo? info, string? sourceUrl) =>
+        sourceUrl is { Length: > 0 }
+            ? (info ?? new SourceTagInfo()) with
+            {
+                SourceUrl = sourceUrl,
+            }
+            : info;
+
     internal static SourceTagInfo? ReadFromFile(string path, IReadOnlyList<TimeSpan> retryDelays)
     {
         try
@@ -156,7 +165,8 @@ public static class AudioTagger
 
         return new SourceTagInfo
         {
-            Title = NullIfEmpty(meta.DisplayTitle),
+            // A direct link's title is its file name; the file's own TITLE stays.
+            Title = meta.IsGeneric ? null : NullIfEmpty(meta.DisplayTitle),
             Artist = NullIfEmpty(meta.Artist),
             CoverArtBytes = artBytes,
             CoverArtMimeType = mimeType,

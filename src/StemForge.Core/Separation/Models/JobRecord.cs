@@ -13,7 +13,8 @@ public sealed record JobRecord(
     AudioFormat StemOutputFormat = AudioFormat.Flac,
     bool KeepSourceFile = false,
     YtDlpMetadata? PreResolvedMeta = null,
-    bool ExtractDrums = false
+    bool ExtractDrums = false,
+    string? SourceUrlOverride = null
 )
 {
     /// <summary>The name the queue shows: for a resolved URL, the name its source file will get (ADR 0014).</summary>
