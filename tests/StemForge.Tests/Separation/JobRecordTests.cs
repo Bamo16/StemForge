@@ -103,7 +103,7 @@ public sealed class JobRecordTests
             MediaUrl: "https://media.example.com/140"
         );
 
-        Assert.Equal("TLC - No Scrubs (Official Audio)", UrlJob(meta).InputFileName);
+        Assert.Equal("TLC - No Scrubs", UrlJob(meta).InputFileName);
     }
 
     [Fact]

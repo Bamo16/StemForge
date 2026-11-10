@@ -44,20 +44,24 @@ public sealed record YtDlpMetadata(
     /// "Artist - Title" when artist is available, plain Title otherwise. An artist the title
     /// already credits as a featured performer is dropped here so the name does not say it twice;
     /// <see cref="Artist"/> itself keeps every credit, because the provenance tag written into the
-    /// file must stay true (see <see cref="ArtistNames"/>).
+    /// file must stay true (see <see cref="ArtistNames"/>). The title's video packaging, such as
+    /// "(Official Video)", is dropped (see <see cref="TitlePackaging"/>); <see cref="Title"/> stays
+    /// as the source reported it.
     /// </summary>
     public string DisplayTitle
     {
         get
         {
+            var title = TitlePackaging.Strip(Title);
+
             if (Artists is not { Count: > 0 } credits)
-                return Title;
+                return title;
 
             var named = string.Join(", ", ArtistNames.WithoutFeatured(credits, Title));
 
             // IsNullOrWhiteSpace rather than a length pattern: patterns have no concept of
             // whitespace, and a credit list of blanks must fall through to the bare title.
-            return string.IsNullOrWhiteSpace(named) ? Title : $"{named} - {Title}";
+            return string.IsNullOrWhiteSpace(named) ? title : $"{named} - {title}";
         }
     }
 
