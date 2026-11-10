@@ -59,6 +59,23 @@ public sealed record YtDlpVideoInfo
     /// <summary>Lowercase extractor name from yt-dlp, e.g. "youtube".</summary>
     public string? Extractor { get; init; }
 
+    /// <summary>yt-dlp's extractor key, e.g. "Soundcloud" or "Generic".</summary>
+    public string? ExtractorKey { get; init; }
+
+    /// <summary>The source's own ID for the track; for a direct link, only its file name.</summary>
+    public string? Id { get; init; }
+
+    /// <summary>The day the source was uploaded, <c>yyyyMMdd</c>.</summary>
+    public string? UploadDate { get; init; }
+
+    public int? ReleaseYear { get; init; }
+
+    public string? Album { get; init; }
+
+    public string? AlbumArtist { get; init; }
+
+    public int? TrackNumber { get; init; }
+
     public List<YtDlpFormat> Formats { get; init; } = [];
 
     /// <summary>

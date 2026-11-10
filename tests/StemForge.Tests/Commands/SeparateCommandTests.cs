@@ -36,6 +36,30 @@ public sealed class SeparateCommandTests : IDisposable
         catch { }
     }
 
+    [Fact]
+    public void UrlInputRejectingSourceUrl_UrlInput_ReturnsIt()
+    {
+        var url = "https://www.youtube.com/watch?v=NTa6Xbzfq1U";
+
+        Assert.Equal(
+            url,
+            SeparateCommand.UrlInputRejectingSourceUrl([_existingInputFile, url], "track:x~1")
+        );
+    }
+
+    [Fact]
+    public void UrlInputRejectingSourceUrl_LocalFilesOnly_ReturnsNull() =>
+        Assert.Null(SeparateCommand.UrlInputRejectingSourceUrl([_existingInputFile], "track:x~1"));
+
+    [Fact]
+    public void UrlInputRejectingSourceUrl_NoSourceUrl_ReturnsNull() =>
+        Assert.Null(
+            SeparateCommand.UrlInputRejectingSourceUrl(
+                ["https://www.youtube.com/watch?v=NTa6Xbzfq1U"],
+                null
+            )
+        );
+
     // ── Preset validation ──────────────────────────────────────────────────────
 
     [Fact]

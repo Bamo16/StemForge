@@ -101,7 +101,10 @@ public sealed class SeparationPipeline(
                 ?? throw new InvalidOperationException(
                     "Job has neither a file path nor a source URL."
                 );
-            sourceInfo = AudioTagger.ReadFromFile(inputFile);
+            sourceInfo = AudioTagger.WithSourceUrl(
+                AudioTagger.ReadFromFile(inputFile),
+                job.SourceUrlOverride
+            );
         }
 
         // ── Separation step — one driver run per preset ───────────────────────

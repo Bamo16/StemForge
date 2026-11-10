@@ -45,6 +45,9 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
         [CommandOption("--extract-drums")]
         public bool ExtractDrums { get; set; }
 
+        [CommandOption("--source-url")]
+        public string? SourceUrl { get; set; }
+
         [CommandOption("--verbose")]
         public bool Verbose { get; set; }
 
@@ -80,6 +83,14 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
         {
             Console.Error.WriteLine(
                 "Error: give at least one of --preset, --model or --extract-drums."
+            );
+            return 1;
+        }
+
+        if (UrlInputRejectingSourceUrl(settings.Inputs, settings.SourceUrl) is { } urlInput)
+        {
+            Console.Error.WriteLine(
+                $"Error: --source-url applies to a local file, not to the URL {urlInput}."
             );
             return 1;
         }
@@ -266,7 +277,8 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
                             ModelsDir: appPaths.ModelsDirectory,
                             StemOutputFormat: resolvedFormat,
                             KeepSourceFile: settings.KeepSource,
-                            ExtractDrums: settings.ExtractDrums
+                            ExtractDrums: settings.ExtractDrums,
+                            SourceUrlOverride: settings.SourceUrl
                         );
                     }
 
@@ -341,6 +353,14 @@ internal sealed class SeparateCommand : AsyncCommand<SeparateCommand.Settings>
     /// Whether the invocation asks for any separation at all; <c>--model</c> and
     /// <c>--extract-drums</c> are runs in their own right, not modifiers on a preset.
     /// </summary>
+    internal static string? UrlInputRejectingSourceUrl(
+        IEnumerable<string> inputs,
+        string? sourceUrl
+    ) =>
+        sourceUrl is { Length: > 0 }
+            ? inputs.FirstOrDefault(input => YtUrlHelper.TryNormalize(input, out _))
+            : null;
+
     internal static bool HasWorkToDo(string[]? presetIds, string? model, bool extractDrums) =>
         presetIds is { Length: > 0 } || !string.IsNullOrWhiteSpace(model) || extractDrums;
 

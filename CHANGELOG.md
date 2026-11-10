@@ -2,6 +2,17 @@
 
 All notable changes to StemForge are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`separate --source-url <value>`** sets the `source:` written on every stem of a local-file input, for a caller that keeps its own identity for the file. A URL input rejects it.
+- **`download --json` says what the source is**: `extractorKey`, `id`, `isGeneric`, `uploader`, `uploadDate`, `releaseYear`, `album`, `albumArtist` and `trackNumber`, so a caller can key a track that is not on YouTube.
+
+### Changed
+
+- **A direct link to a media file keeps its own `TITLE`** instead of being retitled with its file name.
+
 ## [0.5.1] - 2026-10-15
 
 Bug-fix release.
