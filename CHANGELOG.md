@@ -6,7 +6,13 @@ All notable changes to StemForge are documented here. The format is based on [Ke
 
 ### Added
 
+- **`separate --source-url <value>`** sets the `source:` written on every stem of a local-file input, for a caller that keeps its own identity for the file. A URL input rejects it.
+- **`download --json` says what the source is**: `extractorKey`, `id`, `isGeneric`, `uploader`, `uploadDate`, `releaseYear`, `album`, `albumArtist` and `trackNumber`, so a caller can key a track that is not on YouTube.
 - **`stemforge-cli tools [--json] [--ensure]`** shows where StemForge's `ffmpeg`, `ffprobe`, `yt-dlp`, `deno`, `uv` and `audio-separator` are, whether each is installed or overridden in Settings, and its version, so another app can reuse StemForge's ffmpeg. `--ensure` fetches any missing bundled tool first.
+
+### Changed
+
+- **A direct link to a media file keeps its own `TITLE`** instead of being retitled with its file name.
 
 ## [0.5.1] - 2026-10-15
 

@@ -71,6 +71,10 @@ public sealed class AppPaths(
     public string OutputDirectory => Override(_settings.OutputDirectory) ?? DefaultOutputDirectory;
 
     /// <summary>Where audio-separator looks for / stores model files. Defaults to LocalAppData.</summary>
+    /// <summary>The longest "Artist - Title" a file written to <paramref name="directory"/> may be named from.</summary>
+    public int MaxTitleLengthIn(string directory) =>
+        FileTitle.MaxLengthIn(directory, _platform.LongPathsEnabled);
+
     public string ModelsDirectory => Override(_settings.ModelsDirectory) ?? DefaultModelsDirectory;
 
     /// <summary>Cache directory for drum stems when DrumStemLocation is CacheOnly.</summary>

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Spectre.Console.Cli;
 using StemForge.Cli.Commands;
 using StemForge.Tests.TestDoubles;
 
@@ -34,6 +35,30 @@ public sealed class SeparateCommandTests : IDisposable
         }
         catch { }
     }
+
+    [Fact]
+    public void UrlInputRejectingSourceUrl_UrlInput_ReturnsIt()
+    {
+        var url = "https://www.youtube.com/watch?v=NTa6Xbzfq1U";
+
+        Assert.Equal(
+            url,
+            SeparateCommand.UrlInputRejectingSourceUrl([_existingInputFile, url], "track:x~1")
+        );
+    }
+
+    [Fact]
+    public void UrlInputRejectingSourceUrl_LocalFilesOnly_ReturnsNull() =>
+        Assert.Null(SeparateCommand.UrlInputRejectingSourceUrl([_existingInputFile], "track:x~1"));
+
+    [Fact]
+    public void UrlInputRejectingSourceUrl_NoSourceUrl_ReturnsNull() =>
+        Assert.Null(
+            SeparateCommand.UrlInputRejectingSourceUrl(
+                ["https://www.youtube.com/watch?v=NTa6Xbzfq1U"],
+                null
+            )
+        );
 
     // ── Preset validation ──────────────────────────────────────────────────────
 
@@ -468,5 +493,34 @@ public sealed class SeparateCommandTests : IDisposable
         Assert.NotEqual(0, validationResult.ExitCode);
         Assert.Equal(0, callCount);
         await Task.CompletedTask;
+    }
+
+    // ── Exit code ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task A_source_held_open_until_its_tags_cannot_be_read_exits_1()
+    {
+        // The source's tags carry its source URL into every stem, so a source that cannot be read
+        // fails the input rather than producing stems with no provenance. Nothing reaches the
+        // driver: the read fails before separation starts.
+        var app = new CommandApp();
+        app.Configure(config => config.AddCommand<SeparateCommand>("separate"));
+
+        int exitCode;
+        using (new FileStream(_existingInputFile, FileMode.Open, FileAccess.Read, FileShare.None))
+            exitCode = await app.RunAsync(
+                [
+                    "separate",
+                    _existingInputFile,
+                    "--preset",
+                    "vocal_balanced",
+                    "--output",
+                    Path.Combine(_tempDir, "output"),
+                    "--json",
+                ],
+                TestContext.Current.CancellationToken
+            );
+
+        Assert.Equal(1, exitCode);
     }
 }

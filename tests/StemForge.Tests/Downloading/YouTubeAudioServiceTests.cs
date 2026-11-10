@@ -50,6 +50,28 @@ public sealed class YouTubeAudioServiceTests
     }
 
     [Fact]
+    public void DeserializeVideoInfo_SiteTrack_ReadsExtractorKeyIdAndRelease()
+    {
+        var info = YouTubeAudioService.DeserializeVideoInfo(
+            """
+            {
+              "title": "Track", "extractor": "bandcamp", "extractor_key": "Bandcamp",
+              "id": "118527279", "upload_date": "20160601", "release_year": 1998,
+              "album": "Album", "album_artist": "Band", "track_number": 3, "formats": []
+            }
+            """
+        );
+
+        Assert.Equal("Bandcamp", info.ExtractorKey);
+        Assert.Equal("118527279", info.Id);
+        Assert.Equal("20160601", info.UploadDate);
+        Assert.Equal(1998, info.ReleaseYear);
+        Assert.Equal("Album", info.Album);
+        Assert.Equal("Band", info.AlbumArtist);
+        Assert.Equal(3, info.TrackNumber);
+    }
+
+    [Fact]
     public void DeserializeVideoInfo_WithNonJsonPrefixLines_ParsesCorrectly()
     {
         var raw = "INFO:yt-dlp: Downloading metadata\nWARNING: some warning\n" + ValidJson;

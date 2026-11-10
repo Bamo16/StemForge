@@ -59,7 +59,7 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
     /// <c>premiumStatus</c> carries the outcome name, which is what separates a deliberate choice
     /// from a broken session.
     /// </summary>
-    private sealed record DownloadResult(
+    internal sealed record DownloadResult(
         string Input,
         bool Succeeded,
         string? Path,
@@ -69,7 +69,17 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
         double? BitrateKbps = null,
         bool? IsPremium = null,
         bool? PremiumShortfall = null,
-        string? PremiumStatus = null
+        string? PremiumStatus = null,
+        string? Extractor = null,
+        string? ExtractorKey = null,
+        string? Id = null,
+        bool? IsGeneric = null,
+        string? Uploader = null,
+        string? UploadDate = null,
+        int? ReleaseYear = null,
+        string? Album = null,
+        string? AlbumArtist = null,
+        int? TrackNumber = null
     );
 
     /// <summary>One candidate source format, as reported by <c>--list-formats --json</c>.</summary>
@@ -104,6 +114,36 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
         bool? PremiumShortfall = null,
         IReadOnlyList<FormatCandidate>? Formats = null
     );
+
+    internal static DownloadResult SucceededRow(
+        string url,
+        string path,
+        YtDlpMetadata meta,
+        PremiumStatus premiumStatus
+    ) =>
+        new(
+            url,
+            true,
+            path,
+            null,
+            FormatId: meta.FormatId,
+            Codec: meta.SourceCodec,
+            BitrateKbps: meta.SourceBitrateKbps,
+            IsPremium: meta.SelectedFormatIsPremium,
+            PremiumShortfall: premiumStatus
+                is not (PremiumStatus.NotApplicable or PremiumStatus.Premium),
+            PremiumStatus: premiumStatus.ToString(),
+            Extractor: meta.Extractor,
+            ExtractorKey: meta.ExtractorKey,
+            Id: meta.Id,
+            IsGeneric: meta.IsGeneric,
+            Uploader: meta.Uploader,
+            UploadDate: meta.UploadDate,
+            ReleaseYear: meta.ReleaseYear,
+            Album: meta.Album,
+            AlbumArtist: meta.AlbumArtist,
+            TrackNumber: meta.TrackNumber
+        );
 
     protected override async Task<int> ExecuteAsync(
         CommandContext context,
@@ -287,21 +327,7 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommand.Settings>
                         succeeded++;
                         totalFilesWritten++;
                         inputProgress.Complete(InputOutcome.Succeeded, Path.GetFileName(path));
-                        results.Add(
-                            new DownloadResult(
-                                normalizedUrl,
-                                true,
-                                path,
-                                null,
-                                FormatId: meta.FormatId,
-                                Codec: meta.SourceCodec,
-                                BitrateKbps: meta.SourceBitrateKbps,
-                                IsPremium: meta.SelectedFormatIsPremium,
-                                PremiumShortfall: premiumStatus
-                                    is not (PremiumStatus.NotApplicable or PremiumStatus.Premium),
-                                PremiumStatus: premiumStatus.ToString()
-                            )
-                        );
+                        results.Add(SucceededRow(normalizedUrl, path, meta, premiumStatus));
                     }
                     catch (OperationCanceledException)
                     {

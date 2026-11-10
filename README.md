@@ -104,6 +104,7 @@ Both commands take multiple inputs and process them as a batch, continuing past 
 | `--format <flac\|wav\|mp3\|...>` | both | Output audio format (defaults to the saved setting) |
 | `--keep-source` | separate | Keep the source audio alongside the stems |
 | `--extract-drums` | separate | Extract a drums stem. Runs alongside any presets given, or on its own when none are |
+| `--source-url <value>` | separate | For a local-file input: the `source:` written on every stem, in place of whatever the file's own provenance says. Rejected with a URL input |
 | `--cookies-from-browser <name>` | both | Browser to read YouTube cookies from (premium formats) |
 | `--list-formats` | download | Show the source formats on offer and exit without downloading |
 | `--format-id <id>` | download | Fetch a specific source format instead of the automatic pick |
@@ -149,6 +150,8 @@ By default StemForge picks the best source format for separation, preferring 44.
 Note that this pins the format, not the audio. Every download is normalised to 44.1 kHz regardless, because that is what the separation models work at, so pinning a 48 kHz format such as `774` still produces a 44.1 kHz file. The pin controls which source stream is fetched; it does not preserve that stream's sample rate.
 
 If you have configured `--cookies-from-browser` (or the equivalent setting) and the audio being fetched is not the Premium one, StemForge says so before downloading, and says which of the reasons applies: the source genuinely has no premium audio, your browser session is no longer signed in, the account those cookies belong to does not have Premium, or a premium format was on offer and you picked a different one. Only the middle two are yours to fix. The distinction matters because an expired cookie is otherwise silent: yt-dlp still succeeds and simply returns the lower-quality format set. With `--json`, the outcome is reported as `premiumStatus` alongside the plain `premiumShortfall` flag.
+
+With `--json`, `download` also reports what identifies the source: `extractorKey` (yt-dlp's, such as `Soundcloud` or `Generic`), `id`, `isGeneric` (a direct link to a media file, whose own `TITLE` tag is left alone), `uploader`, `uploadDate`, `releaseYear`, `album`, `albumArtist` and `trackNumber`, each null when the source does not say.
 
 ### Finding StemForge's tools
 

@@ -91,6 +91,62 @@ public sealed class AudioTaggerTests : IDisposable
         Assert.DoesNotContain("format-id:", provenance);
     }
 
+    [Theory]
+    [InlineData("generic", null)]
+    [InlineData("soundcloud", "Track")]
+    public void FromYtDlpMetadata_GenericExtractor_LeavesTheFilesOwnTitleAlone(
+        string extractor,
+        string? expectedTitle
+    )
+    {
+        var meta = new YtDlpMetadata(
+            "https://example.com/a.flac",
+            "Track",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "https://example.com/a.flac",
+            Extractor: extractor
+        );
+
+        Assert.Equal(expectedTitle, AudioTagger.FromYtDlpMetadata(meta, thumbPath: null).Title);
+    }
+
+    [Fact]
+    public void WithSourceUrl_FileWithItsOwnSource_ReplacesIt()
+    {
+        var info = new SourceTagInfo { Title = "Track", SourceUrl = "https://example.com/page" };
+
+        var result = AudioTagger.WithSourceUrl(info, "track:file~3fa9c0d12be84471");
+
+        Assert.Equal("track:file~3fa9c0d12be84471", result?.SourceUrl);
+        Assert.Equal("Track", result?.Title);
+    }
+
+    [Fact]
+    public void WithSourceUrl_FileWithNoTags_StillCarriesIt()
+    {
+        var provenance = AudioTagger.BuildProvenance(
+            AudioTagger.WithSourceUrl(null, "track:file~3fa9c0d12be84471"),
+            null,
+            "0.2.0"
+        );
+
+        Assert.Contains("source: track:file~3fa9c0d12be84471", provenance);
+    }
+
+    [Fact]
+    public void WithSourceUrl_NoOverride_LeavesTheInfoAlone()
+    {
+        var info = new SourceTagInfo { SourceUrl = "https://example.com/page" };
+
+        Assert.Same(info, AudioTagger.WithSourceUrl(info, null));
+        Assert.Null(AudioTagger.WithSourceUrl(null, string.Empty));
+    }
+
     [Fact]
     public void BuildProvenance_NullSource_DoesNotThrow()
     {
@@ -199,5 +255,68 @@ public sealed class AudioTaggerTests : IDisposable
 
         Assert.NotNull(recovered);
         Assert.Null(recovered.SourceUrl);
+    }
+
+    // ── A file another process holds open ─────────────────────────────────────
+
+    private static FileStream HoldOpen(string path) =>
+        new(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+    [Fact]
+    public async Task A_file_held_open_is_tagged_once_the_holder_lets_go()
+    {
+        var path = CreateFlacFile();
+        var holder = HoldOpen(path);
+        var release = Task.Run(
+            async () =>
+            {
+                await Task.Delay(100, TestContext.Current.CancellationToken);
+                await holder.DisposeAsync();
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        AudioTagger.ApplyToFile(
+            path,
+            UrlSource(),
+            "Vocal - Full",
+            "0.2.0",
+            [.. Enumerable.Repeat(TimeSpan.FromMilliseconds(200), 5)]
+        );
+        await release;
+
+        Assert.Equal(
+            "https://www.youtube.com/watch?v=abc123",
+            AudioTagger.ReadFromFile(path)?.SourceUrl
+        );
+    }
+
+    [Fact]
+    public void A_file_held_open_throughout_fails_after_every_retry()
+    {
+        var path = CreateFlacFile();
+        TimeSpan[] delays = [TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(50)];
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+
+        AudioTagException failure;
+        using (HoldOpen(path))
+            failure = Assert.Throws<AudioTagException>(() =>
+                AudioTagger.ApplyToFile(path, UrlSource(), "Vocal - Full", "0.2.0", delays)
+            );
+
+        Assert.True(clock.Elapsed >= TimeSpan.FromMilliseconds(100), "it gave up without retrying");
+        Assert.Contains(Path.GetFileName(path), failure.Message);
+        Assert.Null(AudioTagger.ReadFromFile(path)?.SourceUrl);
+    }
+
+    [Fact]
+    public void A_source_held_open_throughout_cannot_be_read()
+    {
+        var path = CreateFlacFile();
+
+        using (HoldOpen(path))
+            Assert.Throws<AudioTagException>(() =>
+                AudioTagger.ReadFromFile(path, [TimeSpan.FromMilliseconds(10)])
+            );
     }
 }

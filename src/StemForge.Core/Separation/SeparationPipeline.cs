@@ -101,7 +101,10 @@ public sealed class SeparationPipeline(
                 ?? throw new InvalidOperationException(
                     "Job has neither a file path nor a source URL."
                 );
-            sourceInfo = AudioTagger.ReadFromFile(inputFile);
+            sourceInfo = AudioTagger.WithSourceUrl(
+                AudioTagger.ReadFromFile(inputFile),
+                job.SourceUrlOverride
+            );
         }
 
         // ── Separation step — one driver run per preset ───────────────────────
@@ -116,6 +119,12 @@ public sealed class SeparationPipeline(
             presets.Sum(p => p.ModelCount) + (job.ExtractDrums ? 1 : 0)
         );
         int cumulativeModelWeight = 0;
+
+        // Every stem is named from the source's title, shortened if a stem's name would be too long.
+        var title = FileTitle.Fit(
+            Path.GetFileNameWithoutExtension(inputFile),
+            _paths.MaxTitleLengthIn(job.OutputDir)
+        );
 
         for (int i = 0; i < presets.Count; i++)
         {
@@ -201,7 +210,7 @@ public sealed class SeparationPipeline(
                 );
             });
 
-            var request = BuildRequest(preset, inputFile, job.OutputDir, format);
+            var request = BuildRequest(preset, inputFile, job.OutputDir, format, title);
             var result = await _driver.RunAsync(request, driverProgress, ct);
 
             if (!result.Succeeded)
@@ -210,7 +219,6 @@ public sealed class SeparationPipeline(
             if (preset.Steps[0].KeepSet is { Count: > 0 } keepSet)
                 CheckKeepSet(keepSet, result, preset);
 
-            var title = Path.GetFileNameWithoutExtension(inputFile);
             var runPaths = new List<string>();
             foreach (var o in result.Outputs)
             {
@@ -331,7 +339,7 @@ public sealed class SeparationPipeline(
                 );
             });
 
-            var drumTitle = Path.GetFileNameWithoutExtension(inputFile);
+            var drumTitle = FileTitle.Fit(title, _paths.MaxTitleLengthIn(drumOutDir));
             var drumRequest = new JobRequest(
                 inputFile,
                 drumOutDir,
@@ -339,7 +347,8 @@ public sealed class SeparationPipeline(
                 PresetId: null,
                 Models: [_settings.DrumExtractionModel],
                 Algorithm: null,
-                StemsToKeep: ["Drums"]
+                StemsToKeep: ["Drums"],
+                Title: drumTitle
             );
 
             var drumResult = await _driver.RunAsync(drumRequest, drumProgress, ct);
@@ -582,6 +591,27 @@ public sealed class SeparationPipeline(
     /// </summary>
     public static string DesiredBaseName(Preset preset, string stem, string title)
     {
+        var name = BaseNameFor(preset, stem, title);
+        if (name.Length <= MaxBaseNameLength || title.Length == 0)
+            return name;
+
+        // A template or catalog label can put more around the title than FileTitle's reserve
+        // allows for, so the title is cut again to what is left beside it.
+        var around = BaseNameFor(preset, stem, string.Empty).Length;
+        var copies = Math.Max(1, (name.Length - around) / title.Length);
+
+        return BaseNameFor(
+            preset,
+            stem,
+            FileTitle.Fit(title, (MaxBaseNameLength - around) / copies)
+        );
+    }
+
+    // What may follow a base name: a collision suffix " (99)", the extension, and Ableton's ".asd".
+    private const int MaxBaseNameLength = FileTitle.MaxComponentLength - 14;
+
+    private static string BaseNameFor(Preset preset, string stem, string title)
+    {
         if (preset.Mode == SeparationMode.BuiltinPreset)
         {
             var targetStem = preset.Category == PresetCategory.Vocals ? "Vocals" : "Instrumental";
@@ -642,9 +672,13 @@ public sealed class SeparationPipeline(
         Preset preset,
         string audioPath,
         string outputDir,
-        string format
-    ) =>
-        preset.Mode switch
+        string format,
+        string? title = null
+    )
+    {
+        title ??= Path.GetFileNameWithoutExtension(audioPath);
+
+        return preset.Mode switch
         {
             SeparationMode.SingleModel => new JobRequest(
                 audioPath,
@@ -659,7 +693,8 @@ public sealed class SeparationPipeline(
                         ),
                 ],
                 Algorithm: null,
-                StemsToKeep: preset.Steps[0].KeepSet
+                StemsToKeep: preset.Steps[0].KeepSet,
+                Title: title
             ),
 
             SeparationMode.CustomEnsemble => new JobRequest(
@@ -676,7 +711,8 @@ public sealed class SeparationPipeline(
                     .. preset.ExtraModels ?? [],
                 ],
                 Algorithm: preset.EnsembleAlgorithm ?? "avg_wave",
-                StemsToKeep: preset.Steps[0].KeepSet
+                StemsToKeep: preset.Steps[0].KeepSet,
+                Title: title
             ),
 
             _ => new JobRequest( // BuiltinPreset
@@ -686,16 +722,14 @@ public sealed class SeparationPipeline(
                 PresetId: preset.Id,
                 Models: null,
                 Algorithm: null,
-                CustomOutputNames: BuildPresetOutputNames(preset, audioPath)
+                CustomOutputNames: BuildPresetOutputNames(preset, title),
+                Title: title
             ),
         };
+    }
 
-    internal static Dictionary<string, string> BuildPresetOutputNames(
-        Preset preset,
-        string audioPath
-    )
+    internal static Dictionary<string, string> BuildPresetOutputNames(Preset preset, string title)
     {
-        var title = Path.GetFileNameWithoutExtension(audioPath);
         var stemKey = preset.Category == PresetCategory.Vocals ? "Vocals" : "Instrumental";
         return new Dictionary<string, string>
         {
@@ -736,7 +770,10 @@ public sealed class SeparationPipeline(
         try
         {
             Directory.CreateDirectory(outputDir);
-            var baseName = Path.GetFileNameWithoutExtension(sourceFlac);
+            var baseName = FileTitle.Fit(
+                Path.GetFileNameWithoutExtension(sourceFlac),
+                _paths.MaxTitleLengthIn(outputDir)
+            );
             var dest = Path.Combine(outputDir, $"{baseName}.{FfmpegArgs.Extension(format)}");
 
             if (format == AudioFormat.Flac)

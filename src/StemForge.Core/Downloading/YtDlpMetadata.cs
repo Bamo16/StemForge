@@ -15,9 +15,24 @@ public sealed record YtDlpMetadata(
     string? ThumbnailUrl = null,
     IReadOnlyList<YtDlpFormat>? AudioFormats = null,
     string? Extractor = null,
-    string? InfoJson = null
+    string? InfoJson = null,
+    string? ExtractorKey = null,
+    string? Id = null,
+    string? UploadDate = null,
+    int? ReleaseYear = null,
+    string? Album = null,
+    string? AlbumArtist = null,
+    int? TrackNumber = null
 )
 {
+    /// <summary>
+    /// True for a direct link to a media file, which yt-dlp reads with its generic extractor: the
+    /// file's own tags are better than anything yt-dlp could say about it.
+    /// </summary>
+    public bool IsGeneric =>
+        Extractor is { } extractor
+        && extractor.Equals("generic", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>
     /// Every credited artist as one string, in first-seen order. The only place the credit list is
     /// flattened, and what reaches the file's ARTIST tag and the CLI's JSON row. Null when the
@@ -29,32 +44,39 @@ public sealed record YtDlpMetadata(
     /// "Artist - Title" when artist is available, plain Title otherwise. An artist the title
     /// already credits as a featured performer is dropped here so the name does not say it twice;
     /// <see cref="Artist"/> itself keeps every credit, because the provenance tag written into the
-    /// file must stay true (see <see cref="ArtistNames"/>).
+    /// file must stay true (see <see cref="ArtistNames"/>). The title's video packaging, such as
+    /// "(Official Video)", is dropped (see <see cref="TitlePackaging"/>); <see cref="Title"/> stays
+    /// as the source reported it.
     /// </summary>
     public string DisplayTitle
     {
         get
         {
+            var title = TitlePackaging.Strip(Title);
+
             if (Artists is not { Count: > 0 } credits)
-                return Title;
+                return title;
 
             var named = string.Join(", ", ArtistNames.WithoutFeatured(credits, Title));
 
             // IsNullOrWhiteSpace rather than a length pattern: patterns have no concept of
             // whitespace, and a credit list of blanks must fall through to the bare title.
-            return string.IsNullOrWhiteSpace(named) ? Title : $"{named} - {Title}";
+            return string.IsNullOrWhiteSpace(named) ? title : $"{named} - {title}";
         }
     }
 
     /// <summary>
     /// The base name the downloaded source file will be given, without extension: the display
-    /// title with characters no filesystem accepts removed. Sole definition of that rule, so the
-    /// name a caller is told to expect and the name the download actually writes cannot drift.
+    /// title with characters no filesystem accepts removed, shortened by <see cref="FileTitle"/>
+    /// when long. Sole definition of that rule, so the name a caller is told to expect and the name
+    /// the download actually writes cannot drift (short of a folder too deep for MAX_PATH).
     /// Stems derive from this, conventionally as "{BaseName} ({stem})", but a preset template or a
     /// collision suffix may reshape them, so only the source file's name is promised.
     /// </summary>
     public string BaseName =>
-        string.Concat(DisplayTitle.Where(c => !PortableFileName.InvalidChars.Contains(c)));
+        FileTitle.Fit(
+            string.Concat(DisplayTitle.Where(c => !PortableFileName.InvalidChars.Contains(c)))
+        );
 
     /// <summary>
     /// True when this came from YouTube. Format ids mean different things per extractor, so every
