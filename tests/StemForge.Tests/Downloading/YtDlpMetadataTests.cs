@@ -10,6 +10,29 @@ public sealed class YtDlpMetadataTests
     }
 
     [Fact]
+    public void DisplayTitle_TitleHasPackaging_DropsItFromTheNameButNotTheTitle()
+    {
+        var meta = Build("Pokémon Smash or Pass (Official Music Video)", "Starbomb");
+        Assert.Equal("Starbomb - Pokémon Smash or Pass", meta.DisplayTitle);
+        Assert.Equal("Pokémon Smash or Pass (Official Music Video)", meta.Title);
+        Assert.Equal("Starbomb - Pokémon Smash or Pass", meta.BaseName);
+    }
+
+    [Fact]
+    public void DisplayTitle_NoArtistAndPackaging_DropsPackaging()
+    {
+        var meta = Build("Being Flat (Official Audio)");
+        Assert.Equal("Being Flat", meta.DisplayTitle);
+    }
+
+    [Fact]
+    public void DisplayTitle_TitleIsOnlyPackaging_KeepsIt()
+    {
+        var meta = Build("(Official Video)", "Artist");
+        Assert.Equal("Artist - (Official Video)", meta.DisplayTitle);
+    }
+
+    [Fact]
     public void DisplayTitle_ArtistNull_ReturnsJustTitle()
     {
         var meta = Build("Track");
