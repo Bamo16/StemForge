@@ -107,8 +107,9 @@ Both commands take multiple inputs and process them as a batch, continuing past 
 | `--cookies-from-browser <name>` | both | Browser to read YouTube cookies from (premium formats) |
 | `--list-formats` | download | Show the source formats on offer and exit without downloading |
 | `--format-id <id>` | download | Fetch a specific source format instead of the automatic pick |
+| `--ensure` | tools | Fetch any bundled tool (ffmpeg with ffprobe, yt-dlp, deno) that is missing and not overridden, then report |
 | `--verbose` | both | Stream full engine logs for troubleshooting (off by default) |
-| `--json` | both, presets | Suppress human output; print a single JSON result payload to stdout |
+| `--json` | both, presets, tools | Suppress human output; print a single JSON result payload to stdout |
 
 `--extract-drums` on its own runs only the drum-extraction preset, which is what you want when the source is already an instrumental and the drum stem is the only thing missing:
 
@@ -148,6 +149,27 @@ By default StemForge picks the best source format for separation, preferring 44.
 Note that this pins the format, not the audio. Every download is normalised to 44.1 kHz regardless, because that is what the separation models work at, so pinning a 48 kHz format such as `774` still produces a 44.1 kHz file. The pin controls which source stream is fetched; it does not preserve that stream's sample rate.
 
 If you have configured `--cookies-from-browser` (or the equivalent setting) and the audio being fetched is not the Premium one, StemForge says so before downloading, and says which of the reasons applies: the source genuinely has no premium audio, your browser session is no longer signed in, the account those cookies belong to does not have Premium, or a premium format was on offer and you picked a different one. Only the middle two are yours to fix. The distinction matters because an expired cookie is otherwise silent: yt-dlp still succeeds and simply returns the lower-quality format set. With `--json`, the outcome is reported as `premiumStatus` alongside the plain `premiumShortfall` flag.
+
+### Finding StemForge's tools
+
+`stemforge-cli tools` lists the tools StemForge runs and the path it would run each from, so another app can reuse StemForge's ffmpeg rather than fetch its own. With `--json` it prints one array, in this order: `uv`, `audio-separator`, `ffmpeg`, `ffprobe`, `yt-dlp`, `deno` (only the tools available on the platform).
+
+```json
+[
+  { "kind": "ffmpeg", "path": "C:\\Users\\you\\AppData\\Local\\StemForge\\bin\\ffmpeg.exe", "installed": true, "overridden": false, "version": "N-124653-g0ac3b00a18-20260526", "release": "v1.0.42" }
+]
+```
+
+| Field | Meaning |
+|---|---|
+| `kind` | The tool's name: `uv`, `audio-separator`, `ffmpeg`, `ffprobe`, `yt-dlp` or `deno` |
+| `path` | What StemForge would run: the Settings → Tool paths override if set, else its own copy. Given even when `installed` is false |
+| `installed` | The tool answered its version check |
+| `overridden` | `path` comes from Settings → Tool paths |
+| `version` | The tool's own version, or null when not installed |
+| `release` | The pinned bundle release (nomercy-ffmpeg's tag for `ffmpeg` and `ffprobe`); null when overridden or when the tool has no pin |
+
+`ffprobe` is the one beside `ffmpeg`, so an ffmpeg override moves it too. `tools` never fetches anything by itself. `--ensure` first fetches whichever bundled tools are missing and not overridden (never `uv` or `audio-separator`) and prints its progress to standard error, so a caller gets a usable path in one call.
 
 Live progress shows a per-input bar with the current activity. Press Ctrl+C once to cancel the running job cleanly, or twice to force-exit. Run `stemforge-cli presets` to list the built-in presets, and `stemforge-cli --help` for the full command reference.
 
@@ -291,7 +313,7 @@ src/StemForge/             Avalonia GUI
   Services/                GUI-only services (setup detection, job queue, DI wiring)
   Assets/                  embedded resources (app icon, etc.)
 src/StemForge.Cli/         stemforge-cli console app
-  Commands/                separate, download, presets
+  Commands/                separate, download, presets, tools
   Progress/                terminal progress rendering
 tests/StemForge.Tests/     xUnit test project
 ```

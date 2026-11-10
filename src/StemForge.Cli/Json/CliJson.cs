@@ -5,7 +5,7 @@ namespace StemForge.Cli.Json;
 /// <summary>
 /// Shared serialization for every command's <c>--json</c> output, so automation callers get one
 /// consistent naming convention (camelCase) across <c>download</c>, <c>separate</c>, and
-/// <c>presets</c>.
+/// <c>presets</c>, and <c>tools</c>.
 /// </summary>
 internal static class CliJson
 {
@@ -15,6 +15,7 @@ internal static class CliJson
     };
 
     /// <summary>Serializes <paramref name="value"/> and writes it to stdout as the sole payload.</summary>
-    internal static void Write(object value) =>
-        Console.WriteLine(JsonSerializer.Serialize(value, Options));
+    internal static void Write(object value) => Console.WriteLine(Serialize(value));
+
+    internal static string Serialize(object value) => JsonSerializer.Serialize(value, Options);
 }

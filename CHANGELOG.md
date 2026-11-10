@@ -2,6 +2,12 @@
 
 All notable changes to StemForge are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`stemforge-cli tools [--json] [--ensure]`** shows where StemForge's `ffmpeg`, `ffprobe`, `yt-dlp`, `deno`, `uv` and `audio-separator` are, whether each is installed or overridden in Settings, and its version, so another app can reuse StemForge's ffmpeg. `--ensure` fetches any missing bundled tool first.
+
 ## [0.5.1] - 2026-10-15
 
 Bug-fix release.

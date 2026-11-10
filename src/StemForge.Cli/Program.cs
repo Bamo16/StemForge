@@ -26,6 +26,9 @@ app.Configure(config =>
         .AddCommand<PresetsCommand>("presets")
         .WithDescription("List built-in separation presets from the audio-separator toolchain.");
     config
+        .AddCommand<ToolsCommand>("tools")
+        .WithDescription("Show where StemForge's ffmpeg, yt-dlp and other tools are.");
+    config
         .AddCommand<SeparateCommand>("separate")
         .WithDescription("Separate a local audio file into stems using a built-in preset.");
     config

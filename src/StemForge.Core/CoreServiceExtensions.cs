@@ -40,6 +40,7 @@ public static class CoreServiceExtensions
         services.AddSingleton<GpuDetector>();
         services.AddSingleton<BundledFetcher>();
         services.AddSingleton<ToolInstaller>();
+        services.AddSingleton<ToolReportService>();
         services.AddSingleton<ModelCatalogService>();
         services.AddSingleton<ModelProfileResolver>();
         services.AddSingleton<DrumModelCatalog>();
