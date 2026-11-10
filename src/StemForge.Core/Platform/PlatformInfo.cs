@@ -1,4 +1,6 @@
 using System.Runtime.InteropServices;
+using System.Security;
+using Microsoft.Win32;
 
 namespace StemForge.Core.Platform;
 
@@ -18,9 +20,38 @@ public enum OSKind
 public sealed record PlatformInfo(OSKind Os, Architecture Arch)
 {
     public static PlatformInfo Current { get; } =
-        new(DetectOs(), RuntimeInformation.ProcessArchitecture);
+        new(DetectOs(), RuntimeInformation.ProcessArchitecture)
+        {
+            LongPathsEnabled = DetectLongPaths(),
+        };
+
+    /// <summary>
+    /// False on Windows unless long paths are turned on, when tools such as Python cannot write a
+    /// path past MAX_PATH. Other systems have no such limit.
+    /// </summary>
+    public bool LongPathsEnabled { get; init; } = true;
 
     public string ExecutableSuffix => Os == OSKind.Windows ? ".exe" : "";
+
+    private static bool DetectLongPaths()
+    {
+        if (!OperatingSystem.IsWindows())
+            return true;
+
+        try
+        {
+            return Registry.GetValue(
+                @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem",
+                "LongPathsEnabled",
+                0
+            )
+                is 1;
+        }
+        catch (Exception ex) when (ex is SecurityException or IOException)
+        {
+            return false;
+        }
+    }
 
     private static OSKind DetectOs()
     {
