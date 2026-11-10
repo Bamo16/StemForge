@@ -44,6 +44,19 @@ public sealed class AppPaths(
     public string Ffmpeg => OverrideFor(ToolKind.Ffmpeg) ?? BundledFfmpeg;
 
     /// <summary>
+    /// The ffprobe that sits beside <see cref="Ffmpeg"/>, where audio-separator finds it. A bare
+    /// ffmpeg name gives a bare ffprobe name.
+    /// </summary>
+    public string Ffprobe =>
+        Path.Combine(
+            Path.GetDirectoryName(Ffmpeg) ?? string.Empty,
+            $"ffprobe{_platform.ExecutableSuffix}"
+        );
+
+    /// <summary>True when the user set a path for the tool in Settings, so <see cref="PathFor"/> reports that path.</summary>
+    public bool IsOverridden(ToolKind kind) => OverrideFor(kind) is not null;
+
+    /// <summary>
     /// Path or PATH-resolvable name of the audio-separator binary. If no user
     /// override is configured, prefers the uv-installed shim location and falls
     /// back to the bare PATH name.

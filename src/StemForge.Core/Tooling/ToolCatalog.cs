@@ -219,6 +219,10 @@ public static class ToolCatalog
 
     public static Tool Get(ToolKind kind) => All.First(t => t.Kind == kind);
 
+    /// <summary>The release StemForge's bundled copy of the tool is pinned to, or null when it has none to name.</summary>
+    public static string? BundledRelease(ToolKind kind) =>
+        kind is ToolKind.Ffmpeg ? NoMercyFfmpegTag : null;
+
     /// <summary>Tools that can be installed on the given platform (have a viable strategy there).</summary>
     public static IReadOnlyList<Tool> AvailableFor(PlatformInfo platform) =>
         [.. All.Where(t => t.IsInstallableOn(platform))];
