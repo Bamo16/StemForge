@@ -213,7 +213,58 @@ public partial class ModelsViewModel : PageViewModelBase
         OnPropertyChanged(nameof(HasUnknownStemModels));
         OnPropertyChanged(nameof(ShowOverlapGuidance));
         OnPropertyChanged(nameof(UnknownStemModelsLabel));
+
+        RecomputeKeepSet();
     }
+
+    // ── Keep set (issue #68) ──────────────────────────────────────────────────
+
+    /// <summary>The stems the checked models emit, each toggled kept or discarded. Empty when unknown.</summary>
+    public ObservableCollection<StemChoice> StemChoices { get; } = [];
+
+    public bool HasStemPicker => StemChoices.Count > 0;
+
+    /// <summary>Why there is no picker (stems undetermined), or empty when there is one or nothing is checked.</summary>
+    public string KeepSetNote { get; private set; } = string.Empty;
+
+    public bool HasKeepSetNote => KeepSetNote.Length > 0;
+
+    private void RecomputeKeepSet()
+    {
+        foreach (var choice in StemChoices)
+            choice.PropertyChanged -= OnStemChoiceChanged;
+        StemChoices.Clear();
+
+        var options = HasChecked
+            ? KeepSetOptions.Resolve(
+                _all.Where(m => m.IsChecked).Select(m => (m.FriendlyName, m.Profile))
+            )
+            : new KeepSetOptions([], null);
+
+        foreach (var name in options.Stems)
+        {
+            StemChoice choice = new(name);
+            choice.PropertyChanged += OnStemChoiceChanged;
+            StemChoices.Add(choice);
+        }
+
+        KeepSetNote = options.Note ?? string.Empty;
+        OnPropertyChanged(nameof(HasStemPicker));
+        OnPropertyChanged(nameof(KeepSetNote));
+        OnPropertyChanged(nameof(HasKeepSetNote));
+        SavePresetCommand.NotifyCanExecuteChanged();
+    }
+
+    private void OnStemChoiceChanged(object? sender, PropertyChangedEventArgs e) =>
+        SavePresetCommand.NotifyCanExecuteChanged();
+
+    /// <summary>Null (keep everything) unless the picker is shown and some stems are unticked.</summary>
+    private IReadOnlyList<string>? SelectedKeepSet() =>
+        StemChoices.Where(choice => choice.IsKept).Select(choice => choice.Name).ToList()
+            is { Count: > 0 } kept
+        && kept.Count < StemChoices.Count
+            ? kept
+            : null;
 
     // ── Save as preset ────────────────────────────────────────────────────────
 
@@ -235,7 +286,11 @@ public partial class ModelsViewModel : PageViewModelBase
         )),
     ];
 
-    private bool CanSavePreset => HasChecked && !string.IsNullOrWhiteSpace(NewPresetName);
+    // With a picker shown, at least one stem must stay ticked or the preset would write nothing.
+    private bool CanSavePreset =>
+        HasChecked
+        && !string.IsNullOrWhiteSpace(NewPresetName)
+        && (!HasStemPicker || StemChoices.Any(choice => choice.IsKept));
 
     [RelayCommand(CanExecute = nameof(CanSavePreset))]
     private void SavePreset()
@@ -279,6 +334,13 @@ public partial class ModelsViewModel : PageViewModelBase
                 ExtraModels: [.. checked_.Skip(1).Select(m => m.Filename)]
             );
         }
+
+        if (SelectedKeepSet() is { } keepSet)
+            preset = preset with
+            {
+                Steps = [preset.Steps[0] with { KeepSet = keepSet }],
+                Description = $"{description} (keeps {string.Join(", ", keepSet)})",
+            };
 
         _userPresets.Add(preset);
         AppLogger.Info(nameof(ModelsViewModel), $"Saved preset: {preset.Label}");
