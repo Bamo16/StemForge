@@ -15,7 +15,7 @@ Usage: list_models.py <models_dir>
 
 Prints the model catalog as JSON to stdout, grouped by architecture, in the same shape
 the C# ModelCatalogService parses: { "<arch>": { "<friendly name>": { "filename", "stems",
-"scores": { "<stem>": { "SDR": ... } }, "download_files": [...] } } }. download_files matches
+"scores": { "<stem>": { "SDR": ... } }, "target_stem", "seconds_per_minute_m3", "download_files": [...] } } }. download_files matches
 upstream: every file the model needs, as a filename or (for Demucs) a URL.
 
 Exit code 1 if the bundled package data cannot be located.
@@ -47,6 +47,11 @@ def _load_bundled(name):
         return json.load(fh)
 
 
+def _number(value):
+    """A scalar metric as a number, or None when absent or not numeric."""
+    return value if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+
 def _entry(filename, scores, download_files):
     """Build a single model entry matching list_supported_model_files() output."""
     score_data = scores.get(filename, {})
@@ -60,6 +65,7 @@ def _entry(filename, scores, download_files):
         "scores": stem_scores,
         "stems": score_data.get("stems", []),
         "target_stem": score_data.get("target_stem"),
+        "seconds_per_minute_m3": _number(median.get("seconds_per_minute_m3")),
         "download_files": download_files,
     }
 

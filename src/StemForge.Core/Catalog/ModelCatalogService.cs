@@ -97,7 +97,9 @@ public sealed class ModelCatalogService(IProcessRunner runner, AppPaths paths)
                         arch,
                         friendlyName,
                         MapStems(entry),
-                        LocalFiles(entry, filename)
+                        LocalFiles(entry, filename),
+                        entry.TargetStem,
+                        entry.SecondsPerMinuteM3
                     )
                 );
             }
@@ -142,12 +144,14 @@ public sealed class ModelCatalogService(IProcessRunner runner, AppPaths paths)
 // ── JSON DTOs ─────────────────────────────────────────────────────────────────
 
 /// <summary>One model entry from list_models.py: { filename, stems, scores: { stem: { SDR } },
-/// download_files }. The script's "target_stem" field is unused and intentionally not modelled.</summary>
+/// target_stem, seconds_per_minute_m3, download_files }.</summary>
 internal sealed record ModelEntryDto
 {
     public string? Filename { get; init; }
     public List<string> Stems { get; init; } = [];
     public List<string> DownloadFiles { get; init; } = [];
+    public string? TargetStem { get; init; }
+    public double? SecondsPerMinuteM3 { get; init; }
 
     /// <summary>
     /// Raw per-stem score map. Held as <see cref="JsonElement"/> values because upstream mixes
