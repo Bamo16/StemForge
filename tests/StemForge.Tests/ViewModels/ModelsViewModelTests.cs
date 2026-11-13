@@ -76,6 +76,63 @@ public sealed class ModelsViewModelTests : IDisposable
         Assert.False(Item(vm, "htdemucs_ft.yaml").IsLocal);
     }
 
+    [Fact]
+    public async Task OverlapGuidance_NothingChecked_IsHidden()
+    {
+        var vm = await LoadAsync();
+
+        Assert.False(vm.ShowOverlapGuidance);
+        Assert.Empty(vm.PassthroughStems);
+    }
+
+    [Fact]
+    public async Task OverlapGuidance_OneModelChecked_ShowsEveryStemAsPassthrough()
+    {
+        var vm = await LoadAsync();
+
+        Item(vm, "x.ckpt").IsChecked = true;
+
+        Assert.True(vm.ShowOverlapGuidance);
+        Assert.False(vm.IsMultiModel);
+        Assert.Equal(["other", "vocals"], vm.PassthroughStems.Select(stem => stem.Name));
+        Assert.Empty(vm.AveragedStems);
+    }
+
+    [Fact]
+    public async Task OverlapGuidance_SecondModelSharingStems_MovesThemToAveraged()
+    {
+        var vm = await LoadAsync();
+
+        Item(vm, "x.ckpt").IsChecked = true;
+        Item(vm, "y.ckpt").IsChecked = true;
+
+        Assert.Equal(["other", "vocals"], vm.AveragedStems.Select(stem => stem.Name));
+        Assert.Empty(vm.PassthroughStems);
+    }
+
+    [Fact]
+    public async Task OverlapGuidance_ModelWithDistinctStems_StaysPassthroughBesideAveraged()
+    {
+        var vm = await LoadAsync();
+
+        Item(vm, "x.ckpt").IsChecked = true;
+        Item(vm, "htdemucs_ft.yaml").IsChecked = true;
+
+        Assert.Equal(["other", "vocals"], vm.AveragedStems.Select(stem => stem.Name));
+        Assert.Equal(["bass", "drums"], vm.PassthroughStems.Select(stem => stem.Name));
+    }
+
+    [Fact]
+    public async Task OverlapGuidance_UncheckingTheLastModel_HidesIt()
+    {
+        var vm = await LoadAsync();
+        Item(vm, "x.ckpt").IsChecked = true;
+
+        Item(vm, "x.ckpt").IsChecked = false;
+
+        Assert.False(vm.ShowOverlapGuidance);
+    }
+
     private async Task<ModelsViewModel> LoadAsync()
     {
         var paths = new AppPaths(
