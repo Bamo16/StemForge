@@ -29,6 +29,9 @@ app.Configure(config =>
         .AddCommand<ToolsCommand>("tools")
         .WithDescription("Show where StemForge's ffmpeg, yt-dlp and other tools are.");
     config
+        .AddCommand<SetupCommand>("setup")
+        .WithDescription("Install the tools StemForge needs, as the setup wizard does.");
+    config
         .AddCommand<SeparateCommand>("separate")
         .WithDescription("Separate a local audio file into stems using a built-in preset.");
     config
