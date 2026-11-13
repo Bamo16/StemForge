@@ -174,6 +174,31 @@ public sealed class ModelCatalogServiceTests
     }
 
     [Fact]
+    public void ParseModels_TargetStemAndSpeed_AreCarriedOntoTheModel()
+    {
+        var json = """
+            {
+              "MDXC": {
+                "M": {
+                  "filename": "m.ckpt",
+                  "stems": ["vocals"],
+                  "target_stem": "vocals",
+                  "seconds_per_minute_m3": 8.6
+                },
+                "N": { "filename": "n.ckpt", "stems": ["vocals"] }
+              }
+            }
+            """;
+
+        var models = ModelCatalogService.ParseModels(json);
+
+        Assert.Equal("vocals", models[0].TargetStem);
+        Assert.Equal(8.6, models[0].SecondsPerMinute);
+        Assert.Null(models[1].TargetStem);
+        Assert.Null(models[1].SecondsPerMinute);
+    }
+
+    [Fact]
     public void ParseModels_ModelMissingFilename_Skipped()
     {
         var json = """
