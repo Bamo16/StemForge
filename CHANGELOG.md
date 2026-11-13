@@ -9,6 +9,7 @@ All notable changes to StemForge are documented here. The format is based on [Ke
 - **`separate --source-url <value>`** sets the `source:` written on every stem of a local-file input, for a caller that keeps its own identity for the file. A URL input rejects it.
 - **`download --json` says what the source is**: `extractorKey`, `id`, `isGeneric`, `uploader`, `uploadDate`, `releaseYear`, `album`, `albumArtist` and `trackNumber`, so a caller can key a track that is not on YouTube.
 - **`stemforge-cli tools [--json] [--ensure]`** shows where StemForge's `ffmpeg`, `ffprobe`, `yt-dlp`, `deno`, `uv` and `audio-separator` are, whether each is installed or overridden in Settings, and its version, so another app can reuse StemForge's ffmpeg. `--ensure` fetches any missing bundled tool first.
+- **`stemforge-cli setup [--variant suggested|cpu|cuda|directml] [--detect-only] [--json]`** does what the setup wizard does without a window: it detects the GPU, installs every missing tool and saves the variant. `--variant suggested` runs unattended, a different variant reinstalls audio-separator, installed tools are skipped, and `--json` streams the detection, each tool and a summary as one object per line. `--detect-only` installs nothing.
 
 ### Changed
 

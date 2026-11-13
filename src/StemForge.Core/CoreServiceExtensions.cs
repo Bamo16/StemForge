@@ -41,6 +41,7 @@ public static class CoreServiceExtensions
         services.AddSingleton<BundledFetcher>();
         services.AddSingleton<ToolInstaller>();
         services.AddSingleton<ToolReportService>();
+        services.AddSingleton<SetupService>();
         services.AddSingleton<ModelCatalogService>();
         services.AddSingleton<ModelProfileResolver>();
         services.AddSingleton<DrumModelCatalog>();
