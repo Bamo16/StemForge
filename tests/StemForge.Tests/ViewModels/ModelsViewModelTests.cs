@@ -76,6 +76,52 @@ public sealed class ModelsViewModelTests : IDisposable
         Assert.False(Item(vm, "htdemucs_ft.yaml").IsLocal);
     }
 
+    [Fact]
+    public async Task A_preset_saved_with_stems_unticked_persists_only_the_kept_stems()
+    {
+        var vm = await LoadAsync();
+        Item(vm, "x.ckpt").IsChecked = true;
+
+        Assert.True(vm.HasStemPicker);
+        vm.StemChoices.Single(choice => choice.Name == "other").IsKept = false;
+        vm.NewPresetName = "Vocals only";
+        vm.SavePresetCommand.Execute(null);
+
+        var saved = UserPresetService.Load(
+            Path.Combine(_root, "user_presets.json"),
+            Path.Combine(_root, "legacy.json")
+        );
+        var step = Assert.Single(Assert.Single(saved.Presets).Steps);
+        Assert.Equal(["vocals"], step.KeepSet);
+    }
+
+    [Fact]
+    public async Task A_preset_saved_with_every_stem_ticked_keeps_all()
+    {
+        var vm = await LoadAsync();
+        Item(vm, "x.ckpt").IsChecked = true;
+        vm.NewPresetName = "Everything";
+        vm.SavePresetCommand.Execute(null);
+
+        var saved = UserPresetService.Load(
+            Path.Combine(_root, "user_presets.json"),
+            Path.Combine(_root, "legacy.json")
+        );
+        Assert.Null(Assert.Single(Assert.Single(saved.Presets).Steps).KeepSet);
+    }
+
+    [Fact]
+    public async Task Unticking_every_stem_blocks_saving()
+    {
+        var vm = await LoadAsync();
+        Item(vm, "x.ckpt").IsChecked = true;
+        vm.NewPresetName = "Nothing";
+        foreach (var choice in vm.StemChoices)
+            choice.IsKept = false;
+
+        Assert.False(vm.SavePresetCommand.CanExecute(null));
+    }
+
     private async Task<ModelsViewModel> LoadAsync()
     {
         var paths = new AppPaths(
