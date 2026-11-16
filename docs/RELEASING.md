@@ -4,11 +4,11 @@ Maintainer runbook for cutting a tagged release. Contributors who only want to b
 
 ## Toolchain
 
-The projects target `net11.0`, a preview framework. `global.json` pins the exact **SDK** that builds them, with `rollForward: disable`, so `dotnet` fails loudly rather than silently compiling with a different one.
+The projects target `net11.0`. `global.json` pins the **SDK** that builds them at 11.0.100, with `rollForward: latestFeature` and no prereleases, so `dotnet` fails loudly rather than silently compiling with an older or preview one.
 
 That pin is not cosmetic. `<TargetFramework>` selects the runtime the code targets; the SDK selects the compiler, analyzers, and implicit-using set that build it. Two SDKs can both produce `net11.0` output and still disagree about whether a given `using` is required. v0.3.0 shipped source that did not compile on the CI runner for exactly this reason. CI reads its SDK version from `global.json` via `global-json-file`, so the two cannot drift apart again.
 
-When the pinned preview needs to move, change `global.json` only. Nothing else records an SDK version.
+When the pinned SDK needs to move, change `global.json` only. Nothing else records an SDK version.
 
 ## Version
 
