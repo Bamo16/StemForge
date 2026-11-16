@@ -376,7 +376,7 @@
                 BorderBrush="{DynamicResource Bg3Brush}"
                 BorderThickness="0,1,0,0"
                 Padding="20,14">
-            <Grid RowDefinitions="Auto,10,Auto,Auto">
+            <Grid RowDefinitions="Auto,10,Auto,Auto,Auto">
 
                 <!-- ===== Selection summary (issue #79) =====
                      One chip per model rather than a comma-joined run of names: model filenames
@@ -504,8 +504,37 @@
                                ToolTip.Tip="StemForge could not resolve these models' output stems, so they are not counted in the blending guidance above. audio-separator still runs them normally." />
                 </StackPanel>
 
+                <!-- Keep set (issue #68): shown only when every checked model's stems are known with
+                     confidence; otherwise the preset keeps everything and a note says why. -->
+                <StackPanel Grid.Row="3" Margin="0,0,0,10" Spacing="6"
+                            IsVisible="{Binding HasStemPicker}">
+                    <TextBlock Text="Keep these stems (untick to discard after the run):"
+                               FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                    <ItemsControl ItemsSource="{Binding StemChoices}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:StemChoice">
+                                <CheckBox Content="{Binding Name}"
+                                          IsChecked="{Binding IsKept, Mode=TwoWay}"
+                                          FontSize="12"
+                                          Margin="0,0,12,0" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+                <TextBlock Grid.Row="3" Margin="0,0,0,10"
+                           Text="{Binding KeepSetNote}"
+                           IsVisible="{Binding HasKeepSetNote}"
+                           FontSize="10" FontStyle="Italic" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextPlaceholderBrush}" />
+
                 <!-- Create-preset form -->
-                <Grid Grid.Row="3" ColumnDefinitions="*,12,Auto,12,Auto">
+                <Grid Grid.Row="4" ColumnDefinitions="*,12,Auto,12,Auto">
 
                     <!-- Name input -->
                     <Border Grid.Column="0" Classes="presetInput">
