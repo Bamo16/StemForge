@@ -255,7 +255,7 @@ Reports of any rough edge (wizard, separation results, UI papercuts) welcome on 
 
 ### Stack
 
-- C# / .NET 11 (preview)
+- C# / .NET 11
 - [Avalonia UI](https://avaloniaui.net/) 12 (Windows, macOS, Linux)
 - [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) source-generated observables and commands
 - [CSharpier](https://csharpier.com/) for formatting (enforced; run `dotnet csharpier format .` before committing)
