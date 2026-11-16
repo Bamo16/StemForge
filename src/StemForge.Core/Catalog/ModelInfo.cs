@@ -2,13 +2,18 @@ namespace StemForge.Core.Catalog;
 
 public sealed record StemSdr(string Name, double? Sdr);
 
-/// <summary>A catalog model; <see cref="Files"/> are the local file names it needs, weights and configs.</summary>
+/// <summary>
+/// A catalog model; <see cref="Files"/> are the local file names it needs, weights and configs.
+/// <paramref name="SecondsPerMinute"/> is the benchmark machine's seconds per minute of audio.
+/// </summary>
 public sealed record ModelInfo(
     string Filename,
     string Architecture,
     string FriendlyName,
     IReadOnlyList<StemSdr> Stems,
-    IReadOnlyList<string> Files
+    IReadOnlyList<string> Files,
+    string? TargetStem = null,
+    double? SecondsPerMinute = null
 )
 {
     /// <summary>Whether every file the model needs is in <paramref name="modelsDirectory"/>.</summary>

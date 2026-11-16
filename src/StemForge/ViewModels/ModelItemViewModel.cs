@@ -14,6 +14,10 @@ public partial class ModelItemViewModel(ModelInfo model, ModelProfile? profile =
     /// </summary>
     public ModelProfile? Profile { get; } = profile;
 
+    /// <summary>What the details flyout shows; built-in presets come from the fallback catalog.</summary>
+    public ModelDetails Details { get; } =
+        new(model, profile, PresetCatalog.BuiltIn, ModelNotes.For(model.Filename));
+
     public string Filename => Model.Filename;
     public string FriendlyName => Model.FriendlyName;
     public string Architecture => Model.Architecture;

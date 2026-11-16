@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:StemForge.ViewModels"
+             xmlns:cat="using:StemForge.Core.Catalog"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="1044" d:DesignHeight="720"
@@ -210,7 +211,7 @@
                     BorderThickness="0,0,0,1"
                     Padding="16,6">
                 <!-- Cols: checkbox | name | arch | stems | status | size | actions -->
-                <Grid ColumnDefinitions="34,*,72,200,72,76,72">
+                <Grid ColumnDefinitions="34,*,72,200,72,76,72,34">
                     <TextBlock Grid.Column="1" Classes="colHeader" Text="NAME" />
                     <TextBlock Grid.Column="2" Classes="colHeader" Text="ARCH" />
                     <TextBlock Grid.Column="3" Classes="colHeader" Text="STEMS (SDR dB)" />
@@ -270,7 +271,7 @@
                                             Classes.checked="{Binding IsChecked}"
                                             Padding="16,0">
                                         <!-- Cols: checkbox | name | arch | stems | status | size | actions -->
-                                        <Grid ColumnDefinitions="34,*,72,200,72,76,72"
+                                        <Grid ColumnDefinitions="34,*,72,200,72,76,72,34"
                                               MinHeight="38">
 
                                             <!-- Checkbox -->
@@ -354,6 +355,101 @@
                                                     VerticalAlignment="Center"
                                                     Command="{Binding $parent[ItemsControl].((vm:ModelsViewModel)DataContext).DeleteModelCommand}"
                                                     CommandParameter="{Binding}" />
+
+                                            <!-- Details flyout (issue #92): a Flyout, not a tooltip, so its links can be clicked. -->
+                                            <Button Grid.Column="7"
+                                                    Classes="ghost"
+                                                    Content="ⓘ"
+                                                    Padding="6,2"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center"
+                                                    ToolTip.Tip="Model details">
+                                                <Button.Flyout>
+                                                    <Flyout Placement="LeftEdgeAlignedTop">
+                                                        <ScrollViewer MaxHeight="460" Width="420"
+                                                                      HorizontalScrollBarVisibility="Disabled">
+                                                            <StackPanel Spacing="4" Margin="0,0,12,0"
+                                                                        x:DataType="vm:ModelItemViewModel">
+                                                                <TextBlock Text="{Binding FriendlyName}"
+                                                                           FontSize="13" FontWeight="SemiBold"
+                                                                           TextWrapping="Wrap" />
+
+                                                                <!-- Hand-written note, only for models that have one. -->
+                                                                <StackPanel Spacing="4" IsVisible="{Binding Details.HasNote}">
+                                                                    <TextBlock Text="{Binding Details.Note.Summary}"
+                                                                               FontSize="12" TextWrapping="Wrap"
+                                                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                                    <ItemsControl ItemsSource="{Binding Details.NoteLinks}">
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate x:DataType="cat:ModelNoteLink">
+                                                                                <Button Classes="ghost" Padding="4,1"
+                                                                                        HorizontalAlignment="Left"
+                                                                                        Content="{Binding Label}"
+                                                                                        Tag="{Binding Url}"
+                                                                                        Click="OnLinkClick" />
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                </StackPanel>
+
+                                                                <TextBlock Classes="colHeader" Text="FILE" Margin="0,6,0,0" />
+                                                                <TextBlock Text="{Binding Details.Filename}" Classes="mono" FontSize="11"
+                                                                           TextWrapping="Wrap" />
+                                                                <TextBlock Text="{Binding Details.Architecture, StringFormat='Architecture: {0}'}"
+                                                                           FontSize="11"
+                                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                    <TextBlock Text="Downloads from" FontSize="11" VerticalAlignment="Center"
+                                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                    <Button Classes="ghost" Padding="4,1"
+                                                                            Content="{Binding Details.Source.Label}"
+                                                                            Tag="{Binding Details.Source.Url}"
+                                                                            Click="OnLinkClick" />
+                                                                </StackPanel>
+                                                                <TextBlock Text="{Binding FileSizeDisplay, StringFormat='Size on disk: {0}'}"
+                                                                           IsVisible="{Binding IsLocal}" FontSize="11"
+                                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+
+                                                                <StackPanel Spacing="2" IsVisible="{Binding Details.HasStems}">
+                                                                    <TextBlock Classes="colHeader" Text="STEMS (SDR)" Margin="0,6,0,0" />
+                                                                    <ItemsControl ItemsSource="{Binding Details.Stems}">
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate x:DataType="vm:StemDetail">
+                                                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                                    <TextBlock Text="{Binding Name}" FontSize="11" MinWidth="110"
+                                                                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                                                    <TextBlock Text="{Binding Sdr}" Classes="mono" FontSize="11"
+                                                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                                    <TextBlock Text="target" FontSize="10" IsVisible="{Binding IsTarget}"
+                                                                                               Foreground="{DynamicResource AccentBrush}" />
+                                                                                </StackPanel>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                </StackPanel>
+
+                                                                <StackPanel Spacing="2" IsVisible="{Binding Details.Speed, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                                    <TextBlock Classes="colHeader" Text="SPEED" Margin="0,6,0,0" />
+                                                                    <TextBlock Text="{Binding Details.Speed}" FontSize="11" TextWrapping="Wrap"
+                                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                </StackPanel>
+
+                                                                <StackPanel Spacing="2" IsVisible="{Binding Details.Training, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                                    <TextBlock Classes="colHeader" Text="FROM THE FILENAME" Margin="0,6,0,0" />
+                                                                    <TextBlock Text="{Binding Details.Training}" FontSize="11" TextWrapping="Wrap"
+                                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                </StackPanel>
+
+                                                                <StackPanel Spacing="2" IsVisible="{Binding Details.PresetsText, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                                    <TextBlock Classes="colHeader" Text="USED BY PRESETS" Margin="0,6,0,0" />
+                                                                    <TextBlock Text="{Binding Details.PresetsText}" FontSize="11" TextWrapping="Wrap"
+                                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                </StackPanel>
+                                                            </StackPanel>
+                                                        </ScrollViewer>
+                                                    </Flyout>
+                                                </Button.Flyout>
+                                            </Button>
 
                                         </Grid>
                                     </Border>
