@@ -11,6 +11,8 @@ All notable changes to StemForge are documented here. The format is based on [Ke
 - **`stemforge-cli tools [--json] [--ensure]`** shows where StemForge's `ffmpeg`, `ffprobe`, `yt-dlp`, `deno`, `uv` and `audio-separator` are, whether each is installed or overridden in Settings, and its version, so another app can reuse StemForge's ffmpeg. `--ensure` fetches any missing bundled tool first.
 - **`stemforge-cli setup [--variant suggested|cpu|cuda|directml] [--detect-only] [--json]`** does what the setup wizard does without a window: it detects the GPU, installs every missing tool and saves the variant. `--variant suggested` runs unattended, a different variant reinstalls audio-separator, installed tools are skipped, and `--json` streams the detection, each tool and a summary as one object per line. `--detect-only` installs nothing.
 
+- **`stemforge-cli art-track <video id or link>`** prints, as JSON, the YouTube Music song (Art Track) that matches a video: its video id, title, artist, length and how far the length is from the video's, or `found: false`. It makes two unauthenticated requests and never signs in (ADR 0017).
+
 ### Changed
 
 - **A direct link to a media file keeps its own `TITLE`** instead of being retitled with its file name.

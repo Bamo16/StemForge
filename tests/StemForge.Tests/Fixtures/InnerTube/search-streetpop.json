@@ -1,0 +1,428 @@
+{
+  "contents": {
+    "musicShelfRenderer": {
+      "contents": [
+        {
+          "musicResponsiveListItemRenderer": {
+            "flexColumns": [
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "STREETPOP (feat. RedDash)",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CN4CEOFnGAAiEwjrjLLW7o-YAxXSpsIBHQsHBcGaAQMQ9CTKAQTthI6v",
+                          "watchEndpoint": {
+                            "videoId": "LcTV5ceBb_I",
+                            "watchEndpointMusicSupportedConfigs": {
+                              "watchEndpointMusicConfig": {
+                                "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              },
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "Wävė",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CN4CEOFnGAAiEwjrjLLW7o-YAxXSpsIBHQsHBcHKAQTthI6v",
+                          "browseEndpoint": {
+                            "browseId": "UCtToJr4m33bini7P53wKlCQ",
+                            "browseEndpointContextSupportedConfigs": {
+                              "browseEndpointContextMusicConfig": {
+                                "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "text": " • "
+                      },
+                      {
+                        "text": "STREETPOP",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CN4CEOFnGAAiEwjrjLLW7o-YAxXSpsIBHQsHBcHKAQTthI6v",
+                          "browseEndpoint": {
+                            "browseId": "MPREb_s6YX9cwDx7N",
+                            "browseEndpointContextSupportedConfigs": {
+                              "browseEndpointContextMusicConfig": {
+                                "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "text": " • "
+                      },
+                      {
+                        "text": "3:20"
+                      }
+                    ],
+                    "accessibility": {
+                      "accessibilityData": {
+                        "label": "Wävė • STREETPOP • 3 minutes, 20 seconds"
+                      }
+                    }
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              },
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "62K plays"
+                      }
+                    ],
+                    "accessibility": {
+                      "accessibilityData": {
+                        "label": "62 thousand plays"
+                      }
+                    }
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              }
+            ],
+            "playlistItemData": {
+              "videoId": "LcTV5ceBb_I"
+            },
+            "overlay": {
+              "watchEndpointMusicConfig": {
+                "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+              }
+            }
+          }
+        },
+        {
+          "musicResponsiveListItemRenderer": {
+            "flexColumns": [
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "Pavements",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CMwCEOFnGAEiEwjrjLLW7o-YAxXSpsIBHQsHBcGaAQMQ9CTKAQTthI6v",
+                          "watchEndpoint": {
+                            "videoId": "_Bl7EHtiiFQ",
+                            "watchEndpointMusicSupportedConfigs": {
+                              "watchEndpointMusicConfig": {
+                                "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              },
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "Wauve",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CMwCEOFnGAEiEwjrjLLW7o-YAxXSpsIBHQsHBcHKAQTthI6v",
+                          "browseEndpoint": {
+                            "browseId": "UCndqBqbu8XXfbafqO0CjAUw",
+                            "browseEndpointContextSupportedConfigs": {
+                              "browseEndpointContextMusicConfig": {
+                                "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "text": " • "
+                      },
+                      {
+                        "text": "Street Serenade",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CMwCEOFnGAEiEwjrjLLW7o-YAxXSpsIBHQsHBcHKAQTthI6v",
+                          "browseEndpoint": {
+                            "browseId": "MPREb_uw5JD2ToVuM",
+                            "browseEndpointContextSupportedConfigs": {
+                              "browseEndpointContextMusicConfig": {
+                                "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "text": " • "
+                      },
+                      {
+                        "text": "4:11"
+                      }
+                    ],
+                    "accessibility": {
+                      "accessibilityData": {
+                        "label": "Wauve • Street Serenade • 4 minutes, 11 seconds"
+                      }
+                    }
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              },
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "5.7K plays"
+                      }
+                    ],
+                    "accessibility": {
+                      "accessibilityData": {
+                        "label": "5.7 thousand plays"
+                      }
+                    }
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              }
+            ],
+            "playlistItemData": {
+              "videoId": "_Bl7EHtiiFQ"
+            },
+            "overlay": {
+              "watchEndpointMusicConfig": {
+                "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+              }
+            }
+          }
+        },
+        {
+          "musicResponsiveListItemRenderer": {
+            "flexColumns": [
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "Exercise",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CLsCEOFnGAIiEwjrjLLW7o-YAxXSpsIBHQsHBcGaAQMQ9CTKAQTthI6v",
+                          "watchEndpoint": {
+                            "videoId": "pX4Z-0N9ZiA",
+                            "watchEndpointMusicSupportedConfigs": {
+                              "watchEndpointMusicConfig": {
+                                "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              },
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "Wavves",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CLsCEOFnGAIiEwjrjLLW7o-YAxXSpsIBHQsHBcHKAQTthI6v",
+                          "browseEndpoint": {
+                            "browseId": "UCBYaFtXX67SKAvMqQ4m0NMQ",
+                            "browseEndpointContextSupportedConfigs": {
+                              "browseEndpointContextMusicConfig": {
+                                "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "text": " • "
+                      },
+                      {
+                        "text": "You’re Welcome",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CLsCEOFnGAIiEwjrjLLW7o-YAxXSpsIBHQsHBcHKAQTthI6v",
+                          "browseEndpoint": {
+                            "browseId": "MPREb_q67LnQjKAwR",
+                            "browseEndpointContextSupportedConfigs": {
+                              "browseEndpointContextMusicConfig": {
+                                "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "text": " • "
+                      },
+                      {
+                        "text": "2:24"
+                      }
+                    ],
+                    "accessibility": {
+                      "accessibilityData": {
+                        "label": "Wavves • You’re Welcome • 2 minutes, 24 seconds"
+                      }
+                    }
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              },
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "44K plays"
+                      }
+                    ],
+                    "accessibility": {
+                      "accessibilityData": {
+                        "label": "44 thousand plays"
+                      }
+                    }
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              }
+            ],
+            "playlistItemData": {
+              "videoId": "pX4Z-0N9ZiA"
+            },
+            "overlay": {
+              "watchEndpointMusicConfig": {
+                "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+              }
+            }
+          }
+        },
+        {
+          "musicResponsiveListItemRenderer": {
+            "flexColumns": [
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "Teenage Super Party",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CKkCEOFnGAMiEwjrjLLW7o-YAxXSpsIBHQsHBcGaAQMQ9CTKAQTthI6v",
+                          "watchEndpoint": {
+                            "videoId": "XyuUtF9S-6A",
+                            "watchEndpointMusicSupportedConfigs": {
+                              "watchEndpointMusicConfig": {
+                                "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              },
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "Wavves",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CKkCEOFnGAMiEwjrjLLW7o-YAxXSpsIBHQsHBcHKAQTthI6v",
+                          "browseEndpoint": {
+                            "browseId": "UCBYaFtXX67SKAvMqQ4m0NMQ",
+                            "browseEndpointContextSupportedConfigs": {
+                              "browseEndpointContextMusicConfig": {
+                                "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "text": " • "
+                      },
+                      {
+                        "text": "Wavves",
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CKkCEOFnGAMiEwjrjLLW7o-YAxXSpsIBHQsHBcHKAQTthI6v",
+                          "browseEndpoint": {
+                            "browseId": "MPREb_1YvRTHybL2M",
+                            "browseEndpointContextSupportedConfigs": {
+                              "browseEndpointContextMusicConfig": {
+                                "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "text": " • "
+                      },
+                      {
+                        "text": "1:47"
+                      }
+                    ],
+                    "accessibility": {
+                      "accessibilityData": {
+                        "label": "Wavves • Wavves • 1 minute, 47 seconds"
+                      }
+                    }
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              },
+              {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                  "text": {
+                    "runs": [
+                      {
+                        "text": "34K plays"
+                      }
+                    ],
+                    "accessibility": {
+                      "accessibilityData": {
+                        "label": "34 thousand plays"
+                      }
+                    }
+                  },
+                  "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                }
+              }
+            ],
+            "playlistItemData": {
+              "videoId": "XyuUtF9S-6A"
+            },
+            "overlay": {
+              "watchEndpointMusicConfig": {
+                "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

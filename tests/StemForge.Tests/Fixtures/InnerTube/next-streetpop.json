@@ -1,0 +1,84 @@
+{
+  "contents": {
+    "playlistPanelRenderer": {
+      "contents": [
+        {
+          "playlistPanelVideoRenderer": {
+            "title": {
+              "runs": [
+                {
+                  "text": "STREETPOP"
+                }
+              ]
+            },
+            "longBylineText": {
+              "runs": [
+                {
+                  "text": "Wävė",
+                  "navigationEndpoint": {
+                    "clickTrackingParams": "CMkGEMggGAAiEwjlq9LU7o-YAxWAttEEHQeoCbvKAQQrcpiZ",
+                    "browseEndpoint": {
+                      "browseId": "UCqXdhw2wlszTZVO07zExkaA",
+                      "browseEndpointContextSupportedConfigs": {
+                        "browseEndpointContextMusicConfig": {
+                          "pageType": "MUSIC_PAGE_TYPE_USER_CHANNEL"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "text": " • "
+                },
+                {
+                  "text": "174K views"
+                },
+                {
+                  "text": " • "
+                },
+                {
+                  "text": "9.2K likes"
+                }
+              ]
+            },
+            "lengthText": {
+              "runs": [
+                {
+                  "text": "3:20"
+                }
+              ],
+              "accessibility": {
+                "accessibilityData": {
+                  "label": "3 minutes, 20 seconds"
+                }
+              }
+            },
+            "videoId": "-pj24dQYGRc",
+            "navigationEndpoint": {
+              "clickTrackingParams": "CMkGEMggGAAiEwjlq9LU7o-YAxWAttEEHQeoCbsyA0JGYUiXsuCgndy9zPoBmgEFCAwQ-B3KAQQrcpiZ",
+              "watchEndpoint": {
+                "videoId": "-pj24dQYGRc",
+                "playlistId": "RDAMVM-pj24dQYGRc",
+                "index": 0,
+                "params": "OAHyAQIIAQ%3D%3D",
+                "playerParams": "8AUBygYQNTZCNDRGNkQxMDU1N0NDNrAIAg%3D%3D",
+                "playlistSetVideoId": "56B44F6D10557CC6",
+                "loggingContext": {
+                  "vssLoggingContext": {
+                    "serializedContextData": "GhFSREFNVk0tcGoyNGRRWUdSYw%3D%3D"
+                  }
+                },
+                "watchEndpointMusicSupportedConfigs": {
+                  "watchEndpointMusicConfig": {
+                    "hasPersistentPlaylistPanel": true,
+                    "musicVideoType": "MUSIC_VIDEO_TYPE_UGC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

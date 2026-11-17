@@ -25,6 +25,18 @@ public static class CoreServiceExtensions
         services.AddSingleton<IReleaseFetcher, GitHubReleaseFetcher>();
         services.AddHttpClient("thumbnail");
         services.AddSingleton<IThumbnailFetcher, ThumbnailFetcher>();
+        services.AddHttpClient(
+            ArtTrackFinder.HttpClientName,
+            client =>
+            {
+                client.BaseAddress = new("https://music.youtube.com/");
+                client.DefaultRequestHeaders.Add("Origin", "https://music.youtube.com");
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0"
+                );
+            }
+        );
+        services.AddSingleton<IArtTrackFinder, ArtTrackFinder>();
         services.AddHttpClient("bundled").WithTimeout(TimeSpan.FromMinutes(15));
         services.AddSingleton<IFileDownloader, FileDownloader>();
         services.AddHttpClient("pypi");

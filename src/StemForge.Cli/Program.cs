@@ -37,6 +37,9 @@ app.Configure(config =>
     config
         .AddCommand<DownloadCommand>("download")
         .WithDescription("Download audio from one or more URLs without separating.");
+    config
+        .AddCommand<ArtTrackCommand>("art-track")
+        .WithDescription("Find the YouTube Music song (Art Track) that matches a video.");
 });
 
 return await app.RunAsync(args);
