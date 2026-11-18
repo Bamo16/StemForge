@@ -301,22 +301,23 @@ docs/
   images/                  README screenshots + logo
 scripts/                   release/packaging scripts (package-win-x64.ps1)
 tools/                     Python scripts for audio-separator (driver + variant probe)
-src/StemForge.Core/        shared engine, no UI
-  Services/                separation pipeline, separator driver, model catalogue,
-                           yt-dlp / ffmpeg integration, logging, path resolution
-  Models/                  domain models + serialisable settings
-  Helpers/                 pure static utilities (no DI, no state)
-  Extensions/              framework extension methods
+src/StemForge.Core/        shared engine, no UI, organised by domain (ADR 0009)
+  Catalog/                 presets, model catalogue, user presets
+  Downloading/             yt-dlp metadata, premium formats, art-track lookup
+  Separation/              separation pipeline, separator driver, output naming
+  Tooling/                 tool catalogue, installers, setup, GPU detection
+  Platform/                OS info and process running
 src/StemForge/             Avalonia GUI
   App.axaml                application entry + theme resources
   Views/                   XAML views + code-behind
   ViewModels/              view models (CommunityToolkit.Mvvm)
+  Controls/                reusable controls
   Styles/                  design tokens (colors, typography, spacing)
   Converters/              value converters
-  Services/                GUI-only services (setup detection, job queue, DI wiring)
+  Services/                GUI-only services (job queue, DI wiring)
   Assets/                  embedded resources (app icon, etc.)
 src/StemForge.Cli/         stemforge-cli console app
-  Commands/                separate, download, presets, tools
+  Commands/                separate, download, presets, tools, setup, art-track
   Progress/                terminal progress rendering
 tests/StemForge.Tests/     xUnit test project
 ```
