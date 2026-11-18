@@ -171,6 +171,57 @@ public sealed class SetupServiceTests : IDisposable
         Assert.Empty(_runner.Calls);
     }
 
+    [Fact]
+    public async Task RunAsync_InstalledVariantCannotBeTold_LeavesAudioSeparatorAlone()
+    {
+        // No recorded variant, and uv reports no tool directory, so the probe has nothing to read.
+        SetupAllTools();
+        var downloader = new FailingDownloader();
+
+        var result = await NewService(downloader)
+            .RunAsync(GpuVariant.Cuda, ct: TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            SetupStepStatus.Skipped,
+            result.Steps.Single(step => step.Tool == "audio-separator").Status
+        );
+        Assert.Empty(InstallCalls());
+        Assert.Null(_settings.InstalledVariant);
+    }
+
+    [Fact]
+    public async Task RunAsync_ToolsAlreadyInstalled_ReportsEachAsSkippedWithoutAnInstallingStep()
+    {
+        SetupAllTools();
+        _settings.InstalledVariant = GpuVariant.Cpu;
+        List<SetupStep> reported = [];
+
+        await NewService(new FailingDownloader())
+            .RunAsync(
+                GpuVariant.Cpu,
+                new SyncProgress<SetupStep>(reported.Add),
+                ct: TestContext.Current.CancellationToken
+            );
+
+        Assert.Equal(5, reported.Count);
+        Assert.All(reported, step => Assert.Equal(SetupStepStatus.Skipped, step.Status));
+    }
+
+    [Fact]
+    public async Task RunAsync_CancelledBeforeTheFirstTool_ThrowsAndLeavesSettingsUntouched()
+    {
+        SetupAllTools();
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            NewService(new FailingDownloader()).RunAsync(GpuVariant.Cuda, ct: cts.Token)
+        );
+
+        Assert.False(_settings.FirstRunComplete);
+        Assert.Null(_settings.InstalledVariant);
+    }
+
     private sealed class SyncProgress<T>(Action<T> report) : IProgress<T>
     {
         public void Report(T value) => report(value);
