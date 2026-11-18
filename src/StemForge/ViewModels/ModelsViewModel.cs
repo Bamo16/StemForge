@@ -259,7 +259,7 @@ public partial class ModelsViewModel : PageViewModelBase
         SavePresetCommand.NotifyCanExecuteChanged();
 
     /// <summary>Null (keep everything) unless the picker is shown and some stems are unticked.</summary>
-    private IReadOnlyList<string>? SelectedKeepSet() =>
+    private List<string>? SelectedKeepSet() =>
         StemChoices.Where(choice => choice.IsKept).Select(choice => choice.Name).ToList()
             is { Count: > 0 } kept
         && kept.Count < StemChoices.Count
