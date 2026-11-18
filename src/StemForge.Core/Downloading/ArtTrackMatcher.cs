@@ -53,13 +53,12 @@ internal static partial class ArtTrackMatcher
 
     /// <summary>Lower-case letters and digits only, with bracketed parts dropped.</summary>
     internal static string Normalize(string title) =>
-        new(
-            Bracketed
+        new([
+            .. Bracketed
                 .Replace(title, " ")
                 .Where(char.IsLetterOrDigit)
-                .Select(char.ToLowerInvariant)
-                .ToArray()
-        );
+                .Select(char.ToLowerInvariant),
+        ]);
 
     [GeneratedRegex(
         @"\s*[\(\[][^\)\]]*\b(official|lyrics?|audio|video|visuali[sz]er)\b[^\)\]]*[\)\]]\s*$",
