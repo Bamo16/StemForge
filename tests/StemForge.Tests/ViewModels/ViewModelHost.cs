@@ -1,3 +1,4 @@
+using System.Reflection;
 using StemForge.Services;
 using StemForge.Tests.TestDoubles;
 using StemForge.ViewModels;
@@ -89,6 +90,88 @@ internal sealed class ViewModelHost : IDisposable
             Paths,
             Platform
         );
+
+    public JobQueueService CreateJobQueue()
+    {
+        var youTube = new YouTubeAudioService(
+            Runner,
+            Paths,
+            new YtdlpUpdater(Runner, Paths, TimeProvider.System)
+        );
+        var pipeline = new SeparationPipeline(
+            Driver,
+            youTube,
+            new StubThumbnailFetcher(),
+            Runner,
+            Settings,
+            Paths,
+            AppInfo.Current
+        );
+        return new JobQueueService(pipeline, Settings);
+    }
+
+    public SeparateViewModel CreateSeparate(JobQueueService? queue = null) =>
+        new(
+            queue ?? CreateJobQueue(),
+            Settings,
+            UserPresets,
+            ToolState,
+            Paths,
+            new YouTubeAudioService(
+                Runner,
+                Paths,
+                new YtdlpUpdater(Runner, Paths, TimeProvider.System)
+            ),
+            Driver,
+            new PresetCatalogService(Runner, Paths)
+        );
+
+    public MainWindowViewModel CreateMainWindow(
+        SeparateViewModel? separate = null,
+        QueueViewModel? queue = null,
+        SettingsViewModel? settings = null,
+        SetupWizardViewModel? wizard = null,
+        string? latestReleaseTag = null
+    )
+    {
+        var jobQueue = CreateJobQueue();
+        return new MainWindowViewModel(
+            separate ?? CreateSeparate(jobQueue),
+            queue ?? new QueueViewModel(jobQueue),
+            new ModelsViewModel(
+                Paths,
+                UserPresets,
+                ModelCatalog,
+                new ModelProfileResolver(),
+                ToolState
+            ),
+            settings ?? CreateSettings(),
+            wizard ?? CreateWizard(),
+            new LogsViewModel(new AppLoggerSink()),
+            Settings,
+            new UpdateCheckService(
+                new AppInfo("StemForge", Version.Parse("0.2.0.0")),
+                new StubReleaseFetcher(latestReleaseTag)
+            ),
+            ToolState
+        );
+    }
+
+    private sealed class StubReleaseFetcher(string? tag) : IReleaseFetcher
+    {
+        public Task<string?> FetchLatestTagAsync(CancellationToken ct = default) =>
+            Task.FromResult(tag);
+    }
+
+    /// <summary>Raises a public <c>event Action</c> from outside, for events only a UI flow fires.</summary>
+    public static void Raise(object owner, string eventName) =>
+        (
+            (Action?)
+                owner
+                    .GetType()
+                    .GetField(eventName, BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .GetValue(owner)
+        )?.Invoke();
 
     public void Dispose()
     {
