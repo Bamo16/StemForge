@@ -309,7 +309,7 @@ public sealed class YtDlpThumbnailSelectionTests
             }
             """;
 
-        var info = StemForge.Core.Downloading.YouTubeAudioService.DeserializeVideoInfo(json);
+        var info = YouTubeAudioService.DeserializeVideoInfo(json);
 
         Assert.Equal(4, info.Thumbnails.Count);
 
@@ -339,7 +339,7 @@ public sealed class YtDlpThumbnailSelectionTests
             }
             """;
 
-        var info = StemForge.Core.Downloading.YouTubeAudioService.DeserializeVideoInfo(json);
+        var info = YouTubeAudioService.DeserializeVideoInfo(json);
 
         Assert.Empty(info.Thumbnails);
         // SelectBestThumbnail falls back to Thumbnail field.
@@ -376,11 +376,8 @@ public sealed class YtDlpThumbnailSelectionTests
         var fake = new StemForge.Tests.TestDoubles.FakeProcessRunner();
         fake.Setup("yt-dlp", json);
         var settings = new StemForge.Core.AppSettings();
-        settings.SetToolPathOverride(StemForge.Core.Tooling.ToolKind.Ytdlp, "yt-dlp");
-        var paths = new StemForge.Core.AppPaths(
-            settings,
-            StemForge.Core.Platform.PlatformInfo.Current
-        );
+        settings.SetToolPathOverride(ToolKind.Ytdlp, "yt-dlp");
+        var paths = new StemForge.Core.AppPaths(settings, PlatformInfo.Current);
         var svc = new StemForge.Core.Downloading.YouTubeAudioService(
             fake,
             paths,
@@ -423,11 +420,8 @@ public sealed class YtDlpThumbnailSelectionTests
         var fake = new StemForge.Tests.TestDoubles.FakeProcessRunner();
         fake.Setup("yt-dlp", json);
         var settings = new StemForge.Core.AppSettings();
-        settings.SetToolPathOverride(StemForge.Core.Tooling.ToolKind.Ytdlp, "yt-dlp");
-        var paths = new StemForge.Core.AppPaths(
-            settings,
-            StemForge.Core.Platform.PlatformInfo.Current
-        );
+        settings.SetToolPathOverride(ToolKind.Ytdlp, "yt-dlp");
+        var paths = new StemForge.Core.AppPaths(settings, PlatformInfo.Current);
         var svc = new StemForge.Core.Downloading.YouTubeAudioService(
             fake,
             paths,

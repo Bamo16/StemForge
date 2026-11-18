@@ -76,15 +76,12 @@ public sealed class AppSettingsTests
 
             await File.WriteAllTextAsync(
                 path,
-                System.Text.Json.JsonSerializer.Serialize(
-                    original,
-                    AppSettingsJsonContext.Default.AppSettings
-                ),
+                JsonSerializer.Serialize(original, AppSettingsJsonContext.Default.AppSettings),
                 TestContext.Current.CancellationToken
             );
 
             var json = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
-            var loaded = System.Text.Json.JsonSerializer.Deserialize(
+            var loaded = JsonSerializer.Deserialize(
                 json,
                 AppSettingsJsonContext.Default.AppSettings
             )!;
