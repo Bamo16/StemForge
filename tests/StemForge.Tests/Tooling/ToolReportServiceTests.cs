@@ -196,4 +196,51 @@ public sealed class ToolReportServiceTests : IDisposable
         Assert.True(ffmpeg.Overridden);
         Assert.False(ffmpeg.Installed);
     }
+
+    [Fact]
+    public async Task ReportAsync_FfprobeOutputWithoutAVersionLine_IsInstalledWithNoVersion()
+    {
+        SetupAllTools();
+        _runner.Setup(_paths.Ffprobe, "something unexpected");
+
+        var report = await _service.ReportAsync(
+            ensure: false,
+            ct: TestContext.Current.CancellationToken
+        );
+
+        var ffprobe = report.Single(r => r.Kind == "ffprobe");
+        Assert.True(ffprobe.Installed);
+        Assert.Null(ffprobe.Version);
+    }
+
+    [Fact]
+    public async Task ReportAsync_EnsureWithOnlyFfprobeMissing_FetchesFfmpegBecauseTheyShareAnArchive()
+    {
+        // An exe with no setup throws, which is how the report sees a missing binary.
+        var runner = new FakeProcessRunner();
+        runner.Setup(_paths.Uv, "uv 0.4.0");
+        runner.Setup(_paths.AudioSeparator, "audio-separator 0.27.2");
+        runner.Setup(_paths.Ffmpeg, "ffmpeg version 9.0");
+        runner.Setup(_paths.Ytdlp, "2026.08.19");
+        runner.Setup(_paths.Deno, "deno 2.8.0 (stable)");
+        var downloader = new RecordingDownloader();
+        var service = new ToolReportService(
+            new SetupDetector(runner, _paths),
+            _paths,
+            new ToolInstaller(
+                runner,
+                _paths,
+                new BundledFetcher(_paths, Windows, downloader),
+                Windows
+            ),
+            runner,
+            Windows
+        );
+
+        await Assert.ThrowsAsync<IOException>(() =>
+            service.ReportAsync(ensure: true, ct: TestContext.Current.CancellationToken)
+        );
+
+        Assert.Contains("nomercy-ffmpeg", Assert.Single(downloader.Urls));
+    }
 }
