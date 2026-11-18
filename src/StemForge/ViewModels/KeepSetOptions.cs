@@ -27,7 +27,7 @@ public sealed record KeepSetOptions(IReadOnlyList<string> Stems, string? Note)
     )
     {
         List<string> unsure = [];
-        SortedSet<string> names = new(StringComparer.OrdinalIgnoreCase);
+        SortedSet<string> names = [with(StringComparer.OrdinalIgnoreCase)];
 
         foreach (var (friendlyName, profile) in selections)
         {
