@@ -1,4 +1,3 @@
-using StemForge.Core.Catalog;
 using StemForge.ViewModels;
 
 namespace StemForge.Tests.ViewModels;
@@ -104,7 +103,7 @@ public sealed class EnsembleOverlapTests
     public void NullProfile_IsTreatedAsUnknown()
     {
         // A missing profile (resolver returned nothing) degrades the same way as an unknown one.
-        var result = EnsembleOverlap.Aggregate([("No Profile", (ModelProfile?)null)]);
+        var result = EnsembleOverlap.Aggregate([("No Profile", null)]);
 
         Assert.Empty(result.Stems);
         Assert.Equal(["No Profile"], result.UnknownModels);

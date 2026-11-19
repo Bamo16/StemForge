@@ -90,7 +90,7 @@ public sealed class OutputNamer
                         "title" => title,
                         "stem" => stem,
                         "preset" => presetName,
-                        _ => (string?)null,
+                        _ => null,
                     };
                     if (replacement is not null)
                     {

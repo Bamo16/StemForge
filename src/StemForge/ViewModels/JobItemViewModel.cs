@@ -130,7 +130,7 @@ public partial class JobItemViewModel(JobRecord job, int maxLogLines = 500) : Ob
         if (File.Exists(path))
             System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{path}\"");
         else if (Directory.Exists(Path.GetDirectoryName(path)))
-            System.Diagnostics.Process.Start("explorer.exe", Path.GetDirectoryName(path)!);
+            System.Diagnostics.Process.Start("explorer.exe", Path.GetDirectoryName(path));
     }
 
     partial void OnStatusChanged(JobStatus value)

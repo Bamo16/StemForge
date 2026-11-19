@@ -18,7 +18,7 @@ public sealed class AppSettings
     public GpuVariant? InstalledVariant { get; set; }
 
     /// <summary>True once the first-run setup wizard has been dismissed or completed.</summary>
-    public bool FirstRunComplete { get; set; } = false;
+    public bool FirstRunComplete { get; set; }
 
     // ── Tool path overrides (missing/null entry = use AppPaths default) ───────
 

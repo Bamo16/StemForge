@@ -34,9 +34,9 @@ public sealed class ToolInstallerTests
             ct: TestContext.Current.CancellationToken
         );
 
-        var (Exe, Args) = Assert.Single(fake.Calls);
-        Assert.Equal("powershell", Exe);
-        Assert.Contains("irm https://astral.sh/uv/install.ps1 | iex", Args);
+        var (exe, args) = Assert.Single(fake.Calls);
+        Assert.Equal("powershell", exe);
+        Assert.Contains("irm https://astral.sh/uv/install.ps1 | iex", args);
     }
 
     [Fact]
@@ -50,9 +50,9 @@ public sealed class ToolInstallerTests
             ct: TestContext.Current.CancellationToken
         );
 
-        var (Exe, Args) = Assert.Single(fake.Calls);
-        Assert.Equal(paths.Uv, Exe);
-        Assert.Equal(["tool", "upgrade", "audio-separator"], Args);
+        var (exe, args) = Assert.Single(fake.Calls);
+        Assert.Equal(paths.Uv, exe);
+        Assert.Equal(["tool", "upgrade", "audio-separator"], args);
     }
 
     [Fact]
@@ -80,9 +80,9 @@ public sealed class ToolInstallerTests
             ct: TestContext.Current.CancellationToken
         );
 
-        var (Exe, Args) = Assert.Single(fake.Calls);
-        Assert.Equal("sh", Exe);
-        Assert.Contains("curl -LsSf https://astral.sh/uv/install.sh | sh", Args);
+        var (exe, args) = Assert.Single(fake.Calls);
+        Assert.Equal("sh", exe);
+        Assert.Contains("curl -LsSf https://astral.sh/uv/install.sh | sh", args);
     }
 
     [Theory]
@@ -104,8 +104,8 @@ public sealed class ToolInstallerTests
             ct: TestContext.Current.CancellationToken
         );
 
-        var (Exe, Args) = Assert.Single(fake.Calls);
-        Assert.Equal(paths.Uv, Exe);
+        var (exe, args) = Assert.Single(fake.Calls);
+        Assert.Equal(paths.Uv, exe);
 
         string[] expected = expectsCudaIndex
             ?
@@ -120,7 +120,7 @@ public sealed class ToolInstallerTests
                 "https://download.pytorch.org/whl/cu121",
             ]
             : ["tool", "install", "--python", "3.10", "--force", expectedPackage];
-        Assert.Equal(expected, Args);
+        Assert.Equal(expected, args);
     }
 
     [Fact]

@@ -16,7 +16,7 @@ public sealed class JobProgressTests
         var labels = Enum.GetValues<JobPhase>()
             .Select(phase => new PhaseProgress(phase).UpdatePhase);
 
-        Assert.All(labels, label => Assert.NotEmpty(label));
+        Assert.All(labels, Assert.NotEmpty);
         Assert.Equal(Enum.GetValues<JobPhase>().Length, labels.Distinct().Count());
     }
 

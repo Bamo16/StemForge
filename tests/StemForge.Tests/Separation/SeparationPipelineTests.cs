@@ -227,7 +227,7 @@ public sealed class SeparationPipelineTests : IDisposable
             "FLAC"
         );
 
-        Assert.Equal(["kick", "snare"], request.StemsToKeep!);
+        Assert.Equal(["kick", "snare"], request.StemsToKeep);
     }
 
     [Fact]
@@ -437,7 +437,7 @@ public sealed class SeparationPipelineTests : IDisposable
         var progressUpdate = updates.LastOrDefault(u => u is { Phase: "progress", RunIndex: 1 });
 
         Assert.NotNull(progressUpdate);
-        Assert.Equal(75, progressUpdate!.OverallPercent);
+        Assert.Equal(75, progressUpdate.OverallPercent);
     }
 
     [Fact]
@@ -487,10 +487,10 @@ public sealed class SeparationPipelineTests : IDisposable
         var runBProgress = updates.LastOrDefault(u => u is { Phase: "progress", RunIndex: 1 });
 
         Assert.NotNull(runAComplete);
-        Assert.Equal(75, runAComplete!.OverallPercent);
+        Assert.Equal(75, runAComplete.OverallPercent);
 
         Assert.NotNull(runBProgress);
-        Assert.Equal(88, runBProgress!.OverallPercent);
+        Assert.Equal(88, runBProgress.OverallPercent);
     }
 
     // ── Test 4: First-preset failure stops pipeline ───────────────────────────

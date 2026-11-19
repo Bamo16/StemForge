@@ -1,5 +1,3 @@
-using StemForge.Core.Separation.Models;
-
 namespace StemForge.Tests.Separation;
 
 /// <summary>

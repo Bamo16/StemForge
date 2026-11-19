@@ -97,7 +97,7 @@ public sealed class PresetTests
 
         var step = Assert.Single(preset.Steps);
         Assert.Equal(["MDX23C-DrumSep-aufr33-jarredou.ckpt"], step.Models);
-        Assert.Equal(["kick", "snare"], step.KeepSet!);
+        Assert.Equal(["kick", "snare"], step.KeepSet);
         Assert.Equal("MDX23C-DrumSep-aufr33-jarredou.ckpt", preset.PrimaryModel);
         Assert.Equal("MDX23C-DrumSep-aufr33-jarredou", preset.DisplayName);
     }

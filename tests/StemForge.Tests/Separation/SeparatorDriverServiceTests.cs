@@ -138,8 +138,7 @@ public sealed class SeparatorDriverServiceTests
     )
     {
         var method = _type.GetMethod("BuildTerminationMessage", _privateStatic)!;
-        return (string)
-            method.Invoke(null, [exitCode, stderrTail, activityTail ?? (IReadOnlyList<string>)[]])!;
+        return (string)method.Invoke(null, [exitCode, stderrTail, activityTail ?? []])!;
     }
 
     private static readonly Type _bufferType = _type.GetNestedType(

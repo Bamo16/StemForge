@@ -68,9 +68,9 @@ public sealed class LightweightCatalogTests : IDisposable
             CancellationToken.None
         );
 
-        var call = Assert.Single(runner.Calls);
-        Assert.Equal(paths.SeparationDriverPython, call.Exe);
-        Assert.Equal([_script, "--flag", "value"], call.Args);
+        var (exe, args) = Assert.Single(runner.Calls);
+        Assert.Equal(paths.SeparationDriverPython, exe);
+        Assert.Equal([_script, "--flag", "value"], args);
         Assert.Equal("{\"ok\":true}", output);
     }
 

@@ -1,5 +1,3 @@
-using StemForge.Core.Downloading;
-
 namespace StemForge.Tests.Downloading;
 
 public sealed class TitlePackagingTests

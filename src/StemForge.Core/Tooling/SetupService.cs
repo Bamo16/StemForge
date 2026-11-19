@@ -1,5 +1,3 @@
-using System.Net.Http;
-
 namespace StemForge.Core.Tooling;
 
 /// <summary>What setup found: the GPUs, the variant it suggests and the variants this platform offers.</summary>

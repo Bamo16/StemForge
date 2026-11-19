@@ -44,7 +44,7 @@ public partial class MainWindow : Window
         if (IsInteractiveHit(source, stopAt: this))
             return;
 
-        FocusManager?.Focus(null!);
+        FocusManager?.Focus(null);
     }
 
     // Walks the visual tree from <paramref name="source"/> up to (but not

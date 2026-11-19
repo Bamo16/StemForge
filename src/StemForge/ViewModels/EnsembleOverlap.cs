@@ -1,5 +1,3 @@
-using StemForge.Core.Catalog;
-
 namespace StemForge.ViewModels;
 
 /// <summary>

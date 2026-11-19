@@ -271,7 +271,7 @@ public sealed class DownloadCommandTests : IDisposable
         var tags = AudioTagger.ReadFromFile(path);
         Assert.NotNull(tags);
         // Title is written as the display title ("Artist - Title") and the artist is preserved.
-        Assert.Equal("Artist - Sample Track", tags!.Title);
+        Assert.Equal("Artist - Sample Track", tags.Title);
         Assert.Equal("Artist", tags.Artist);
     }
 
@@ -354,9 +354,9 @@ public sealed class DownloadCommandTests : IDisposable
 
         var complete = updates.LastOrDefault(u => u.Phase == "run_complete");
         Assert.NotNull(complete);
-        Assert.Equal(100, complete!.OverallPercent);
+        Assert.Equal(100, complete.OverallPercent);
         Assert.NotNull(complete.WrittenPaths);
-        Assert.Contains(path, complete.WrittenPaths!);
+        Assert.Contains(path, complete.WrittenPaths);
     }
 
     [Fact]
