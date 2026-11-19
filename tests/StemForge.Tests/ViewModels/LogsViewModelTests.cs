@@ -134,7 +134,7 @@ public sealed class LogsViewModelTests
     {
         var (_, vm) = Build(Entry(LogLevel.Warning, "disk low", source: "setup"));
 
-        var expected = $"{Start.ToString("HH:mm:ss.fff"), -12}  WRN  {"setup", -24}  disk low";
+        var expected = $"{Start, -12:HH:mm:ss.fff}  WRN  {"setup", -24}  disk low";
         Assert.Equal(expected, vm.DisplayedText);
     }
 
