@@ -55,42 +55,42 @@ public sealed class ProcessRunner : IProcessRunner
 
     /// Run to completion and capture output. Returns the result regardless of exit code.
     public Task<Result> RunAsync(
-        string filePath,
+        string exe,
         IEnumerable<string> args,
         bool logRawLines = true,
         CancellationToken ct = default
-    ) => CoreAsync(filePath, args, progress: null, throwOnFailure: false, logRawLines, ct);
+    ) => CoreAsync(exe, args, progress: null, throwOnFailure: false, logRawLines, ct);
 
     /// Run to completion and capture output. Throws <see cref="ProcessFailedException"/>
     /// if the process exits with a non-zero code.
     public Task<Result> RunCheckedAsync(
-        string filePath,
+        string exe,
         IEnumerable<string> args,
         bool logRawLines = true,
         CancellationToken ct = default
-    ) => CoreAsync(filePath, args, progress: null, throwOnFailure: true, logRawLines, ct);
+    ) => CoreAsync(exe, args, progress: null, throwOnFailure: true, logRawLines, ct);
 
     /// Run and stream each line (stdout + stderr) to <paramref name="progress"/> as it arrives.
     /// Throws <see cref="ProcessFailedException"/> on non-zero exit.
     public async Task RunStreamingAsync(
-        string filePath,
+        string exe,
         IEnumerable<string> args,
         IProgress<string>? progress = null,
         bool logRawLines = true,
         CancellationToken ct = default
-    ) => await CoreAsync(filePath, args, progress, throwOnFailure: true, logRawLines, ct);
+    ) => await CoreAsync(exe, args, progress, throwOnFailure: true, logRawLines, ct);
 
     /// Captures stdout into the returned <see cref="Result"/> while streaming stderr lines live
     /// to <paramref name="stderrProgress"/>. Throws <see cref="ProcessFailedException"/> on non-zero exit.
     public Task<Result> RunStreamingStderrAsync(
-        string filePath,
+        string exe,
         IEnumerable<string> args,
         IProgress<string>? stderrProgress = null,
         bool logRawLines = true,
         CancellationToken ct = default
     ) =>
         CoreAsync(
-            filePath,
+            exe,
             args,
             stderrProgress,
             throwOnFailure: true,
