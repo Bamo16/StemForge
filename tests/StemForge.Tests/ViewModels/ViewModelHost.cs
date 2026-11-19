@@ -78,7 +78,6 @@ internal sealed class ViewModelHost : IDisposable
     public SetupWizardViewModel CreateWizard() =>
         new(
             Settings,
-            Detector,
             new GpuDetector(Runner),
             new ToolInstaller(
                 Runner,
@@ -122,7 +121,6 @@ internal sealed class ViewModelHost : IDisposable
                 Paths,
                 new YtdlpUpdater(Runner, Paths, TimeProvider.System)
             ),
-            Driver,
             new PresetCatalogService(Runner, Paths)
         );
 

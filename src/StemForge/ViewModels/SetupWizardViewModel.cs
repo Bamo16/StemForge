@@ -18,7 +18,6 @@ public enum WizardStep
 
 public partial class SetupWizardViewModel(
     AppSettings settings,
-    SetupDetector setupDetector,
     GpuDetector gpuDetector,
     ToolInstaller toolInstaller,
     ToolStateService toolState,
@@ -29,7 +28,6 @@ public partial class SetupWizardViewModel(
     ICommand IVariantPicker.SetVariantCommand => SetGpuVariantCommand;
 
     private readonly AppSettings _settings = settings;
-    private readonly SetupDetector _setupDetector = setupDetector;
     private readonly GpuDetector _gpuDetector = gpuDetector;
     private readonly ToolInstaller _toolInstaller = toolInstaller;
     private readonly ToolStateService _toolState = toolState;

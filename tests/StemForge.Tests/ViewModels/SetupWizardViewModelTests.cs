@@ -18,7 +18,6 @@ public sealed class SetupWizardViewModelTests
         var bundledFetcher = new BundledFetcher(paths, platform, NullFileDownloader.Instance);
         return new SetupWizardViewModel(
             settings,
-            setupDetector,
             new GpuDetector(runner),
             new ToolInstaller(runner, paths, bundledFetcher, platform),
             new ToolStateService(setupDetector),

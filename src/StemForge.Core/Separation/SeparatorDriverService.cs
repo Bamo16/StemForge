@@ -19,7 +19,6 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
 
     private Process? _process;
     private StreamWriter? _stdin;
-    private Task? _readerTask;
     private Task? _stderrTask;
 
     // Recent driver output, retained so an unexpected exit can be reported with
@@ -195,7 +194,7 @@ public sealed class SeparatorDriverService(AppPaths paths) : ISeparatorDriverSer
                 CancellationToken.None
             );
 
-            _readerTask = Task.Run(ReadLoopAsync, CancellationToken.None);
+            _ = Task.Run(ReadLoopAsync, CancellationToken.None);
 
             // Wait for the ready event (up to 2 min for CUDA init).
             using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));

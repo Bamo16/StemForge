@@ -156,7 +156,6 @@ public partial class SeparateViewModel : PageViewModelBase
     private readonly ToolStateService _toolState;
     private readonly AppPaths _paths;
     private readonly YouTubeAudioService _ytAudio;
-    private readonly ISeparatorDriverService _driver;
     private readonly PresetCatalogService _presetCatalog;
     private CancellationTokenSource? _urlCheckCts;
     private YtDlpMetadata? _cachedUrlMeta;
@@ -471,7 +470,6 @@ public partial class SeparateViewModel : PageViewModelBase
         ToolStateService toolState,
         AppPaths paths,
         YouTubeAudioService ytAudio,
-        ISeparatorDriverService driver,
         PresetCatalogService presetCatalog
     )
     {
@@ -481,7 +479,6 @@ public partial class SeparateViewModel : PageViewModelBase
         _userPresets = userPresets;
         _toolState = toolState;
         _paths = paths;
-        _driver = driver;
         _presetCatalog = presetCatalog;
         OutputPath = paths.OutputDirectory;
         StemOutputFormat = settings.DefaultAudioFormat;
