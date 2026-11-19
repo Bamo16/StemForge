@@ -149,16 +149,16 @@ public sealed class ToolStateServiceTests
         public bool SlowChecks { get; set; }
 
         public async Task<ProcessRunner.Result> RunAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             bool logRawLines = true,
             CancellationToken ct = default
         )
         {
-            var found = Installed.Contains(exe);
-            if (SlowChecks && exe.Contains("audio-separator"))
+            var found = Installed.Contains(fileName);
+            if (SlowChecks && fileName.Contains("audio-separator"))
                 await ReleaseSlowCheck.Task;
-            if (SlowChecks && exe.Contains("yt-dlp"))
+            if (SlowChecks && fileName.Contains("yt-dlp"))
                 YtdlpCheckedByFullRefresh.TrySetResult();
 
             return found
@@ -167,14 +167,14 @@ public sealed class ToolStateServiceTests
         }
 
         public Task<ProcessRunner.Result> RunCheckedAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             bool logRawLines = true,
             CancellationToken ct = default
         ) => throw new NotSupportedException();
 
         public Task RunStreamingAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             IProgress<string>? progress = null,
             bool logRawLines = true,
@@ -182,7 +182,7 @@ public sealed class ToolStateServiceTests
         ) => throw new NotSupportedException();
 
         public Task<ProcessRunner.Result> RunStreamingStderrAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             IProgress<string>? stderrProgress = null,
             bool logRawLines = true,

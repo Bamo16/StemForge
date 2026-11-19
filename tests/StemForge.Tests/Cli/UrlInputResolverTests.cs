@@ -122,7 +122,7 @@ public sealed class UrlInputResolverTests
     private sealed class CancellingProcessRunner : IProcessRunner
     {
         public Task RunStreamingAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             IProgress<string>? progress = null,
             bool logRawLines = true,
@@ -130,21 +130,21 @@ public sealed class UrlInputResolverTests
         ) => throw new OperationCanceledException();
 
         public Task<ProcessRunner.Result> RunAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             bool logRawLines = true,
             CancellationToken ct = default
         ) => throw new OperationCanceledException();
 
         public Task<ProcessRunner.Result> RunCheckedAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             bool logRawLines = true,
             CancellationToken ct = default
         ) => throw new OperationCanceledException();
 
         public Task<ProcessRunner.Result> RunStreamingStderrAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             IProgress<string>? stderrProgress = null,
             bool logRawLines = true,

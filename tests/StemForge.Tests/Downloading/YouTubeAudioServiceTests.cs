@@ -420,7 +420,7 @@ public sealed class YouTubeAudioServiceTests
         public List<IReadOnlyList<string>> Calls { get; } = [];
 
         public Task<ProcessRunner.Result> RunStreamingStderrAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             IProgress<string>? stderrProgress = null,
             bool logRawLines = true,
@@ -432,7 +432,7 @@ public sealed class YouTubeAudioServiceTests
 
             return argList.Contains("--cookies-from-browser")
                 ? throw new ProcessRunner.ProcessFailedException(
-                    exe,
+                    fileName,
                     1,
                     "ERROR: Could not copy Chrome cookie database."
                 )
@@ -440,21 +440,21 @@ public sealed class YouTubeAudioServiceTests
         }
 
         public Task<ProcessRunner.Result> RunAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             bool logRawLines = true,
             CancellationToken ct = default
         ) => throw new NotSupportedException();
 
         public Task<ProcessRunner.Result> RunCheckedAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             bool logRawLines = true,
             CancellationToken ct = default
         ) => throw new NotSupportedException();
 
         public Task RunStreamingAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             IProgress<string>? progress = null,
             bool logRawLines = true,

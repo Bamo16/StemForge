@@ -204,7 +204,7 @@ public sealed class PresetCatalogServiceTests
         public int CallCount { get; private set; }
 
         public Task<ProcessRunner.Result> RunAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             bool logRawLines = true,
             CancellationToken ct = default
@@ -216,14 +216,14 @@ public sealed class PresetCatalogServiceTests
         }
 
         public Task<ProcessRunner.Result> RunCheckedAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             bool logRawLines = true,
             CancellationToken ct = default
-        ) => RunAsync(exe, args, logRawLines, ct);
+        ) => RunAsync(fileName, args, logRawLines, ct);
 
         public Task RunStreamingAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             IProgress<string>? progress = null,
             bool logRawLines = true,
@@ -231,12 +231,12 @@ public sealed class PresetCatalogServiceTests
         ) => Task.CompletedTask;
 
         public Task<ProcessRunner.Result> RunStreamingStderrAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             IProgress<string>? stderrProgress = null,
             bool logRawLines = true,
             CancellationToken ct = default
-        ) => RunAsync(exe, args, logRawLines, ct);
+        ) => RunAsync(fileName, args, logRawLines, ct);
 
         public Task RunPipedAsync(
             string producer,

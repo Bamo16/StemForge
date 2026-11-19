@@ -104,14 +104,14 @@ public sealed class DownloadCommandTests : IDisposable
         public List<FileStream>? Held { get; init; }
 
         public Task RunStreamingAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             IProgress<string>? progress = null,
             bool logRawLines = true,
             CancellationToken ct = default
         )
         {
-            StreamedExes.Add(exe);
+            StreamedExes.Add(fileName);
             var outputPath = args.Last();
             File.WriteAllBytes(outputPath, MinimalAudio(outputPath));
             Held?.Add(new FileStream(outputPath, FileMode.Open, FileAccess.Read, FileShare.None));
@@ -120,21 +120,21 @@ public sealed class DownloadCommandTests : IDisposable
         }
 
         public Task<ProcessRunner.Result> RunAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             bool logRawLines = true,
             CancellationToken ct = default
         ) => Task.FromResult(new ProcessRunner.Result(0, "", ""));
 
         public Task<ProcessRunner.Result> RunCheckedAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             bool logRawLines = true,
             CancellationToken ct = default
         ) => Task.FromResult(new ProcessRunner.Result(0, "", ""));
 
         public Task<ProcessRunner.Result> RunStreamingStderrAsync(
-            string exe,
+            string fileName,
             IEnumerable<string> args,
             IProgress<string>? stderrProgress = null,
             bool logRawLines = true,
