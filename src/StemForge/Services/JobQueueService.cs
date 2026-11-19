@@ -11,7 +11,7 @@ namespace StemForge.Services;
 /// One user-submitted job runs at a time; all others wait in FIFO order. Thread-safe
 /// enqueue; all observable mutations happen on the UI thread.
 /// </summary>
-public sealed class JobQueueService(SeparationPipeline pipeline, AppSettings settings)
+public sealed class JobQueueService(SeparationPipeline pipeline, AppSettings settings) : IDisposable
 {
     private readonly SeparationPipeline _pipeline = pipeline;
     private readonly AppSettings _settings = settings;
@@ -274,6 +274,8 @@ public sealed class JobQueueService(SeparationPipeline pipeline, AppSettings set
             Jobs.Remove(j);
         OnPropertyChanged();
     }
+
+    public void Dispose() => _gate.Dispose();
 
     public event EventHandler? StateChanged;
 

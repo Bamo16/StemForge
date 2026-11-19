@@ -9,7 +9,7 @@ namespace StemForge.Core.Tooling;
 /// can drive a one-shot <see cref="RefreshAsync"/> and have every page (Settings, Separate, Models)
 /// react automatically.
 /// </summary>
-public sealed partial class ToolStateService(SetupDetector detector) : ObservableObject
+public sealed partial class ToolStateService(SetupDetector detector) : ObservableObject, IDisposable
 {
     private readonly SetupDetector _detector = detector;
 
@@ -66,6 +66,8 @@ public sealed partial class ToolStateService(SetupDetector detector) : Observabl
             _refreshing.Release();
         }
     }
+
+    public void Dispose() => _refreshing.Dispose();
 
     private void Apply(IEnumerable<ToolState> states)
     {

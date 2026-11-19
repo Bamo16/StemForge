@@ -8,6 +8,7 @@ namespace StemForge.Core.Tooling;
 /// YouTube stops serving an old yt-dlp within months (#95). A user's override is left alone.
 /// </summary>
 public sealed class YtdlpUpdater(IProcessRunner runner, AppPaths paths, TimeProvider time)
+    : IDisposable
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromDays(1);
 
@@ -57,6 +58,8 @@ public sealed class YtdlpUpdater(IProcessRunner runner, AppPaths paths, TimeProv
             _gate.Release();
         }
     }
+
+    public void Dispose() => _gate.Dispose();
 
     private bool IsDue() =>
         _paths.Ytdlp == _paths.BundledYtdlp
