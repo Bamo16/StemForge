@@ -13,7 +13,6 @@ public partial class MainWindowViewModel : ViewModelBase
     private const string IconModels = "M9 2 L15 5 V13 L9 16 L3 13 V5 Z M3 5 L9 8 L15 5 M9 8 V16";
     private const string IconSettings =
         "M9 6 A3 3 0 1 0 9 12 A3 3 0 1 0 9 6 M9 1 V3 M9 15 V17 M1 9 H3 M15 9 H17";
-    private const string IconLogs = "M3 5 H5 M3 9 H5 M3 13 H5 M7 5 H15 M7 9 H15 M7 13 H13";
 
     [ObservableProperty]
     public partial PageViewModelBase CurrentPage { get; set; }

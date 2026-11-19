@@ -41,28 +41,6 @@ public sealed class SeparateCommandBatchTests : IDisposable
         return path;
     }
 
-    // Helper: build a minimal SeparationPipeline backed by a fake driver.
-    private static (SeparationPipeline Pipeline, FakeSeparatorDriverService Driver) BuildPipeline(
-        AppSettings settings,
-        AppPaths paths,
-        JobResult? nextResult = null
-    )
-    {
-        var driver = new FakeSeparatorDriverService();
-        if (nextResult is not null)
-            driver.NextResult = nextResult;
-
-        var services = new ServiceCollection();
-        services.AddSingleton(settings);
-        services.AddSingleton(paths);
-        services.AddSingleton<ISeparatorDriverService>(driver);
-        services.AddStemForgeCore();
-
-        var provider = services.BuildServiceProvider();
-        var pipeline = provider.GetRequiredService<SeparationPipeline>();
-        return (pipeline, driver);
-    }
-
     // ── ValidatePresets: up-front preset validation ───────────────────────────
 
     [Fact]
