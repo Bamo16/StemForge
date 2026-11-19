@@ -19,7 +19,17 @@ csharp_prefer_braces = false:silent
 dotnet_code_quality.CA1822.api_surface = private, internal
 # FirstOrDefault() reads better than its indexed replacement, and LINQ already indexes a list.
 dotnet_code_quality.CA1826.exclude_ordefault_methods = true
+# An app's text is for its user, in their culture.
+dotnet_diagnostic.CA1305.severity = none
+# These protect other languages' callers of a library; an app has none.
+dotnet_diagnostic.CA1716.severity = none
+dotnet_diagnostic.CA1720.severity = none
+dotnet_diagnostic.CA1711.severity = none
 
 [tests/**.cs]
 # Inline arrays in test data are clearer than hoisting each into a static field.
 dotnet_diagnostic.CA1861.severity = none
+# Test names are sentences, so underscores are the style.
+dotnet_diagnostic.CA1707.severity = none
+# Caching a CompositeFormat for a test's one-off format string is noise.
+dotnet_diagnostic.CA1863.severity = none
