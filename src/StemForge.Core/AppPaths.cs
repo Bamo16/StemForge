@@ -14,7 +14,6 @@ public sealed class AppPaths(
 {
     private readonly AppSettings _settings = settings;
     private readonly PlatformInfo _platform = platform;
-    private readonly string? _bundledBinDir = bundledBinDir;
 
     // ── Tool executables ──────────────────────────────────────────────────────
 
@@ -86,8 +85,8 @@ public sealed class AppPaths(
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "model-configs");
 
     /// <summary>Directory holding bundled binaries that StemForge downloads on first run.</summary>
-    public string BundledBinDir =>
-        _bundledBinDir
+    public string BundledBinDir { get; } =
+        bundledBinDir
         ?? Environment.SpecialFolder.LocalApplicationData.GetFolderPath("StemForge", "bin");
 
     /// <summary>Path to the bundled ffmpeg binary inside <see cref="BundledBinDir"/>.</summary>
