@@ -167,7 +167,7 @@ public sealed class AudioDubFilteringTests
             FormatId = id,
             AverageAudioBitrate = kbps,
             AudioSampleRate = asr,
-            AudioCodec = id.StartsWith("14") ? "mp4a.40.2" : "opus",
+            AudioCodec = id.StartsWith("14", StringComparison.Ordinal) ? "mp4a.40.2" : "opus",
             VideoCodec = "none",
             Url = $"https://media.example.com/{id}",
             LanguagePreference = langPref,

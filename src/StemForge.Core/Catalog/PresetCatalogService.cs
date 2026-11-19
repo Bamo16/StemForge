@@ -106,8 +106,8 @@ public sealed class PresetCatalogService(IProcessRunner runner, AppPaths paths)
     }
 
     public static PresetCategory InferCategory(string id) =>
-        id.StartsWith("vocal_") ? PresetCategory.Vocals
-        : id.StartsWith("instrumental_") || id == "karaoke" ? PresetCategory.Instrumentals
+        id.StartsWith("vocal_", StringComparison.Ordinal) ? PresetCategory.Vocals
+        : id.StartsWith("instrumental_", StringComparison.Ordinal) || id == "karaoke" ? PresetCategory.Instrumentals
         : PresetCategory.Other;
 
     public static string StripCategoryPrefix(string name, PresetCategory category)

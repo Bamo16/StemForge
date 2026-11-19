@@ -121,7 +121,7 @@ public sealed class ModelCatalogService(IProcessRunner runner, AppPaths paths)
             ?
             [
                 .. files.Select(file =>
-                    file.StartsWith("http") ? file[(file.LastIndexOf('/') + 1)..] : file
+                    file.StartsWith("http", StringComparison.Ordinal) ? file[(file.LastIndexOf('/') + 1)..] : file
                 ),
             ]
             : [filename];
